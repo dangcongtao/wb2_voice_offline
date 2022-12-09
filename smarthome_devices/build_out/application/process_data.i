@@ -1,0 +1,5 @@
+# 1 "/home/dungnt98/ai-wb2-baremetal/smarthome_devices/components/application/process_data.c"
+# 1 "/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/application//"
+# 1 "<built-in>"
+# 1 "<command-line>"
+# 1 "/home/dungnt98/ai-wb2-baremetal/smarthome_devices/components/application/process_data.c"

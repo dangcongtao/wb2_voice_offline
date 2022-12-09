@@ -1,14 +1,19 @@
 #include <stdio.h>
 #include <string.h>
-#include <FreeRTOS.h>
-#include <task.h>
 #include <bl_gpio.h>
 
+#include <FreeRTOS.h>
+#include <task.h>
+
+#include "hardware.h"
+
 #define GPIO_BUTTON_PIN 8
-#define GPIO_LED_PIN 14
+#define GPIO_LED_PIN 12
 
 void main(void)
 {
+    hw_pcb_sort_pins();
+
     bl_gpio_enable_input(GPIO_BUTTON_PIN, 0, 0);
     bl_gpio_enable_output(GPIO_LED_PIN, 0, 0);
     bl_gpio_output_set(GPIO_LED_PIN, 0);

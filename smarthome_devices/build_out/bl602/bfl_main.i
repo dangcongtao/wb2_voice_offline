@@ -10181,7 +10181,7 @@ static void _dump_boot_info(void)
     puts("Dec  9 2022");
     puts("\r\n");
     puts("Build Time: ");
-    puts("09:59:43");
+    puts("14:48:13");
     puts("\r\n");
 
 }

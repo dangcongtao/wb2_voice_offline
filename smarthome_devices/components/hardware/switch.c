@@ -1,0 +1,46 @@
+#include "hardware.h"
+#include "system_typedef.h"
+
+uint32_t switch_arr[] = {SWITCH1, SWITCH2, SWITCH3, SWITCH4};
+
+void hw_switch_cfg(uint8_t index)
+{
+    gpio_set_output(index);
+    gpio_set_level(switch_arr[index], SWITCH_IDLE_LEVEL); /* set relay */
+}
+
+void hw_write_switch_pin(uint8_t index, uint8_t val)
+{
+    if (index >= max_number_channel)
+        return;
+
+    gpio_set_level(switch_arr[index], val); /* set relay */
+
+    if (device_type == WSWITCH) {
+        if (max_number_channel == 1 && index == 0) {
+            /* bug in hardware pcb so need do it for fake led indicator */
+            gpio_set_level(switch_arr[1], val);
+        }
+        else if (max_number_channel == 2 && index == 1) {
+            /* bug in hardware pcb so need do it for fake led indicator */
+            gpio_set_level(switch_arr[2], val);
+        }
+    }
+}
+
+uint8_t hw_read_switch_pin(uint8_t index)
+{
+    if (index >= max_number_channel)
+        return SWITCH_IDLE_LEVEL;
+
+    return (uint8_t)gpio_get_level(switch_arr[index]);
+}
+
+/* Public */
+void hw_switch_match_pcb(void)
+{
+    if ((device_type == WSWITCH || device_type == WSDATIC) && max_number_channel == 4) {
+		switch_arr[2] = SWITCH4;
+		switch_arr[3] = SWITCH3;
+    }
+}

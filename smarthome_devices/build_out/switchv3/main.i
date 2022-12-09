@@ -1472,11 +1472,9 @@ static __inline unsigned long __libc_detect_null(unsigned long w)
 
 
 # 3 "/home/dungnt98/ai-wb2-baremetal/smarthome_devices/switchv3/main.c" 2
-# 1 "/home/dungnt98/Ai-Thinker-WB2/components/platform/soc/bl602/freertos_riscv_ram/config/FreeRTOS.h" 1
-# 34 "/home/dungnt98/Ai-Thinker-WB2/components/platform/soc/bl602/freertos_riscv_ram/config/FreeRTOS.h"
-# 1 "/home/dungnt98/Ai-Thinker-WB2/toolchain/riscv/Linux/lib/gcc/riscv64-unknown-elf/10.2.0/include/stddef.h" 1 3 4
-# 35 "/home/dungnt98/Ai-Thinker-WB2/components/platform/soc/bl602/freertos_riscv_ram/config/FreeRTOS.h" 2
-# 49 "/home/dungnt98/Ai-Thinker-WB2/components/platform/soc/bl602/freertos_riscv_ram/config/FreeRTOS.h"
+# 1 "/home/dungnt98/Ai-Thinker-WB2/components/platform/hosal/bl602_hal/bl_gpio.h" 1
+
+
 # 1 "/home/dungnt98/Ai-Thinker-WB2/toolchain/riscv/Linux/lib/gcc/riscv64-unknown-elf/10.2.0/include/stdint.h" 1 3 4
 # 11 "/home/dungnt98/Ai-Thinker-WB2/toolchain/riscv/Linux/lib/gcc/riscv64-unknown-elf/10.2.0/include/stdint.h" 3 4
 # 1 "/home/dungnt98/Ai-Thinker-WB2/toolchain/riscv/Linux/lib/gcc/riscv64-unknown-elf/10.2.0/include/stdint-gcc.h" 1 3 4
@@ -1541,18 +1539,39 @@ typedef unsigned int uintptr_t;
 typedef long long int intmax_t;
 typedef long long unsigned int uintmax_t;
 # 12 "/home/dungnt98/Ai-Thinker-WB2/toolchain/riscv/Linux/lib/gcc/riscv64-unknown-elf/10.2.0/include/stdint.h" 2 3 4
-# 50 "/home/dungnt98/Ai-Thinker-WB2/components/platform/soc/bl602/freertos_riscv_ram/config/FreeRTOS.h" 2
+# 4 "/home/dungnt98/Ai-Thinker-WB2/components/platform/hosal/bl602_hal/bl_gpio.h" 2
 
 
+# 5 "/home/dungnt98/Ai-Thinker-WB2/components/platform/hosal/bl602_hal/bl_gpio.h"
+typedef struct _gpio_ctx_desc {
+    struct _gpio_ctx_desc *next;
+    void (*gpio_handler)(void *);
+    void *arg;
 
+    uint8_t gpioPin;
+    uint8_t intCtrlMod;
+    uint8_t intTrgMod;
+} gpio_ctx_t;
 
+int bl_gpio_enable_output(uint8_t pin, uint8_t pullup, uint8_t pulldown);
+int bl_gpio_enable_input(uint8_t pin, uint8_t pullup, uint8_t pulldown);
+int bl_gpio_output_set(uint8_t pin, uint8_t value);
+int bl_gpio_input_get(uint8_t pin, uint8_t *value);
+int bl_gpio_input_get_value(uint8_t pin);
+int bl_gpio_int_clear(uint8_t gpioPin,uint8_t intClear);
+void bl_gpio_intmask(uint8_t gpiopin, uint8_t mask);
+void bl_set_gpio_intmod(uint8_t gpioPin, uint8_t intCtrlMod, uint8_t intTrgMod);
+void bl_gpio_register(gpio_ctx_t *pstnode);
+# 4 "/home/dungnt98/ai-wb2-baremetal/smarthome_devices/switchv3/main.c" 2
 
-
+# 1 "/home/dungnt98/Ai-Thinker-WB2/components/platform/soc/bl602/freertos_riscv_ram/config/FreeRTOS.h" 1
+# 34 "/home/dungnt98/Ai-Thinker-WB2/components/platform/soc/bl602/freertos_riscv_ram/config/FreeRTOS.h"
+# 1 "/home/dungnt98/Ai-Thinker-WB2/toolchain/riscv/Linux/lib/gcc/riscv64-unknown-elf/10.2.0/include/stddef.h" 1 3 4
+# 35 "/home/dungnt98/Ai-Thinker-WB2/components/platform/soc/bl602/freertos_riscv_ram/config/FreeRTOS.h" 2
+# 56 "/home/dungnt98/Ai-Thinker-WB2/components/platform/soc/bl602/freertos_riscv_ram/config/FreeRTOS.h"
 # 1 "/home/dungnt98/Ai-Thinker-WB2/components/platform/soc/bl602/freertos_riscv_ram/config/FreeRTOSConfig.h" 1
 # 74 "/home/dungnt98/Ai-Thinker-WB2/components/platform/soc/bl602/freertos_riscv_ram/config/FreeRTOSConfig.h"
 # 1 "/home/dungnt98/Ai-Thinker-WB2/components/platform/soc/bl602/freertos_riscv_ram/config/platform.h" 1
-# 127 "/home/dungnt98/Ai-Thinker-WB2/components/platform/soc/bl602/freertos_riscv_ram/config/platform.h"
-
 # 127 "/home/dungnt98/Ai-Thinker-WB2/components/platform/soc/bl602/freertos_riscv_ram/config/platform.h"
 unsigned long get_cpu_freq(void);
 unsigned long get_timer_freq(void);
@@ -1774,7 +1793,7 @@ typedef struct xSTATIC_STREAM_BUFFER
 
 
 typedef StaticStreamBuffer_t StaticMessageBuffer_t;
-# 4 "/home/dungnt98/ai-wb2-baremetal/smarthome_devices/switchv3/main.c" 2
+# 6 "/home/dungnt98/ai-wb2-baremetal/smarthome_devices/switchv3/main.c" 2
 # 1 "/home/dungnt98/Ai-Thinker-WB2/components/platform/soc/bl602/freertos_riscv_ram/config/task.h" 1
 # 36 "/home/dungnt98/Ai-Thinker-WB2/components/platform/soc/bl602/freertos_riscv_ram/config/task.h"
 # 1 "/home/dungnt98/Ai-Thinker-WB2/components/platform/soc/bl602/freertos_riscv_ram/config/list.h" 1
@@ -2096,48 +2115,59 @@ TaskHandle_t pvTaskIncrementMutexHeldCount( void ) ;
 
 
 void vTaskInternalSetTimeOutState( TimeOut_t * const pxTimeOut ) ;
-# 5 "/home/dungnt98/ai-wb2-baremetal/smarthome_devices/switchv3/main.c" 2
-# 1 "/home/dungnt98/Ai-Thinker-WB2/components/platform/hosal/bl602_hal/bl_gpio.h" 1
+# 7 "/home/dungnt98/ai-wb2-baremetal/smarthome_devices/switchv3/main.c" 2
+
+# 1 "/home/dungnt98/ai-wb2-baremetal/smarthome_devices/components/hardware/hardware.h" 1
+# 32 "/home/dungnt98/ai-wb2-baremetal/smarthome_devices/components/hardware/hardware.h"
+extern volatile uint8_t max_number_channel;
+extern volatile uint8_t device_type;
+extern uint32_t switch_arr[];
+extern uint32_t button_arr[];
 
 
+void hw_timer_init();
+uint32_t hw_get_tick_ms(void);
 
 
-typedef struct _gpio_ctx_desc {
-    struct _gpio_ctx_desc *next;
-    void (*gpio_handler)(void *);
-    void *arg;
+void hw_button_match_pcb(void);
+void hw_button_config(uint32_t index);
+uint32_t hw_btn_read(uint32_t index);
 
-    uint8_t gpioPin;
-    uint8_t intCtrlMod;
-    uint8_t intTrgMod;
-} gpio_ctx_t;
 
-int bl_gpio_enable_output(uint8_t pin, uint8_t pullup, uint8_t pulldown);
-int bl_gpio_enable_input(uint8_t pin, uint8_t pullup, uint8_t pulldown);
-int bl_gpio_output_set(uint8_t pin, uint8_t value);
-int bl_gpio_input_get(uint8_t pin, uint8_t *value);
-int bl_gpio_input_get_value(uint8_t pin);
-int bl_gpio_int_clear(uint8_t gpioPin,uint8_t intClear);
-void bl_gpio_intmask(uint8_t gpiopin, uint8_t mask);
-void bl_set_gpio_intmod(uint8_t gpioPin, uint8_t intCtrlMod, uint8_t intTrgMod);
-void bl_gpio_register(gpio_ctx_t *pstnode);
-# 6 "/home/dungnt98/ai-wb2-baremetal/smarthome_devices/switchv3/main.c" 2
+void hw_led_stt_cfg(void);
+void hw_led_stt_on(void);
+void hw_led_stt_off(void);
+void hw_toggle_led_stt(void);
+
+
+void hw_switch_match_pcb(void);
+void hw_switch_cfg(uint8_t index);
+void hw_write_switch_pin(uint8_t index, uint8_t val);
+uint8_t hw_read_switch_pin(uint8_t index);
+
+
+void hw_pcb_sort_pins(void);
+void gpio_set_output(int pin);
+void gpio_set_input(int pin);
+# 9 "/home/dungnt98/ai-wb2-baremetal/smarthome_devices/switchv3/main.c" 2
 
 
 
 
 void main(void)
 {
+    hw_pcb_sort_pins();
+
     bl_gpio_enable_input(8, 0, 0);
-    bl_gpio_enable_output(14, 0, 0);
-    bl_gpio_output_set(14, 0);
+    bl_gpio_enable_output(12, 0, 0);
+    bl_gpio_output_set(12, 0);
 
     for (;;) {
         if (bl_gpio_input_get_value(8)) {
-            bl_gpio_output_set(14, 1);
+            bl_gpio_output_set(12, 1);
         }
         else {
-            bl_gpio_output_set(14, 0);
+            bl_gpio_output_set(12, 0);
         }
 
         vTaskDelay(( ( TickType_t ) ( ( ( TickType_t ) ( 5 ) * ( TickType_t ) ( ( TickType_t ) 1000 ) ) / ( TickType_t ) 1000 ) ));
