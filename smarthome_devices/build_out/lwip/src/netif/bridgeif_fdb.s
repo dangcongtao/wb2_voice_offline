@@ -2084,8 +2084,8 @@ bridgeif_fdb_init:
 	.string	"dst_addr"
 .LASF7:
 	.string	"__uint32_t"
-.LASF19:
-	.string	"u32_t"
+.LASF45:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF37:
 	.string	"src_addr"
 .LASF46:
@@ -2124,8 +2124,8 @@ bridgeif_fdb_init:
 	.string	"short int"
 .LASF15:
 	.string	"uint16_t"
-.LASF45:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
+.LASF19:
+	.string	"u32_t"
 .LASF16:
 	.string	"uint32_t"
 .LASF6:

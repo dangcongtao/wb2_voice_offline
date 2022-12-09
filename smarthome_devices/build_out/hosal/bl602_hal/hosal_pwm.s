@@ -2949,6 +2949,8 @@ _fsymf_info_hosalhosal_pwm:
 	.section	.debug_str,"MS",@progbits,1
 .LASF26:
 	.string	"priv"
+.LASF68:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF70:
 	.string	"_blog_info"
 .LASF61:
@@ -2961,8 +2963,6 @@ _fsymf_info_hosalhosal_pwm:
 	.string	"GLB_GPIO_Init"
 .LASF62:
 	.string	"PWM_Smart_Configure"
-.LASF68:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF19:
 	.string	"smtCtrl"
 .LASF7:

@@ -14088,8 +14088,6 @@ fdt_check_full:
 	.string	"fdt_get_property_namelen"
 .LASF6:
 	.string	"uint8_t"
-.LASF135:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/blfdt"
 .LASF23:
 	.string	"boot_cpuid_phys"
 .LASF113:
@@ -14098,6 +14096,8 @@ fdt_check_full:
 	.string	"fdt32_ld"
 .LASF46:
 	.string	"err_"
+.LASF135:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/blfdt"
 .LASF118:
 	.string	"fdt_offset_ptr_"
 .LASF122:

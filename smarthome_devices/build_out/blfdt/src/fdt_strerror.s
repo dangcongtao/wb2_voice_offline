@@ -562,12 +562,12 @@ fdt_errtable:
 	.string	"unsigned char"
 .LASF3:
 	.string	"long int"
-.LASF13:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/blfdt"
 .LASF6:
 	.string	"short unsigned int"
 .LASF1:
 	.string	"signed char"
+.LASF13:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/blfdt"
 .LASF2:
 	.string	"short int"
 .LASF12:

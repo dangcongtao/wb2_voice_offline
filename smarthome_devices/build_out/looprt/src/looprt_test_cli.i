@@ -1,5 +1,5 @@
 # 1 "/home/dungnt98/Ai-Thinker-WB2/components/sys/bloop/looprt/src/looprt_test_cli.c"
-# 1 "/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/looprt//"
+# 1 "/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/looprt//"
 # 1 "<built-in>"
 # 1 "<command-line>"
 # 1 "/home/dungnt98/Ai-Thinker-WB2/components/sys/bloop/looprt/src/looprt_test_cli.c"

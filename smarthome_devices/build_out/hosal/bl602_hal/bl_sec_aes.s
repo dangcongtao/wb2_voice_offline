@@ -11312,8 +11312,6 @@ _fsymf_info_hosalbl_sec_aes:
 	.string	"Sec_Eng_AES_Enable_Link"
 .LASF49:
 	.string	"UART1_IRQn"
-.LASF224:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF102:
 	.string	"aesIntClr"
 .LASF35:
@@ -11488,6 +11486,8 @@ _fsymf_info_hosalbl_sec_aes:
 	.string	"TIMER_CH1_IRQn"
 .LASF130:
 	.string	"BLOG_LEVEL_WARN"
+.LASF224:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF171:
 	.string	"get_ctr_input_output_size"
 .LASF152:

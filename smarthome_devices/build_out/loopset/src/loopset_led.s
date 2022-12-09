@@ -3466,6 +3466,8 @@ _led_bloop_handler_holder.0:
 	.section	.debug_str,"MS",@progbits,1
 .LASF27:
 	.string	"header"
+.LASF105:
+	.string	"_cb_led_trigger"
 .LASF80:
 	.string	"utils_dlist_add"
 .LASF56:
@@ -3476,6 +3478,8 @@ _led_bloop_handler_holder.0:
 	.string	"bitmap_evt"
 .LASF35:
 	.string	"time_max"
+.LASF102:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/loopset"
 .LASF49:
 	.string	"statistic"
 .LASF70:
@@ -3486,8 +3490,6 @@ _led_bloop_handler_holder.0:
 	.string	"short int"
 .LASF5:
 	.string	"size_t"
-.LASF105:
-	.string	"_cb_led_trigger"
 .LASF82:
 	.string	"__utils_dlist_add"
 .LASF26:
@@ -3662,8 +3664,6 @@ _led_bloop_handler_holder.0:
 	.string	"arg2"
 .LASF20:
 	.string	"prev"
-.LASF102:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/loopset"
 .LASF62:
 	.string	"led_trigger_item"
 .LASF83:

@@ -11485,6 +11485,8 @@ secp256k1_b:
 	.string	"secp256r1_gy"
 .LASF23:
 	.string	"MBEDTLS_ECP_DP_CURVE25519"
+.LASF110:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 .LASF10:
 	.string	"uint32_t"
 .LASF26:
@@ -11649,8 +11651,6 @@ secp256k1_b:
 	.string	"mbedtls_mpi_mul_int"
 .LASF49:
 	.string	"secp224k1_a"
-.LASF110:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
 .LASF31:
 	.string	"pbits"
 .LASF1:

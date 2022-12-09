@@ -5879,8 +5879,6 @@ vEventGroupSetNumber:
 	.string	"xEventGroupClearBits"
 .LASF56:
 	.string	"xEventGroupSetBitsFromISR"
-.LASF109:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/freertos_riscv_ram"
 .LASF97:
 	.string	"vEnvironmentCall"
 .LASF2:
@@ -5957,6 +5955,8 @@ vEventGroupSetNumber:
 	.string	"uxTaskResetEventItemValue"
 .LASF39:
 	.string	"xListEnd"
+.LASF109:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/freertos_riscv_ram"
 .LASF82:
 	.string	"xEventGroupClearBitsFromISR"
 .LASF80:

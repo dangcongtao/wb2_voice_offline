@@ -3609,8 +3609,6 @@ mbedtls_ssl_cookie_check:
 	.string	"mbedtls_ssl_cookie_ctx"
 .LASF20:
 	.string	"MBEDTLS_MD_SHA384"
-.LASF67:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
 .LASF6:
 	.string	"long long int"
 .LASF60:
@@ -3655,6 +3653,8 @@ mbedtls_ssl_cookie_check:
 	.string	"short unsigned int"
 .LASF11:
 	.string	"char"
+.LASF67:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 .LASF62:
 	.string	"mbedtls_md_hmac_update"
 .LASF29:

@@ -2995,8 +2995,6 @@ bl_gpio_register:
 	.string	"pulldown"
 .LASF46:
 	.string	"UART1_IRQn"
-.LASF150:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF109:
 	.string	"pullType"
 .LASF132:
@@ -3135,6 +3133,8 @@ bl_gpio_register:
 	.string	"bl_set_gpio_intmod"
 .LASF53:
 	.string	"TIMER_CH1_IRQn"
+.LASF150:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF68:
 	.string	"HBN_OUT1_IRQn"
 .LASF118:

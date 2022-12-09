@@ -455,8 +455,6 @@ memset_func:
 	.string	"short unsigned int"
 .LASF0:
 	.string	"signed char"
-.LASF12:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
 .LASF2:
 	.string	"short int"
 .LASF8:
@@ -465,4 +463,6 @@ memset_func:
 	.string	"mbedtls_platform_zeroize"
 .LASF10:
 	.string	"GNU C99 10.2.0 -march=rv32imfc -mabi=ilp32f -march=rv32imfc -gdwarf -Os -std=gnu99 -ffunction-sections -fdata-sections -fstrict-volatile-bitfields -fcommon -ffreestanding -fno-strict-aliasing"
+.LASF12:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 	.ident	"GCC: (SiFive GCC-Metal 10.2.0-2020.12.8) 10.2.0"

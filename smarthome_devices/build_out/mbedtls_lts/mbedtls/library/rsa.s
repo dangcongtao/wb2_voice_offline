@@ -28261,8 +28261,6 @@ mbedtls_rsa_copy:
 	.string	"dst_len"
 .LASF95:
 	.string	"label"
-.LASF199:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
 .LASF175:
 	.string	"mbedtls_mpi_free"
 .LASF83:
@@ -28453,6 +28451,8 @@ mbedtls_rsa_copy:
 	.string	"mbedtls_rsa_free"
 .LASF68:
 	.string	"min_slen"
+.LASF199:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 .LASF201:
 	.string	"mem_move_to_left"
 .LASF198:

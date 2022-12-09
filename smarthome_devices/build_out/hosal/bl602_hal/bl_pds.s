@@ -4097,6 +4097,8 @@ _fsymf_info_hosalbl_pds:
 	.string	"cpuGateClk"
 .LASF83:
 	.string	"wrEnableBit"
+.LASF275:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF146:
 	.string	"cpuPwrOff"
 .LASF87:
@@ -4415,8 +4417,6 @@ _fsymf_info_hosalbl_pds:
 	.string	"forceWbIsoPwrOff"
 .LASF46:
 	.string	"resetEnCmd"
-.LASF275:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF184:
 	.string	"forceMiscPwrOff"
 .LASF266:

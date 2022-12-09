@@ -18496,8 +18496,8 @@ code_log:
 	.string	"code_log"
 .LASF87:
 	.string	"temp2"
-.LASF67:
-	.string	"offset"
+.LASF140:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/utils"
 .LASF44:
 	.string	"reedsolomon_getmemsize"
 .LASF107:
@@ -18608,6 +18608,8 @@ code_log:
 	.string	"forney"
 .LASF86:
 	.string	"temp"
+.LASF67:
+	.string	"offset"
 .LASF127:
 	.string	"poly_reset"
 .LASF89:
@@ -18650,8 +18652,6 @@ code_log:
 	.string	"ID_MSG_OUT"
 .LASF104:
 	.string	"addp"
-.LASF140:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/utils"
 .LASF116:
 	.string	"power"
 .LASF2:

@@ -2697,6 +2697,8 @@ aos_unregister_fs:
 	.string	"aos_dir_t"
 .LASF0:
 	.string	"unsigned int"
+.LASF132:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/vfs"
 .LASF57:
 	.string	"st_blksize"
 .LASF110:
@@ -2833,8 +2835,6 @@ aos_unregister_fs:
 	.string	"aos_unregister_driver"
 .LASF82:
 	.string	"file_ops"
-.LASF132:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/vfs"
 .LASF81:
 	.string	"file_ops_t"
 .LASF128:

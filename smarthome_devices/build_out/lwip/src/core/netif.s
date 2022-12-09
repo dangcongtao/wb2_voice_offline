@@ -8143,6 +8143,8 @@ netif_num:
 	.string	"unsigned int"
 .LASF190:
 	.string	"netif2"
+.LASF221:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF75:
 	.string	"MEMP_PBUF"
 .LASF22:
@@ -8313,8 +8315,6 @@ netif_num:
 	.string	"ERR_ABRT"
 .LASF188:
 	.string	"netif_add"
-.LASF221:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
 .LASF96:
 	.string	"rx_general"
 .LASF70:

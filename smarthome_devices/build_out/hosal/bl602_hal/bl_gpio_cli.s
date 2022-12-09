@@ -2881,6 +2881,8 @@ cmds_user:
 	.section	.debug_line,"",@progbits
 .Ldebug_line0:
 	.section	.debug_str,"MS",@progbits,1
+.LASF56:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF26:
 	.string	"_blog_info"
 .LASF43:
@@ -2891,8 +2893,6 @@ cmds_user:
 	.string	"short int"
 .LASF55:
 	.string	"/home/dungnt98/Ai-Thinker-WB2/components/platform/hosal/bl602_hal/bl_gpio_cli.c"
-.LASF56:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF7:
 	.string	"__uint32_t"
 .LASF30:

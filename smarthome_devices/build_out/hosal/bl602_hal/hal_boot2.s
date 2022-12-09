@@ -5796,6 +5796,8 @@ _fsymf_info_hosalhal_boot2:
 	.section	.debug_str,"MS",@progbits,1
 .LASF42:
 	.string	"HAL_ERROR"
+.LASF108:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF110:
 	.string	"_blog_info"
 .LASF75:
@@ -5818,6 +5820,8 @@ _fsymf_info_hosalhal_boot2:
 	.string	"activeIndex"
 .LASF2:
 	.string	"short int"
+.LASF91:
+	.string	"hal_update_mfg_ptable"
 .LASF77:
 	.string	"size0"
 .LASF78:
@@ -5854,8 +5858,8 @@ _fsymf_info_hosalhal_boot2:
 	.string	"PT_ENTRY_FW_CPU0"
 .LASF13:
 	.string	"uint8_t"
-.LASF91:
-	.string	"hal_update_mfg_ptable"
+.LASF64:
+	.string	"ptEntry_fw"
 .LASF50:
 	.string	"BLOG_LEVEL_ERROR"
 .LASF101:
@@ -5918,8 +5922,8 @@ _fsymf_info_hosalhal_boot2:
 	.string	"PT_ENTRY_MAX"
 .LASF87:
 	.string	"hal_boot2_get_flash_addr"
-.LASF64:
-	.string	"ptEntry_fw"
+.LASF59:
+	.string	"_fsymf_level_hosalhal_boot2"
 .LASF51:
 	.string	"BLOG_LEVEL_ASSERT"
 .LASF0:
@@ -5938,12 +5942,8 @@ _fsymf_info_hosalhal_boot2:
 	.string	"HALpPtTable_Flash_Write"
 .LASF48:
 	.string	"BLOG_LEVEL_INFO"
-.LASF59:
-	.string	"_fsymf_level_hosalhal_boot2"
 .LASF65:
 	.string	"ptEntry_media"
-.LASF108:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF68:
 	.string	"hal_boot2_get_active_entries"
 .LASF81:

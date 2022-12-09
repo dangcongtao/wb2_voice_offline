@@ -33447,6 +33447,8 @@ small_prime:
 	.string	"_cookie"
 .LASF195:
 	.string	"mbedtls_mpi_write_file"
+.LASF242:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 .LASF29:
 	.string	"_Bigint"
 .LASF202:
@@ -33761,8 +33763,6 @@ small_prime:
 	.string	"state"
 .LASF148:
 	.string	"nblimbs"
-.LASF242:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
 .LASF236:
 	.string	"mbedtls_calloc"
 .LASF71:

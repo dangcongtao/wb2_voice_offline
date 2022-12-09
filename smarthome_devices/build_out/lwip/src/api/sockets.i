@@ -1,5 +1,5 @@
 # 1 "/home/dungnt98/Ai-Thinker-WB2/components/network/lwip/src/api/sockets.c"
-# 1 "/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip//"
+# 1 "/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip//"
 # 1 "<built-in>"
 # 1 "<command-line>"
 # 1 "/home/dungnt98/Ai-Thinker-WB2/components/network/lwip/src/api/sockets.c"

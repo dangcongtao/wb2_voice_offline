@@ -1529,6 +1529,8 @@ crc32Tab:
 	.string	"crc32Tab"
 .LASF23:
 	.string	"utils_crc32_stream_results"
+.LASF13:
+	.string	"uint8_t"
 .LASF4:
 	.string	"__uint16_t"
 .LASF19:
@@ -1555,8 +1557,8 @@ crc32Tab:
 	.string	"unsigned int"
 .LASF10:
 	.string	"long long unsigned int"
-.LASF13:
-	.string	"uint8_t"
+.LASF17:
+	.string	"chCRCLTalbe"
 .LASF20:
 	.string	"utils_crc32_stream_feed_block"
 .LASF16:
@@ -1569,12 +1571,10 @@ crc32Tab:
 	.string	"GNU C99 10.2.0 -march=rv32imfc -mabi=ilp32f -march=rv32imfc -gdwarf -Os -std=gnu99 -ffunction-sections -fdata-sections -fstrict-volatile-bitfields -fcommon -ffreestanding -fno-strict-aliasing"
 .LASF12:
 	.string	"char"
-.LASF32:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/utils"
 .LASF2:
 	.string	"short int"
-.LASF17:
-	.string	"chCRCLTalbe"
+.LASF32:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/utils"
 .LASF29:
 	.string	"wIndex"
 .LASF14:

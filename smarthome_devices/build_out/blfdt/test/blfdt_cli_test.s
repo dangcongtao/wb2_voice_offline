@@ -679,26 +679,26 @@ cmds_user:
 	.string	"char"
 .LASF4:
 	.string	"long int"
-.LASF16:
-	.string	"tc_blfdtdump"
 .LASF6:
 	.string	"long long int"
 .LASF13:
 	.string	"argc"
-.LASF19:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/blfdt"
 .LASF12:
 	.string	"function"
 .LASF10:
 	.string	"name"
 .LASF20:
 	.string	"cli_command"
+.LASF19:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/blfdt"
 .LASF23:
 	.string	"blfdt"
 .LASF2:
 	.string	"short int"
 .LASF18:
 	.string	"/home/dungnt98/Ai-Thinker-WB2/components/stage/blfdt/test/blfdt_cli_test.c"
+.LASF16:
+	.string	"tc_blfdtdump"
 .LASF17:
 	.string	"GNU C99 10.2.0 -march=rv32imfc -mabi=ilp32f -march=rv32imfc -gdwarf -Os -std=gnu99 -ffunction-sections -fdata-sections -fstrict-volatile-bitfields -fcommon -ffreestanding -fno-strict-aliasing"
 .LASF0:

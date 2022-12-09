@@ -8111,6 +8111,8 @@ mbedtls_ecdsa_from_keypair:
 	.string	"mbedtls_ecp_point_init"
 .LASF23:
 	.string	"MBEDTLS_ECP_DP_CURVE25519"
+.LASF114:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 .LASF110:
 	.string	"mbedtls_ecp_mul_restartable"
 .LASF106:
@@ -8265,8 +8267,6 @@ mbedtls_ecdsa_from_keypair:
 	.string	"MBEDTLS_MD_MD5"
 .LASF5:
 	.string	"long unsigned int"
-.LASF114:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
 .LASF31:
 	.string	"pbits"
 .LASF1:

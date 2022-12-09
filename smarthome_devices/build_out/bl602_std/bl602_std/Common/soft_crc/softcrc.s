@@ -1324,6 +1324,8 @@ crc32Tab:
 	.section	.debug_str,"MS",@progbits,1
 .LASF16:
 	.string	"dataIn"
+.LASF25:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std"
 .LASF17:
 	.string	"data"
 .LASF0:
@@ -1334,16 +1336,14 @@ crc32Tab:
 	.string	"long unsigned int"
 .LASF7:
 	.string	"short unsigned int"
-.LASF25:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std"
+.LASF4:
+	.string	"unsigned char"
 .LASF26:
 	.string	"BFLB_Soft_CRC16"
 .LASF18:
 	.string	"BFLB_Soft_CRC32"
 .LASF20:
 	.string	"chCRCHi"
-.LASF4:
-	.string	"unsigned char"
 .LASF11:
 	.string	"unsigned int"
 .LASF10:

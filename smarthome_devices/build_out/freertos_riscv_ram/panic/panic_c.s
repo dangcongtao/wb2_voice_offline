@@ -548,12 +548,12 @@ backtrace_now_task:
 	.string	"regs"
 .LASF4:
 	.string	"long int"
+.LASF19:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/freertos_riscv_ram"
 .LASF18:
 	.string	"/home/dungnt98/Ai-Thinker-WB2/components/platform/soc/bl602/freertos_riscv_ram/panic/panic_c.c"
 .LASF23:
 	.string	"backtrace_riscv"
-.LASF19:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/freertos_riscv_ram"
 .LASF3:
 	.string	"short unsigned int"
 .LASF0:

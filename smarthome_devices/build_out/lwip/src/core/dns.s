@@ -7465,6 +7465,8 @@ dns_mquery_v4group:
 	.string	"MEMP_IGMP_GROUP"
 .LASF191:
 	.string	"pbuf_take"
+.LASF198:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF74:
 	.string	"MEMP_TCPIP_MSG_API"
 .LASF120:
@@ -7687,8 +7689,6 @@ dns_mquery_v4group:
 	.string	"IPADDR_TYPE_V4"
 .LASF61:
 	.string	"IPADDR_TYPE_V6"
-.LASF198:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
 .LASF70:
 	.string	"MEMP_TCP_SEG"
 .LASF129:

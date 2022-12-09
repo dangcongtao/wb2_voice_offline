@@ -4283,6 +4283,8 @@ bflb_dsa_init:
 	.string	"invR_q"
 .LASF26:
 	.string	"SEC_ENG_PKA_REG_SIZE_96"
+.LASF58:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std"
 .LASF54:
 	.string	"Sec_Eng_PKA_Mont2GF"
 .LASF3:
@@ -4321,8 +4323,6 @@ bflb_dsa_init:
 	.string	"SEC_ENG_PKA_REG_SIZE_Type"
 .LASF47:
 	.string	"Sec_Eng_PKA_CREG"
-.LASF58:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std"
 .LASF50:
 	.string	"Sec_Eng_PKA_LADD"
 .LASF45:

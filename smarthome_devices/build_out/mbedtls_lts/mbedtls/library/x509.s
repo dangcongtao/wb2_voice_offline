@@ -6644,8 +6644,6 @@ mbedtls_x509_time_is_future:
 	.string	"md_alg"
 .LASF69:
 	.string	"x509_get_attr_type_value"
-.LASF87:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
 .LASF43:
 	.string	"mbedtls_x509_sig_alg_gets"
 .LASF74:
@@ -6714,6 +6712,8 @@ mbedtls_x509_time_is_future:
 	.string	"mbedtls_x509_get_name"
 .LASF9:
 	.string	"char"
+.LASF87:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 .LASF59:
 	.string	"tag_type"
 .LASF86:

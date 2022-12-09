@@ -2741,8 +2741,6 @@ PtTable_Get_Active_Entries_By_Name:
 	.string	"BL602_MemCpy_Fast"
 .LASF76:
 	.string	"burstWrapData"
-.LASF141:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF60:
 	.string	"busyBit"
 .LASF106:
@@ -2751,6 +2749,8 @@ PtTable_Get_Active_Entries_By_Name:
 	.string	"PT_TABLE_ID_INVALID"
 .LASF102:
 	.string	"PtTable_ID_Type"
+.LASF141:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF2:
 	.string	"unsigned char"
 .LASF56:

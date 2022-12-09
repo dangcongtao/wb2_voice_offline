@@ -3648,6 +3648,8 @@ local_event:
 	.string	"long unsigned int"
 .LASF52:
 	.string	"local_event"
+.LASF84:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/yloop"
 .LASF9:
 	.string	"__uint32_t"
 .LASF58:
@@ -3662,8 +3664,6 @@ local_event:
 	.string	"events"
 .LASF20:
 	.string	"time"
-.LASF84:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/yloop"
 .LASF35:
 	.string	"sock"
 .LASF60:

@@ -3200,6 +3200,8 @@ signal.0:
 	.string	"unsigned char"
 .LASF43:
 	.string	"bl_printk"
+.LASF15:
+	.string	"SUCCESS_RETURN"
 .LASF10:
 	.string	"long unsigned int"
 .LASF8:
@@ -3252,14 +3254,12 @@ signal.0:
 	.string	"char"
 .LASF42:
 	.string	"xTaskGetTickCountFromISR"
-.LASF47:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/utils"
 .LASF32:
 	.string	"opaque"
 .LASF1:
 	.string	"short int"
-.LASF15:
-	.string	"SUCCESS_RETURN"
+.LASF47:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/utils"
 .LASF9:
 	.string	"uint32_t"
 .LASF4:

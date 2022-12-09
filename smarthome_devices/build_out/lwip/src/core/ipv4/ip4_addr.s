@@ -3069,12 +3069,14 @@ ip_addr_broadcast:
 	.string	"ip_addr_broadcast"
 .LASF94:
 	.string	"ip4_addr_isbroadcast_u32"
+.LASF5:
+	.string	"__uint16_t"
 .LASF8:
 	.string	"__uint32_t"
 .LASF66:
 	.string	"status_callback"
-.LASF5:
-	.string	"__uint16_t"
+.LASF98:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF69:
 	.string	"client_data"
 .LASF58:
@@ -3191,14 +3193,12 @@ ip_addr_broadcast:
 	.string	"MEMP_RAW_PCB"
 .LASF22:
 	.string	"ip4_addr_t"
-.LASF98:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
+.LASF60:
+	.string	"netif"
 .LASF55:
 	.string	"LWIP_NETIF_CLIENT_DATA_INDEX_MAX"
 .LASF92:
 	.string	"mask"
-.LASF60:
-	.string	"netif"
 .LASF62:
 	.string	"netmask"
 .LASF21:

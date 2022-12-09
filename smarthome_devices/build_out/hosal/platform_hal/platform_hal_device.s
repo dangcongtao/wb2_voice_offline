@@ -11952,8 +11952,6 @@ platform_hal_device_init:
 	.string	"__GCC_ATOMIC_BOOL_LOCK_FREE 1"
 .LASF1328:
 	.string	"traceFREE(pvAddress,uiSize) "
-.LASF1578:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF157:
 	.string	"__INT_FAST32_MAX__ 0x7fffffff"
 .LASF179:
@@ -12654,6 +12652,8 @@ platform_hal_device_init:
 	.string	"eNoAction"
 .LASF523:
 	.string	"__STRING(x) #x"
+.LASF1578:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF740:
 	.string	"_INT64_T_DECLARED "
 .LASF370:

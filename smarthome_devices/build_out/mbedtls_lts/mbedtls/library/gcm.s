@@ -8231,6 +8231,8 @@ last4:
 	.string	"MBEDTLS_CIPHER_CAMELLIA_128_ECB"
 .LASF25:
 	.string	"MBEDTLS_CIPHER_AES_256_ECB"
+.LASF170:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 .LASF133:
 	.string	"mbedtls_gcm_context"
 .LASF153:
@@ -8469,8 +8471,6 @@ last4:
 	.string	"base_ectr"
 .LASF33:
 	.string	"MBEDTLS_CIPHER_AES_192_CTR"
-.LASF170:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
 .LASF12:
 	.string	"MBEDTLS_CIPHER_ID_DES"
 .LASF166:

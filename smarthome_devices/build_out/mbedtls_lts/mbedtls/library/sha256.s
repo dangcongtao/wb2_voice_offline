@@ -5321,6 +5321,8 @@ K:
 	.string	"mbedtls_sha256_starts_ret"
 .LASF25:
 	.string	"high"
+.LASF45:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 .LASF8:
 	.string	"unsigned int"
 .LASF20:
@@ -5333,8 +5335,6 @@ K:
 	.string	"mbedtls_sha256_context"
 .LASF32:
 	.string	"temp1"
-.LASF45:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
 .LASF6:
 	.string	"long long int"
 .LASF43:

@@ -16578,6 +16578,8 @@ netconn_reset:
 	.string	"lwip_netconn_do_bind_if"
 .LASF286:
 	.string	"netconn_reset"
+.LASF395:
+	.string	"sys_sem_new"
 .LASF263:
 	.string	"SYN_SENT"
 .LASF291:
@@ -16804,8 +16806,6 @@ netconn_reset:
 	.string	"ip4_addr_t"
 .LASF355:
 	.string	"netif_get_by_index"
-.LASF415:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
 .LASF102:
 	.string	"netmask"
 .LASF92:
@@ -17030,8 +17030,8 @@ netconn_reset:
 	.string	"port"
 .LASF89:
 	.string	"MEMP_PBUF"
-.LASF395:
-	.string	"sys_sem_new"
+.LASF415:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF38:
 	.string	"ERR_BUF"
 .LASF209:

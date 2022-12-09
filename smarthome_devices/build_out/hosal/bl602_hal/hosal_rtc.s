@@ -5467,6 +5467,8 @@ s_rtc_base:
 	.section	.debug_str,"MS",@progbits,1
 .LASF33:
 	.string	"priv"
+.LASF84:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF53:
 	.string	"result"
 .LASF54:
@@ -5493,8 +5495,6 @@ s_rtc_base:
 	.string	"clock_isleapyear"
 .LASF83:
 	.string	"/home/dungnt98/Ai-Thinker-WB2/components/platform/hosal/bl602_hal/hosal_rtc.c"
-.LASF84:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF26:
 	.string	"tm_wday"
 .LASF10:

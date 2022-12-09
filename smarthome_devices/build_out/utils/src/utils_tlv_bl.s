@@ -1701,12 +1701,12 @@ utils_tlv_bl_unpack_auto:
 	.string	"GNU C99 10.2.0 -march=rv32imfc -mabi=ilp32f -march=rv32imfc -gdwarf -Os -std=gnu99 -ffunction-sections -fdata-sections -fstrict-volatile-bitfields -fcommon -ffreestanding -fno-strict-aliasing"
 .LASF19:
 	.string	"CFG_ELEMENT_TYPE_STRING"
-.LASF32:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/utils"
 .LASF21:
 	.string	"type"
 .LASF1:
 	.string	"short int"
+.LASF32:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/utils"
 .LASF6:
 	.string	"uint16_t"
 .LASF20:

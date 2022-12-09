@@ -1161,14 +1161,14 @@
 	.string	"_offset"
 .LASF83:
 	.string	"_v_hl"
-.LASF57:
-	.string	"netif"
+.LASF5:
+	.string	"__uint16_t"
 .LASF8:
 	.string	"__uint32_t"
 .LASF63:
 	.string	"status_callback"
-.LASF5:
-	.string	"__uint16_t"
+.LASF100:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF66:
 	.string	"client_data"
 .LASF85:
@@ -1289,8 +1289,8 @@
 	.string	"MEMP_RAW_PCB"
 .LASF22:
 	.string	"ip4_addr_t"
-.LASF100:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
+.LASF57:
+	.string	"netif"
 .LASF59:
 	.string	"netmask"
 .LASF21:

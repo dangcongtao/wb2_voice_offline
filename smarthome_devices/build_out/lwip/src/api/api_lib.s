@@ -10798,6 +10798,8 @@ netconn_gethostbyname:
 	.string	"netvector"
 .LASF69:
 	.string	"NETCONN_TCP"
+.LASF282:
+	.string	"sys_sem_new"
 .LASF207:
 	.string	"SYN_SENT"
 .LASF286:
@@ -10940,8 +10942,6 @@ netconn_gethostbyname:
 	.string	"ERR_ARG"
 .LASF59:
 	.string	"ip4_addr_t"
-.LASF300:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
 .LASF231:
 	.string	"seqno"
 .LASF117:
@@ -11112,8 +11112,8 @@ netconn_gethostbyname:
 	.string	"port"
 .LASF182:
 	.string	"MEMP_PBUF"
-.LASF282:
-	.string	"sys_sem_new"
+.LASF300:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF236:
 	.string	"netconn_gethostbyname"
 .LASF34:

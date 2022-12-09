@@ -5192,6 +5192,8 @@ _fsymf_info_hosalhosal_ota:
 	.section	.debug_line,"",@progbits
 .Ldebug_line0:
 	.section	.debug_str,"MS",@progbits,1
+.LASF94:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF42:
 	.string	"_blog_info"
 .LASF96:
@@ -5318,8 +5320,6 @@ _fsymf_info_hosalhosal_ota:
 	.string	"BLOG_LEVEL_INFO"
 .LASF82:
 	.string	"puts"
-.LASF94:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF48:
 	.string	"ota_parm"
 .LASF86:

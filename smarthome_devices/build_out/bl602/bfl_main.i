@@ -1,5 +1,5 @@
 # 1 "/home/dungnt98/Ai-Thinker-WB2/components/platform/soc/bl602/bl602/bfl_main.c"
-# 1 "/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602//"
+# 1 "/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602//"
 # 1 "<built-in>"
 # 1 "<command-line>"
 # 1 "/home/dungnt98/Ai-Thinker-WB2/components/platform/soc/bl602/bl602/bfl_main.c"
@@ -10181,7 +10181,7 @@ static void _dump_boot_info(void)
     puts("Dec  9 2022");
     puts("\r\n");
     puts("Build Time: ");
-    puts("09:29:48");
+    puts("09:59:43");
     puts("\r\n");
 
 }

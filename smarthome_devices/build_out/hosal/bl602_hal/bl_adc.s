@@ -8102,8 +8102,8 @@ _fsymf_info_hosalbl_adc:
 	.string	"ADC_Parse_Result"
 .LASF139:
 	.string	"ADC_V18_SEL_1P82V"
-.LASF242:
-	.string	"data_size"
+.LASF324:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF158:
 	.string	"ADC_PGA_GAIN_2"
 .LASF73:
@@ -8424,8 +8424,6 @@ _fsymf_info_hosalbl_adc:
 	.string	"volt"
 .LASF213:
 	.string	"ADC_FIFO_Threshold_Type"
-.LASF324:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF130:
 	.string	"ADC_CHAN_VABT_HALF"
 .LASF168:
@@ -8450,6 +8448,8 @@ _fsymf_info_hosalbl_adc:
 	.string	"int32_t"
 .LASF103:
 	.string	"DMA_INT_ALL"
+.LASF242:
+	.string	"data_size"
 .LASF285:
 	.string	"aos_msleep"
 .LASF163:

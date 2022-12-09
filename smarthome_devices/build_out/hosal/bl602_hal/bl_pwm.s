@@ -2593,6 +2593,8 @@ _fsymf_info_hosalbl_pwm:
 	.section	.debug_line,"",@progbits
 .Ldebug_line0:
 	.section	.debug_str,"MS",@progbits,1
+.LASF110:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF112:
 	.string	"_blog_info"
 .LASF92:
@@ -2611,8 +2613,6 @@ _fsymf_info_hosalbl_pwm:
 	.string	"GLB_GPIO_PIN_7"
 .LASF31:
 	.string	"PWM_Polarity_Type"
-.LASF110:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF68:
 	.string	"smtCtrl"
 .LASF37:

@@ -3632,8 +3632,6 @@ _fsymf_info_hosalbl_sec_sha:
 	.string	"SEC_Eng_SHA_Link_Config_Type"
 .LASF50:
 	.string	"UART1_IRQn"
-.LASF177:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF36:
 	.string	"RESERVED0"
 .LASF37:
@@ -3784,6 +3782,8 @@ _fsymf_info_hosalbl_sec_sha:
 	.string	"BLOG_LEVEL_WARN"
 .LASF143:
 	.string	"sha256_link"
+.LASF177:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF72:
 	.string	"HBN_OUT1_IRQn"
 .LASF90:

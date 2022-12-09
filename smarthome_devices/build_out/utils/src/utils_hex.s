@@ -1302,6 +1302,8 @@ hex_asc_upper:
 	.string	"char2hex"
 .LASF22:
 	.string	"byte"
+.LASF12:
+	.string	"hex_asc"
 .LASF4:
 	.string	"unsigned char"
 .LASF6:
@@ -1330,16 +1332,14 @@ hex_asc_upper:
 	.string	"GNU C99 10.2.0 -march=rv32imfc -mabi=ilp32f -march=rv32imfc -gdwarf -Os -std=gnu99 -ffunction-sections -fdata-sections -fstrict-volatile-bitfields -fcommon -ffreestanding -fno-strict-aliasing"
 .LASF11:
 	.string	"char"
-.LASF25:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/utils"
 .LASF18:
 	.string	"count"
 .LASF24:
 	.string	"/home/dungnt98/Ai-Thinker-WB2/components/utils/src/utils_hex.c"
 .LASF1:
 	.string	"short int"
-.LASF12:
-	.string	"hex_asc"
+.LASF25:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/utils"
 .LASF15:
 	.string	"buflen"
 .LASF2:

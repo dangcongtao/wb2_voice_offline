@@ -4001,6 +4001,8 @@ rf_para_addr:
 	.string	"mfg_flash_read_poweroffset"
 .LASF131:
 	.string	"rf_para"
+.LASF168:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std"
 .LASF84:
 	.string	"timeE32k"
 .LASF14:
@@ -4019,8 +4021,6 @@ rf_para_addr:
 	.string	"PT_ERROR_FALSH_WRITE"
 .LASF152:
 	.string	"flashCfg"
-.LASF168:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std"
 .LASF95:
 	.string	"poweroffset"
 .LASF162:

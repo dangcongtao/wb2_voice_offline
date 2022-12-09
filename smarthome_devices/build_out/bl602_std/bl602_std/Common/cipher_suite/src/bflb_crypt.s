@@ -3904,8 +3904,8 @@ aesCtx:
 	.section	.debug_line,"",@progbits
 .Ldebug_line0:
 	.section	.debug_str,"MS",@progbits,1
-.LASF35:
-	.string	"bflb_crypt_cfg_t"
+.LASF80:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std"
 .LASF44:
 	.string	"result"
 .LASF49:
@@ -3916,6 +3916,8 @@ aesCtx:
 	.string	"SEC_ENG_AES_KEY_192BITS"
 .LASF20:
 	.string	"SEC_ENG_AES_CBC"
+.LASF35:
+	.string	"bflb_crypt_cfg_t"
 .LASF18:
 	.string	"SEC_ENG_AES_ECB"
 .LASF55:
@@ -4058,8 +4060,6 @@ aesCtx:
 	.string	"tag_bflb_crypt_handle_t"
 .LASF19:
 	.string	"SEC_ENG_AES_CTR"
-.LASF80:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std"
 .LASF62:
 	.string	"bflb_crypt_finish_do"
 .LASF76:

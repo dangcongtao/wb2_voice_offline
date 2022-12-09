@@ -854,8 +854,6 @@ _fsymp_info_blog_testc1:
 	.string	"_blog_info"
 .LASF10:
 	.string	"__uint32_t"
-.LASF34:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/blog_testc"
 .LASF28:
 	.string	"_fsymp_level_blog_testc1"
 .LASF8:
@@ -864,6 +862,8 @@ _fsymp_info_blog_testc1:
 	.string	"BLOG_LEVEL_ALL"
 .LASF7:
 	.string	"long long unsigned int"
+.LASF34:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/blog_testc"
 .LASF23:
 	.string	"BLOG_HARD_DECLARE_DISABLE"
 .LASF14:

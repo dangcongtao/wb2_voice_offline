@@ -968,8 +968,6 @@ xISRStackTop:
 	.string	"pullMachineTimerCompareRegister"
 .LASF25:
 	.string	"pTrapNetCounter"
-.LASF35:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/freertos_riscv_ram"
 .LASF31:
 	.string	"vEnvironmentCall"
 .LASF8:
@@ -1012,6 +1010,8 @@ xISRStackTop:
 	.string	"StackType_t"
 .LASF22:
 	.string	"uxTimerIncrementsForOneTick"
+.LASF35:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/freertos_riscv_ram"
 .LASF27:
 	.string	"ulCurrentTimeHigh"
 .LASF28:

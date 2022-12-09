@@ -121,8 +121,6 @@
 	.string	"unsigned int"
 .LASF7:
 	.string	"long unsigned int"
-.LASF12:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF1:
 	.string	"signed char"
 .LASF6:
@@ -131,6 +129,8 @@
 	.string	"GNU C99 10.2.0 -march=rv32imfc -mabi=ilp32f -march=rv32imfc -gdwarf -Os -std=gnu99 -ffunction-sections -fdata-sections -fstrict-volatile-bitfields -fcommon -ffreestanding -fno-strict-aliasing"
 .LASF11:
 	.string	"/home/dungnt98/Ai-Thinker-WB2/components/platform/hosal/bl602_hal/hal_wifi.c"
+.LASF12:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF8:
 	.string	"long long unsigned int"
 .LASF5:

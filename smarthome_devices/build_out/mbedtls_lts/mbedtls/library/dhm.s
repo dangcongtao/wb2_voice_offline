@@ -9685,6 +9685,8 @@ mbedtls_dhm_parse_dhmfile:
 	.string	"_fns"
 .LASF53:
 	.string	"_cookie"
+.LASF188:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 .LASF27:
 	.string	"_Bigint"
 .LASF135:
@@ -9937,8 +9939,6 @@ mbedtls_dhm_parse_dhmfile:
 	.string	"mbedtls_dhm_make_params"
 .LASF40:
 	.string	"_dso_handle"
-.LASF188:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
 .LASF159:
 	.string	"mbedtls_calloc"
 .LASF69:

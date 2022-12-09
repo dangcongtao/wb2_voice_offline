@@ -16830,8 +16830,6 @@ dhcp_discover_request_options:
 	.string	"DHCP_STATE_REQUESTING"
 .LASF202:
 	.string	"LWIP_IANA_PORT_MDNS"
-.LASF317:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
 .LASF88:
 	.string	"netmask"
 .LASF239:
@@ -17030,6 +17028,8 @@ dhcp_discover_request_options:
 	.string	"port"
 .LASF36:
 	.string	"MEMP_PBUF"
+.LASF317:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF41:
 	.string	"ERR_BUF"
 .LASF237:

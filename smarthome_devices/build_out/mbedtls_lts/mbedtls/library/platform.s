@@ -923,6 +923,8 @@ mbedtls_free_func:
 	.string	"mbedtls_free_func"
 .LASF20:
 	.string	"mbedtls_calloc"
+.LASF25:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 .LASF1:
 	.string	"unsigned char"
 .LASF17:
@@ -939,8 +941,6 @@ mbedtls_free_func:
 	.string	"signed char"
 .LASF22:
 	.string	"size"
-.LASF25:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
 .LASF18:
 	.string	"mbedtls_platform_teardown"
 .LASF2:

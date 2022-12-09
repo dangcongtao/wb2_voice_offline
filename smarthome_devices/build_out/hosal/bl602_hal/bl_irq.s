@@ -5061,6 +5061,8 @@ _fsymf_info_hosalbl_irq:
 	.section	.debug_line,"",@progbits
 .Ldebug_line0:
 	.section	.debug_str,"MS",@progbits,1
+.LASF112:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF114:
 	.string	"_blog_info"
 .LASF113:
@@ -5077,8 +5079,8 @@ _fsymf_info_hosalbl_irq:
 	.string	"bl_wdt_init"
 .LASF98:
 	.string	"bl_irq_disable"
-.LASF112:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
+.LASF9:
+	.string	"long long unsigned int"
 .LASF86:
 	.string	"bl_irq_register"
 .LASF61:
@@ -5281,8 +5283,6 @@ _fsymf_info_hosalbl_irq:
 	.string	"blog_level_t"
 .LASF14:
 	.string	"BLOG_LEVEL_DEBUG"
-.LASF9:
-	.string	"long long unsigned int"
 .LASF80:
 	.string	"registerdump"
 .LASF117:

@@ -7023,6 +7023,8 @@ uartAddr:
 	.string	"UART_MSB_FIRST"
 .LASF173:
 	.string	"uartCfg"
+.LASF180:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std"
 .LASF111:
 	.string	"txIrInverse"
 .LASF171:
@@ -7033,8 +7035,6 @@ uartAddr:
 	.string	"UART_GetAutoBaudCount"
 .LASF97:
 	.string	"stopBits"
-.LASF180:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std"
 .LASF0:
 	.string	"BL_AHB_SLAVE1_GLB"
 .LASF61:

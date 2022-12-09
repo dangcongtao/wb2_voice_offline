@@ -3304,8 +3304,8 @@ base64_enc_map:
 	.string	"dlen"
 .LASF10:
 	.string	"uint32_t"
-.LASF31:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
+.LASF35:
+	.string	"mbedtls_base64_cond_assign_uchar"
 .LASF6:
 	.string	"long long int"
 .LASF14:
@@ -3326,8 +3326,8 @@ base64_enc_map:
 	.string	"short unsigned int"
 .LASF26:
 	.string	"condition"
-.LASF35:
-	.string	"mbedtls_base64_cond_assign_uchar"
+.LASF31:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 .LASF18:
 	.string	"mbedtls_base64_encode"
 .LASF11:

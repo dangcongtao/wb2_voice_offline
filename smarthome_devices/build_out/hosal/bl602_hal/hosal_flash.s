@@ -2923,6 +2923,8 @@ _fsymf_info_hosalhosal_flash:
 	.string	"calloc"
 .LASF44:
 	.string	"start_addr"
+.LASF87:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF36:
 	.string	"_blog_info"
 .LASF57:
@@ -3023,8 +3025,6 @@ _fsymf_info_hosalhosal_flash:
 	.string	"partition_description"
 .LASF29:
 	.string	"BLOG_LEVEL_INFO"
-.LASF87:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF59:
 	.string	"in_buf"
 .LASF64:

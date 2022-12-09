@@ -486,7 +486,7 @@ lwip_init:
 .LASF21:
 	.string	"/home/dungnt98/Ai-Thinker-WB2/components/network/lwip/src/core/init.c"
 .LASF22:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF11:
 	.string	"sys_init"
 .LASF16:

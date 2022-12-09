@@ -2270,8 +2270,8 @@ called.0:
 	.section	.debug_line,"",@progbits
 .Ldebug_line0:
 	.section	.debug_str,"MS",@progbits,1
-.LASF118:
-	.string	"called"
+.LASF116:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF83:
 	.string	"bl_wifi_ap_info"
 .LASF98:
@@ -2298,8 +2298,6 @@ called.0:
 	.string	"IRRX_IRQn"
 .LASF84:
 	.string	"_bl_wifi_env"
-.LASF116:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF90:
 	.string	"ap_info"
 .LASF111:
@@ -2426,6 +2424,8 @@ called.0:
 	.string	"char"
 .LASF106:
 	.string	"bl_wifi_sta_mac_addr_set"
+.LASF118:
+	.string	"called"
 .LASF48:
 	.string	"PWM_IRQn"
 .LASF64:

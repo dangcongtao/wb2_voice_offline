@@ -1695,12 +1695,10 @@ cmds_user:
 	.string	"cmd_looprt_test_evt_dump"
 .LASF22:
 	.string	"looprt_evt_schedule"
-.LASF12:
-	.string	"function"
+.LASF29:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/looprt"
 .LASF3:
 	.string	"short unsigned int"
-.LASF29:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/looprt"
 .LASF2:
 	.string	"short int"
 .LASF25:
@@ -1719,6 +1717,8 @@ cmds_user:
 	.string	"unsigned char"
 .LASF30:
 	.string	"cli_command"
+.LASF12:
+	.string	"function"
 .LASF18:
 	.string	"cmd_looprt_test_evt"
 .LASF20:

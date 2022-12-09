@@ -9851,6 +9851,8 @@ _fsymf_info_hosalhosal_spi:
 	.string	"SPI_FifoCfg_Type"
 .LASF331:
 	.string	"bl_dma_int_clear"
+.LASF341:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF178:
 	.string	"DWidth"
 .LASF293:
@@ -10179,8 +10181,6 @@ _fsymf_info_hosalhosal_spi:
 	.string	"EventBits_t"
 .LASF255:
 	.string	"spi_event_group"
-.LASF341:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF229:
 	.string	"p_arg"
 .LASF91:

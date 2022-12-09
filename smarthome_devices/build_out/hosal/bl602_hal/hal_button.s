@@ -8451,6 +8451,8 @@ _fsymf_info_hosalhal_button:
 	.string	"uint32_t"
 .LASF40:
 	.string	"TimerHandle_t"
+.LASF128:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF31:
 	.string	"blog_level_t"
 .LASF92:
@@ -8597,8 +8599,6 @@ _fsymf_info_hosalhal_button:
 	.string	"longlong_kevent"
 .LASF101:
 	.string	"__builtin_memset"
-.LASF128:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF61:
 	.string	"short_press_end_ms"
 .LASF39:

@@ -4421,6 +4421,8 @@ ram_heap:
 	.string	"rmem"
 .LASF52:
 	.string	"MEMP_IGMP_GROUP"
+.LASF127:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF50:
 	.string	"MEMP_TCPIP_MSG_API"
 .LASF71:
@@ -4519,8 +4521,6 @@ ram_heap:
 	.string	"size"
 .LASF66:
 	.string	"chkerr"
-.LASF68:
-	.string	"memerr"
 .LASF47:
 	.string	"MEMP_ALTCP_PCB"
 .LASF103:
@@ -4585,8 +4585,8 @@ ram_heap:
 	.string	"stats_sys"
 .LASF3:
 	.string	"unsigned char"
-.LASF127:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
+.LASF68:
+	.string	"memerr"
 .LASF46:
 	.string	"MEMP_TCP_SEG"
 .LASF86:

@@ -12810,8 +12810,6 @@ pbuf_strstr:
 	.string	"ERR_ARG"
 .LASF89:
 	.string	"ip4_addr_t"
-.LASF285:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
 .LASF187:
 	.string	"substr_len"
 .LASF176:
@@ -12984,6 +12982,8 @@ pbuf_strstr:
 	.string	"listener"
 .LASF84:
 	.string	"MEMP_PBUF"
+.LASF285:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF33:
 	.string	"ERR_BUF"
 .LASF155:

@@ -1623,14 +1623,16 @@ altcp_tls_alloc:
 	.string	"sent"
 .LASF78:
 	.string	"altcp_write_fn"
+.LASF5:
+	.string	"__uint16_t"
 .LASF8:
 	.string	"__uint32_t"
 .LASF89:
 	.string	"altcp_get_ip_fn"
 .LASF71:
 	.string	"altcp_recved_fn"
-.LASF5:
-	.string	"__uint16_t"
+.LASF100:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF49:
 	.string	"altcp_functions"
 .LASF94:
@@ -1745,8 +1747,6 @@ altcp_tls_alloc:
 	.string	"altcp_accept_fn"
 .LASF32:
 	.string	"ip4_addr_t"
-.LASF100:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
 .LASF44:
 	.string	"altcp_connected_fn"
 .LASF66:

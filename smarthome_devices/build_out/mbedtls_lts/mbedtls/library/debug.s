@@ -9549,6 +9549,8 @@ debug_threshold:
 	.string	"value"
 .LASF180:
 	.string	"out_left"
+.LASF267:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 .LASF13:
 	.string	"char"
 .LASF37:
@@ -9647,8 +9649,6 @@ debug_threshold:
 	.string	"session"
 .LASF97:
 	.string	"sig_md"
-.LASF267:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
 .LASF26:
 	.string	"MBEDTLS_ECP_DP_CURVE25519"
 .LASF176:

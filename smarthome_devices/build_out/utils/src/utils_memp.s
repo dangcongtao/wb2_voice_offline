@@ -1523,6 +1523,8 @@ utils_memp_free:
 	.string	"utils_memp_node"
 .LASF25:
 	.string	"diff"
+.LASF15:
+	.string	"next"
 .LASF1:
 	.string	"short int"
 .LASF12:
@@ -1557,8 +1559,6 @@ utils_memp_free:
 	.string	"uint32_t"
 .LASF11:
 	.string	"unsigned int"
-.LASF37:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/utils"
 .LASF6:
 	.string	"uint16_t"
 .LASF7:
@@ -1587,8 +1587,8 @@ utils_memp_free:
 	.string	"utils_memp_pool_t"
 .LASF34:
 	.string	"pvPortMalloc"
-.LASF15:
-	.string	"next"
+.LASF37:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/utils"
 .LASF35:
 	.string	"GNU C99 10.2.0 -march=rv32imfc -mabi=ilp32f -march=rv32imfc -gdwarf -Os -std=gnu99 -ffunction-sections -fdata-sections -fstrict-volatile-bitfields -fcommon -ffreestanding -fno-strict-aliasing"
 	.ident	"GCC: (SiFive GCC-Metal 10.2.0-2020.12.8) 10.2.0"

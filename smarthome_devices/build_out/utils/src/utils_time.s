@@ -1136,16 +1136,16 @@ utils_time_date_from_epoch:
 	.string	"GNU C99 10.2.0 -march=rv32imfc -mabi=ilp32f -march=rv32imfc -gdwarf -Os -std=gnu99 -ffunction-sections -fdata-sections -fstrict-volatile-bitfields -fcommon -ffreestanding -fno-strict-aliasing"
 .LASF31:
 	.string	"memcpy"
-.LASF28:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/utils"
+.LASF17:
+	.string	"leap_year_ind"
 .LASF3:
 	.string	"short int"
+.LASF28:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/utils"
 .LASF21:
 	.string	"epoch"
 .LASF20:
 	.string	"day_of_year"
-.LASF17:
-	.string	"leap_year_ind"
 .LASF5:
 	.string	"long int"
 .LASF15:

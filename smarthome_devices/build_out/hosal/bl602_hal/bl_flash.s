@@ -5780,6 +5780,8 @@ _fsymf_info_hosalbl_flash:
 	.string	"flash_set_qspi_enable"
 .LASF220:
 	.string	"ROM_API_INDEX_SFlash_Reset_Continue_Read"
+.LASF343:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF11:
 	.string	"long long unsigned int"
 .LASF252:
@@ -6186,8 +6188,6 @@ _fsymf_info_hosalbl_flash:
 	.string	"ROM_API_INDEX_PDS_Disable_PLL_Clk"
 .LASF34:
 	.string	"resetEnCmd"
-.LASF343:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF250:
 	.string	"ROM_API_INDEX_SF_Ctrl_AES_Set_IV_BE"
 .LASF200:

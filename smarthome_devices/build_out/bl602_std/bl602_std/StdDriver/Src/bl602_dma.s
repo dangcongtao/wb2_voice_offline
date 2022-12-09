@@ -4983,8 +4983,6 @@ PingPongListArra:
 	.string	"DBSize"
 .LASF185:
 	.string	"dmaPpStruct"
-.LASF195:
-	.string	"DMA_Channel_Disable"
 .LASF34:
 	.string	"UART1_IRQn"
 .LASF84:
@@ -5013,8 +5011,8 @@ PingPongListArra:
 	.string	"DMA_LLI_Init"
 .LASF210:
 	.string	"/home/dungnt98/Ai-Thinker-WB2/components/platform/soc/bl602/bl602_std/bl602_std/StdDriver/Src/bl602_dma.c"
-.LASF191:
-	.string	"DMA_LLI_PpStruct_Init"
+.LASF211:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std"
 .LASF167:
 	.string	"is_single_mode"
 .LASF116:
@@ -5053,14 +5051,16 @@ PingPongListArra:
 	.string	"DMA_Channel_Init"
 .LASF205:
 	.string	"DMA_Enable"
+.LASF191:
+	.string	"DMA_LLI_PpStruct_Init"
 .LASF128:
 	.string	"DMA_Periph_Req_Type"
 .LASF197:
 	.string	"DMA_Channel_Is_Busy"
 .LASF149:
 	.string	"destAddrInc"
-.LASF211:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std"
+.LASF195:
+	.string	"DMA_Channel_Disable"
 .LASF60:
 	.string	"BLE_IRQn"
 .LASF115:

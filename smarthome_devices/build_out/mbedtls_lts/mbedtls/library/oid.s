@@ -7485,6 +7485,8 @@ oid_x520_attr_type:
 	.string	"MBEDTLS_ECP_DP_CURVE25519"
 .LASF50:
 	.string	"MBEDTLS_CIPHER_AES_256_ECB"
+.LASF183:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 .LASF157:
 	.string	"olen"
 .LASF142:
@@ -7733,8 +7735,6 @@ oid_x520_attr_type:
 	.string	"MBEDTLS_CIPHER_AES_192_CTR"
 .LASF172:
 	.string	"oid_sig_alg_from_asn1"
-.LASF183:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
 .LASF175:
 	.string	"mbedtls_oid_get_x509_ext_type"
 .LASF105:

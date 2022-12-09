@@ -2757,8 +2757,8 @@ GLB_DAC_Set_ChanB_Value:
 	.section	.debug_line,"",@progbits
 .Ldebug_line0:
 	.section	.debug_str,"MS",@progbits,1
-.LASF83:
-	.string	"GPIP_Set_DAC_DMA_TX_FORMAT_SEL"
+.LASF96:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std"
 .LASF55:
 	.string	"GPIP_DAC_ChanA_SRC_DMA_WITH_FILTER"
 .LASF49:
@@ -2911,6 +2911,8 @@ GLB_DAC_Set_ChanB_Value:
 	.string	"long unsigned int"
 .LASF47:
 	.string	"GPIP_DAC_ChanB_SRC_DMA"
+.LASF83:
+	.string	"GPIP_Set_DAC_DMA_TX_FORMAT_SEL"
 .LASF79:
 	.string	"GPIP_DAC_DMA_WriteData"
 .LASF85:
@@ -2937,8 +2939,6 @@ GLB_DAC_Set_ChanB_Value:
 	.string	"GPIP_Set_DAC_DMA_TX_Enable"
 .LASF21:
 	.string	"GLB_DAC_Ref_Sel_Type"
-.LASF96:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std"
 .LASF39:
 	.string	"outMux"
 .LASF97:

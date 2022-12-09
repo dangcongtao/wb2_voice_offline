@@ -14805,8 +14805,6 @@ romfs_root:
 	.string	"filebuf"
 .LASF87:
 	.string	"unlink"
-.LASF205:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/romfs"
 .LASF10:
 	.string	"long long unsigned int"
 .LASF56:
@@ -15017,6 +15015,8 @@ romfs_root:
 	.string	"short int"
 .LASF53:
 	.string	"st_mtim"
+.LASF205:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/romfs"
 .LASF102:
 	.string	"i_flags"
 .LASF6:

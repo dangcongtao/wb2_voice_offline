@@ -7648,6 +7648,8 @@ mbedtls_ecdh_calc_secret:
 	.string	"mbedtls_ecp_point_init"
 .LASF23:
 	.string	"MBEDTLS_ECP_DP_CURVE25519"
+.LASF98:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 .LASF45:
 	.string	"olen"
 .LASF93:
@@ -7790,8 +7792,6 @@ mbedtls_ecdh_calc_secret:
 	.string	"MBEDTLS_ECDH_OURS"
 .LASF58:
 	.string	"ecdh_get_params_internal"
-.LASF98:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
 .LASF31:
 	.string	"pbits"
 .LASF1:

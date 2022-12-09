@@ -1921,12 +1921,10 @@ count.0:
 	.string	"tot_len"
 .LASF33:
 	.string	"ERR_CLSD"
-.LASF49:
-	.string	"netif"
 .LASF55:
 	.string	"status_callback"
-.LASF61:
-	.string	"hwaddr_len"
+.LASF82:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF58:
 	.string	"client_data"
 .LASF47:
@@ -2035,10 +2033,12 @@ count.0:
 	.string	"payload"
 .LASF11:
 	.string	"long unsigned int"
+.LASF61:
+	.string	"hwaddr_len"
 .LASF45:
 	.string	"ip4_addr_t"
-.LASF82:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
+.LASF49:
+	.string	"netif"
 .LASF74:
 	.string	"count"
 .LASF51:

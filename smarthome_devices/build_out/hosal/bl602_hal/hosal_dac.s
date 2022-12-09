@@ -5900,8 +5900,6 @@ _fsymf_info_hosalhosal_dac:
 	.string	"SWidth"
 .LASF20:
 	.string	"priv"
-.LASF211:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF126:
 	.string	"nextLLI"
 .LASF130:
@@ -6064,6 +6062,8 @@ _fsymf_info_hosalhosal_dac:
 	.string	"BLOG_LEVEL_WARN"
 .LASF122:
 	.string	"DMA_REQ_NONE"
+.LASF211:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF102:
 	.string	"DMA_TRNS_WIDTH_32BITS"
 .LASF159:

@@ -26817,6 +26817,8 @@ mbedtls_ssl_handshake_server_step:
 	.string	"curves"
 .LASF465:
 	.string	"olen"
+.LASF600:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 .LASF96:
 	.string	"MBEDTLS_CIPHER_CAMELLIA_256_ECB"
 .LASF13:
@@ -27063,8 +27065,6 @@ mbedtls_ssl_handshake_server_step:
 	.string	"curve_matching_done"
 .LASF93:
 	.string	"MBEDTLS_CIPHER_AES_256_GCM"
-.LASF600:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
 .LASF557:
 	.string	"mbedtls_ssl_derive_keys"
 .LASF591:

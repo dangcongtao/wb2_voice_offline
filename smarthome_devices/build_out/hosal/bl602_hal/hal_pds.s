@@ -1129,8 +1129,6 @@ _fsymf_info_hosalhal_pds:
 	.string	"_fsymc_level_hosal"
 .LASF45:
 	.string	"/home/dungnt98/Ai-Thinker-WB2/components/platform/hosal/bl602_hal/hal_pds.c"
-.LASF46:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF5:
 	.string	"short unsigned int"
 .LASF38:
@@ -1159,6 +1157,8 @@ _fsymf_info_hosalhal_pds:
 	.string	"uint32_t"
 .LASF29:
 	.string	"rtcLowBeforeSleep"
+.LASF46:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF41:
 	.string	"vTaskStepTick"
 .LASF44:

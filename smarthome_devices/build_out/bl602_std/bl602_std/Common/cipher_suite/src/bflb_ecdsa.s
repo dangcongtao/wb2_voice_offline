@@ -13913,6 +13913,8 @@ secp256r1_Zeroy:
 	.string	"bflb_ecdsa_verify_point_mul"
 .LASF22:
 	.string	"SEC_ENG_PKA_REG_SIZE_192"
+.LASF99:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std"
 .LASF86:
 	.string	"Sec_Eng_PKA_Mont2GF"
 .LASF3:
@@ -13979,8 +13981,6 @@ secp256r1_Zeroy:
 	.string	"secp256r1_BAR4"
 .LASF77:
 	.string	"bflb_ecdsa_copy_x2_to_x1"
-.LASF99:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std"
 .LASF76:
 	.string	"bflb_ecdsa_point_add"
 .LASF96:

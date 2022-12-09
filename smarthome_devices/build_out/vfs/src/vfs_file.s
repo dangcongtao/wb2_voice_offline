@@ -3605,6 +3605,8 @@ files_handle_dev:
 	.string	"inode_ref"
 .LASF130:
 	.string	"get_fd"
+.LASF155:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/vfs"
 .LASF52:
 	.string	"st_blksize"
 .LASF101:
@@ -3761,8 +3763,6 @@ files_handle_dev:
 	.string	"f_bfree"
 .LASF73:
 	.string	"file_ops"
-.LASF155:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/vfs"
 .LASF72:
 	.string	"file_ops_t"
 .LASF151:

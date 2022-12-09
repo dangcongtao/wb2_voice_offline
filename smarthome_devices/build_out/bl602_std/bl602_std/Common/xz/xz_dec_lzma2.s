@@ -11518,6 +11518,8 @@ xz_dec_lzma2_end:
 	.string	"char"
 .LASF152:
 	.string	"dict_reset"
+.LASF166:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std"
 .LASF11:
 	.string	"uint8_t"
 .LASF150:
@@ -11548,8 +11550,6 @@ xz_dec_lzma2_end:
 	.string	"lzma"
 .LASF102:
 	.string	"dict"
-.LASF166:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std"
 .LASF70:
 	.string	"pos_mask"
 .LASF117:

@@ -3633,6 +3633,8 @@ netifapi_netif_index_to_name:
 	.string	"unsigned int"
 .LASF19:
 	.string	"u8_t"
+.LASF116:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF59:
 	.string	"output"
 .LASF105:
@@ -3733,8 +3735,6 @@ netifapi_netif_index_to_name:
 	.string	"uint32_t"
 .LASF36:
 	.string	"ERR_ABRT"
-.LASF116:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
 .LASF84:
 	.string	"netifapi_errt_fn"
 .LASF9:

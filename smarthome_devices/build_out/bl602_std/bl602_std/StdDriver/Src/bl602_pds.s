@@ -4833,6 +4833,8 @@ PDS_Power_On_PLL:
 	.string	"xtalType"
 .LASF198:
 	.string	"PDS_IntMask"
+.LASF59:
+	.string	"WbRst"
 .LASF188:
 	.string	"trim"
 .LASF100:
@@ -4961,6 +4963,8 @@ PDS_Power_On_PLL:
 	.string	"PDS_RAM_Config"
 .LASF111:
 	.string	"MiscIsoEn"
+.LASF216:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std"
 .LASF11:
 	.string	"char"
 .LASF70:
@@ -4969,8 +4973,6 @@ PDS_Power_On_PLL:
 	.string	"PDS_RF_STS_PU_SFREG"
 .LASF170:
 	.string	"PDS_PLL_CLK_96M"
-.LASF216:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std"
 .LASF206:
 	.string	"cfg2"
 .LASF207:
@@ -4987,8 +4989,6 @@ PDS_Power_On_PLL:
 	.string	"rsv10"
 .LASF180:
 	.string	"PDS_Disable_PLL_All_Clks"
-.LASF196:
-	.string	"PDS_IntClear"
 .LASF86:
 	.string	"rsv11"
 .LASF168:
@@ -5019,8 +5019,8 @@ PDS_Power_On_PLL:
 	.string	"PDS_PLL_XTAL_26M"
 .LASF109:
 	.string	"WbIsoEn"
-.LASF59:
-	.string	"WbRst"
+.LASF196:
+	.string	"PDS_IntClear"
 .LASF29:
 	.string	"xtalForceOff"
 .LASF139:

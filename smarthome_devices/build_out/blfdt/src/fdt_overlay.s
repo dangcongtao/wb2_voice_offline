@@ -9509,14 +9509,14 @@ fdt_overlay_apply:
 	.string	"fdt_node_offset_by_phandle"
 .LASF7:
 	.string	"uint8_t"
-.LASF124:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/blfdt"
 .LASF20:
 	.string	"boot_cpuid_phys"
 .LASF79:
 	.string	"adj_val"
 .LASF25:
 	.string	"err_"
+.LASF124:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/blfdt"
 .LASF48:
 	.string	"prop_len"
 .LASF56:

@@ -4816,6 +4816,8 @@ mbedtls_sha512_info:
 	.string	"GNU C99 10.2.0 -march=rv32imfc -mabi=ilp32f -march=rv32imfc -gdwarf -Os -std=gnu99 -ffunction-sections -fdata-sections -fstrict-volatile-bitfields -fcommon -ffreestanding -fno-strict-aliasing"
 .LASF51:
 	.string	"is384"
+.LASF124:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 .LASF41:
 	.string	"uint32_t"
 .LASF60:
@@ -4988,8 +4990,6 @@ mbedtls_sha512_info:
 	.string	"mbedtls_sha1_info"
 .LASF61:
 	.string	"sha384_ctx_alloc"
-.LASF124:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
 .LASF70:
 	.string	"sha224_ctx_free"
 .LASF96:

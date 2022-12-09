@@ -2633,7 +2633,9 @@ fdt_nop_node:
 .LASF25:
 	.string	"start"
 .LASF46:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/blfdt"
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/blfdt"
+.LASF17:
+	.string	"fdt_nop_node"
 .LASF30:
 	.string	"namelen"
 .LASF24:
@@ -2698,8 +2700,6 @@ fdt_nop_node:
 	.string	"short int"
 .LASF27:
 	.string	"propval"
-.LASF17:
-	.string	"fdt_nop_node"
 .LASF16:
 	.string	"nodeoffset"
 .LASF32:

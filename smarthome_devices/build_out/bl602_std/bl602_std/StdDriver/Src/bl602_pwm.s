@@ -3568,6 +3568,8 @@ PWM_Smart_Configure:
 	.section	.debug_line,"",@progbits
 .Ldebug_line0:
 	.section	.debug_str,"MS",@progbits,1
+.LASF79:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std"
 .LASF66:
 	.string	"PWM_Channel_Disable"
 .LASF72:
@@ -3720,8 +3722,6 @@ PWM_Smart_Configure:
 	.string	"long int"
 .LASF36:
 	.string	"PWM_STOP_GRACEFUL"
-.LASF79:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std"
 .LASF41:
 	.string	"PWM_INT_PULSE_CNT"
 .LASF32:

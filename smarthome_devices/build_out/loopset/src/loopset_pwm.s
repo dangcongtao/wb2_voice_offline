@@ -2417,6 +2417,8 @@ _pwm_bloop_handler_holder.0:
 	.string	"arg1"
 .LASF62:
 	.string	"timeon_ms"
+.LASF86:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/loopset"
 .LASF4:
 	.string	"long long int"
 .LASF77:
@@ -2529,8 +2531,6 @@ _pwm_bloop_handler_holder.0:
 	.string	"loopset_pwm_trigger_off"
 .LASF19:
 	.string	"prev"
-.LASF86:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/loopset"
 .LASF72:
 	.string	"pvPortMalloc"
 .LASF53:

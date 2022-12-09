@@ -15750,6 +15750,8 @@ BFLB_Soft_CRC32:
 	.string	"ROM_API_INDEX_FUNC_EMPTY_END"
 .LASF723:
 	.string	"clkSel"
+.LASF775:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std"
 .LASF491:
 	.string	"ROM_API_INDEX_SFlash_Restore_From_Powerdown"
 .LASF234:
@@ -16326,8 +16328,6 @@ BFLB_Soft_CRC32:
 	.string	"long unsigned int"
 .LASF453:
 	.string	"ROM_API_INDEX_PDS_Disable_PLL_Clk"
-.LASF775:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std"
 .LASF493:
 	.string	"ROM_API_INDEX_SF_Cfg_Init_Internal_Flash_Gpio"
 .LASF280:

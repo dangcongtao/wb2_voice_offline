@@ -5884,22 +5884,22 @@ sha256_padding:
 	.string	"utils_sha256_clone"
 .LASF45:
 	.string	"__builtin_memcpy"
-.LASF32:
-	.string	"temp1"
 .LASF7:
 	.string	"long long int"
 .LASF40:
 	.string	"GNU C99 10.2.0 -march=rv32imfc -mabi=ilp32f -march=rv32imfc -gdwarf -Os -std=gnu99 -ffunction-sections -fdata-sections -fstrict-volatile-bitfields -fcommon -ffreestanding -fno-strict-aliasing"
 .LASF39:
 	.string	"memcpy"
-.LASF42:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/utils"
+.LASF32:
+	.string	"temp1"
 .LASF33:
 	.string	"temp2"
 .LASF18:
 	.string	"sha256_padding"
 .LASF3:
 	.string	"short int"
+.LASF42:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/utils"
 .LASF21:
 	.string	"output"
 .LASF36:

@@ -2784,10 +2784,12 @@ lwip_dump_ether_pkt:
 	.string	"eth_addr"
 .LASF54:
 	.string	"ackno"
-.LASF7:
-	.string	"__uint32_t"
 .LASF4:
 	.string	"__uint16_t"
+.LASF7:
+	.string	"__uint32_t"
+.LASF75:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF30:
 	.string	"ETHTYPE_LLDP"
 .LASF45:
@@ -2886,8 +2888,6 @@ lwip_dump_ether_pkt:
 	.string	"ETHTYPE_ETHERCAT"
 .LASF53:
 	.string	"seqno"
-.LASF75:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
 .LASF68:
 	.string	"dump_print_level"
 .LASF57:

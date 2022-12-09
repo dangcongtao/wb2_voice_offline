@@ -4333,8 +4333,8 @@ aos_ioctl_in_loop:
 	.string	"QueueHandle_t"
 .LASF46:
 	.string	"ssize_t"
-.LASF151:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/yloop"
+.LASF92:
+	.string	"lseek"
 .LASF7:
 	.string	"uint8_t"
 .LASF109:
@@ -4403,8 +4403,6 @@ aos_ioctl_in_loop:
 	.string	"f_blocks"
 .LASF45:
 	.string	"gid_t"
-.LASF92:
-	.string	"lseek"
 .LASF19:
 	.string	"__int_least64_t"
 .LASF104:
@@ -4479,6 +4477,8 @@ aos_ioctl_in_loop:
 	.string	"pre_poll"
 .LASF74:
 	.string	"d_ino"
+.LASF151:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/yloop"
 .LASF54:
 	.string	"st_uid"
 .LASF28:

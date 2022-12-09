@@ -10054,6 +10054,8 @@ mbedtls_pk_parse_public_keyfile:
 	.string	"pk_parse_key_pkcs8_unencrypted_der"
 .LASF29:
 	.string	"MBEDTLS_ECP_DP_CURVE25519"
+.LASF133:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 .LASF10:
 	.string	"uint32_t"
 .LASF58:
@@ -10236,8 +10238,6 @@ mbedtls_pk_parse_public_keyfile:
 	.string	"mbedtls_pk_parse_key"
 .LASF111:
 	.string	"mbedtls_rsa_check_pubkey"
-.LASF133:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
 .LASF123:
 	.string	"mbedtls_calloc"
 .LASF56:

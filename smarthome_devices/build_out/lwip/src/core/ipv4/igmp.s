@@ -6616,6 +6616,8 @@ allsystems:
 	.string	"int8_t"
 .LASF71:
 	.string	"MEMP_IGMP_GROUP"
+.LASF192:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF69:
 	.string	"MEMP_TCPIP_MSG_API"
 .LASF90:
@@ -6744,8 +6746,6 @@ allsystems:
 	.string	"tmp_group"
 .LASF179:
 	.string	"igmp_lookfor_group"
-.LASF87:
-	.string	"memerr"
 .LASF44:
 	.string	"PBUF_LINK"
 .LASF66:
@@ -6854,8 +6854,8 @@ allsystems:
 	.string	"unsigned char"
 .LASF8:
 	.string	"__uint32_t"
-.LASF192:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
+.LASF87:
+	.string	"memerr"
 .LASF65:
 	.string	"MEMP_TCP_SEG"
 .LASF140:

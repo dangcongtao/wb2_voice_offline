@@ -13515,8 +13515,8 @@ EF_Ctrl_Crc_Result:
 	.string	"RESET"
 .LASF59:
 	.string	"adcGainCoeffParity"
-.LASF170:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std"
+.LASF122:
+	.string	"EF_Ctrl_Is_MAC_Address_Slot_Empty"
 .LASF2:
 	.string	"unsigned char"
 .LASF130:
@@ -13563,6 +13563,8 @@ EF_Ctrl_Crc_Result:
 	.string	"pwrOffset"
 .LASF109:
 	.string	"EF_Ctrl_Read_CapCode_Opt"
+.LASF170:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std"
 .LASF93:
 	.string	"EF_Ctrl_Writelock_AES_Key"
 .LASF90:
@@ -13589,8 +13591,6 @@ EF_Ctrl_Crc_Result:
 	.string	"EF_Ctrl_Write_PowerOffset_Opt"
 .LASF85:
 	.string	"pEfuseStart0"
-.LASF122:
-	.string	"EF_Ctrl_Is_MAC_Address_Slot_Empty"
 .LASF5:
 	.string	"short unsigned int"
 .LASF117:

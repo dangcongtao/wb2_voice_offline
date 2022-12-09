@@ -1643,7 +1643,7 @@ cmds_user:
 .LASF2:
 	.string	"short int"
 .LASF36:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/utils"
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/utils"
 .LASF18:
 	.string	"argv"
 .LASF23:

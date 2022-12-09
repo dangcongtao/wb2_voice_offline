@@ -497,6 +497,8 @@ xz_crc32:
 	.string	"long unsigned int"
 .LASF8:
 	.string	"long long unsigned int"
+.LASF16:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std"
 .LASF18:
 	.string	"xz_crc32"
 .LASF15:
@@ -521,8 +523,6 @@ xz_crc32:
 	.string	"size"
 .LASF17:
 	.string	"crc32Tab"
-.LASF16:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std"
 .LASF3:
 	.string	"short int"
 .LASF0:

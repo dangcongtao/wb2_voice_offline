@@ -847,6 +847,8 @@ bflb_platform_deinit_uart_debug_gpio:
 	.section	.debug_line,"",@progbits
 .Ldebug_line0:
 	.section	.debug_str,"MS",@progbits,1
+.LASF69:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std"
 .LASF55:
 	.string	"GLB_UART_SIG_FUN_UART0_TXD"
 .LASF45:
@@ -955,8 +957,6 @@ bflb_platform_deinit_uart_debug_gpio:
 	.string	"char"
 .LASF4:
 	.string	"long int"
-.LASF10:
-	.string	"unsigned int"
 .LASF7:
 	.string	"long unsigned int"
 .LASF40:
@@ -979,8 +979,8 @@ bflb_platform_deinit_uart_debug_gpio:
 	.string	"GLB_UART_SIG_FUN_UART1_RXD"
 .LASF38:
 	.string	"gpioPin"
-.LASF69:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std"
+.LASF10:
+	.string	"unsigned int"
 .LASF54:
 	.string	"GLB_UART_SIG_FUN_UART0_CTS"
 .LASF66:

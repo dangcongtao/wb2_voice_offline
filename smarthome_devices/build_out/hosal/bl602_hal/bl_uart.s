@@ -6086,8 +6086,6 @@ uartAddr:
 	.string	"UNMASK"
 .LASF166:
 	.string	"bl_uart_int_tx_notify_unregister"
-.LASF197:
-	.string	"rx_sigfun"
 .LASF153:
 	.string	"cb_uart_notify_t"
 .LASF18:
@@ -6132,8 +6130,8 @@ uartAddr:
 	.string	"UART_StopBits_Type"
 .LASF108:
 	.string	"UART_LSB_FIRST"
-.LASF217:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
+.LASF197:
+	.string	"rx_sigfun"
 .LASF162:
 	.string	"UART0_IRQHandler"
 .LASF138:
@@ -6318,6 +6316,8 @@ uartAddr:
 	.string	"fifoCfg"
 .LASF146:
 	.string	"GLB_UART_SIG_FUN_UART0_TXD"
+.LASF217:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF142:
 	.string	"HBN_UART_CLK_FCLK"
 .LASF56:

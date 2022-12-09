@@ -4499,7 +4499,7 @@ tc_fdt_wifi:
 .LASF3:
 	.string	"long int"
 .LASF42:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/blfdt"
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/blfdt"
 .LASF12:
 	.string	"fdt32_t"
 .LASF19:

@@ -5823,6 +5823,8 @@ SFlash_Clear_Status_Register:
 	.string	"SF_CTRL_DO_MODE"
 .LASF58:
 	.string	"resetCreadCmd"
+.LASF179:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std"
 .LASF117:
 	.string	"timeE32k"
 .LASF176:
@@ -5839,8 +5841,6 @@ SFlash_Clear_Status_Register:
 	.string	"SFlash_GetJedecId"
 .LASF21:
 	.string	"SF_CTRL_WRITE"
-.LASF179:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std"
 .LASF144:
 	.string	"secOptMode"
 .LASF118:

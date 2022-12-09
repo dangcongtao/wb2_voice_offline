@@ -11756,6 +11756,8 @@ tcplen:
 	.string	"tcp_active_pcbs_changed"
 .LASF228:
 	.string	"accept"
+.LASF328:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF78:
 	.string	"MEMP_TCPIP_MSG_API"
 .LASF99:
@@ -11998,8 +12000,6 @@ tcplen:
 	.string	"connected"
 .LASF222:
 	.string	"tcp_recv_fn"
-.LASF96:
-	.string	"memerr"
 .LASF165:
 	.string	"current_ip_header_tot_len"
 .LASF323:
@@ -12160,8 +12160,8 @@ tcplen:
 	.string	"__uint32_t"
 .LASF35:
 	.string	"FIN_WAIT_2"
-.LASF328:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
+.LASF96:
+	.string	"memerr"
 .LASF74:
 	.string	"MEMP_TCP_SEG"
 .LASF148:

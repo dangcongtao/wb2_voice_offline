@@ -225,8 +225,6 @@ blog_testc_init:
 	.section	.debug_line,"",@progbits
 .Ldebug_line0:
 	.section	.debug_str,"MS",@progbits,1
-.LASF7:
-	.string	"blog_testc_init"
 .LASF5:
 	.string	"/home/dungnt98/Ai-Thinker-WB2/components/stage/blog_testc/blog_testc.c"
 .LASF2:
@@ -235,10 +233,12 @@ blog_testc_init:
 	.string	"blog_testc4_init"
 .LASF1:
 	.string	"blog_testc2_init"
+.LASF6:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/blog_testc"
 .LASF0:
 	.string	"blog_testc1_init"
-.LASF6:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/blog_testc"
+.LASF7:
+	.string	"blog_testc_init"
 .LASF4:
 	.string	"GNU C99 10.2.0 -march=rv32imfc -mabi=ilp32f -march=rv32imfc -gdwarf -Os -std=gnu99 -ffunction-sections -fdata-sections -fstrict-volatile-bitfields -fcommon -ffreestanding -fno-strict-aliasing"
 	.ident	"GCC: (SiFive GCC-Metal 10.2.0-2020.12.8) 10.2.0"

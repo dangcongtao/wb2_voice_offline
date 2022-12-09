@@ -4498,6 +4498,8 @@ _fsymf_info_hosalbl_cks:
 	.section	.debug_line,"",@progbits
 .Ldebug_line0:
 	.section	.debug_str,"MS",@progbits,1
+.LASF59:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF26:
 	.string	"_blog_info"
 .LASF60:
@@ -4556,8 +4558,6 @@ _fsymf_info_hosalbl_cks:
 	.string	"uint16_t"
 .LASF20:
 	.string	"BLOG_LEVEL_INFO"
-.LASF59:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF37:
 	.string	"last"
 .LASF7:

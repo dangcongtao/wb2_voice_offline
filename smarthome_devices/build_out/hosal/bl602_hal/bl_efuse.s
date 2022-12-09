@@ -1704,10 +1704,10 @@ bl_efuse_read_mac_opt:
 	.string	"bl_efuse_read_pwroft"
 .LASF42:
 	.string	"mfg_media_read_xtal_capcode"
-.LASF47:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF6:
 	.string	"uint8_t"
+.LASF47:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF43:
 	.string	"mfg_media_read_macaddr"
 .LASF20:

@@ -15389,6 +15389,8 @@ vQueueWaitForMessageRestricted:
 	.string	"pxHigherPriorityTaskWoken"
 .LASF136:
 	.string	"pxMutex"
+.LASF177:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/freertos_riscv_ram"
 .LASF0:
 	.string	"unsigned int"
 .LASF44:
@@ -15505,8 +15507,6 @@ vQueueWaitForMessageRestricted:
 	.string	"prvCopyDataToQueue"
 .LASF33:
 	.string	"uxDummy8"
-.LASF177:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/freertos_riscv_ram"
 .LASF127:
 	.string	"xQueueGenericSend"
 .LASF66:

@@ -3074,6 +3074,8 @@ _fsymf_info_hosalhosal_timer:
 	.string	"int8_t"
 .LASF111:
 	.string	"countMode"
+.LASF162:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF142:
 	.string	"hosal_timer_finalize"
 .LASF133:
@@ -3262,8 +3264,6 @@ _fsymf_info_hosalhosal_timer:
 	.string	"TIMER_COUNT_PRELOAD"
 .LASF146:
 	.string	"handle"
-.LASF162:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF14:
 	.string	"SEC_CDET_IRQn"
 .LASF79:

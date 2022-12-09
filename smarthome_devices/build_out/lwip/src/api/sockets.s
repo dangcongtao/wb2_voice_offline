@@ -29094,6 +29094,8 @@ select_cb_list:
 	.string	"ip4addr_aton"
 .LASF204:
 	.string	"NETCONN_TCP"
+.LASF495:
+	.string	"sys_sem_new"
 .LASF292:
 	.string	"SYN_SENT"
 .LASF23:
@@ -29356,8 +29358,6 @@ select_cb_list:
 	.string	"recvevent"
 .LASF138:
 	.string	"iovec"
-.LASF521:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
 .LASF103:
 	.string	"netmask"
 .LASF374:
@@ -29664,8 +29664,8 @@ select_cb_list:
 	.string	"MEMP_PBUF"
 .LASF465:
 	.string	"free_socket_locked"
-.LASF495:
-	.string	"sys_sem_new"
+.LASF521:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF55:
 	.string	"ERR_BUF"
 .LASF326:

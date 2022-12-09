@@ -10722,8 +10722,8 @@ CSWTCH.50:
 	.string	"SFlash_Reset_Continue_Read"
 .LASF297:
 	.string	"HBN_Set_PIR_Interval"
-.LASF282:
-	.string	"HBN_Set_XCLK_CLK_Sel"
+.LASF336:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std"
 .LASF169:
 	.string	"HBN_LDO_LEVEL_0P75V"
 .LASF61:
@@ -10788,8 +10788,6 @@ CSWTCH.50:
 	.string	"wrEnableIndex"
 .LASF139:
 	.string	"HBN_INT_RTC"
-.LASF336:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std"
 .LASF69:
 	.string	"writeVregEnableCmd"
 .LASF80:
@@ -11028,6 +11026,8 @@ CSWTCH.50:
 	.string	"HBN_ROOT_CLK_PLL"
 .LASF50:
 	.string	"writeEnableCmd"
+.LASF282:
+	.string	"HBN_Set_XCLK_CLK_Sel"
 .LASF293:
 	.string	"threshold"
 .LASF241:

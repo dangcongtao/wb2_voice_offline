@@ -8014,8 +8014,8 @@ tc_wifi_dtb:
 	.string	"off_mem_rsvmap"
 .LASF7:
 	.string	"uint8_t"
-.LASF76:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/blfdt"
+.LASF62:
+	.string	"fdth"
 .LASF32:
 	.string	"input_buf"
 .LASF41:
@@ -8060,6 +8060,8 @@ tc_wifi_dtb:
 	.string	"off_dt_strings"
 .LASF24:
 	.string	"size_dt_strings"
+.LASF76:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/blfdt"
 .LASF5:
 	.string	"unsigned char"
 .LASF79:
@@ -8130,8 +8132,6 @@ tc_wifi_dtb:
 	.string	"bl_printk"
 .LASF56:
 	.string	"cell"
-.LASF62:
-	.string	"fdth"
 .LASF27:
 	.string	"fdt_reserve_entry"
 .LASF16:

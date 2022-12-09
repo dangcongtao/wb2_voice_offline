@@ -1873,6 +1873,8 @@ cmds_user:
 	.section	.debug_line,"",@progbits
 .Ldebug_line0:
 	.section	.debug_str,"MS",@progbits,1
+.LASF53:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF24:
 	.string	"_blog_info"
 .LASF52:
@@ -1921,8 +1923,6 @@ cmds_user:
 	.string	"atoi"
 .LASF32:
 	.string	"_para_div"
-.LASF38:
-	.string	"argv"
 .LASF12:
 	.string	"name"
 .LASF2:
@@ -1943,8 +1943,8 @@ cmds_user:
 	.string	"cmd_clk_change"
 .LASF17:
 	.string	"BLOG_LEVEL_INFO"
-.LASF53:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
+.LASF38:
+	.string	"argv"
 .LASF4:
 	.string	"short unsigned int"
 .LASF9:

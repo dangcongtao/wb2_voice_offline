@@ -5582,6 +5582,8 @@ _fsymf_info_hosalbl_pm:
 	.string	"bl_pm_state_run"
 .LASF11:
 	.string	"uint32_t"
+.LASF139:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF29:
 	.string	"blog_level_t"
 .LASF88:
@@ -5748,8 +5750,6 @@ _fsymf_info_hosalbl_pm:
 	.string	"WLAN_PM_EVENT_CONTROL"
 .LASF107:
 	.string	"pm_pmlist_traverse"
-.LASF139:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF141:
 	.string	"ps_cap"
 .LASF12:

@@ -7725,8 +7725,6 @@ mbedtls_ctr_drbg_update_seed_file:
 	.string	"_rand48"
 .LASF82:
 	.string	"_emergency"
-.LASF175:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
 .LASF159:
 	.string	"resistance"
 .LASF142:
@@ -8043,6 +8041,8 @@ mbedtls_ctr_drbg_update_seed_file:
 	.string	"_ssize_t"
 .LASF117:
 	.string	"_l64a_buf"
+.LASF175:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 .LASF95:
 	.string	"_sig_func"
 .LASF69:

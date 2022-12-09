@@ -1472,6 +1472,8 @@ _ir_bloop_handler_holder.0:
 	.string	"bitmap_evt"
 .LASF34:
 	.string	"time_max"
+.LASF68:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/loopset"
 .LASF48:
 	.string	"statistic"
 .LASF14:
@@ -1596,8 +1598,6 @@ _ir_bloop_handler_holder.0:
 	.string	"arg2"
 .LASF19:
 	.string	"prev"
-.LASF68:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/loopset"
 .LASF61:
 	.string	"looprt_evt_notify_async_fromISR"
 .LASF13:

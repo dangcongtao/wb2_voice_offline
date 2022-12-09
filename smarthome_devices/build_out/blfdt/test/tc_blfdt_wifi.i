@@ -1,5 +1,5 @@
 # 1 "/home/dungnt98/Ai-Thinker-WB2/components/stage/blfdt/test/tc_blfdt_wifi.c"
-# 1 "/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/blfdt//"
+# 1 "/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/blfdt//"
 # 1 "<built-in>"
 # 1 "<command-line>"
 # 1 "/home/dungnt98/Ai-Thinker-WB2/components/stage/blfdt/test/tc_blfdt_wifi.c"

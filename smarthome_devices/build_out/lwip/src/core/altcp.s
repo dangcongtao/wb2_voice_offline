@@ -6680,6 +6680,8 @@ altcp_default_get_port:
 	.string	"altcp_close_fn"
 .LASF125:
 	.string	"MEMP_IGMP_GROUP"
+.LASF197:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF158:
 	.string	"altcp_get_port"
 .LASF163:
@@ -6812,8 +6814,6 @@ altcp_default_get_port:
 	.string	"nagle_enable"
 .LASF17:
 	.string	"uint32_t"
-.LASF197:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
 .LASF123:
 	.string	"MEMP_TCPIP_MSG_API"
 .LASF35:

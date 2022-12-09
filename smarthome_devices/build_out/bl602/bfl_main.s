@@ -544,7 +544,7 @@ log_port_reset:
 	.string	"Build Time: "
 	.align	2
 .LC23:
-	.string	"09:29:48"
+	.string	"09:59:43"
 	.align	2
 .LC24:
 	.string	"[OS] Starting aos_loop_proc task...\r\n"
@@ -4104,8 +4104,6 @@ xHeapRegions:
 	.string	"p_txarg"
 .LASF72:
 	.string	"stop_bits"
-.LASF170:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602"
 .LASF142:
 	.string	"hosal_uart_init_only_tx"
 .LASF18:
@@ -4192,6 +4190,8 @@ xHeapRegions:
 	.string	"offset"
 .LASF95:
 	.string	"_heap_wifi_size"
+.LASF170:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602"
 .LASF45:
 	.string	"hosal_uart_data_width_t"
 .LASF53:

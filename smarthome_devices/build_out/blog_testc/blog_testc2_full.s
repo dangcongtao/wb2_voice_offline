@@ -3318,8 +3318,6 @@ _fsymp_info_blog_testc2:
 	.string	"_blog_info"
 .LASF6:
 	.string	"__uint32_t"
-.LASF43:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/blog_testc"
 .LASF28:
 	.string	"_fsymf_level_blog_testcblog_testc2_full"
 .LASF29:
@@ -3334,6 +3332,8 @@ _fsymp_info_blog_testc2:
 	.string	"uint8_t"
 .LASF36:
 	.string	"xPortIsInsideInterrupt"
+.LASF43:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/blog_testc"
 .LASF25:
 	.string	"BLOG_HARD_DECLARE_DISABLE"
 .LASF16:

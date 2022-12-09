@@ -9097,6 +9097,8 @@ g_vfs_mutex:
 	.string	"unsigned int"
 .LASF157:
 	.string	"get_fd"
+.LASF165:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/vfs"
 .LASF130:
 	.string	"aos_readdir"
 .LASF57:
@@ -9267,8 +9269,6 @@ g_vfs_mutex:
 	.string	"f_bfree"
 .LASF82:
 	.string	"file_ops"
-.LASF165:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/vfs"
 .LASF81:
 	.string	"file_ops_t"
 .LASF143:

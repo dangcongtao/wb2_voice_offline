@@ -1761,6 +1761,8 @@ shaCtx:
 	.string	"shaPadding"
 .LASF5:
 	.string	"__int32_t"
+.LASF46:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std"
 .LASF11:
 	.string	"unsigned int"
 .LASF41:
@@ -1787,8 +1789,6 @@ shaCtx:
 	.string	"Sec_Eng_SHA256_Init"
 .LASF15:
 	.string	"uint32_t"
-.LASF46:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std"
 .LASF39:
 	.string	"memset"
 .LASF16:

@@ -755,12 +755,12 @@ hosal_random_num_read:
 	.section	.debug_str,"MS",@progbits,1
 .LASF8:
 	.string	"long long int"
-.LASF22:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF10:
 	.string	"unsigned int"
 .LASF21:
 	.string	"/home/dungnt98/Ai-Thinker-WB2/components/platform/hosal/bl602_hal/hosal_rng.c"
+.LASF22:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF6:
 	.string	"__uint32_t"
 .LASF14:

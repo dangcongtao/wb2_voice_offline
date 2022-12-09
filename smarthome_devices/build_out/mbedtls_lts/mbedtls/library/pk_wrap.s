@@ -6843,6 +6843,8 @@ mbedtls_rsa_info:
 	.string	"ecdsa"
 .LASF37:
 	.string	"MBEDTLS_ECP_DP_CURVE25519"
+.LASF142:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 .LASF114:
 	.string	"olen"
 .LASF107:
@@ -7039,8 +7041,6 @@ mbedtls_rsa_info:
 	.string	"long unsigned int"
 .LASF76:
 	.string	"encrypt_func"
-.LASF142:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
 .LASF124:
 	.string	"mbedtls_calloc"
 .LASF45:

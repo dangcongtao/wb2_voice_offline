@@ -1792,6 +1792,8 @@ log_buf:
 	.string	"__uint8_t"
 .LASF37:
 	.string	"__builtin_va_list"
+.LASF22:
+	.string	"args"
 .LASF5:
 	.string	"short unsigned int"
 .LASF19:
@@ -1854,12 +1856,10 @@ log_buf:
 	.string	"type"
 .LASF4:
 	.string	"short int"
-.LASF22:
-	.string	"args"
+.LASF36:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/utils"
 .LASF18:
 	.string	"LOG_BUF_OUT_DATA_TYPE_UNT8"
-.LASF36:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/utils"
 .LASF6:
 	.string	"long int"
 .LASF2:

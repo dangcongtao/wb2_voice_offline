@@ -7963,8 +7963,6 @@ aes_init_done:
 	.string	"short int"
 .LASF28:
 	.string	"mbedtls_internal_aes_encrypt"
-.LASF39:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
 .LASF15:
 	.string	"length"
 .LASF26:
@@ -8005,6 +8003,8 @@ aes_init_done:
 	.string	"short unsigned int"
 .LASF9:
 	.string	"char"
+.LASF39:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 .LASF31:
 	.string	"mbedtls_aes_setkey_enc"
 .LASF5:

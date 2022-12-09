@@ -4972,6 +4972,8 @@ tcpip_mbox:
 	.string	"u8_t"
 .LASF140:
 	.string	"tcpip_thread_handle_msg"
+.LASF165:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF147:
 	.string	"sys_thread_new"
 .LASF82:
@@ -5096,8 +5098,6 @@ tcpip_mbox:
 	.string	"tcpip_callbackmsg_new"
 .LASF35:
 	.string	"ERR_ABRT"
-.LASF165:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
 .LASF132:
 	.string	"tcpip_send_msg_wait_sem"
 .LASF63:

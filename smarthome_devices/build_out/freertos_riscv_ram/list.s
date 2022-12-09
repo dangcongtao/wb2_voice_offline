@@ -1010,6 +1010,8 @@ uxListRemove:
 	.string	"xValueOfInsertion"
 .LASF8:
 	.string	"long long unsigned int"
+.LASF38:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/freertos_riscv_ram"
 .LASF35:
 	.string	"pxItem"
 .LASF23:
@@ -1020,8 +1022,6 @@ uxListRemove:
 	.string	"char"
 .LASF30:
 	.string	"pxIterator"
-.LASF38:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/freertos_riscv_ram"
 .LASF3:
 	.string	"short int"
 .LASF21:

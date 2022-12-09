@@ -3674,6 +3674,8 @@ spi_ops:
 	.string	"aos_dir_t"
 .LASF11:
 	.string	"unsigned int"
+.LASF152:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/vfs"
 .LASF53:
 	.string	"st_blksize"
 .LASF102:
@@ -3828,8 +3830,6 @@ spi_ops:
 	.string	"tx_nbits"
 .LASF74:
 	.string	"file_ops"
-.LASF152:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/vfs"
 .LASF73:
 	.string	"file_ops_t"
 .LASF134:

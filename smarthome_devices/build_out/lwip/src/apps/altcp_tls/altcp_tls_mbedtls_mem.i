@@ -1,5 +1,5 @@
 # 1 "/home/dungnt98/Ai-Thinker-WB2/components/network/lwip/src/apps/altcp_tls/altcp_tls_mbedtls_mem.c"
-# 1 "/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip//"
+# 1 "/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip//"
 # 1 "<built-in>"
 # 1 "<command-line>"
 # 1 "/home/dungnt98/Ai-Thinker-WB2/components/network/lwip/src/apps/altcp_tls/altcp_tls_mbedtls_mem.c"

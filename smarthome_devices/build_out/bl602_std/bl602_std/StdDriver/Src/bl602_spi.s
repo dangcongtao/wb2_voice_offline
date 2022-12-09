@@ -11770,8 +11770,6 @@ SPI_GetFifoStatus:
 	.string	"SPI_BYTE_INVERSE_BYTE3_FIRST"
 .LASF42:
 	.string	"DISABLE"
-.LASF76:
-	.string	"SPI_Timeout_Type"
 .LASF36:
 	.string	"long long unsigned int"
 .LASF89:
@@ -11878,6 +11876,8 @@ SPI_GetFifoStatus:
 	.string	"SPI_Send_24bits"
 .LASF35:
 	.string	"long unsigned int"
+.LASF76:
+	.string	"SPI_Timeout_Type"
 .LASF143:
 	.string	"data"
 .LASF93:
@@ -12020,6 +12020,8 @@ SPI_GetFifoStatus:
 	.string	"uint32_t"
 .LASF73:
 	.string	"SPI_WORK_MODE_Type"
+.LASF175:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std"
 .LASF124:
 	.string	"length"
 .LASF37:
@@ -12028,8 +12030,6 @@ SPI_GetFifoStatus:
 	.string	"unsigned int"
 .LASF119:
 	.string	"SPI_GetTxFifoCount"
-.LASF175:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std"
 .LASF114:
 	.string	"SPI_GetFifoStatus"
 .LASF0:

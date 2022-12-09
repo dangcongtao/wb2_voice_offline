@@ -9007,6 +9007,8 @@ adcGainCoeffCal:
 	.string	"ADC_CHAN_DAC_OUTA"
 .LASF43:
 	.string	"ADC_CHAN_DAC_OUTB"
+.LASF254:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std"
 .LASF185:
 	.string	"TSEN_Get_Temp"
 .LASF75:
@@ -9203,8 +9205,6 @@ adcGainCoeffCal:
 	.string	"offsetCalibEn"
 .LASF14:
 	.string	"long unsigned int"
-.LASF254:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std"
 .LASF62:
 	.string	"ADC_V11_SEL_1P18V"
 .LASF104:

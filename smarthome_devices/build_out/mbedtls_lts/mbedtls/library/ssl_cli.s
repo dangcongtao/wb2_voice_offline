@@ -25642,8 +25642,8 @@ mbedtls_ssl_handshake_client_step:
 	.string	"curves"
 .LASF454:
 	.string	"olen"
-.LASF554:
-	.string	"mbedtls_ssl_check_curve"
+.LASF558:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 .LASF98:
 	.string	"MBEDTLS_CIPHER_CAMELLIA_256_ECB"
 .LASF14:
@@ -25810,6 +25810,8 @@ mbedtls_ssl_handshake_client_step:
 	.string	"cert_req_ca_list"
 .LASF490:
 	.string	"elliptic_curve_list"
+.LASF554:
+	.string	"mbedtls_ssl_check_curve"
 .LASF330:
 	.string	"out_ctr"
 .LASF411:
@@ -25866,8 +25868,6 @@ mbedtls_ssl_handshake_client_step:
 	.string	"ssl_write_certificate_verify"
 .LASF95:
 	.string	"MBEDTLS_CIPHER_AES_256_GCM"
-.LASF558:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
 .LASF533:
 	.string	"mbedtls_ssl_derive_keys"
 .LASF463:

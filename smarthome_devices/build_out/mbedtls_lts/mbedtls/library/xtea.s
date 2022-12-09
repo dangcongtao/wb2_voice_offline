@@ -129,12 +129,12 @@
 	.string	"long int"
 .LASF10:
 	.string	"/home/dungnt98/Ai-Thinker-WB2/components/security/mbedtls_lts/mbedtls/library/xtea.c"
-.LASF0:
-	.string	"signed char"
 .LASF11:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 .LASF2:
 	.string	"short int"
 .LASF9:
 	.string	"GNU C99 10.2.0 -march=rv32imfc -mabi=ilp32f -march=rv32imfc -gdwarf -Os -std=gnu99 -ffunction-sections -fdata-sections -fstrict-volatile-bitfields -fcommon -ffreestanding -fno-strict-aliasing"
+.LASF0:
+	.string	"signed char"
 	.ident	"GCC: (SiFive GCC-Metal 10.2.0-2020.12.8) 10.2.0"

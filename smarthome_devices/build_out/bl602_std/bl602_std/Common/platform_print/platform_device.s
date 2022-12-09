@@ -5807,6 +5807,8 @@ uart_dbg_disable:
 	.string	"bflb_platform_deinit_uart_debug_gpio"
 .LASF58:
 	.string	"I2C_IRQn"
+.LASF258:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std"
 .LASF255:
 	.string	"Ring_Buffer_Get_Empty_Length"
 .LASF120:
@@ -5845,8 +5847,6 @@ uart_dbg_disable:
 	.string	"tmpValLow"
 .LASF113:
 	.string	"BL_AHB_SLAVE1_IRR"
-.LASF258:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std"
 .LASF82:
 	.string	"BLE_IRQn"
 .LASF152:

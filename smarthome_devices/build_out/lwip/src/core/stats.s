@@ -3234,6 +3234,8 @@ stats_netstat:
 	.string	"MEMP_IGMP_GROUP"
 .LASF163:
 	.string	"accept"
+.LASF190:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF34:
 	.string	"MEMP_TCPIP_MSG_API"
 .LASF55:
@@ -3378,8 +3380,6 @@ stats_netstat:
 	.string	"chkerr"
 .LASF157:
 	.string	"tcp_recv_fn"
-.LASF52:
-	.string	"memerr"
 .LASF31:
 	.string	"MEMP_ALTCP_PCB"
 .LASF1:
@@ -3492,8 +3492,8 @@ stats_netstat:
 	.string	"__uint32_t"
 .LASF82:
 	.string	"FIN_WAIT_2"
-.LASF190:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
+.LASF52:
+	.string	"memerr"
 .LASF30:
 	.string	"MEMP_TCP_SEG"
 .LASF70:

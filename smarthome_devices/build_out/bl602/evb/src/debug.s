@@ -10736,6 +10736,8 @@ ucdigits.1:
 	.string	"intmax_t"
 .LASF71:
 	.string	"decpt"
+.LASF106:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602"
 .LASF48:
 	.string	"prec"
 .LASF95:
@@ -10854,8 +10856,6 @@ ucdigits.1:
 	.string	"tmpval"
 .LASF103:
 	.string	"__umoddi3"
-.LASF106:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602"
 .LASF4:
 	.string	"short int"
 .LASF30:

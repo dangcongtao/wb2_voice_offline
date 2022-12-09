@@ -952,10 +952,10 @@ bl_rtc_get_delta_time_ms:
 	.string	"/home/dungnt98/Ai-Thinker-WB2/components/platform/hosal/bl602_hal/bl_rtc.c"
 .LASF13:
 	.string	"HBN_32K_XTAL"
-.LASF28:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF25:
 	.string	"HBN_Enable_RTC_Counter"
+.LASF28:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF10:
 	.string	"uint64_t"
 .LASF0:

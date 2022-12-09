@@ -745,14 +745,14 @@ utils_hexdump:
 	.string	"utils_hexdump"
 .LASF12:
 	.string	"bl_putchar"
-.LASF15:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/utils"
+.LASF14:
+	.string	"/home/dungnt98/Ai-Thinker-WB2/components/utils/src/utils_hexdump.c"
 .LASF5:
 	.string	"long unsigned int"
 .LASF7:
 	.string	"long long unsigned int"
-.LASF14:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/components/utils/src/utils_hexdump.c"
+.LASF15:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/utils"
 .LASF1:
 	.string	"unsigned char"
 .LASF9:

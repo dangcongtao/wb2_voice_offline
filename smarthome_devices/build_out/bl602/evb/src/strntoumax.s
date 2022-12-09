@@ -1160,10 +1160,10 @@ strntoumax:
 	.string	"base"
 .LASF0:
 	.string	"unsigned int"
-.LASF18:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602"
 .LASF8:
 	.string	"long long unsigned int"
+.LASF18:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602"
 .LASF21:
 	.string	"digitval"
 .LASF19:

@@ -4186,6 +4186,8 @@ rf_para_on_flash:
 	.string	"mfg_flash_read_poweroffset"
 .LASF19:
 	.string	"resetCreadCmd"
+.LASF143:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std"
 .LASF102:
 	.string	"mfg_media_write_poweroffset_pre_with_lock"
 .LASF12:
@@ -4198,8 +4200,6 @@ rf_para_on_flash:
 	.string	"frDmyClk"
 .LASF115:
 	.string	"flashCfg"
-.LASF143:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std"
 .LASF79:
 	.string	"timeE64k"
 .LASF22:

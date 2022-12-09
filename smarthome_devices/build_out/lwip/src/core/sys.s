@@ -680,8 +680,6 @@ sys_msleep:
 	.string	"QueueHandle_t"
 .LASF39:
 	.string	"sys_arch_sem_wait"
-.LASF20:
-	.string	"ERR_RTE"
 .LASF14:
 	.string	"s8_t"
 .LASF24:
@@ -710,14 +708,14 @@ sys_msleep:
 	.string	"/home/dungnt98/Ai-Thinker-WB2/components/network/lwip/src/core/sys.c"
 .LASF1:
 	.string	"unsigned char"
-.LASF43:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
+.LASF20:
+	.string	"ERR_RTE"
 .LASF35:
 	.string	"SemaphoreHandle_t"
 .LASF6:
 	.string	"__uint32_t"
-.LASF15:
-	.string	"u32_t"
+.LASF43:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF21:
 	.string	"ERR_INPROGRESS"
 .LASF16:
@@ -746,6 +744,8 @@ sys_msleep:
 	.string	"short int"
 .LASF27:
 	.string	"ERR_CONN"
+.LASF15:
+	.string	"u32_t"
 .LASF13:
 	.string	"uint32_t"
 .LASF4:

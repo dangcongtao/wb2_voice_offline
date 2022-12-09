@@ -1295,10 +1295,10 @@ _fsymf_info_hosalhosal_efuse:
 	.string	"BLOG_LEVEL_ASSERT"
 .LASF32:
 	.string	"bl_irq_save"
-.LASF43:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF5:
 	.string	"short unsigned int"
+.LASF43:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF35:
 	.string	"bl_irq_restore"
 .LASF21:

@@ -48364,8 +48364,8 @@ CSWTCH.53:
 	.string	"curves"
 .LASF619:
 	.string	"olen"
-.LASF454:
-	.string	"mbedtls_ssl_check_curve"
+.LASF764:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 .LASF98:
 	.string	"MBEDTLS_CIPHER_CAMELLIA_256_ECB"
 .LASF14:
@@ -48600,6 +48600,8 @@ CSWTCH.53:
 	.string	"mbedtls_ssl_conf_psk_cb"
 .LASF531:
 	.string	"mbedtls_ssl_conf_ciphersuites_for_version"
+.LASF454:
+	.string	"mbedtls_ssl_check_curve"
 .LASF623:
 	.string	"taglen"
 .LASF335:
@@ -48674,8 +48676,6 @@ CSWTCH.53:
 	.string	"MBEDTLS_CIPHER_AES_256_GCM"
 .LASF729:
 	.string	"mbedtls_sha256_init"
-.LASF764:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
 .LASF489:
 	.string	"mbedtls_ssl_get_bytes_avail"
 .LASF661:

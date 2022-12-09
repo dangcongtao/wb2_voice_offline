@@ -3295,6 +3295,8 @@ _fsymf_info_hosalhal_ir:
 	.section	.debug_line,"",@progbits
 .Ldebug_line0:
 	.section	.debug_str,"MS",@progbits,1
+.LASF93:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF31:
 	.string	"_blog_info"
 .LASF72:
@@ -3323,8 +3325,6 @@ _fsymf_info_hosalhal_ir:
 	.string	"reset_size"
 .LASF44:
 	.string	"spi_dma_ir_event_group"
-.LASF93:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF6:
 	.string	"__uint32_t"
 .LASF35:

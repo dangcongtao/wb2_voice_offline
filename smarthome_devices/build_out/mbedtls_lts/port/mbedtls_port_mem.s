@@ -509,8 +509,6 @@ mbedtls_port_calloc:
 	.string	"signed char"
 .LASF11:
 	.string	"size"
-.LASF16:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
 .LASF18:
 	.string	"mbedtls_port_calloc"
 .LASF13:
@@ -521,4 +519,6 @@ mbedtls_port_calloc:
 	.string	"unsigned int"
 .LASF14:
 	.string	"GNU C99 10.2.0 -march=rv32imfc -mabi=ilp32f -march=rv32imfc -gdwarf -Os -std=gnu99 -ffunction-sections -fdata-sections -fstrict-volatile-bitfields -fcommon -ffreestanding -fno-strict-aliasing"
+.LASF16:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 	.ident	"GCC: (SiFive GCC-Metal 10.2.0-2020.12.8) 10.2.0"

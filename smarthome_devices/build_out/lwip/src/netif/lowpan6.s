@@ -121,6 +121,8 @@
 	.string	"unsigned int"
 .LASF5:
 	.string	"long unsigned int"
+.LASF12:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF0:
 	.string	"signed char"
 .LASF3:
@@ -137,8 +139,6 @@
 	.string	"unsigned char"
 .LASF4:
 	.string	"long int"
-.LASF12:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
 .LASF9:
 	.string	"char"
 .LASF6:

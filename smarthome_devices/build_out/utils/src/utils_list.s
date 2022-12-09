@@ -2816,12 +2816,12 @@ utils_list_remove:
 	.string	"memcpy"
 .LASF19:
 	.string	"element"
-.LASF49:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/utils"
 .LASF20:
 	.string	"utils_list_remove"
 .LASF45:
 	.string	"utils_list_pick"
+.LASF49:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/utils"
 .LASF41:
 	.string	"elmt_size"
 .LASF12:

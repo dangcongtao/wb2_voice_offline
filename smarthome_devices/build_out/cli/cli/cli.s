@@ -17245,8 +17245,8 @@ built_ins:
 	.string	"initialized"
 .LASF325:
 	.string	"aos_task_exit"
-.LASF193:
-	.string	"romfs_filebuf_t"
+.LASF128:
+	.string	"p_rxdma_arg"
 .LASF93:
 	.string	"HOSAL_FLOW_CONTROL_DISABLED"
 .LASF279:
@@ -17275,6 +17275,8 @@ built_ins:
 	.string	"uint8_t"
 .LASF108:
 	.string	"tx_pin"
+.LASF304:
+	.string	"strcpy"
 .LASF52:
 	.string	"st_uid"
 .LASF61:
@@ -17409,8 +17411,8 @@ built_ins:
 	.string	"ino_t"
 .LASF11:
 	.string	"long unsigned int"
-.LASF304:
-	.string	"strcpy"
+.LASF193:
+	.string	"romfs_filebuf_t"
 .LASF168:
 	.string	"opendir"
 .LASF211:
@@ -17613,8 +17615,8 @@ built_ins:
 	.string	"command"
 .LASF241:
 	.string	"xSpacePadding"
-.LASF128:
-	.string	"p_rxdma_arg"
+.LASF343:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/cli"
 .LASF237:
 	.string	"ps_cmd"
 .LASF23:
@@ -17701,8 +17703,6 @@ built_ins:
 	.string	"uart_stdio"
 .LASF35:
 	.string	"tv_nsec"
-.LASF343:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/cli"
 .LASF174:
 	.string	"telldir"
 .LASF199:

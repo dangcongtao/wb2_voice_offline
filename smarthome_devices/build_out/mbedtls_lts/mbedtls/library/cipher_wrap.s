@@ -3610,6 +3610,8 @@ mbedtls_cipher_definitions:
 	.string	"ecb_func"
 .LASF25:
 	.string	"MBEDTLS_CIPHER_AES_256_ECB"
+.LASF193:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 .LASF146:
 	.string	"mbedtls_gcm_context"
 .LASF157:
@@ -3876,8 +3878,6 @@ mbedtls_cipher_definitions:
 	.string	"base_ectr"
 .LASF33:
 	.string	"MBEDTLS_CIPHER_AES_192_CTR"
-.LASF193:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
 .LASF12:
 	.string	"MBEDTLS_CIPHER_ID_DES"
 .LASF182:

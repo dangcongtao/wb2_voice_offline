@@ -1713,7 +1713,7 @@ cmds_user:
 .LASF36:
 	.string	"cmd_wdt_disable"
 .LASF50:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF26:
 	.string	"blog_info_t"
 .LASF28:

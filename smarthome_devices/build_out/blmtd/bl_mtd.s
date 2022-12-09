@@ -3365,8 +3365,6 @@ bl_mtd_size:
 	.string	"__uint8_t"
 .LASF47:
 	.string	"xTaskGetTickCount"
-.LASF62:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/blmtd"
 .LASF57:
 	.string	"hal_boot2_partition_addr_inactive"
 .LASF35:
@@ -3431,6 +3429,8 @@ bl_mtd_size:
 	.string	"/home/dungnt98/Ai-Thinker-WB2/components/sys/blmtd/bl_mtd.c"
 .LASF20:
 	.string	"bl_mtd_handle_priv_t"
+.LASF62:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/blmtd"
 .LASF15:
 	.string	"name"
 .LASF64:

@@ -7001,6 +7001,8 @@ supported_digests:
 	.string	"_fns"
 .LASF87:
 	.string	"_cookie"
+.LASF195:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 .LASF57:
 	.string	"_Bigint"
 .LASF98:
@@ -7251,8 +7253,6 @@ supported_digests:
 	.string	"supported_digests"
 .LASF74:
 	.string	"_dso_handle"
-.LASF195:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
 .LASF190:
 	.string	"mbedtls_calloc"
 .LASF22:

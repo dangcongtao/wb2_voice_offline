@@ -2210,8 +2210,6 @@ netbuf_first:
 	.string	"pbuf_free"
 .LASF94:
 	.string	"memp_free"
-.LASF101:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
 .LASF81:
 	.string	"netbuf_data"
 .LASF14:
@@ -2234,10 +2232,12 @@ netbuf_first:
 	.string	"MEMP_TCP_SEG"
 .LASF37:
 	.string	"ERR_CLSD"
-.LASF8:
-	.string	"__uint32_t"
 .LASF5:
 	.string	"__uint16_t"
+.LASF8:
+	.string	"__uint32_t"
+.LASF101:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF82:
 	.string	"dataptr"
 .LASF75:

@@ -3313,8 +3313,8 @@ xStart:
 	.string	"long int"
 .LASF53:
 	.string	"pxNewBlockLink"
-.LASF40:
-	.string	"xPortGetFreeHeapSize"
+.LASF23:
+	.string	"xStart"
 .LASF46:
 	.string	"pvReturn"
 .LASF14:
@@ -3325,8 +3325,6 @@ xStart:
 	.string	"BlockLink_t"
 .LASF16:
 	.string	"HeapRegion_t"
-.LASF62:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/freertos_riscv_ram"
 .LASF54:
 	.string	"vEnvironmentCall"
 .LASF2:
@@ -3369,14 +3367,16 @@ xStart:
 	.string	"pxBlockToInsert"
 .LASF6:
 	.string	"long unsigned int"
+.LASF40:
+	.string	"xPortGetFreeHeapSize"
 .LASF42:
 	.string	"vPortFree"
 .LASF28:
 	.string	"pxFirstFreeBlockInRegion"
 .LASF20:
 	.string	"xBlockSize"
-.LASF23:
-	.string	"xStart"
+.LASF62:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/freertos_riscv_ram"
 .LASF61:
 	.string	"/home/dungnt98/Ai-Thinker-WB2/components/platform/soc/bl602/freertos_riscv_ram/portable/MemMang/heap_5.c"
 .LASF17:

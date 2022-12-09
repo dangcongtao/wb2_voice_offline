@@ -15128,8 +15128,6 @@ tcp_persist_backoff:
 	.string	"netif_get_by_index"
 .LASF247:
 	.string	"old_addr"
-.LASF363:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
 .LASF132:
 	.string	"netmask"
 .LASF227:
@@ -15360,6 +15358,8 @@ tcp_persist_backoff:
 	.string	"port"
 .LASF43:
 	.string	"MEMP_PBUF"
+.LASF363:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF93:
 	.string	"ERR_BUF"
 .LASF198:

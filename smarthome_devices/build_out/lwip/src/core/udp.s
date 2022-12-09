@@ -8165,6 +8165,8 @@ udp_port:
 	.string	"udp_sendto_if"
 .LASF76:
 	.string	"MEMP_IGMP_GROUP"
+.LASF249:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF74:
 	.string	"MEMP_TCPIP_MSG_API"
 .LASF95:
@@ -8333,8 +8335,6 @@ udp_port:
 	.string	"ICMP_DUR_PORT"
 .LASF228:
 	.string	"udp_init"
-.LASF92:
-	.string	"memerr"
 .LASF161:
 	.string	"current_ip_header_tot_len"
 .LASF207:
@@ -8465,8 +8465,8 @@ udp_port:
 	.string	"unsigned char"
 .LASF9:
 	.string	"__uint32_t"
-.LASF249:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
+.LASF92:
+	.string	"memerr"
 .LASF70:
 	.string	"MEMP_TCP_SEG"
 .LASF144:

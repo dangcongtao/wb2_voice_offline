@@ -5709,8 +5709,8 @@ K:
 	.string	"size_t"
 .LASF14:
 	.string	"is384"
-.LASF45:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
+.LASF10:
+	.string	"uint64_t"
 .LASF26:
 	.string	"mbedtls_sha512_update"
 .LASF7:
@@ -5763,8 +5763,6 @@ K:
 	.string	"mbedtls_sha512_update_ret"
 .LASF19:
 	.string	"output"
-.LASF10:
-	.string	"uint64_t"
 .LASF24:
 	.string	"used"
 .LASF20:
@@ -5801,6 +5799,8 @@ K:
 	.string	"memset"
 .LASF18:
 	.string	"ilen"
+.LASF45:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 .LASF28:
 	.string	"left"
 	.ident	"GCC: (SiFive GCC-Metal 10.2.0-2020.12.8) 10.2.0"

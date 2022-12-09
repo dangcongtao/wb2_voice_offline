@@ -861,10 +861,10 @@ utils_notifier_chain_call:
 	.string	"utils_list_push_back"
 .LASF7:
 	.string	"utils_notifier_fn_t"
-.LASF20:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/utils"
 .LASF1:
 	.string	"utils_list_hdr"
+.LASF20:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/utils"
 .LASF11:
 	.string	"priority"
 .LASF17:

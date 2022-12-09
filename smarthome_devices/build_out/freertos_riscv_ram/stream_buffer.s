@@ -10836,8 +10836,6 @@ ucStreamBufferGetStreamBufferType:
 	.string	"xTaskGenericNotifyFromISR"
 .LASF85:
 	.string	"xRequiredSpace"
-.LASF121:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/freertos_riscv_ram"
 .LASF111:
 	.string	"xTaskNotifyStateClear"
 .LASF120:
@@ -11016,6 +11014,8 @@ ucStreamBufferGetStreamBufferType:
 	.string	"xTaskCheckForTimeOut"
 .LASF102:
 	.string	"pucAllocatedMemory"
+.LASF121:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/freertos_riscv_ram"
 .LASF6:
 	.string	"unsigned char"
 .LASF59:

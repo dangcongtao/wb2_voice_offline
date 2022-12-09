@@ -2474,6 +2474,8 @@ _fsymf_info_hosalbl_i2c:
 	.section	.debug_line,"",@progbits
 .Ldebug_line0:
 	.section	.debug_str,"MS",@progbits,1
+.LASF109:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF80:
 	.string	"_blog_info"
 .LASF96:
@@ -2494,8 +2496,6 @@ _fsymf_info_hosalbl_i2c:
 	.string	"I2C_READ"
 .LASF63:
 	.string	"GPIO_FUN_SPI"
-.LASF109:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF4:
 	.string	"long long int"
 .LASF98:

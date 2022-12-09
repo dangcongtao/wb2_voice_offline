@@ -397,8 +397,6 @@ err_to_errno_table:
 	.string	"long unsigned int"
 .LASF7:
 	.string	"long long unsigned int"
-.LASF16:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
 .LASF13:
 	.string	"err_t"
 .LASF17:
@@ -417,6 +415,8 @@ err_to_errno_table:
 	.string	"s8_t"
 .LASF18:
 	.string	"err_to_errno"
+.LASF16:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF2:
 	.string	"short int"
 .LASF14:

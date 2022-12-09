@@ -4346,6 +4346,8 @@ s_nextthread:
 	.string	"int8_t"
 .LASF67:
 	.string	"MEMP_IGMP_GROUP"
+.LASF160:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF65:
 	.string	"MEMP_TCPIP_MSG_API"
 .LASF86:
@@ -4476,8 +4478,6 @@ s_nextthread:
 	.string	"chkerr"
 .LASF46:
 	.string	"TaskHandle_t"
-.LASF83:
-	.string	"memerr"
 .LASF62:
 	.string	"MEMP_ALTCP_PCB"
 .LASF45:
@@ -4558,8 +4558,8 @@ s_nextthread:
 	.string	"unsigned char"
 .LASF10:
 	.string	"__uint32_t"
-.LASF160:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
+.LASF83:
+	.string	"memerr"
 .LASF61:
 	.string	"MEMP_TCP_SEG"
 .LASF101:

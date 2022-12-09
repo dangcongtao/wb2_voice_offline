@@ -2952,6 +2952,8 @@ ethzero:
 	.string	"int8_t"
 .LASF62:
 	.string	"MEMP_IGMP_GROUP"
+.LASF173:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF60:
 	.string	"MEMP_TCPIP_MSG_API"
 .LASF81:
@@ -2982,8 +2984,6 @@ ethzero:
 	.string	"ERR_VAL"
 .LASF140:
 	.string	"ETHTYPE_JUMBO"
-.LASF134:
-	.string	"ETHTYPE_WOL"
 .LASF61:
 	.string	"MEMP_TCPIP_MSG_INPKT"
 .LASF70:
@@ -3084,8 +3084,8 @@ ethzero:
 	.string	"ETHTYPE_QINQ"
 .LASF76:
 	.string	"chkerr"
-.LASF78:
-	.string	"memerr"
+.LASF134:
+	.string	"ETHTYPE_WOL"
 .LASF57:
 	.string	"MEMP_ALTCP_PCB"
 .LASF106:
@@ -3176,8 +3176,8 @@ ethzero:
 	.string	"unsigned char"
 .LASF8:
 	.string	"__uint32_t"
-.LASF173:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
+.LASF78:
+	.string	"memerr"
 .LASF56:
 	.string	"MEMP_TCP_SEG"
 .LASF129:

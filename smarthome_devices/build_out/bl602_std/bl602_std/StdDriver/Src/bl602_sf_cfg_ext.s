@@ -2690,8 +2690,6 @@ flashCfg_FM_25Q08:
 	.string	"frDioDmyClk"
 .LASF51:
 	.string	"frDmyClk"
-.LASF129:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std"
 .LASF94:
 	.string	"timeE64k"
 .LASF37:
@@ -2724,6 +2722,8 @@ flashCfg_FM_25Q08:
 	.string	"uint8_t"
 .LASF13:
 	.string	"SUCCESS"
+.LASF129:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std"
 .LASF112:
 	.string	"restoreDefault"
 .LASF95:

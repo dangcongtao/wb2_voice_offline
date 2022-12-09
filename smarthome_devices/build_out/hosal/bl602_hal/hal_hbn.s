@@ -1900,8 +1900,8 @@ _fsymf_info_hosalhal_hbn:
 	.section	.debug_line,"",@progbits
 .Ldebug_line0:
 	.section	.debug_str,"MS",@progbits,1
-.LASF68:
-	.string	"ntf_init"
+.LASF64:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF38:
 	.string	"_blog_info"
 .LASF14:
@@ -1960,6 +1960,8 @@ _fsymf_info_hosalhal_hbn:
 	.string	"ntf_list_t"
 .LASF24:
 	.string	"utils_notifier_fn_t"
+.LASF68:
+	.string	"ntf_init"
 .LASF1:
 	.string	"unsigned char"
 .LASF35:
@@ -1976,8 +1978,6 @@ _fsymf_info_hosalhal_hbn:
 	.string	"BLOG_LEVEL_INFO"
 .LASF46:
 	.string	"_fsymf_info_hosalhal_hbn"
-.LASF64:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF50:
 	.string	"time"
 .LASF22:

@@ -1112,7 +1112,7 @@ _fsymf_info_hosalhosal_wdg:
 .LASF15:
 	.string	"timeout"
 .LASF47:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF30:
 	.string	"blog_info_t"
 .LASF32:

@@ -125,8 +125,6 @@
 	.string	"long unsigned int"
 .LASF0:
 	.string	"signed char"
-.LASF12:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
 .LASF3:
 	.string	"short unsigned int"
 .LASF10:
@@ -141,6 +139,8 @@
 	.string	"long int"
 .LASF9:
 	.string	"char"
+.LASF12:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 .LASF6:
 	.string	"long long int"
 	.ident	"GCC: (SiFive GCC-Metal 10.2.0-2020.12.8) 10.2.0"

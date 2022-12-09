@@ -5426,14 +5426,14 @@ _fsymf_info_hosalhosal_i2c:
 	.string	"GPIO_FUN_SPI"
 .LASF70:
 	.string	"priv"
-.LASF125:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF111:
 	.string	"xPortIsInsideInterrupt"
 .LASF89:
 	.string	"hosal_i2c_mem_read"
 .LASF67:
 	.string	"hosal_i2c_config_t"
+.LASF125:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF84:
 	.string	"_fsymc_info_hosal"
 .LASF22:

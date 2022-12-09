@@ -3233,8 +3233,6 @@ _fsymf_info_hosalhosal_gpio:
 	.string	"GNU C99 10.2.0 -march=rv32imfc -mabi=ilp32f -march=rv32imfc -gdwarf -Os -std=gnu99 -ffunction-sections -fdata-sections -fstrict-volatile-bitfields -fcommon -ffreestanding -fno-strict-aliasing"
 .LASF153:
 	.string	"node"
-.LASF134:
-	.string	"BLOG_LEVEL_ALL"
 .LASF174:
 	.string	"vPortFree"
 .LASF158:
@@ -3291,8 +3289,8 @@ _fsymf_info_hosalhosal_gpio:
 	.string	"GLB_GPIO_Write"
 .LASF46:
 	.string	"UART1_IRQn"
-.LASF186:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
+.LASF134:
+	.string	"BLOG_LEVEL_ALL"
 .LASF173:
 	.string	"bl_gpio_int_clear"
 .LASF32:
@@ -3445,6 +3443,8 @@ _fsymf_info_hosalhosal_gpio:
 	.string	"HOSAL_IRQ_TRIG_POS_PULSE"
 .LASF137:
 	.string	"BLOG_LEVEL_WARN"
+.LASF186:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF68:
 	.string	"HBN_OUT1_IRQn"
 .LASF143:

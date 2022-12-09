@@ -1128,6 +1128,8 @@ s:
 	.string	"XZ_BUF_ERROR"
 .LASF26:
 	.string	"in_pos"
+.LASF46:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std"
 .LASF12:
 	.string	"XZ_SINGLE"
 .LASF36:
@@ -1160,8 +1162,6 @@ s:
 	.string	"xz_dec_init"
 .LASF47:
 	.string	"xz_buf"
-.LASF46:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std"
 .LASF38:
 	.string	"xz_uncompress_stream"
 .LASF0:

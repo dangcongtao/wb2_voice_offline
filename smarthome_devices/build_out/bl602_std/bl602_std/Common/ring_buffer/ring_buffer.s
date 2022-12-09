@@ -4392,6 +4392,8 @@ Ring_Buffer_Write_Byte_Force:
 	.section	.debug_line,"",@progbits
 .Ldebug_line0:
 	.section	.debug_str,"MS",@progbits,1
+.LASF64:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std"
 .LASF19:
 	.string	"Ring_Buffer_Status_Type"
 .LASF32:
@@ -4504,8 +4506,6 @@ Ring_Buffer_Write_Byte_Force:
 	.string	"readIndex"
 .LASF18:
 	.string	"RING_BUFFER_FULL"
-.LASF64:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std"
 .LASF20:
 	.string	"pointer"
 .LASF52:

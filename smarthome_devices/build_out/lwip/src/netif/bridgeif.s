@@ -5560,6 +5560,8 @@ bridgeif_netif_client_id:
 	.string	"MEMP_IGMP_GROUP"
 .LASF177:
 	.string	"bridgeif_find_dst_ports"
+.LASF194:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF138:
 	.string	"netif_status_callback_fn"
 .LASF121:
@@ -5698,8 +5700,6 @@ bridgeif_netif_client_id:
 	.string	"bridgeif_fdb_get_dst_ports"
 .LASF36:
 	.string	"ERR_ABRT"
-.LASF194:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
 .LASF185:
 	.string	"mem_free"
 .LASF95:

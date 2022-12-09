@@ -32804,6 +32804,8 @@ init_done.0:
 	.string	"mbedtls_ecp_point_init"
 .LASF24:
 	.string	"MBEDTLS_ECP_DP_CURVE25519"
+.LASF194:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 .LASF109:
 	.string	"olen"
 .LASF81:
@@ -33076,8 +33078,6 @@ init_done.0:
 	.string	"mbedtls_mpi_mul_int"
 .LASF105:
 	.string	"ecp_normalize_jac_many"
-.LASF194:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
 .LASF33:
 	.string	"bit_size"
 .LASF37:

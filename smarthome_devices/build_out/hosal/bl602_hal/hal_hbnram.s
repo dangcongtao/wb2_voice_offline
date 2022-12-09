@@ -8804,8 +8804,8 @@ _fsymf_info_hosalhal_hbnram:
 	.section	.debug_str,"MS",@progbits,1
 .LASF87:
 	.string	"flen"
-.LASF17:
-	.string	"BL_SHA256"
+.LASF109:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF38:
 	.string	"_blog_info"
 .LASF112:
@@ -8934,8 +8934,8 @@ _fsymf_info_hosalhal_hbnram:
 	.string	"BLOG_LEVEL_INFO"
 .LASF75:
 	.string	"phbn_addr"
-.LASF109:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
+.LASF72:
+	.string	"calc_hash"
 .LASF76:
 	.string	"key_val"
 .LASF48:
@@ -8966,6 +8966,8 @@ _fsymf_info_hosalhal_hbnram:
 	.string	"blog_info_t"
 .LASF81:
 	.string	"data_size"
+.LASF17:
+	.string	"BL_SHA256"
 .LASF62:
 	.string	"area_size"
 .LASF80:
@@ -9008,8 +9010,6 @@ _fsymf_info_hosalhal_hbnram:
 	.string	"BLOG_LEVEL_NEVER"
 .LASF20:
 	.string	"bl_sha_type_t"
-.LASF72:
-	.string	"calc_hash"
 .LASF37:
 	.string	"blog_level_t"
 .LASF14:

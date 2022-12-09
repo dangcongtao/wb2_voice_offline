@@ -729,10 +729,10 @@ bl_wdt_init:
 	.section	.debug_str,"MS",@progbits,1
 .LASF4:
 	.string	"long long int"
-.LASF28:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF16:
 	.string	"WDT_INT"
+.LASF28:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF20:
 	.string	"WDT_Disable"
 .LASF22:

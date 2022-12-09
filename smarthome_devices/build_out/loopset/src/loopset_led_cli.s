@@ -1184,12 +1184,12 @@ cmds_user:
 	.string	"argv"
 .LASF19:
 	.string	"loopset_led_trigger"
+.LASF23:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/loopset"
 .LASF1:
 	.string	"unsigned char"
 .LASF5:
 	.string	"long unsigned int"
-.LASF23:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/loopset"
 .LASF3:
 	.string	"short unsigned int"
 .LASF11:

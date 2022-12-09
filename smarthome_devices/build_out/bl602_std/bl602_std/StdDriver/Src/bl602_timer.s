@@ -4058,6 +4058,8 @@ timerIntCbfArra:
 	.section	.debug_str,"MS",@progbits,1
 .LASF42:
 	.string	"TIMER_COUNT_FREERUN"
+.LASF101:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std"
 .LASF82:
 	.string	"TIMER_Disable"
 .LASF43:
@@ -4246,8 +4248,6 @@ timerIntCbfArra:
 	.string	"TIMER_COMP_ID_1"
 .LASF77:
 	.string	"WDT_SetCompValue"
-.LASF101:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std"
 .LASF89:
 	.string	"tmpval"
 .LASF50:

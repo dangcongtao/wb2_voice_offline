@@ -4137,6 +4137,8 @@ dmaCtrlRegVal:
 	.string	"GPIP_DAC_DMA_FORMAT_2"
 .LASF247:
 	.string	"GLB_GPIP_DAC_Set_ChanB_Config"
+.LASF266:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF164:
 	.string	"dmaFmt"
 .LASF241:
@@ -4411,8 +4413,6 @@ dmaCtrlRegVal:
 	.string	"pingpang"
 .LASF144:
 	.string	"GPIP_DAC_ChanB_SRC_Type"
-.LASF266:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF232:
 	.string	"p_arg"
 .LASF91:

@@ -1890,8 +1890,6 @@ lwip_itoa:
 	.section	.debug_line,"",@progbits
 .Ldebug_line0:
 	.section	.debug_str,"MS",@progbits,1
-.LASF16:
-	.string	"u16_t"
 .LASF33:
 	.string	"memmove"
 .LASF18:
@@ -1908,6 +1906,8 @@ lwip_itoa:
 	.string	"unsigned char"
 .LASF7:
 	.string	"long unsigned int"
+.LASF38:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF3:
 	.string	"short unsigned int"
 .LASF11:
@@ -1918,8 +1918,8 @@ lwip_itoa:
 	.string	"__uint32_t"
 .LASF5:
 	.string	"__uint16_t"
-.LASF38:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
+.LASF16:
+	.string	"u16_t"
 .LASF21:
 	.string	"str1"
 .LASF22:

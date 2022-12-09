@@ -3873,6 +3873,8 @@ lwip_num_cyclic_timers:
 	.string	"u8_t"
 .LASF20:
 	.string	"uint16_t"
+.LASF180:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF10:
 	.string	"long unsigned int"
 .LASF85:
@@ -4011,8 +4013,6 @@ lwip_num_cyclic_timers:
 	.string	"last_timer"
 .LASF106:
 	.string	"ssthresh"
-.LASF180:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
 .LASF76:
 	.string	"tcp_state"
 .LASF159:

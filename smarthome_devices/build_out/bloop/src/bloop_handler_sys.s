@@ -1705,6 +1705,8 @@ bloop_handler_sys:
 	.string	"id_src"
 .LASF8:
 	.string	"long long int"
+.LASF62:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bloop"
 .LASF66:
 	.string	"loop_evt_entity_sys_evt"
 .LASF42:
@@ -1783,8 +1785,6 @@ bloop_handler_sys:
 	.string	"loop"
 .LASF32:
 	.string	"arg2"
-.LASF62:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bloop"
 .LASF21:
 	.string	"prev"
 .LASF15:

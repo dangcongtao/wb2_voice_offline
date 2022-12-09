@@ -9169,8 +9169,6 @@ _fsymf_info_hosalbl_ir:
 	.string	"DMA_REQ_GPADC1"
 .LASF362:
 	.string	"SPI_Disable"
-.LASF100:
-	.string	"rxMode"
 .LASF234:
 	.string	"DMA_TRNS_WIDTH_16BITS"
 .LASF27:
@@ -9203,6 +9201,8 @@ _fsymf_info_hosalbl_ir:
 	.string	"SPI_FifoCfg_Type"
 .LASF346:
 	.string	"bl_dma_int_clear"
+.LASF387:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF146:
 	.string	"ssp_id"
 .LASF160:
@@ -9583,8 +9583,8 @@ _fsymf_info_hosalbl_ir:
 	.string	"GLB_IR_LED_Driver_Enable"
 .LASF164:
 	.string	"chip_type"
-.LASF387:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
+.LASF100:
+	.string	"rxMode"
 .LASF144:
 	.string	"GLB_SPI_PAD_ACT_AS_MASTER"
 .LASF84:

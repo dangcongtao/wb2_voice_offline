@@ -8319,8 +8319,6 @@ altcp_tcp_functions:
 	.string	"tcp_setprio"
 .LASF30:
 	.string	"ESTABLISHED"
-.LASF266:
-	.string	"altcp_alloc"
 .LASF43:
 	.string	"ERR_VAL"
 .LASF265:
@@ -8501,8 +8499,8 @@ altcp_tcp_functions:
 	.string	"ERR_ARG"
 .LASF64:
 	.string	"ip4_addr_t"
-.LASF271:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
+.LASF266:
+	.string	"altcp_alloc"
 .LASF122:
 	.string	"altcp_get_port_fn"
 .LASF252:
@@ -8677,6 +8675,8 @@ altcp_tcp_functions:
 	.string	"port"
 .LASF136:
 	.string	"MEMP_PBUF"
+.LASF271:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF39:
 	.string	"ERR_BUF"
 .LASF103:

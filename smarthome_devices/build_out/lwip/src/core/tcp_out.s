@@ -14017,8 +14017,6 @@ tcp_zero_window_probe:
 	.string	"tcp_ticks"
 .LASF307:
 	.string	"netif_get_by_index"
-.LASF323:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
 .LASF139:
 	.string	"netmask"
 .LASF251:
@@ -14229,6 +14227,8 @@ tcp_zero_window_probe:
 	.string	"listener"
 .LASF97:
 	.string	"MEMP_PBUF"
+.LASF323:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF305:
 	.string	"ip_chksum_pseudo"
 .LASF46:

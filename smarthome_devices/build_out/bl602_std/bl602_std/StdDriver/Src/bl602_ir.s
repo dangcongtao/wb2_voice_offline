@@ -8892,8 +8892,8 @@ IR_LEDSend:
 	.string	"IR_LearnToReceive"
 .LASF172:
 	.string	"irTxCfg"
-.LASF63:
-	.string	"IR_RX_SWM"
+.LASF35:
+	.string	"long unsigned int"
 .LASF74:
 	.string	"tailPulse"
 .LASF80:
@@ -8960,16 +8960,16 @@ IR_LEDSend:
 	.string	"IR_RX_RC5"
 .LASF134:
 	.string	"IR_SWMReceiveData"
-.LASF35:
-	.string	"long unsigned int"
+.LASF178:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std"
 .LASF124:
 	.string	"length"
 .LASF37:
 	.string	"char"
 .LASF123:
 	.string	"mode"
-.LASF178:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std"
+.LASF63:
+	.string	"IR_RX_SWM"
 .LASF0:
 	.string	"BL_AHB_SLAVE1_GLB"
 .LASF169:

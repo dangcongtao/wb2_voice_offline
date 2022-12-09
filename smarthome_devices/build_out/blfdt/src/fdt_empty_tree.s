@@ -642,6 +642,8 @@ fdt_create_empty_tree:
 	.section	.debug_str,"MS",@progbits,1
 .LASF4:
 	.string	"long long int"
+.LASF19:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/blfdt"
 .LASF0:
 	.string	"unsigned int"
 .LASF5:
@@ -670,8 +672,6 @@ fdt_create_empty_tree:
 	.string	"fdt_open_into"
 .LASF3:
 	.string	"long int"
-.LASF19:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/blfdt"
 .LASF6:
 	.string	"short unsigned int"
 .LASF1:

@@ -4408,6 +4408,8 @@ _fsymf_info_hosalhal_gpio:
 	.string	"valid"
 .LASF64:
 	.string	"_get_gpio_max"
+.LASF83:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF31:
 	.string	"_blog_info"
 .LASF57:
@@ -4516,8 +4518,6 @@ _fsymf_info_hosalhal_gpio:
 	.string	"unsigned int"
 .LASF17:
 	.string	"BLOG_LEVEL_INFO"
-.LASF83:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF44:
 	.string	"time"
 .LASF14:

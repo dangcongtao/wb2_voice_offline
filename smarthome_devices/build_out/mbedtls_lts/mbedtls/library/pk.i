@@ -1,5 +1,5 @@
 # 1 "/home/dungnt98/Ai-Thinker-WB2/components/security/mbedtls_lts/mbedtls/library/pk.c"
-# 1 "/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts//"
+# 1 "/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts//"
 # 1 "<built-in>"
 # 1 "<command-line>"
 # 1 "/home/dungnt98/Ai-Thinker-WB2/components/security/mbedtls_lts/mbedtls/library/pk.c"

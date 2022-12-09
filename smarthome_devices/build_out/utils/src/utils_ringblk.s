@@ -6662,6 +6662,8 @@ __func__.9:
 	.string	"vTaskExitCritical"
 .LASF5:
 	.string	"long int"
+.LASF31:
+	.string	"buf_size"
 .LASF68:
 	.string	"queue"
 .LASF87:
@@ -6706,12 +6708,12 @@ __func__.9:
 	.string	"last_block"
 .LASF14:
 	.string	"RBB_BLK_UNUSED"
-.LASF84:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/utils"
+.LASF27:
+	.string	"blocks"
 .LASF60:
 	.string	"tail"
-.LASF31:
-	.string	"buf_size"
+.LASF84:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/utils"
 .LASF83:
 	.string	"/home/dungnt98/Ai-Thinker-WB2/components/utils/src/utils_ringblk.c"
 .LASF52:
@@ -6774,8 +6776,6 @@ __func__.9:
 	.string	"uint8_t"
 .LASF15:
 	.string	"RBB_BLK_INITED"
-.LASF27:
-	.string	"blocks"
 .LASF70:
 	.string	"utils_slist_next"
 .LASF74:

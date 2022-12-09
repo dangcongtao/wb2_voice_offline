@@ -1374,10 +1374,10 @@ bannder_shadow_bl602:
 	.string	"misa"
 .LASF22:
 	.string	"bl_chip_banner"
-.LASF32:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF5:
 	.string	"short unsigned int"
+.LASF32:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF14:
 	.string	"desc"
 .LASF13:

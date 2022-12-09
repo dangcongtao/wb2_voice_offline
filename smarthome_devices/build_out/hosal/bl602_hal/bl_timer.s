@@ -2035,6 +2035,8 @@ bl_timer_tick_enable:
 	.string	"countMode"
 .LASF123:
 	.string	"timerCh1Cfg"
+.LASF146:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF61:
 	.string	"GPIO_INT0_IRQn"
 .LASF11:
@@ -2197,8 +2199,6 @@ bl_timer_tick_enable:
 	.string	"TIMER_COUNT_PRELOAD"
 .LASF150:
 	.string	"bl_timer_delay_us"
-.LASF146:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF27:
 	.string	"SEC_CDET_IRQn"
 .LASF9:

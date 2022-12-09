@@ -5092,8 +5092,8 @@ inited:
 	.string	"closedir"
 .LASF36:
 	.string	"ssize_t"
-.LASF160:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/yloop"
+.LASF92:
+	.string	"lseek"
 .LASF25:
 	.string	"uint8_t"
 .LASF109:
@@ -5164,8 +5164,6 @@ inited:
 	.string	"gid_t"
 .LASF139:
 	.string	"event_open"
-.LASF92:
-	.string	"lseek"
 .LASF12:
 	.string	"__int_least64_t"
 .LASF104:
@@ -5248,6 +5246,8 @@ inited:
 	.string	"dlist_del"
 .LASF153:
 	.string	"aos_free"
+.LASF160:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/yloop"
 .LASF134:
 	.string	"event_ioctl"
 .LASF54:

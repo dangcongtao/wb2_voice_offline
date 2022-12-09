@@ -7441,8 +7441,8 @@ _fsymf_info_hosalhosal_adc:
 	.string	"DMA_BURST_SIZE_4"
 .LASF87:
 	.string	"ADC_V18_SEL_1P82V"
-.LASF236:
-	.string	"data_size"
+.LASF309:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF165:
 	.string	"DWidth"
 .LASF16:
@@ -7567,8 +7567,6 @@ _fsymf_info_hosalhosal_adc:
 	.string	"long long int"
 .LASF135:
 	.string	"ADC_DATA_WIDTH_16_WITH_256_AVERAGE"
-.LASF222:
-	.string	"hosal_adc_irq_t"
 .LASF139:
 	.string	"clkDiv"
 .LASF132:
@@ -7759,8 +7757,8 @@ _fsymf_info_hosalhosal_adc:
 	.string	"chan_init_table"
 .LASF155:
 	.string	"ADC_FIFO_Threshold_Type"
-.LASF309:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
+.LASF222:
+	.string	"hosal_adc_irq_t"
 .LASF78:
 	.string	"ADC_CHAN_VABT_HALF"
 .LASF116:
@@ -7795,6 +7793,8 @@ _fsymf_info_hosalhosal_adc:
 	.string	"DMA_INT_ALL"
 .LASF223:
 	.string	"port"
+.LASF236:
+	.string	"data_size"
 .LASF111:
 	.string	"ADC_PGA_GAIN_Type"
 .LASF57:

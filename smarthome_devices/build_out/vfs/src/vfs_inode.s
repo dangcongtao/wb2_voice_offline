@@ -4644,6 +4644,8 @@ inode_rb_tree:
 	.string	"unsigned int"
 .LASF130:
 	.string	"inode_ref"
+.LASF162:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/vfs"
 .LASF64:
 	.string	"st_blksize"
 .LASF131:
@@ -4810,8 +4812,6 @@ inode_rb_tree:
 	.string	"inode_del"
 .LASF89:
 	.string	"file_ops"
-.LASF162:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/vfs"
 .LASF88:
 	.string	"file_ops_t"
 .LASF154:

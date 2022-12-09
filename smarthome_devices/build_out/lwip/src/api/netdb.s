@@ -3428,8 +3428,6 @@ s_phostent_addr.3:
 	.string	"ERR_RST"
 .LASF19:
 	.string	"uint32_t"
-.LASF139:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
 .LASF12:
 	.string	"__uintptr_t"
 .LASF15:
@@ -3506,6 +3504,8 @@ s_phostent_addr.3:
 	.string	"ai_canonname"
 .LASF118:
 	.string	"h_errnop"
+.LASF139:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF65:
 	.string	"MEMP_PBUF"
 .LASF117:

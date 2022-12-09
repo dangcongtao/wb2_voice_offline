@@ -1574,12 +1574,12 @@ utils_hmac_sha1_fast:
 	.string	"GNU C99 10.2.0 -march=rv32imfc -mabi=ilp32f -march=rv32imfc -gdwarf -Os -std=gnu99 -ffunction-sections -fdata-sections -fstrict-volatile-bitfields -fcommon -ffreestanding -fno-strict-aliasing"
 .LASF12:
 	.string	"char"
-.LASF39:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/utils"
 .LASF36:
 	.string	"memcpy"
 .LASF18:
 	.string	"BL_SHA256"
+.LASF39:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/utils"
 .LASF27:
 	.string	"output"
 .LASF25:

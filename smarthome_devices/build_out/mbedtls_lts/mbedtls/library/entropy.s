@@ -5825,8 +5825,8 @@ mbedtls_entropy_update_seed_file:
 	.string	"mbedtls_entropy_f_source_ptr"
 .LASF89:
 	.string	"_emergency"
-.LASF175:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
+.LASF10:
+	.string	"uint64_t"
 .LASF157:
 	.string	"mbedtls_entropy_init"
 .LASF154:
@@ -6001,8 +6001,6 @@ mbedtls_entropy_update_seed_file:
 	.string	"mbedtls_entropy_func"
 .LASF133:
 	.string	"_nextf"
-.LASF10:
-	.string	"uint64_t"
 .LASF50:
 	.string	"__tm_mon"
 .LASF148:
@@ -6133,6 +6131,8 @@ mbedtls_entropy_update_seed_file:
 	.string	"_ssize_t"
 .LASF124:
 	.string	"_l64a_buf"
+.LASF175:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 .LASF102:
 	.string	"_sig_func"
 .LASF76:

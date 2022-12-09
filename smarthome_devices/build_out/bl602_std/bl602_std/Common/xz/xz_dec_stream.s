@@ -5026,8 +5026,6 @@ xz_dec_end:
 	.string	"xz_dec_hash"
 .LASF92:
 	.string	"xz_dec_lzma2_end"
-.LASF32:
-	.string	"vli_type"
 .LASF30:
 	.string	"out_pos"
 .LASF103:
@@ -5066,6 +5064,8 @@ xz_dec_end:
 	.string	"SEQ_INDEX_COUNT"
 .LASF43:
 	.string	"SEQ_STREAM_HEADER"
+.LASF104:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std"
 .LASF9:
 	.string	"char"
 .LASF77:
@@ -5080,8 +5080,8 @@ xz_dec_end:
 	.string	"xz_dec_init"
 .LASF69:
 	.string	"index"
-.LASF104:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std"
+.LASF32:
+	.string	"vli_type"
 .LASF23:
 	.string	"XZ_MEMLIMIT_ERROR"
 .LASF100:

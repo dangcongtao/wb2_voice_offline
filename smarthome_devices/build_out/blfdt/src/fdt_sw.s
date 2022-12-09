@@ -7612,8 +7612,6 @@ fdt_finish:
 	.string	"memmove"
 .LASF7:
 	.string	"uint8_t"
-.LASF91:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/blfdt"
 .LASF24:
 	.string	"boot_cpuid_phys"
 .LASF56:
@@ -7622,6 +7620,8 @@ fdt_finish:
 	.string	"fdt32_ld"
 .LASF51:
 	.string	"fdt_add_reservemap_entry"
+.LASF91:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/blfdt"
 .LASF68:
 	.string	"fdt_offset_ptr_"
 .LASF84:

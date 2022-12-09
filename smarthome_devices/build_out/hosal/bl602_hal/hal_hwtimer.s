@@ -1265,8 +1265,6 @@ _fsymf_info_hosalhal_hwtimer:
 	.string	"hw_timer_t"
 .LASF44:
 	.string	"xTimerCreate"
-.LASF48:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF0:
 	.string	"unsigned int"
 .LASF36:
@@ -1291,6 +1289,8 @@ _fsymf_info_hosalhal_hwtimer:
 	.string	"short unsigned int"
 .LASF42:
 	.string	"handle"
+.LASF48:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF18:
 	.string	"BLOG_LEVEL_ERROR"
 .LASF39:

@@ -682,8 +682,6 @@ lwip_if_nametoindex:
 	.string	"s8_t"
 .LASF10:
 	.string	"unsigned int"
-.LASF25:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
 .LASF17:
 	.string	"lwip_if_nametoindex"
 .LASF24:
@@ -726,6 +724,8 @@ lwip_if_nametoindex:
 	.string	"errno"
 .LASF14:
 	.string	"u8_t"
+.LASF25:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF4:
 	.string	"short int"
 .LASF23:

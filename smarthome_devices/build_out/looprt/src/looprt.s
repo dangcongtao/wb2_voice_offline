@@ -2842,6 +2842,8 @@ looprt:
 	.string	"handler"
 .LASF107:
 	.string	"bloop_status_dump"
+.LASF61:
+	.string	"handle"
 .LASF99:
 	.string	"bloop_handler_register"
 .LASF17:
@@ -2916,8 +2918,8 @@ looprt:
 	.string	"idx_task"
 .LASF1:
 	.string	"unsigned char"
-.LASF61:
-	.string	"handle"
+.LASF115:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/looprt"
 .LASF72:
 	.string	"timer_dlist"
 .LASF73:
@@ -2954,8 +2956,6 @@ looprt:
 	.string	"evt_type_map"
 .LASF117:
 	.string	"bloop_handler_sys"
-.LASF115:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/looprt"
 .LASF11:
 	.string	"char"
 .LASF4:

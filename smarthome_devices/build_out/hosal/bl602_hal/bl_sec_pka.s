@@ -7352,8 +7352,6 @@ pka_mutex:
 	.string	"a_words"
 .LASF74:
 	.string	"cleanup"
-.LASF127:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF119:
 	.string	"mbedtls_mpi_sub_mpi"
 .LASF63:
@@ -7362,6 +7360,8 @@ pka_mutex:
 	.string	"e_words"
 .LASF123:
 	.string	"GLB_Set_PKA_CLK_Sel"
+.LASF127:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF20:
 	.string	"xSTATIC_LIST"
 .LASF100:

@@ -5557,8 +5557,6 @@ _sys_errno:
 	.string	"_link_r"
 .LASF86:
 	.string	"__sdidinit"
-.LASF140:
-	.string	"gid_t"
 .LASF145:
 	.string	"st_ino"
 .LASF197:
@@ -5625,8 +5623,8 @@ _sys_errno:
 	.string	"__gid_t"
 .LASF66:
 	.string	"_write"
-.LASF9:
-	.string	"__uint32_t"
+.LASF140:
+	.string	"gid_t"
 .LASF192:
 	.string	"_path"
 .LASF174:
@@ -5681,6 +5679,8 @@ _sys_errno:
 	.string	"_maxwds"
 .LASF118:
 	.string	"_l64a_buf"
+.LASF225:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/newlibc"
 .LASF71:
 	.string	"_blksize"
 .LASF39:
@@ -5707,8 +5707,8 @@ _sys_errno:
 	.string	"_cvtbuf"
 .LASF5:
 	.string	"unsigned char"
-.LASF225:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/newlibc"
+.LASF9:
+	.string	"__uint32_t"
 .LASF188:
 	.string	"_open_r"
 .LASF120:

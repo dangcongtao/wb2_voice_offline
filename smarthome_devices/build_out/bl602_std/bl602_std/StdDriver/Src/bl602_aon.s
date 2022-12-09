@@ -2144,6 +2144,8 @@ AON_Set_LDO11_SOC_Sstart_Delay:
 	.string	"TIMEOUT"
 .LASF21:
 	.string	"AON_Power_On_SFReg"
+.LASF40:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std"
 .LASF3:
 	.string	"long int"
 .LASF10:
@@ -2166,8 +2168,6 @@ AON_Set_LDO11_SOC_Sstart_Delay:
 	.string	"tmpVal"
 .LASF26:
 	.string	"AON_Power_Off_BG"
-.LASF40:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std"
 .LASF38:
 	.string	"GNU C99 10.2.0 -march=rv32imfc -mabi=ilp32f -march=rv32imfc -gdwarf -Os -std=gnu99 -ffunction-sections -fdata-sections -fstrict-volatile-bitfields -fcommon -ffreestanding -fno-strict-aliasing"
 .LASF9:

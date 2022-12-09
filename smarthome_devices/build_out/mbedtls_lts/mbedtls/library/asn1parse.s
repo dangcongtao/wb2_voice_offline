@@ -4166,6 +4166,8 @@ mbedtls_asn1_find_named_data:
 	.string	"head"
 .LASF42:
 	.string	"/home/dungnt98/Ai-Thinker-WB2/components/security/mbedtls_lts/mbedtls/library/asn1parse.c"
+.LASF43:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 .LASF8:
 	.string	"unsigned int"
 .LASF16:
@@ -4206,8 +4208,6 @@ mbedtls_asn1_find_named_data:
 	.string	"uint32_t"
 .LASF4:
 	.string	"long int"
-.LASF43:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
 .LASF0:
 	.string	"signed char"
 .LASF24:

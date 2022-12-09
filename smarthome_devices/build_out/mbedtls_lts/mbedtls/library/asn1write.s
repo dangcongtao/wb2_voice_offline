@@ -6513,8 +6513,6 @@ mbedtls_asn1_store_named_data:
 	.string	"mbedtls_asn1_write_tag"
 .LASF51:
 	.string	"mbedtls_mpi_write_binary"
-.LASF54:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
 .LASF57:
 	.string	"mbedtls_asn1_write_len"
 .LASF47:
@@ -6567,6 +6565,8 @@ mbedtls_asn1_store_named_data:
 	.string	"par_len"
 .LASF11:
 	.string	"char"
+.LASF54:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 .LASF4:
 	.string	"long int"
 .LASF29:

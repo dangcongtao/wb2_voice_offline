@@ -9003,6 +9003,8 @@ inited.0:
 	.string	"HOSAL_FLOW_CONTROL_CTS_RTS"
 .LASF110:
 	.string	"node"
+.LASF272:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/vfs"
 .LASF137:
 	.string	"HOSAL_FLOW_CONTROL_CTS"
 .LASF135:
@@ -9075,8 +9077,8 @@ inited.0:
 	.string	"HOSAL_DATA_WIDTH_6BIT"
 .LASF244:
 	.string	"aos_register_driver"
-.LASF272:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/vfs"
+.LASF115:
+	.string	"pollfd"
 .LASF213:
 	.string	"uart_dev"
 .LASF14:
@@ -9099,8 +9101,6 @@ inited.0:
 	.string	"aos_hdl_t"
 .LASF9:
 	.string	"long long int"
-.LASF231:
-	.string	"__uart_tx_irq"
 .LASF219:
 	.string	"waitr_arg"
 .LASF197:
@@ -9257,8 +9257,8 @@ inited.0:
 	.string	"short int"
 .LASF160:
 	.string	"mode"
-.LASF115:
-	.string	"pollfd"
+.LASF231:
+	.string	"__uart_tx_irq"
 .LASF31:
 	.string	"tv_nsec"
 .LASF99:

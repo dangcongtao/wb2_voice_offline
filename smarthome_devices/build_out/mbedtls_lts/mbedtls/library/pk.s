@@ -6084,6 +6084,8 @@ CSWTCH.7:
 	.string	"mbedtls_pk_setup"
 .LASF107:
 	.string	"GNU C99 10.2.0 -march=rv32imfc -mabi=ilp32f -march=rv32imfc -gdwarf -Os -std=gnu99 -ffunction-sections -fdata-sections -fstrict-volatile-bitfields -fcommon -ffreestanding -fno-strict-aliasing"
+.LASF109:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 .LASF76:
 	.string	"olen"
 .LASF22:
@@ -6158,8 +6160,6 @@ CSWTCH.7:
 	.string	"MBEDTLS_PK_DEBUG_NONE"
 .LASF27:
 	.string	"padding"
-.LASF71:
-	.string	"mbedtls_pk_check_pair"
 .LASF9:
 	.string	"MBEDTLS_MD_NONE"
 .LASF39:
@@ -6240,8 +6240,8 @@ CSWTCH.7:
 	.string	"mbedtls_pk_encrypt"
 .LASF54:
 	.string	"encrypt_func"
-.LASF109:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
+.LASF71:
+	.string	"mbedtls_pk_check_pair"
 .LASF80:
 	.string	"mbedtls_pk_decrypt"
 .LASF61:

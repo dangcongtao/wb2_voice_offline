@@ -8108,6 +8108,8 @@ _fsymf_info_hosalhosal_uart:
 	.string	"dstPeriph"
 .LASF170:
 	.string	"transfLength"
+.LASF274:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF251:
 	.string	"bl_uart_int_tx_enable"
 .LASF246:
@@ -8416,8 +8418,6 @@ _fsymf_info_hosalhosal_uart:
 	.string	"name"
 .LASF177:
 	.string	"srcPeriph"
-.LASF274:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF211:
 	.string	"hosal_uart_init_only_tx"
 .LASF203:

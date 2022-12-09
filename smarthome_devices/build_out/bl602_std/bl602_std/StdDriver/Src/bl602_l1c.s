@@ -1790,6 +1790,8 @@ L1C_BMX_TIMEOUT_INT_Callback_Install:
 	.string	"L1C_BMX_BusErrResponse_Enable"
 .LASF13:
 	.string	"ERROR"
+.LASF21:
+	.string	"intCallback_Type"
 .LASF48:
 	.string	"tmpVal"
 .LASF35:
@@ -1816,8 +1818,8 @@ L1C_BMX_TIMEOUT_INT_Callback_Install:
 	.string	"disableVal"
 .LASF61:
 	.string	"/home/dungnt98/Ai-Thinker-WB2/components/platform/soc/bl602/bl602_std/bl602_std/StdDriver/Src/bl602_l1c.c"
-.LASF21:
-	.string	"intCallback_Type"
+.LASF62:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std"
 .LASF30:
 	.string	"L1C_BMX_BUS_ERR_TRUSTZONE_DECODE"
 .LASF6:
@@ -1866,8 +1868,6 @@ L1C_BMX_TIMEOUT_INT_Callback_Install:
 	.string	"cacheEn"
 .LASF24:
 	.string	"L1C_BMX_ARB_RANDOM"
-.LASF62:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std"
 .LASF17:
 	.string	"ENABLE"
 .LASF60:

@@ -12437,8 +12437,6 @@ fdt_pack:
 	.string	"uint8_t"
 .LASF61:
 	.string	"oldlen"
-.LASF124:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/blfdt"
 .LASF23:
 	.string	"boot_cpuid_phys"
 .LASF113:
@@ -12449,6 +12447,8 @@ fdt_pack:
 	.string	"err_"
 .LASF48:
 	.string	"endoffset"
+.LASF124:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/blfdt"
 .LASF41:
 	.string	"newsize"
 .LASF91:

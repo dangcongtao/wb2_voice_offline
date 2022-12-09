@@ -6215,6 +6215,8 @@ cmds_user:
 	.section	.debug_line,"",@progbits
 .Ldebug_line0:
 	.section	.debug_str,"MS",@progbits,1
+.LASF84:
+	.string	"/home/dungnt98/Ai-Thinker-WB2/components/utils/src/test/test_utils_ringblk.c"
 .LASF22:
 	.string	"RBB_BLK_GET"
 .LASF57:
@@ -6319,8 +6321,6 @@ cmds_user:
 	.string	"blocks"
 .LASF10:
 	.string	"unsigned int"
-.LASF85:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/utils"
 .LASF41:
 	.string	"argv"
 .LASF68:
@@ -6341,8 +6341,8 @@ cmds_user:
 	.string	"put_thread"
 .LASF27:
 	.string	"list"
-.LASF84:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/components/utils/src/test/test_utils_ringblk.c"
+.LASF85:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/utils"
 .LASF66:
 	.string	"memcmp"
 .LASF64:

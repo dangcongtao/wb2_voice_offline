@@ -4659,14 +4659,14 @@ fdt_move:
 	.string	"fdt_next_node"
 .LASF6:
 	.string	"uint8_t"
-.LASF61:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/blfdt"
 .LASF21:
 	.string	"boot_cpuid_phys"
 .LASF63:
 	.string	"fdt32_ld"
 .LASF29:
 	.string	"err_"
+.LASF61:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/blfdt"
 .LASF53:
 	.string	"fdt_offset_ptr_"
 .LASF43:

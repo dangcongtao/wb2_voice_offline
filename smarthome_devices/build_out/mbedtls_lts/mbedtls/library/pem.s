@@ -4630,6 +4630,8 @@ mbedtls_pem_free:
 	.string	"MBEDTLS_CIPHER_CAMELLIA_128_ECB"
 .LASF23:
 	.string	"MBEDTLS_CIPHER_AES_256_ECB"
+.LASF133:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 .LASF53:
 	.string	"MBEDTLS_CIPHER_DES_EDE_ECB"
 .LASF130:
@@ -4804,8 +4806,6 @@ mbedtls_pem_free:
 	.string	"MBEDTLS_CIPHER_AES_192_CTR"
 .LASF116:
 	.string	"strstr"
-.LASF133:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
 .LASF101:
 	.string	"enc_alg"
 .LASF120:

@@ -3600,6 +3600,8 @@ adc_ops:
 	.string	"aos_dir_t"
 .LASF11:
 	.string	"unsigned int"
+.LASF155:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/vfs"
 .LASF55:
 	.string	"st_blksize"
 .LASF104:
@@ -3754,8 +3756,6 @@ adc_ops:
 	.string	"file_ops"
 .LASF149:
 	.string	"aos_mutex_free"
-.LASF155:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/vfs"
 .LASF75:
 	.string	"file_ops_t"
 .LASF132:

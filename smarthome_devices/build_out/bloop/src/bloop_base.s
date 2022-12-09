@@ -7358,8 +7358,6 @@ bloop_status_dump:
 	.string	"use_auto_free"
 .LASF14:
 	.string	"uint8_t"
-.LASF142:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bloop"
 .LASF118:
 	.string	"INIT_UTILS_DLIST_HEAD"
 .LASF124:
@@ -7480,6 +7478,8 @@ bloop_status_dump:
 	.string	"count_triggered"
 .LASF0:
 	.string	"signed char"
+.LASF142:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bloop"
 .LASF116:
 	.string	"utils_dlist_empty"
 .LASF3:

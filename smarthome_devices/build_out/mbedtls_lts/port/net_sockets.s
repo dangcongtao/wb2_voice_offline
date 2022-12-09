@@ -5313,8 +5313,6 @@ mbedtls_net_free:
 	.string	"lwip_fcntl"
 .LASF15:
 	.string	"__suseconds_t"
-.LASF112:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
 .LASF115:
 	.string	"net_would_block"
 .LASF63:
@@ -5515,6 +5513,8 @@ mbedtls_net_free:
 	.string	"uint8_t"
 .LASF106:
 	.string	"lwip_getaddrinfo"
+.LASF112:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 .LASF46:
 	.string	"s2_len"
 .LASF44:

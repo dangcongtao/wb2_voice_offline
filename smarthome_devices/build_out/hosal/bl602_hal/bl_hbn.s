@@ -2190,8 +2190,6 @@ _fsymf_info_hosalbl_hbn:
 	.string	"qpiFastReadCmd"
 .LASF51:
 	.string	"qpiFrQioDmyClk"
-.LASF137:
-	.string	"BLOG_LEVEL_ALL"
 .LASF145:
 	.string	"_hbn_type"
 .LASF128:
@@ -2220,12 +2218,14 @@ _fsymf_info_hosalbl_hbn:
 	.string	"burstWrapData"
 .LASF109:
 	.string	"HBN_LDO_LEVEL_0P85V"
-.LASF162:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
+.LASF137:
+	.string	"BLOG_LEVEL_ALL"
 .LASF59:
 	.string	"busyBit"
 .LASF62:
 	.string	"qeWriteRegLen"
+.LASF162:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF151:
 	.string	"_fsymc_info_hosal"
 .LASF91:

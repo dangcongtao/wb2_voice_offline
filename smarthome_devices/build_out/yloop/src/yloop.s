@@ -5017,6 +5017,8 @@ g_main_ctx:
 	.string	"action"
 .LASF17:
 	.string	"aos_call_t"
+.LASF87:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/yloop"
 .LASF23:
 	.string	"revents"
 .LASF51:
@@ -5111,8 +5113,6 @@ g_main_ctx:
 	.string	"events"
 .LASF58:
 	.string	"loop"
-.LASF87:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/yloop"
 .LASF13:
 	.string	"prev"
 .LASF78:

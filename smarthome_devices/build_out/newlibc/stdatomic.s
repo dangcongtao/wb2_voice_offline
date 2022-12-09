@@ -13094,8 +13094,6 @@ __sync_val_compare_and_swap_8:
 	.string	"__atomic_exchange_8"
 .LASF38:
 	.string	"__atomic_load_8"
-.LASF34:
-	.string	"weak"
 .LASF86:
 	.string	"__atomic_store_8"
 .LASF4:
@@ -13158,8 +13156,8 @@ __sync_val_compare_and_swap_8:
 	.string	"__sync_fetch_and_add_4"
 .LASF8:
 	.string	"short unsigned int"
-.LASF85:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/newlibc"
+.LASF34:
+	.string	"weak"
 .LASF18:
 	.string	"_Bool"
 .LASF10:
@@ -13168,6 +13166,8 @@ __sync_val_compare_and_swap_8:
 	.string	"__atomic_fetch_and_2"
 .LASF66:
 	.string	"__atomic_fetch_and_4"
+.LASF85:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/newlibc"
 .LASF28:
 	.string	"__atomic_fetch_and_8"
 .LASF33:

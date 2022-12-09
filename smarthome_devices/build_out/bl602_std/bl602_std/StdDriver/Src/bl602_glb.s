@@ -13099,6 +13099,8 @@ GLB_GPIO_INT0_Callback_Install:
 	.string	"GLB_Platform_Wakeup_Disable"
 .LASF356:
 	.string	"GLB_Set_SF_CLK"
+.LASF387:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std"
 .LASF246:
 	.string	"GLB_PLL_CLK_192M"
 .LASF227:
@@ -13173,8 +13175,6 @@ GLB_GPIO_INT0_Callback_Install:
 	.string	"GLB_ROOT_CLK_Type"
 .LASF130:
 	.string	"PDS_PLL_CLK_160M"
-.LASF387:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std"
 .LASF325:
 	.string	"emType"
 .LASF248:

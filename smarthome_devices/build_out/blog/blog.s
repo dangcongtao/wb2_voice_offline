@@ -5221,8 +5221,6 @@ cmds_user:
 	.string	"_ld_bl_static_blogfile_code_end"
 .LASF36:
 	.string	"width"
-.LASF78:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/blog"
 .LASF62:
 	.string	"info_p"
 .LASF45:
@@ -5249,6 +5247,8 @@ cmds_user:
 	.string	"snprintf"
 .LASF17:
 	.string	"name"
+.LASF54:
+	.string	"left"
 .LASF55:
 	.string	"right"
 .LASF1:
@@ -5291,8 +5291,8 @@ cmds_user:
 	.string	"function"
 .LASF70:
 	.string	"strlen"
-.LASF54:
-	.string	"left"
+.LASF78:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/blog"
 .LASF74:
 	.string	"strcpy"
 .LASF43:

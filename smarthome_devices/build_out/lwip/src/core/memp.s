@@ -3992,6 +3992,8 @@ memp_memory_RAW_PCB_base:
 	.string	"unsigned int"
 .LASF30:
 	.string	"MEMP_IGMP_GROUP"
+.LASF154:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF8:
 	.string	"long unsigned int"
 .LASF50:
@@ -4108,8 +4110,6 @@ memp_memory_RAW_PCB_base:
 	.string	"LWIP_NETIF_CLIENT_DATA_INDEX_DHCP"
 .LASF90:
 	.string	"memp_stats_TCP_PCB"
-.LASF154:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
 .LASF97:
 	.string	"memp_memory_TCP_SEG_base"
 .LASF62:

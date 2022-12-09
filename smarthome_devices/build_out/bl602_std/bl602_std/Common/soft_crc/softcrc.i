@@ -1,5 +1,5 @@
 # 1 "/home/dungnt98/Ai-Thinker-WB2/components/platform/soc/bl602/bl602_std/bl602_std/Common/soft_crc/softcrc.c"
-# 1 "/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std//"
+# 1 "/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std//"
 # 1 "<built-in>"
 # 1 "<command-line>"
 # 1 "/home/dungnt98/Ai-Thinker-WB2/components/platform/soc/bl602/bl602_std/bl602_std/Common/soft_crc/softcrc.c"

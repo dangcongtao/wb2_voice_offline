@@ -3056,8 +3056,6 @@ supported_init:
 	.string	"MBEDTLS_CIPHER_AES_192_OFB"
 .LASF140:
 	.string	"ciphersuite"
-.LASF145:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
 .LASF47:
 	.string	"MBEDTLS_CIPHER_CAMELLIA_192_ECB"
 .LASF74:
@@ -3312,6 +3310,8 @@ supported_init:
 	.string	"MBEDTLS_PK_NONE"
 .LASF125:
 	.string	"flags"
+.LASF145:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 .LASF31:
 	.string	"MBEDTLS_CIPHER_AES_128_ECB"
 .LASF119:

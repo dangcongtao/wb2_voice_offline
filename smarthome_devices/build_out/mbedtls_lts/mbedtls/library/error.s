@@ -9231,8 +9231,6 @@ mbedtls_strerror:
 	.string	"short unsigned int"
 .LASF0:
 	.string	"signed char"
-.LASF17:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
 .LASF12:
 	.string	"memset"
 .LASF2:
@@ -9241,4 +9239,6 @@ mbedtls_strerror:
 	.string	"unsigned int"
 .LASF15:
 	.string	"GNU C99 10.2.0 -march=rv32imfc -mabi=ilp32f -march=rv32imfc -gdwarf -Os -std=gnu99 -ffunction-sections -fdata-sections -fstrict-volatile-bitfields -fcommon -ffreestanding -fno-strict-aliasing"
+.LASF17:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 	.ident	"GCC: (SiFive GCC-Metal 10.2.0-2020.12.8) 10.2.0"

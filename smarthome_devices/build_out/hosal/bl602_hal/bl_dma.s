@@ -7293,8 +7293,6 @@ _fsymf_info_hosalbl_dma:
 	.string	"interr_flag"
 .LASF49:
 	.string	"UART1_IRQn"
-.LASF220:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF113:
 	.string	"dstPeriph"
 .LASF97:
@@ -7331,6 +7329,8 @@ _fsymf_info_hosalbl_dma:
 	.string	"BLOG_LEVEL_ALL"
 .LASF1:
 	.string	"unsigned char"
+.LASF220:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF211:
 	.string	"xPortGetFreeHeapSize"
 .LASF208:

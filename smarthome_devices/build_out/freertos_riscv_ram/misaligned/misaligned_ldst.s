@@ -2872,6 +2872,8 @@ csrw mstatus, a3
 	.string	"long long unsigned int"
 .LASF5:
 	.string	"uint8_t"
+.LASF39:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/freertos_riscv_ram"
 .LASF4:
 	.string	"int32_t"
 .LASF3:
@@ -2884,8 +2886,6 @@ csrw mstatus, a3
 	.string	"value"
 .LASF26:
 	.string	"__tmp"
-.LASF39:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/freertos_riscv_ram"
 .LASF1:
 	.string	"short int"
 .LASF31:

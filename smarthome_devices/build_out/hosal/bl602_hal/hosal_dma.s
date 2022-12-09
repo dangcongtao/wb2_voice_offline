@@ -3795,8 +3795,6 @@ _fsymf_info_hosalhosal_dma:
 	.string	"priv"
 .LASF57:
 	.string	"UART1_IRQn"
-.LASF152:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF13:
 	.string	"used"
 .LASF43:
@@ -3923,6 +3921,8 @@ _fsymf_info_hosalhosal_dma:
 	.string	"BLOG_LEVEL_WARN"
 .LASF154:
 	.string	"hosal_dma_chan_stop"
+.LASF152:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF79:
 	.string	"HBN_OUT1_IRQn"
 .LASF148:

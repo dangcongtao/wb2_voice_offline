@@ -3829,6 +3829,8 @@ __Interrupt_Handlers:
 	.string	"I2C_IRQn"
 .LASF100:
 	.string	"FreeRTOS_Interrupt_Handler"
+.LASF111:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std"
 .LASF75:
 	.string	"uint8_t"
 .LASF64:
@@ -3841,8 +3843,6 @@ __Interrupt_Handlers:
 	.string	"BL602_MemCpy_Fast"
 .LASF87:
 	.string	"pdst"
-.LASF111:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std"
 .LASF60:
 	.string	"BLE_IRQn"
 .LASF55:

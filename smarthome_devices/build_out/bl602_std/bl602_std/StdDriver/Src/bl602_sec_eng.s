@@ -24735,6 +24735,8 @@ CSWTCH.118:
 	.string	"BL_Mask_Type"
 .LASF80:
 	.string	"SEC_ENG_PKA_OP_MADD"
+.LASF290:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std"
 .LASF115:
 	.string	"rsvd"
 .LASF233:
@@ -24947,8 +24949,6 @@ CSWTCH.118:
 	.string	"UNMASK"
 .LASF6:
 	.string	"long unsigned int"
-.LASF290:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std"
 .LASF137:
 	.string	"status"
 .LASF23:

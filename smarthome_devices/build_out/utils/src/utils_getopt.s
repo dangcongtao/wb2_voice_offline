@@ -1183,14 +1183,14 @@ utils_getopt:
 	.string	"GNU C99 10.2.0 -march=rv32imfc -mabi=ilp32f -march=rv32imfc -gdwarf -Os -std=gnu99 -ffunction-sections -fdata-sections -fstrict-volatile-bitfields -fcommon -ffreestanding -fno-strict-aliasing"
 .LASF9:
 	.string	"char"
-.LASF23:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/utils"
 .LASF26:
 	.string	"printf"
 .LASF18:
 	.string	"optchar"
 .LASF2:
 	.string	"short int"
+.LASF23:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/utils"
 .LASF16:
 	.string	"argv"
 .LASF4:

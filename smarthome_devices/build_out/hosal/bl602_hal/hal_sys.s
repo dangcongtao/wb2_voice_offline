@@ -2293,8 +2293,6 @@ capout_static.0:
 	.string	"ROM_API_INDEX_PDS_Disable_PLL_All_Clks"
 .LASF16:
 	.string	"ROM_API_INDEX_VERSION"
-.LASF232:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF120:
 	.string	"ROM_API_INDEX_SFlash_Chip_Erase"
 .LASF25:
@@ -2309,6 +2307,8 @@ capout_static.0:
 	.string	"ROM_API_INDEX_SFlash_GetUniqueId"
 .LASF175:
 	.string	"ROM_API_INDEX_SF_Ctrl_Get_Clock_Delay"
+.LASF232:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF62:
 	.string	"ROM_API_INDEX_GLB_Set_PKA_CLK_Sel"
 .LASF162:

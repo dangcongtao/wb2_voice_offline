@@ -729,6 +729,8 @@ malloced:
 	.string	"long long unsigned int"
 .LASF5:
 	.string	"__uint8_t"
+.LASF19:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std"
 .LASF18:
 	.string	"/home/dungnt98/Ai-Thinker-WB2/components/platform/soc/bl602/bl602_std/bl602_std/Common/xz/xz_port.c"
 .LASF12:
@@ -753,8 +755,6 @@ malloced:
 	.string	"size"
 .LASF2:
 	.string	"short int"
-.LASF19:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std"
 .LASF17:
 	.string	"GNU C99 10.2.0 -march=rv32imfc -mabi=ilp32f -march=rv32imfc -gdwarf -Os -std=gnu99 -ffunction-sections -fdata-sections -fstrict-volatile-bitfields -fcommon -ffreestanding -fno-strict-aliasing"
 .LASF14:

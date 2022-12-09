@@ -4435,8 +4435,8 @@ i2cIntCbfArra:
 	.section	.debug_line,"",@progbits
 .Ldebug_line0:
 	.section	.debug_str,"MS",@progbits,1
-.LASF82:
-	.string	"I2C_IsBusy"
+.LASF103:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std"
 .LASF65:
 	.string	"slaveAddr"
 .LASF95:
@@ -4515,6 +4515,8 @@ i2cIntCbfArra:
 	.string	"BL_AHB_SLAVE1_SPI"
 .LASF41:
 	.string	"BL_Err_Type"
+.LASF82:
+	.string	"I2C_IsBusy"
 .LASF88:
 	.string	"I2C_SetPrd"
 .LASF4:
@@ -4631,8 +4633,6 @@ i2cIntCbfArra:
 	.string	"BL_AHB_SLAVE1_CKS"
 .LASF91:
 	.string	"I2C_Init"
-.LASF103:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std"
 .LASF80:
 	.string	"I2C_MasterSendBlocking"
 .LASF63:

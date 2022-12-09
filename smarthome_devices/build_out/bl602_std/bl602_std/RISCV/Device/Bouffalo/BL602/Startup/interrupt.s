@@ -759,6 +759,8 @@ clic_get_cliccfg:
 	.section	.debug_line,"",@progbits
 .Ldebug_line0:
 	.section	.debug_str,"MS",@progbits,1
+.LASF20:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std"
 .LASF17:
 	.string	"clic_disable_interrupt"
 .LASF12:
@@ -775,8 +777,6 @@ clic_get_cliccfg:
 	.string	"long unsigned int"
 .LASF5:
 	.string	"short unsigned int"
-.LASF20:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std"
 .LASF22:
 	.string	"clic_get_intcfg"
 .LASF13:

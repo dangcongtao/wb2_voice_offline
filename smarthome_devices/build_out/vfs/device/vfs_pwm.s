@@ -2934,6 +2934,8 @@ pwm_ops:
 	.string	"aos_dir_t"
 .LASF11:
 	.string	"unsigned int"
+.LASF136:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/vfs"
 .LASF53:
 	.string	"st_blksize"
 .LASF102:
@@ -3082,8 +3084,6 @@ pwm_ops:
 	.string	"f_bfree"
 .LASF74:
 	.string	"file_ops"
-.LASF136:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/vfs"
 .LASF73:
 	.string	"file_ops_t"
 .LASF138:

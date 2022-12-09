@@ -23161,6 +23161,8 @@ CSWTCH.241:
 	.string	"uxTopReadyPriority"
 .LASF260:
 	.string	"pxDelayedList"
+.LASF305:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/freertos_riscv_ram"
 .LASF0:
 	.string	"unsigned int"
 .LASF203:
@@ -23335,8 +23337,6 @@ CSWTCH.241:
 	.string	"uxDummy5"
 .LASF30:
 	.string	"uxDummy9"
-.LASF305:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/freertos_riscv_ram"
 .LASF66:
 	.string	"ucStaticallyAllocated"
 .LASF130:

@@ -4334,6 +4334,8 @@ _fsymf_info_hosalbl_clocktree:
 	.section	.debug_line,"",@progbits
 .Ldebug_line0:
 	.section	.debug_str,"MS",@progbits,1
+.LASF87:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF28:
 	.string	"_blog_info"
 .LASF79:
@@ -4448,8 +4450,6 @@ _fsymf_info_hosalbl_clocktree:
 	.string	"clock_hclk"
 .LASF80:
 	.string	"puts"
-.LASF87:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF65:
 	.string	"clock_i2c_div_get"
 .LASF3:

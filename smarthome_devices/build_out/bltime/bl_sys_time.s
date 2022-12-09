@@ -1247,6 +1247,8 @@ time_synced:
 	.section	.debug_line,"",@progbits
 .Ldebug_line0:
 	.section	.debug_str,"MS",@progbits,1
+.LASF35:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bltime"
 .LASF14:
 	.string	"time_synced"
 .LASF28:
@@ -1275,8 +1277,6 @@ time_synced:
 	.string	"bl_sys_time_update"
 .LASF18:
 	.string	"xTicksToJump"
-.LASF35:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bltime"
 .LASF23:
 	.string	"ms_diff"
 .LASF1:

@@ -1,5 +1,5 @@
 # 1 "/home/dungnt98/Ai-Thinker-WB2/components/stage/blog_testc/blog_testc1_diable.c"
-# 1 "/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/blog_testc//"
+# 1 "/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/blog_testc//"
 # 1 "<built-in>"
 # 1 "<command-line>"
 # 1 "/home/dungnt98/Ai-Thinker-WB2/components/stage/blog_testc/blog_testc1_diable.c"

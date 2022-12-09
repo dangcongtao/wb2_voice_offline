@@ -5290,8 +5290,6 @@ mbedtls_rsa_deduce_crt:
 	.section	.debug_str,"MS",@progbits,1
 .LASF9:
 	.string	"size_t"
-.LASF47:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
 .LASF30:
 	.string	"mbedtls_mpi_sub_int"
 .LASF7:
@@ -5382,6 +5380,8 @@ mbedtls_rsa_deduce_crt:
 	.string	"mbedtls_mpi_mul_mpi"
 .LASF33:
 	.string	"mbedtls_mpi_is_prime_ext"
+.LASF47:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 .LASF20:
 	.string	"mbedtls_rsa_validate_crt"
 .LASF41:

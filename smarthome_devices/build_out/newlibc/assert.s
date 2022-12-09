@@ -704,14 +704,14 @@ abort:
 	.string	"line"
 .LASF8:
 	.string	"unsigned int"
-.LASF21:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/newlibc"
 .LASF5:
 	.string	"long unsigned int"
 .LASF7:
 	.string	"long long unsigned int"
 .LASF11:
 	.string	"__assert_func"
+.LASF21:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/newlibc"
 .LASF1:
 	.string	"unsigned char"
 .LASF9:

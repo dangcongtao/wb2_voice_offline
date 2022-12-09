@@ -3890,6 +3890,8 @@ slipif_poll:
 	.string	"uint32_t"
 .LASF15:
 	.string	"int8_t"
+.LASF147:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF75:
 	.string	"opterr"
 .LASF87:
@@ -4000,8 +4002,6 @@ slipif_poll:
 	.string	"chkerr"
 .LASF130:
 	.string	"slipif_rxbyte_input"
-.LASF72:
-	.string	"memerr"
 .LASF45:
 	.string	"PBUF_LINK"
 .LASF95:
@@ -4080,8 +4080,8 @@ slipif_poll:
 	.string	"unsigned char"
 .LASF8:
 	.string	"__uint32_t"
-.LASF147:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
+.LASF72:
+	.string	"memerr"
 .LASF118:
 	.string	"netif_status_callback_fn"
 .LASF90:

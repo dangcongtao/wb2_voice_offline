@@ -6799,6 +6799,8 @@ aesEnable:
 	.string	"SF_CTRL_DO_MODE"
 .LASF31:
 	.string	"resetCreadCmd"
+.LASF155:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std"
 .LASF90:
 	.string	"timeE32k"
 .LASF146:
@@ -6817,8 +6819,6 @@ aesEnable:
 	.string	"SFlash_GetJedecId"
 .LASF97:
 	.string	"flashCfg"
-.LASF155:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std"
 .LASF123:
 	.string	"XIP_SFlash_Write_Need_Lock_Ext"
 .LASF91:

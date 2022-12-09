@@ -2194,6 +2194,8 @@ sys_log_all_enable:
 	.section	.debug_str,"MS",@progbits,1
 .LASF84:
 	.string	"word"
+.LASF103:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF63:
 	.string	"BL_RST_FATAL_EXCEPTION"
 .LASF90:
@@ -2234,8 +2236,6 @@ sys_log_all_enable:
 	.string	"HBN_LDO_LEVEL_0P80V"
 .LASF14:
 	.string	"BL_AHB_SLAVE1_PDS_HBN_AON_HBNRAM"
-.LASF76:
-	.string	"sys_log_all_enable"
 .LASF65:
 	.string	"BL_RST_SOFTWARE"
 .LASF12:
@@ -2314,8 +2314,8 @@ sys_log_all_enable:
 	.string	"EF_Ctrl_Read_Ldo11VoutSel_Opt"
 .LASF77:
 	.string	"__LD_CONFIG_EM_SEL"
-.LASF103:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
+.LASF76:
+	.string	"sys_log_all_enable"
 .LASF51:
 	.string	"HBN_LDO_LEVEL_1P10V"
 .LASF37:

@@ -3837,16 +3837,18 @@ lwip_chksum_copy:
 	.section	.debug_line,"",@progbits
 .Ldebug_line0:
 	.section	.debug_str,"MS",@progbits,1
-.LASF54:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
+.LASF42:
+	.string	"dest"
 .LASF2:
 	.string	"short int"
 .LASF45:
 	.string	"ip_chksum_pseudo"
-.LASF7:
-	.string	"__uint32_t"
 .LASF4:
 	.string	"__uint16_t"
+.LASF7:
+	.string	"__uint32_t"
+.LASF54:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF50:
 	.string	"memcpy"
 .LASF21:
@@ -3879,8 +3881,6 @@ lwip_chksum_copy:
 	.string	"swapped"
 .LASF39:
 	.string	"proto"
-.LASF42:
-	.string	"dest"
 .LASF1:
 	.string	"unsigned char"
 .LASF27:

@@ -4876,6 +4876,8 @@ raw_pcbs:
 	.string	"old_payload"
 .LASF35:
 	.string	"MEMP_IGMP_GROUP"
+.LASF185:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF33:
 	.string	"MEMP_TCPIP_MSG_API"
 .LASF141:
@@ -5102,8 +5104,6 @@ raw_pcbs:
 	.string	"unsigned char"
 .LASF9:
 	.string	"__uint32_t"
-.LASF185:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
 .LASF29:
 	.string	"MEMP_TCP_SEG"
 .LASF107:

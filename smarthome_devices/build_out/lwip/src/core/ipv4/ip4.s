@@ -6761,8 +6761,6 @@ ip_id:
 	.string	"ip_id"
 .LASF185:
 	.string	"LWIP_IANA_PORT_MDNS"
-.LASF232:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/lwip"
 .LASF116:
 	.string	"netmask"
 .LASF180:
@@ -6927,6 +6925,8 @@ ip_id:
 	.string	"name"
 .LASF69:
 	.string	"MEMP_PBUF"
+.LASF232:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/lwip"
 .LASF28:
 	.string	"ERR_BUF"
 .LASF174:

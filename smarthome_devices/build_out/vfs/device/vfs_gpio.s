@@ -2844,6 +2844,8 @@ gpio_ops:
 	.string	"vfs_gpio_ioctl"
 .LASF11:
 	.string	"unsigned int"
+.LASF143:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/vfs"
 .LASF52:
 	.string	"st_blksize"
 .LASF101:
@@ -2982,8 +2984,6 @@ gpio_ops:
 	.string	"f_bfree"
 .LASF73:
 	.string	"file_ops"
-.LASF143:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/vfs"
 .LASF72:
 	.string	"file_ops_t"
 .LASF128:

@@ -1306,6 +1306,8 @@ _fsymp_info_dts:
 	.string	"long long int"
 .LASF19:
 	.string	"blog_level_t"
+.LASF32:
+	.string	"hal_boot2_partition_addr_active"
 .LASF17:
 	.string	"BLOG_LEVEL_ASSERT"
 .LASF30:
@@ -1313,9 +1315,7 @@ _fsymp_info_dts:
 .LASF41:
 	.string	"_blog_leve"
 .LASF40:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
-.LASF32:
-	.string	"hal_boot2_partition_addr_active"
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF27:
 	.string	"_fsymf_info_hosalhal_board"
 .LASF22:

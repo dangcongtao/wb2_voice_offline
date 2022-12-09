@@ -685,6 +685,8 @@ mbedtls_platform_entropy_poll:
 	.string	"unsigned char"
 .LASF19:
 	.string	"bl_rand"
+.LASF16:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 .LASF5:
 	.string	"long unsigned int"
 .LASF7:
@@ -705,8 +707,6 @@ mbedtls_platform_entropy_poll:
 	.string	"short unsigned int"
 .LASF0:
 	.string	"signed char"
-.LASF16:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
 .LASF13:
 	.string	"rand_buf"
 .LASF2:

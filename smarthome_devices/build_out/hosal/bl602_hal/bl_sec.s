@@ -7602,8 +7602,6 @@ _fsymf_info_hosalbl_sec:
 	.string	"MAC_TX_TRG_IRQn"
 .LASF48:
 	.string	"UART1_IRQn"
-.LASF205:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/hosal"
 .LASF174:
 	.string	"copysize"
 .LASF163:
@@ -7784,6 +7782,8 @@ _fsymf_info_hosalbl_sec:
 	.string	"StaticSemaphore_t"
 .LASF128:
 	.string	"BLOG_LEVEL_WARN"
+.LASF205:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/hosal"
 .LASF70:
 	.string	"HBN_OUT1_IRQn"
 .LASF192:

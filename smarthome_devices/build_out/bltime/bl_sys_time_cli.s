@@ -1498,7 +1498,7 @@ cmds_user:
 .LASF44:
 	.string	"bl_sys_time_cli_init"
 .LASF42:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bltime"
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bltime"
 .LASF13:
 	.string	"uint64_t"
 .LASF32:

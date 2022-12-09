@@ -23534,8 +23534,8 @@ x509_crt_verify_strings:
 	.string	"d_type"
 .LASF194:
 	.string	"mbedtls_x509_crt_verify"
-.LASF258:
-	.string	"mbedtls_x509_crt_parse_der"
+.LASF344:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/mbedtls_lts"
 .LASF24:
 	.string	"char"
 .LASF79:
@@ -23640,8 +23640,6 @@ x509_crt_verify_strings:
 	.string	"mbedtls_pk_ec"
 .LASF117:
 	.string	"sig_md"
-.LASF344:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/mbedtls_lts"
 .LASF250:
 	.string	"mbedtls_x509_crt_parse_file"
 .LASF206:
@@ -23928,6 +23926,8 @@ x509_crt_verify_strings:
 	.string	"x509_crt_verify_strings"
 .LASF216:
 	.string	"x509_crt_check_parent"
+.LASF258:
+	.string	"mbedtls_x509_crt_parse_der"
 .LASF61:
 	.string	"MBEDTLS_ECP_DP_SECP224R1"
 .LASF9:

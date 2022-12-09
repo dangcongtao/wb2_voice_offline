@@ -7298,8 +7298,8 @@ rf_cal_slots:
 	.section	.debug_str,"MS",@progbits,1
 .LASF78:
 	.string	"EF_Ctrl_Write_PowerOffset_Opt"
-.LASF65:
-	.string	"EF_Ctrl_Busy"
+.LASF84:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/bl602_std"
 .LASF35:
 	.string	"countInword"
 .LASF33:
@@ -7380,6 +7380,8 @@ rf_cal_slots:
 	.string	"/home/dungnt98/Ai-Thinker-WB2/components/platform/soc/bl602/bl602_std/bl602_std/StdDriver/Src/bl602_mfg_efuse.c"
 .LASF59:
 	.string	"slots"
+.LASF65:
+	.string	"EF_Ctrl_Busy"
 .LASF47:
 	.string	"mfg_efuse_read_poweroffset"
 .LASF8:
@@ -7460,8 +7462,6 @@ rf_cal_slots:
 	.string	"printf"
 .LASF69:
 	.string	"EF_Ctrl_Write_R0"
-.LASF84:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/bl602_std"
 .LASF48:
 	.string	"step"
 .LASF58:

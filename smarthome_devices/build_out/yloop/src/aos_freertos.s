@@ -6891,8 +6891,6 @@ aos_now_ms:
 	.string	"targ"
 .LASF37:
 	.string	"QueueHandle_t"
-.LASF140:
-	.string	"/home/dungnt98/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/build_out/yloop"
 .LASF143:
 	.string	"aos_queue_free"
 .LASF13:
@@ -7027,6 +7025,8 @@ aos_now_ms:
 	.string	"vTaskSwitchContext"
 .LASF63:
 	.string	"aos_free"
+.LASF140:
+	.string	"/home/dungnt98/ai-wb2-baremetal/smarthome_devices/build_out/yloop"
 .LASF89:
 	.string	"aos_sem_signal_all"
 .LASF1:
