@@ -6,6 +6,8 @@
 #include <task.h>
 
 #include "hardware.h"
+#include "m_button.h"
+#include "m_switch.h"
 
 #define GPIO_BUTTON_PIN 8
 #define GPIO_LED_PIN 12
@@ -13,10 +15,8 @@
 void main(void)
 {
     hw_pcb_sort_pins();
-
-    bl_gpio_enable_input(GPIO_BUTTON_PIN, 0, 0);
-    bl_gpio_enable_output(GPIO_LED_PIN, 0, 0);
-    bl_gpio_output_set(GPIO_LED_PIN, 0);
+    m_switch_init();
+    m_button_init();
 
     for (;;) {
         if (bl_gpio_input_get_value(GPIO_BUTTON_PIN)) {
