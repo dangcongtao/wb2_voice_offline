@@ -29,8 +29,8 @@
 #define SWITCH3 3
 #define SWITCH4 3
 
-extern volatile uint8_t max_number_channel;
-extern volatile uint8_t device_type;
+extern uint32_t max_number_channel;
+extern uint32_t device_type;
 extern uint32_t switch_arr[];
 extern uint32_t button_arr[];
 

@@ -33,7 +33,7 @@ INCLUDE_COMPONENTS += app_config
 INCLUDE_COMPONENTS += application
 INCLUDE_COMPONENTS += hardware
 INCLUDE_COMPONENTS += middle
-INCLUDE_COMPONENTS += thirt_party
+INCLUDE_COMPONENTS += third_party
 
 COMPONENT_ADD_INCLUDEDIRS += app_config
 COMPONENT_ADD_INCLUDEDIRS += application
@@ -41,9 +41,10 @@ COMPONENT_ADD_INCLUDEDIRS += hardware
 COMPONENT_ADD_INCLUDEDIRS += middle/mqtt
 COMPONENT_ADD_INCLUDEDIRS += middle/gpio
 COMPONENT_ADD_INCLUDEDIRS += middle/wifi
+COMPONENT_ADD_INCLUDEDIRS += middle/ota
 COMPONENT_ADD_INCLUDEDIRS += middle/database
-COMPONENT_ADD_INCLUDEDIRS += thirt_party/huytv_button
-COMPONENT_ADD_INCLUDEDIRS += thirt_party/aes
-COMPONENT_ADD_INCLUDEDIRS += thirt_party/cJson
+COMPONENT_ADD_INCLUDEDIRS += third_party/huytv_button
+COMPONENT_ADD_INCLUDEDIRS += third_party/aes
+COMPONENT_ADD_INCLUDEDIRS += third_party/cJson
 
 include $(BL60X_SDK_PATH)/make_scripts_riscv/project.mk

@@ -16,7 +16,7 @@
 #endif
 
 #ifndef APP_BTN_HOLD_SO_LONG_TIME_MS
-#define APP_BTN_HOLD_SO_LONG_TIME_MS             (5000) // +  APP_BTN_ON_HOLD_TIME_FIRE_EVENT_MS  = HOLD SO LONG TIME
+#define APP_BTN_HOLD_SO_LONG_TIME_MS             (5000)
 #endif
 
 

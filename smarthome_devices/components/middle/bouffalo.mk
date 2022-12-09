@@ -5,6 +5,7 @@ COMPONENT_ADD_INCLUDEDIRS += 	database \
 								gpio\
 								mqtt\
 								wifi \
+								ota
 
 ## not be exported to project level
 COMPONENT_PRIV_INCLUDEDIRS :=
@@ -20,6 +21,7 @@ COMPONENT_SRCS := database/m_database.c \
 				  wifi/m_ap_config.c \
 				  wifi/m_http_server.c \
 				  wifi/m_smartconfig.c \
+				  ota/m_ota.c \
 
 				  
 COMPONENT_OBJS := $(patsubst %.c,%.o, $(COMPONENT_SRCS))
@@ -28,6 +30,7 @@ COMPONENT_SRCDIRS := 	database \
 						gpio \
 						mqtt \
 						wifi \
+						ota \
 					 
 
 

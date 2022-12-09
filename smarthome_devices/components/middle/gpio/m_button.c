@@ -1,5 +1,5 @@
 #include "m_button.h"
-#include "../../third_party/huytv_button/app_btn.h"
+#include "app_btn.h"
 #include "hardware.h"
 
 #include <stdint.h>
@@ -25,9 +25,9 @@ void on_button_event_cb(int button_pin, int event, void *data)
 {
     os_trace("Button %d, event %s\r\n", button_pin, event_name[event]);
 
-    if (m_db_get_instance()->_m_device._switch_info.channel_lock_state[button_pin] == 1)
-        if (m_wifi_get_instance().wifi_get_state_cb() == WIFI_DEV_ACTIVE)
-            return;
+    // if (m_db_get_instance()->_m_device._switch_info.channel_lock_state[button_pin] == 1)
+    //     if (m_wifi_get_instance().wifi_get_state_cb() == WIFI_DEV_ACTIVE)
+    //         return;
 
     switch (event)
     {

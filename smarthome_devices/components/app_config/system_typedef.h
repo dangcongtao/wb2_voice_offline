@@ -43,8 +43,8 @@ typedef enum {
 	WSDATIC,
 } device_type_t;
 
-extern volatile uint8_t device_type;
-extern volatile uint8_t max_number_channel;
+extern uint32_t device_type;
+extern uint32_t max_number_channel;
 extern char* gs_dev_type[];
 
 typedef enum {
