@@ -1,21 +1,9 @@
-# Example: Ai-WB2 Series SoC Module GPIO usage
 
-## Hardware Setup and Wiring
+setup environment to work with Ai-WB02 chip:
+-------------------------------------------------------------------
+sudo apt install build-essential python3 python3-pip git screen
+cd ~/ && git clone --recursive https://github.com/Ai-Thinker-Open/Ai-Thinker-WB2.git
+export BL60X_SDK_PATH=~/Ai-Thinker-WB2/
+export CONFIG_CHIP_NAME=BL602
 
-| Ai-WB2 Series SoC Module Pinout | Peripheral Pinout |
-|---|---|
-| IO14 | LED |
-| IO8 | Button |
-| 3V3 | VCC |
-| GND | GND |
 
-## Build and Flash
-
-```shell
-make -j
-make flash
-```
-
-## Run
-
-![img](img/demo.jpg)
