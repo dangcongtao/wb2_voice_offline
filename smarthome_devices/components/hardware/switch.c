@@ -16,7 +16,7 @@ void hw_write_switch_pin(uint8_t index, uint8_t val)
 {
     if (index >= MAX_NUM_SWITCH)
         return;
-    os_trace("hw_write_switch_pin: %d: %d-%d\n", index, switch_arr[index], val);
+    // os_trace("hw_write_switch_pin: %d: %d-%d\n", index, switch_arr[index], val);
 
 
     switch_state[index] = val;
@@ -28,7 +28,7 @@ uint8_t hw_read_switch_pin(uint8_t index)
     if (index >= MAX_NUM_SWITCH)
         return SWITCH_IDLE_LEVEL;
 
-    os_trace("hw_read_switch_pin: %d: %d\n", index, switch_state[index]);
+    // os_trace("hw_read_switch_pin: %d: %d\n", index, switch_state[index]);
 
     return switch_state[index];
 }

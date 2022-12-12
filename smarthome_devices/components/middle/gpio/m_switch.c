@@ -60,15 +60,16 @@ static uint8_t m_control_switch(uint32_t action, uint32_t act_id, uint32_t uid, 
     // m_mqtt_t mqtt_obj = m_mqtt_get_instance();
     // m_database_t *db_instance = m_db_get_instance();
 
+    os_trace("m_control_switch: %d, %d\n", channel_index, state);
+    
     if (channel_index > MAX_NUM_SWITCH)
     {
-        os_trace("channel_index: %d, out of index\n", channel_index);
+        os_trace("channel out of index\n");
         return 0;
     }
 
-    os_trace("m_control_switch: %d, %d\n", channel_index, state);
-
     s_switch_obj._write_switch_cb(channel_index, state);
+    
     set_user_trigger_press_event(channel_index, set_even_release, action);
     //db_instance->_set_current_state_cb(channel_index, state);
 
@@ -104,7 +105,7 @@ static uint8_t m_toggle_switch(uint32_t index, uint32_t act_id, bool respond, bo
 {
     uint8_t pin_value = s_switch_obj._read_switch_cb(index);
 
-    os_trace("m_toggle_switch %d: %d\n", index, pin_value);
+    // os_trace("m_toggle_switch %d: %d\n", index, pin_value);
 
     /* control switch one */
     if (index == APP_SWITCH_ONE)

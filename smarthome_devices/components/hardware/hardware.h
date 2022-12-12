@@ -9,7 +9,7 @@
 #define gpio_get_level      bl_gpio_input_get_value
 #define gpio_set_level      bl_gpio_output_set
 
-#define LED_STT 14
+#define LED_STT 12
 #define LED_STT_ON      0
 #define LED_STT_OFF     1
 
@@ -23,7 +23,7 @@
 #define MAX_NUM_SWITCH          1
 #define SWITCH_IDLE_LEVEL       1
 #define SWITCH_ACTIVE_LEVEL     0
-#define SWITCH1 12
+#define SWITCH1 14
 #define SWITCH2 17
 #define SWITCH3 17
 #define SWITCH4 3
