@@ -21,8 +21,8 @@
 #define BUTTON4 5
 
 #define MAX_NUM_SWITCH          1
-#define SWITCH_IDLE_LEVEL       0
-#define SWITCH_ACTIVE_LEVEL     1
+#define SWITCH_IDLE_LEVEL       1
+#define SWITCH_ACTIVE_LEVEL     0
 #define SWITCH1 12
 #define SWITCH2 17
 #define SWITCH3 17
@@ -30,8 +30,6 @@
 
 extern uint32_t max_number_channel;
 extern uint32_t device_type;
-extern uint32_t switch_arr[];
-extern uint32_t button_arr[];
 
 /* timer */
 void hw_timer_init();

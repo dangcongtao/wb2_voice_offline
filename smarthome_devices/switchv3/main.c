@@ -25,9 +25,9 @@ void main(void)
 
     for (;;) {
         // printf("blink\r\n");
-        bl_gpio_output_set(SWITCH1, 1);
-        vTaskDelay(pdMS_TO_TICKS(500));
-        bl_gpio_output_set(SWITCH1, 0);
+        // bl_gpio_output_set(SWITCH1, 1);
+        // vTaskDelay(pdMS_TO_TICKS(500));
+        // bl_gpio_output_set(SWITCH1, 0);
         vTaskDelay(pdMS_TO_TICKS(500));
     }
 }
