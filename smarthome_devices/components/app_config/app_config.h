@@ -6,7 +6,7 @@
 #include <blog.h>
 
 #define DEBUG_ENABLE    1
-#define os_trace if (DEBUG_ENABLE == 1) blog_info
+#define os_trace if (DEBUG_ENABLE == 1) printf
 
 #if (DEBUG_ENABLE == 1)
     #define USER_LOG_LEVEL	ESP_LOG_VERBOSE
