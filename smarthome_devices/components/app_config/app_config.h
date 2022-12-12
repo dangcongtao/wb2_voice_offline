@@ -3,9 +3,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <blog.h>
 
-#define DEBUG_ENABLE    0
-#define os_trace if (DEBUG_ENABLE == 1) printf
+#define DEBUG_ENABLE    1
+#define os_trace if (DEBUG_ENABLE == 1) blog_info
 
 #if (DEBUG_ENABLE == 1)
     #define USER_LOG_LEVEL	ESP_LOG_VERBOSE

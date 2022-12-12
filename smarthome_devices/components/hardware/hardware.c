@@ -16,7 +16,6 @@ void gpio_set_input(int pin)
     bl_gpio_enable_input(pin, 0, 0);
 }
 
-
 void hw_pcb_sort_pins(void)
 {
     hw_switch_match_pcb();
