@@ -32,7 +32,7 @@ void app_btn_initialize(app_btn_config_t * conf)
     {
         return;
     }
-    
+
     memset(&m_btn_config, 0, sizeof(app_btn_config_t));
     memcpy(&m_btn_config, conf, sizeof(app_btn_config_t));
     m_hw_params = m_btn_config.config;
@@ -40,24 +40,18 @@ void app_btn_initialize(app_btn_config_t * conf)
     for (i = 0; i < m_btn_config.btn_count; i++)
     {
         m_btn_instances[i] = m_hw_params[i].pin;
-        if (m_btn_config.btn_initialize)
+        if (m_btn_config.btn_initialize) {
             m_btn_config.btn_initialize(m_hw_params[i].pin);    // Init GPIO pin as input for btn read
+        }
 
         m_hw_params[i].last_state = m_hw_params[i].idle_level;
         m_btn_data[i] = m_hw_params[i].idle_level;
     }
 }
 
-
-
 void app_btn_scan(void* params)
 {
     uint8_t i = 0;
-
-    if (NULL == m_hw_params)
-    {
-        return;
-    }
 
     if (APP_BTN_MAX_BTN_SUPPORT < m_btn_config.btn_count)
     {

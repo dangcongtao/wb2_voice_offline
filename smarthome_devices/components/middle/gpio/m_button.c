@@ -52,8 +52,8 @@ void on_button_event_cb(int button_pin, int event, void *data)
     {
         /* factory reset database */
         m_led_stt_get_instance()._set_led_stt_smart_config_cb();
-        m_wifi_get_instance().start_smart_config_cb();
-        m_db_get_instance()->_reset_db_cb();
+        // m_wifi_get_instance().start_smart_config_cb();
+        // m_db_get_instance()->_reset_db_cb();
         ignore_event_release[button_pin] = 1;
     }
     break;
@@ -65,7 +65,7 @@ void on_button_event_cb(int button_pin, int event, void *data)
 
         /* factory reset database */
         m_led_stt_get_instance()._set_led_stt_ap_config_cb();
-        m_wifi_get_instance().start_ap_config_cb();
+        // m_wifi_get_instance().start_ap_config_cb();
         ignore_event_release[button_pin] = 2;
     }
     break;
@@ -93,14 +93,14 @@ static void m_button_config(void)
     for (uint32_t i = 0; i < MAX_NUM_BUTTON; i++)
     {
         m_hw_button_initialize_value[i].idle_level = BTN_IDLE_LEVEL;
-        m_hw_button_initialize_value[i].last_state = hw_btn_read(i);
+        m_hw_button_initialize_value[i].last_state = BTN_IDLE_LEVEL;
         m_hw_button_initialize_value[i].pin = i;
     }
 
     app_btn_config_t conf;
     conf.config = &m_hw_button_initialize_value[0];
     conf.btn_count = MAX_NUM_BUTTON;
-    conf.get_tick_cb = hw_get_tick_ms;
+    conf.get_tick_cb = sys_get_tick_ms;
     conf.btn_initialize = hw_button_config;
     conf.btn_read = hw_btn_read;
 
@@ -114,10 +114,11 @@ static void m_button_config(void)
 /* private */
 static void button_scan_task(void *param)
 {
+    os_trace("button_scan_task\n");
     while (true)
     {
-        m_switch_press_release_loop();
-        m_switch_cyclic_timer_loop();
+        // m_switch_press_release_loop();
+        // m_switch_cyclic_timer_loop();
         app_btn_scan(NULL);
 
         vTaskDelay(pdMS_TO_TICKS(50));
@@ -129,6 +130,7 @@ void m_button_init(void)
 {
     m_button_config();
     
+    os_trace("m_button_init\n");
     xTaskCreate(button_scan_task,  /* Function that implements the task. */
                 "led_button_task", /* Text name for the task. */
                 1024 * 3,          /* Stack size in words, not bytes. */
