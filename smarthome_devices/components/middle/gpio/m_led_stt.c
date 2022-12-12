@@ -187,7 +187,7 @@ void m_led_stt_init(void)
     m_start_timer(timeline_status[0]);
 
     /* Test */
-    set_led_stt_not_config();
+    set_led_stt_smart_config();
 }
 
 m_led_stt_t m_led_stt_get_instance(void)

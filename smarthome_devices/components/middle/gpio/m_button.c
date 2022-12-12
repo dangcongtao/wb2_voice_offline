@@ -90,7 +90,7 @@ void on_button_event_cb(int button_pin, int event, void *data)
 static void m_button_config(void)
 {
     static app_btn_hw_config_t m_hw_button_initialize_value[MAX_NUM_BUTTON];
-    for (uint32_t i = 0; i < s_button_obj._btn_max_number_channel; i++)
+    for (uint32_t i = 0; i < MAX_NUM_BUTTON; i++)
     {
         m_hw_button_initialize_value[i].idle_level = BTN_IDLE_LEVEL;
         m_hw_button_initialize_value[i].last_state = hw_btn_read(i);
@@ -99,7 +99,7 @@ static void m_button_config(void)
 
     app_btn_config_t conf;
     conf.config = &m_hw_button_initialize_value[0];
-    conf.btn_count = max_number_channel;
+    conf.btn_count = MAX_NUM_BUTTON;
     conf.get_tick_cb = hw_get_tick_ms;
     conf.btn_initialize = hw_button_config;
     conf.btn_read = hw_btn_read;

@@ -5,16 +5,6 @@ uint32_t button_arr[] = {BUTTON1, BUTTON2, BUTTON3, BUTTON4};
 
 static uint32_t btn_tick_ms = 0;
 
-static void hw_timer_callback(void *args) { btn_tick_ms++; }
-
-uint32_t hw_get_tick_ms(void) { return btn_tick_ms; }
-
-void hw_timer_init(void)
-{
-    // hw_timer_init(hw_timer_callback, NULL);
-    // hw_timer_alarm_us(1000, true); /* 1ms */
-}
-
 void hw_button_config(uint32_t index)
 {
     if (index >= max_number_channel)

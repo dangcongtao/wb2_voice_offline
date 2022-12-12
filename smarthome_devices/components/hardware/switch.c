@@ -5,7 +5,7 @@ uint32_t switch_arr[] = {SWITCH1, SWITCH2, SWITCH3, SWITCH4};
 
 void hw_switch_cfg(uint8_t index)
 {
-    gpio_set_output(index);
+    gpio_set_output(switch_arr[index]);
     gpio_set_level(switch_arr[index], SWITCH_IDLE_LEVEL); /* set relay */
 }
 

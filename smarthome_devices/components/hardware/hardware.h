@@ -12,12 +12,13 @@
 
 #define BTN_IDLE_LEVEL      1
 #define SWITCH_IDLE_LEVEL   0
+#define SWITCH_ACTIVE_LEVEL   0
 #define LED_STT_ON      0
 #define LED_STT_OFF     1
 
 #define LED_STT 12
 
-#define MAX_NUM_BUTTON 4
+#define MAX_NUM_BUTTON 2
 #define BUTTON1 1
 #define BUTTON2 5
 #define BUTTON3 8

@@ -13,9 +13,6 @@
 #include "m_led_stt.h"
 #include "m_database.h"
 
-#define GPIO_BUTTON_PIN 8
-#define GPIO_LED_PIN 12
-
 void main(void)
 {
     bl_uart_init(0, 16, 7, 255, 255, 115200);//set uart baud 115200

@@ -228,7 +228,7 @@ void m_switch_init(void)
     s_switch_obj._control_switch_cb = m_control_switch;
 
     uint32_t i = 0;
-    for (i = 0; i < MAX_NUM_SWITCH; i++)
+    for (i = 0; i < max_number_channel; i++)
         s_switch_obj._switch_cfg_cb(i);
     
     control_switch_default_state();
