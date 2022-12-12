@@ -6,7 +6,8 @@
 #include <blog.h>
 
 #define DEBUG_ENABLE    1
-#define os_trace if (DEBUG_ENABLE == 1) printf
+void m_log(const char *fmt, ...);
+#define os_trace if (DEBUG_ENABLE == 1) m_log
 
 #if (DEBUG_ENABLE == 1)
     #define USER_LOG_LEVEL	ESP_LOG_VERBOSE
