@@ -12,6 +12,7 @@ COMPONENT_PRIV_INCLUDEDIRS :=
 
 ## This component's src
 COMPONENT_SRCS := database/m_database.c \
+				  database/easyflash_common.c \
                   gpio/m_button.c \
                   gpio/m_led_stt.c \
 				  gpio/m_switch_event.c \

@@ -58,7 +58,7 @@ typedef struct {
     m_switch_state_t         current_state[APP_MAX_CHANNEL_SUPPORT];
     m_switch_lock_t          channel_lock_state[APP_MAX_CHANNEL_SUPPORT];  
 	uint32_t				 time_release[APP_MAX_CHANNEL_SUPPORT];
-    uint32_t				 time_release_mode[APP_MAX_CHANNEL_SUPPORT];
+    uint32_t				 release_mode[APP_MAX_CHANNEL_SUPPORT];
 } m_switch_info_t;
 
 typedef struct {

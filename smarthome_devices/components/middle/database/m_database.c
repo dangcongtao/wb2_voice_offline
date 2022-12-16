@@ -114,16 +114,16 @@ static void set_lock_channel(uint32_t index, uint8_t lock)
 static void set_time_release(uint32_t index, uint32_t time, uint32_t mode)
 {
     s_m_database._m_device._switch_info.time_release[index] = time;
-    s_m_database._m_device._switch_info.time_release_mode[index] = mode;
-    os_trace("mode: %ld\r\n", s_m_database._m_device._switch_info.time_release_mode[index]);
+    s_m_database._m_device._switch_info.release_mode[index] = mode;
+    os_trace("mode: %ld\r\n", s_m_database._m_device._switch_info.release_mode[index]);
     m_db_request_sync_database();
 }
 
 static void get_time_release(uint32_t index, uint32_t *time, uint32_t *mode)
 {
     *time = s_m_database._m_device._switch_info.time_release[index];
-    *mode = s_m_database._m_device._switch_info.time_release_mode[index];
-    os_trace("mode: %ld\r\n", s_m_database._m_device._switch_info.time_release_mode[index]);
+    *mode = s_m_database._m_device._switch_info.release_mode[index];
+    os_trace("mode: %ld\r\n", s_m_database._m_device._switch_info.release_mode[index]);
 }
 
 static void generate_aes_key_iv(void)

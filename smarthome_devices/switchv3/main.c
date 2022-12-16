@@ -3,6 +3,8 @@
 
 #include <bl_gpio.h>
 #include <bl_uart.h>
+#include "bl_sys.h"
+#include "easyflash_common.h"
 
 #include <FreeRTOS.h>
 #include <task.h>
@@ -16,7 +18,7 @@
 void main(void)
 {
     bl_uart_init(0, 16, 7, 255, 255, 115200);//set uart baud 115200
-
+    easyflash_init();
     hw_timer_init();
     m_database_init();
     m_button_init();

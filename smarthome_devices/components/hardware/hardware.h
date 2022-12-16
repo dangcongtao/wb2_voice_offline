@@ -23,9 +23,9 @@
 #define MAX_NUM_SWITCH          1
 #define SWITCH_IDLE_LEVEL       1
 #define SWITCH_ACTIVE_LEVEL     0
-#define SWITCH1 14
-#define SWITCH2 17
-#define SWITCH3 17
+#define SWITCH1 17
+#define SWITCH2 14
+#define SWITCH3 14
 #define SWITCH4 3
 
 extern uint32_t max_number_channel;

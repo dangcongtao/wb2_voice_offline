@@ -107,7 +107,7 @@ void set_user_trigger_press_event(uint8_t channel_index, bool set_event, uint32_
 
     ms_tick_control_switch[channel_index] = sys_get_tick_ms();
 
-    uint32_t mode = m_db_get_instance()->_m_device._switch_info.time_release_mode[channel_index];
+    uint32_t mode = m_db_get_instance()->_m_device._switch_info.release_mode[channel_index];
     if (mode == 0)
         return;
 
@@ -130,7 +130,7 @@ void m_switch_press_release_loop(void)
         if (user_control_switch_event[i] && time_diff_release > time_event)
         {
             user_control_switch_event[i] = 0;
-            mode = m_db_get_instance()->_m_device._switch_info.time_release_mode[i];
+            mode = m_db_get_instance()->_m_device._switch_info.release_mode[i];
             current_state = (m_control_get_status_switch(i) % 2) ? 1 : 2;
 
             os_trace("release mode/state [%ld:%ld]\n", mode, current_state);

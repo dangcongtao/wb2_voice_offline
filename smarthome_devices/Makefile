@@ -21,6 +21,7 @@ endif
 COMPONENTS_BLSYS   := bltime blfdt blmtd bloop loopset looprt
 COMPONENTS_VFS     := romfs
 
+INCLUDE_COMPONENTS += easyflash4
 INCLUDE_COMPONENTS += freertos_riscv_ram
 INCLUDE_COMPONENTS += bl602 bl602_std
 INCLUDE_COMPONENTS += hosal mbedtls_lts lwip cli vfs yloop utils blog blog_testc newlibc
