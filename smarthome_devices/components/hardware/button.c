@@ -3,8 +3,6 @@
 
 uint32_t button_arr[] = {BUTTON1, BUTTON2, BUTTON3, BUTTON4};
 
-static uint32_t btn_tick_ms = 0;
-
 void hw_button_config(uint32_t index)
 {
     // os_trace("hw_button_config: %ld\r\n", index);
