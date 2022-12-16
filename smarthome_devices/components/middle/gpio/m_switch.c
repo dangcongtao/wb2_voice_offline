@@ -6,6 +6,7 @@
 #include "m_button.h"
 #include "m_mqtt.h"
 #include "system_typedef.h"
+#include "m_database.h"
 
 static m_switch_t s_switch_obj;
 char respond_msg[256];
@@ -58,7 +59,7 @@ static uint8_t m_control_switch(uint32_t action, uint32_t act_id, uint32_t uid, 
     uint8_t channel_index = (action - 1) / 2;
     state_t state = (action % 2) ? HIGH : LOW;
     // m_mqtt_t mqtt_obj = m_mqtt_get_instance();
-    // m_database_t *db_instance = m_db_get_instance();
+    m_database_t *db_instance = m_db_get_instance();
 
     os_trace("m_control_switch: %d, %d\n", channel_index, state);
     
@@ -69,16 +70,14 @@ static uint8_t m_control_switch(uint32_t action, uint32_t act_id, uint32_t uid, 
     }
 
     s_switch_obj._write_switch_cb(channel_index, state);
-    
     set_user_trigger_press_event(channel_index, set_even_release, action);
-    //db_instance->_set_current_state_cb(channel_index, state);
-
+    db_instance->_set_current_state_cb(channel_index, state);
     /* save current state if needed */
-    // uint8_t def_state = db_instance->_m_device._switch_info.default_state[channel_index] % 3;
-    // if (def_state == SWITCH_ONE_KEEP_OLD_STATE)
-    // {
-    //     db_instance->_request_sync_db();
-    // }
+    uint8_t def_state = db_instance->_m_device._switch_info.default_state[channel_index] % 3;
+    if (def_state == SWITCH_ONE_KEEP_OLD_STATE)
+    {
+        db_instance->_request_sync_db();
+    }
 
     // /* respond server here */
     // if (uid == 0)
@@ -164,59 +163,59 @@ static uint8_t m_toggle_switch(uint32_t index, uint32_t act_id, bool respond, bo
 
 static void control_switch_default_state(void)
 {
-    // uint8_t mode;
-    // uint8_t state = LED_STT_OFF;
-    // uint8_t channel;
-    // m_database_t *db_instance = m_db_get_instance();
+    uint8_t mode;
+    uint8_t state = LED_STT_OFF;
+    uint8_t channel;
+    m_database_t *db_instance = m_db_get_instance();
 
-    // for (channel = 0; channel < max_number_channel; channel++)
-    // {
-    //     mode = db_instance->_m_device._switch_info.default_state[channel];
+    for (channel = 0; channel < max_number_channel; channel++)
+    {
+        mode = db_instance->_m_device._switch_info.default_state[channel];
 
-    //     if (mode >= 3)
-    //         mode %= 3;
+        if (mode >= 3)
+            mode %= 3;
 
-    //     switch (mode)
-    //     {
-    //     case SWITCH_ONE_KEEP_OLD_STATE:
-    //     {
-    //         state = db_instance->_m_device._switch_info.current_state[channel] % 2;
-    //     }
-    //     break;
+        switch (mode)
+        {
+        case SWITCH_ONE_KEEP_OLD_STATE:
+        {
+            state = db_instance->_m_device._switch_info.current_state[channel] % 2;
+        }
+        break;
 
-    //     case SWITCH_ONE_DEFAULT_ON:
-    //     {
-    //         state = LED_STT_OFF;
-    //     }
-    //     break;
+        case SWITCH_ONE_DEFAULT_ON:
+        {
+            state = LED_STT_OFF;
+        }
+        break;
 
-    //     case SWITCH_ONE_DEFAULT_OFF:
-    //     {
-    //         state = LED_STT_ON;
-    //     }
-    //     break;
+        case SWITCH_ONE_DEFAULT_OFF:
+        {
+            state = LED_STT_ON;
+        }
+        break;
 
-    //     default:
-    //     {
-    //         os_trace("control_switch_default_state default case\n");
-    //     }
-    //     break;
-    //     }
+        default:
+        {
+            os_trace("control_switch_default_state default case\n");
+        }
+        break;
+        }
 
-    //     if (s_switch_obj._write_switch_cb != NULL)
-    //     {
-    //         os_trace("control_switch_default_state - %d : %s\n", channel, state ? "ON" : "OFF");
-    //         s_switch_obj._write_switch_cb(channel, state);
+        if (s_switch_obj._write_switch_cb != NULL)
+        {
+            os_trace("control_switch_default_state - %d : %s\n", channel, state ? "ON" : "OFF");
+            s_switch_obj._write_switch_cb(channel, state);
             
-    //         /* save state to database */
-    //         state = m_control_get_status_switch(channel);
-    //         db_instance->_set_current_state_cb(channel, state);
-    //     }
-    //     else
-    //     {
-    //         os_trace("s_switch_obj._write_switch_cb is NULL\n");
-    //     }
-    // }
+            /* save state to database */
+            state = m_control_get_status_switch(channel);
+            db_instance->_set_current_state_cb(channel, state);
+        }
+        else
+        {
+            os_trace("s_switch_obj._write_switch_cb is NULL\n");
+        }
+    }
 }
 
 /************************* public api ****************************/
