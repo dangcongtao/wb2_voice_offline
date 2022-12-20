@@ -25,12 +25,15 @@ COMPONENTS_VFS     := romfs
 INCLUDE_COMPONENTS += easyflash4
 INCLUDE_COMPONENTS += freertos_riscv_ram
 INCLUDE_COMPONENTS += bl602 bl602_std
-INCLUDE_COMPONENTS += hosal mbedtls_lts lwip cli vfs yloop utils blog blog_testc newlibc 
+INCLUDE_COMPONENTS += cli vfs yloop utils blog blog_testc newlibc 
+#=============== DUNGNT98 ===============
 # HTTP
 INCLUDE_COMPONENTS += httpc mbedtls_lts lwip lwip_dhcpd
 # WIFI
 INCLUDE_COMPONENTS += wifi wifi_manager wpa_supplicant wifi_hosal hosal bl602_os_adapter blcrypto_suite
-
+INCLUDE_COMPONENTS +=  aws-iot       
+INCLUDE_COMPONENTS +=  coredump
+#=======================================
 INCLUDE_COMPONENTS += dns_server netutils
 INCLUDE_COMPONENTS += $(COMPONENTS_NETWORK)
 INCLUDE_COMPONENTS += $(COMPONENTS_BLSYS)

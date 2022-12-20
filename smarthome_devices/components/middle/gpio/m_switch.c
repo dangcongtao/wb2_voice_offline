@@ -61,11 +61,11 @@ static uint8_t m_control_switch(uint32_t action, uint32_t act_id, uint32_t uid, 
     // m_mqtt_t mqtt_obj = m_mqtt_get_instance();
     m_database_t *db_instance = m_db_get_instance();
 
-    os_trace("m_control_switch: %d, %d\n", channel_index, state);
+    os_trace("m_control_switch: %d, %d\r\n", channel_index, state);
     
     if (channel_index > MAX_NUM_SWITCH)
     {
-        os_trace("channel out of index\n");
+        os_trace("channel out of index\r\n");
         return 0;
     }
 
@@ -92,7 +92,7 @@ static uint8_t m_control_switch(uint32_t action, uint32_t act_id, uint32_t uid, 
     //     }
     //     else
     //     {
-    //         os_trace("Device is not connect mqtt\n");
+    //         os_trace("Device is not connect mqtt\r\n");
     //     }
     // }
 
@@ -104,7 +104,7 @@ static uint8_t m_toggle_switch(uint32_t index, uint32_t act_id, bool respond, bo
 {
     uint8_t pin_value = s_switch_obj._read_switch_cb(index);
 
-    // os_trace("m_toggle_switch %d: %d\n", index, pin_value);
+    // os_trace("m_toggle_switch %d: %d\r\n", index, pin_value);
 
     /* control switch one */
     if (index == APP_SWITCH_ONE)
@@ -197,14 +197,14 @@ static void control_switch_default_state(void)
 
         default:
         {
-            os_trace("control_switch_default_state default case\n");
+            os_trace("control_switch_default_state default case\r\n");
         }
         break;
         }
 
         if (s_switch_obj._write_switch_cb != NULL)
         {
-            os_trace("control_switch_default_state - %d : %s\n", channel, state ? "ON" : "OFF");
+            os_trace("control_switch_default_state - %d : %s\r\n", channel, state ? "ON" : "OFF");
             s_switch_obj._write_switch_cb(channel, state);
             
             /* save state to database */
@@ -213,7 +213,7 @@ static void control_switch_default_state(void)
         }
         else
         {
-            os_trace("s_switch_obj._write_switch_cb is NULL\n");
+            os_trace("s_switch_obj._write_switch_cb is NULL\r\n");
         }
     }
 }
@@ -221,7 +221,7 @@ static void control_switch_default_state(void)
 /************************* public api ****************************/
 void m_switch_init(void)
 {
-    os_trace("m_switch_init: %d\n", max_number_channel);
+    os_trace("m_switch_init: %ld\r\r\n", max_number_channel);
 
     s_switch_obj.max_number_channel = max_number_channel;
     s_switch_obj._switch_cfg_cb = hw_switch_cfg;

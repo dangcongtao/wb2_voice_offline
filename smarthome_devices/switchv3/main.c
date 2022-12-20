@@ -14,38 +14,29 @@
 #include "m_led_stt.h"
 #include "m_database.h"
 #include "m_http_server.h"
+#include "process_data.h"
 
 void m_stack_start(void)
 {
 
-    if (m_mqtt_get_instance()._mqtt_handler_msg == NULL)
-    {
-        os_trace(
-            "m_mqtt can not start. Please call function "
-            "m_mqtt_register_msg_handler() before start stack\n");
-        return;
-    }
+    // if (m_mqtt_get_instance()._mqtt_handler_msg == NULL)
+    // {
+    //     os_trace("m_mqtt can not start, Please call function "
+    //              "m_mqtt_register_msg_handler() before start stack\n");
+    //     exit(0);
+    // }
 
-    if (m_mqtt_get_instance()._mqtt_pub_startup_msg == NULL)
-    {
-        os_trace(
-            "m_mqtt can not start. Please call function "
-            "m_mqtt_command_startup_register_handler() before start stack\n");
-        return;
-    }
-
-    if (m_db_get_instance()->_request_sync_db == NULL)
-    {
-        os_trace(
-            "m_mqtt can not start. Please call function "
-            "m_db_request_sync_handler_register() before start stack\n");
-        return;
-    }
+    // if (m_mqtt_get_instance()._mqtt_pub_startup_msg == NULL)
+    // {
+    //     os_trace("m_mqtt can not start, Please call function "
+    //              "m_mqtt_command_startup_register_handler() before start stack\n");
+    //     exit(0);
+    // }
 
     /* start stack */
+    m_wifi_init();
     m_mqtt_init();
     m_http_init();
-    m_wifi_init();
 }
 
 void main(void)
@@ -58,5 +49,7 @@ void main(void)
     m_switch_init();
     m_led_stt_init();
 
-    // m_stack_start();
+    app_handler_msg_init();
+
+    m_stack_start();
 }

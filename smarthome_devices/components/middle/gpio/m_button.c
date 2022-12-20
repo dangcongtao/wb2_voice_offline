@@ -130,7 +130,7 @@ void m_button_init(void)
 {
     m_button_config();
     
-    os_trace("m_button_init: %d\n", max_number_channel);
+    os_trace("m_button_init: %ld\r\n", max_number_channel);
     xTaskCreate(button_scan_task,  /* Function that implements the task. */
                 "led_button_task", /* Text name for the task. */
                 1024 * 3,          /* Stack size in words, not bytes. */

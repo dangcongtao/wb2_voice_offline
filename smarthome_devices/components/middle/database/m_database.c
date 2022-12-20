@@ -56,13 +56,11 @@ uint8_t m_db_get_number_channel(void)
 
 static bool m_db_dev_get_pair(void)
 {
-    os_trace("Device was %s\r\r\n", s_m_database._m_device._device_is_paired? "paired" : "not paired");
     return s_m_database._m_device._device_is_paired;
 }
 
 static void m_db_dev_set_pair(bool new_state)
 {
-    os_trace("Set device %s\r\r\n", new_state? "paired" : "not paired");
     s_m_database._m_device._device_is_paired = new_state;
 }
 
@@ -134,7 +132,6 @@ static void generate_aes_key_iv(void)
     uint32_t len_of_code = sizeof(device_id_encoded);
 
     os_trace("generate key iv\r\n");
-    os_trace("device_id: %s\r\n", s_device_id);
 
     aes_cbc128_init((uint8_t*)DEFAULT_AES_KEY, (uint8_t*)DEFAULT_AES_IV);
     memset(device_id_encoded, 0, sizeof(device_id_encoded));

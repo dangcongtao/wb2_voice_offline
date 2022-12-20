@@ -7,7 +7,7 @@
 
 #define DEBUG_ENABLE    1
 void m_log(const char *fmt, ...);
-#define os_trace if (DEBUG_ENABLE == 1) m_log
+#define os_trace if (DEBUG_ENABLE == 1) printf
 
 #if (DEBUG_ENABLE == 1)
     #define USER_LOG_LEVEL	ESP_LOG_VERBOSE

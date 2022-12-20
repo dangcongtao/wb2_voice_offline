@@ -133,7 +133,7 @@ void flash_read_database(m_device_t* object_data, uint32_t* _size)
     /* read state pair */
     if ((ef_get_u32(PAIR_STATE, &(object_data->_device_is_paired)) == false) || (object_data->_device_is_paired == 0))
     {
-        os_trace("Read flash: Device was not paired\n");
+        os_trace("Read flash: Device was not paired\r\n");
         object_data->_switch_info.default_state[0] = SWITCH_ONE_DEFAULT_OFF;
         object_data->_switch_info.default_state[1] = SWITCH_TWO_DEFAULT_OFF;
         object_data->_switch_info.default_state[2] = SWITCH_THREE_DEFAULT_OFF;

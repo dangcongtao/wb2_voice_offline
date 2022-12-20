@@ -23,7 +23,7 @@ static bool request_send_command_online = false;
 void set_mqtt_server(char* data, uint32_t len)
 {
     if (len > sizeof(s_mqtt_obj.mqtt_info.server)) {
-        os_trace("fail to set mqtt server, len data too long\r\n");
+        os_trace("fail to set mqtt server, len data too long\r\r\n");
         return;
     }
 
@@ -39,7 +39,7 @@ void set_mqtt_port(uint32_t num)
 void set_mqtt_user(char* data, uint32_t len)
 {
     if (len > sizeof(s_mqtt_obj.mqtt_info.username)) {
-        os_trace("fail to set mqtt user, len data too long\r\n");
+        os_trace("fail to set mqtt user, len data too long\r\r\n");
         return;
     }
 
@@ -50,7 +50,7 @@ void set_mqtt_user(char* data, uint32_t len)
 void set_mqtt_passwd(char* data, uint32_t len)
 {
     if (len > sizeof(s_mqtt_obj.mqtt_info.passwd)) {
-        os_trace("fail to set mqtt passwd, len data too long\r\n");
+        os_trace("fail to set mqtt passwd, len data too long\r\r\n");
         return;
     }
 
@@ -61,7 +61,7 @@ void set_mqtt_passwd(char* data, uint32_t len)
 void set_mqtt_topic_sub(char* data, uint32_t len)
 {
     if (len > sizeof(s_mqtt_obj.mqtt_info.topic_sub)) {
-        os_trace("fail to set mqtt topic_sub, len data too long\r\n");
+        os_trace("fail to set mqtt topic_sub, len data too long\r\r\n");
         return;
     }
 
@@ -72,7 +72,7 @@ void set_mqtt_topic_sub(char* data, uint32_t len)
 void set_mqtt_topic_pub(char* data, uint32_t len)
 {
     if (len > sizeof(s_mqtt_obj.mqtt_info.topic_pub)) {
-        os_trace("fail to set mqtt topic_sub, len data too long\r\n");
+        os_trace("fail to set mqtt topic_sub, len data too long\r\r\n");
         return;
     }
 
@@ -85,7 +85,7 @@ static bool mqtt_init_queue(void)
     if (mqtt_tx_queue == NULL) {
         mqtt_tx_queue = xQueueCreate(MAXIMUM_QUEUE_ITEM, sizeof(m_mqtt_msg_pub_t));
         if(mqtt_tx_queue == NULL){
-            os_trace("Cannot create queue send at command\r\n");
+            os_trace("%s fail\r\r\n", __func__);
             return false;
         }
     }
@@ -95,8 +95,11 @@ static bool mqtt_init_queue(void)
 
 static void m_mqtt_publish(char *topic, char* data, uint32_t length)
 {
-    if(topic == NULL || data == NULL)
+    if(data == NULL)
         return;
+
+    if(topic == NULL)
+        topic = s_mqtt_obj.mqtt_info.topic_pub;
 
     m_mqtt_msg_pub_t message;
 	memset(&message, 0, sizeof(message));
@@ -105,7 +108,7 @@ static void m_mqtt_publish(char *topic, char* data, uint32_t length)
 	message.length = length;
 
 	if (xQueueSend(mqtt_tx_queue, &message, pdMS_TO_TICKS(0)) != pdPASS) {
-        os_trace("Push to queue tx fail\n");
+        os_trace("Push to queue tx fail\r\n");
     }
 }
 
@@ -132,7 +135,7 @@ static void mqtt_on_message(char* data, uint32_t len)
         if (aes_cbc128_decrypt((uint8_t *)temp_data, data_len, 
                             (uint8_t *)m_message_real, 
                             (size_t *)&m_message_real_len) != AES_SUCCESS) {
-            os_trace("Can not decrypt message\n");
+            os_trace("Can not decrypt message\r\n");
             return;
         }
     } else {
@@ -140,26 +143,26 @@ static void mqtt_on_message(char* data, uint32_t len)
         m_message_real_len = data_len;
     }
 
-    os_trace("mqtt received: %s\n", m_message_real);
+    os_trace("mqtt received: %s\r\n", m_message_real);
     s_mqtt_obj._mqtt_handler_msg(m_message_real, m_message_real_len);
 }
 
 static void m_mqtt_start(void)
 {
-    os_trace("mqtt start\n");
-    os_trace("\tserver: %s\n", s_mqtt_obj.mqtt_info.server);
-    os_trace("\tport: %d\n", s_mqtt_obj.mqtt_info.port);
-    os_trace("\tusername: %s\n", s_mqtt_obj.mqtt_info.username);
-    os_trace("\tpasswd: %s\n", s_mqtt_obj.mqtt_info.passwd);
-    os_trace("\ttopic_pub: %s\n", s_mqtt_obj.mqtt_info.topic_pub);
-    os_trace("\ttopic_sub: %s\n", s_mqtt_obj.mqtt_info.topic_sub);
+    os_trace("mqtt start\r\n");
+    os_trace("\tserver: %s\r\n", s_mqtt_obj.mqtt_info.server);
+    os_trace("\tport: %ld\r\n", s_mqtt_obj.mqtt_info.port);
+    os_trace("\tusername: %s\r\n", s_mqtt_obj.mqtt_info.username);
+    os_trace("\tpasswd: %s\r\n", s_mqtt_obj.mqtt_info.passwd);
+    os_trace("\ttopic_pub: %s\r\n", s_mqtt_obj.mqtt_info.topic_pub);
+    os_trace("\ttopic_sub: %s\r\n", s_mqtt_obj.mqtt_info.topic_sub);
     s_mqtt_obj._mqtt_state = MQTT_INTIALIZED;
     request_send_command_online = true;
 }
 
 static void m_mqtt_stop(void)
 {
-    os_trace("\tmqtt stop\n");
+    os_trace("mqtt stop\r\r\n");
 }
 
 static void m_mqtt_publish_loop(void)
@@ -183,7 +186,7 @@ static void m_mqtt_publish_loop(void)
                                                         (uint8_t*)msg_encrypted, 
                                                         (size_t *)&len_msg_encrypted);
         if (aes_encrypt_result != AES_SUCCESS) {
-            os_trace("Encode fail,error-code: %d\n", aes_encrypt_result);
+            os_trace("Encode fail,error-code: %ld\r\n", aes_encrypt_result);
             return;
         }
 
@@ -205,7 +208,7 @@ static void m_mqtt_task_loop(void)
 
 void m_mqtt_init(void)
 {
-    os_trace("m_mqtt_init\n");
+    os_trace("m_mqtt_init\r\n");
 
     s_mqtt_obj._mqtt_state = MQTT_UNINTIALIZED;
     s_mqtt_obj._mqtt_publish = m_mqtt_publish;

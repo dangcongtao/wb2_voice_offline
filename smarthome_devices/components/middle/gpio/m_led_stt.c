@@ -45,7 +45,7 @@ static void m_stop_timer(void)
 static void set_led_stt_smart_config(void)
 {
     if (s_led_stt_obj._led_stt_type != LED_STYLE_SMARTCONFIG) {
-        os_trace("set_led_stt_smart_config\n");
+        os_trace("set_led_stt_smart_config\r\n");
         /* Stop timer */
         m_stop_timer();
 
