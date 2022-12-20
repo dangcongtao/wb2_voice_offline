@@ -32,7 +32,6 @@ extern uint32_t max_number_channel;
 extern uint32_t device_type;
 
 /* timer */
-void hw_timer_init();
 uint32_t sys_get_tick_ms(void);
 
 /* button */
@@ -51,7 +50,6 @@ void hw_write_switch_pin(uint8_t index, uint8_t val);
 uint8_t hw_read_switch_pin(uint8_t index);
 
 /* hardware init. should call this api first */
-void hw_pcb_sort_pins(void);
 void gpio_set_output(int pin);
 void gpio_set_input(int pin);
 

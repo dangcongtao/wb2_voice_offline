@@ -207,6 +207,10 @@ static void m_load_databse(void)
 extern void clear_cyclic_timer(void);
 static void m_database_sync_task(void *param)
 {
+    flash_init();
+    m_load_databse();
+    generate_aes_key_iv();
+
     while(1) {
         if (s_request_reset_db) {
             os_trace("have reset factory request\r\n");
@@ -254,10 +258,6 @@ static void m_database_sync_task(void *param)
 
 void m_database_init(void)
 {
-    // flash_init();
-    m_load_databse();
-    generate_aes_key_iv();
-
     s_m_database._m_device._mqtt_info = m_mqtt_get_info_reference();
     s_m_database._set_dev_pair_state = m_db_dev_set_pair;
     s_m_database._get_dev_pair_state = m_db_dev_get_pair;

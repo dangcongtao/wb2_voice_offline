@@ -53,7 +53,10 @@ char* release_modes[] = {RELEASE_MODE0, RELEASE_MODE1, RELEASE_MODE2, RELEASE_MO
 #define MQTT_USERNAME "username"
 #define MQTT_PASSWD "passwd"
 
-void flash_init(void) {}
+void flash_init(void) 
+{
+    easyflash_init();
+}
 
 void flash_write_database(const m_device_t object_data, uint32_t _size)
 {
@@ -89,7 +92,7 @@ void flash_write_database(const m_device_t object_data, uint32_t _size)
     }
 
     /* write state pair */
-    ef_get_u32(PAIR_STATE, (uint32_t*)(&object_data._device_is_paired));
+    ef_set_u32(PAIR_STATE, object_data._device_is_paired);
 }
 
 void flash_read_database(m_device_t* object_data, uint32_t* _size)
@@ -128,8 +131,8 @@ void flash_read_database(m_device_t* object_data, uint32_t* _size)
     }
 
     /* read state pair */
-    ef_get_u32(PAIR_STATE, &(object_data->_device_is_paired));
-    if (object_data->_device_is_paired == 0) { /* if device was not pair */
+    if ((ef_get_u32(PAIR_STATE, &(object_data->_device_is_paired)) == false) || (object_data->_device_is_paired == 0))
+    {
         os_trace("Read flash: Device was not paired\n");
         object_data->_switch_info.default_state[0] = SWITCH_ONE_DEFAULT_OFF;
         object_data->_switch_info.default_state[1] = SWITCH_TWO_DEFAULT_OFF;

@@ -1,196 +1,118 @@
-/* Simple HTTP Server Example
-
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
 #include "m_http_server.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+
+#include "lwip/err.h"
+#include "lwip/sys.h"
+#include "lwip/netdb.h"
+#include "lwip/api.h"
+#include "web_server.h"
+
 #include <FreeRTOS.h>
+#include "portmacro.h"
 #include <task.h>
+#include <timers.h>
+#include "event_groups.h"
+#include <aos/kernel.h>
+#include <aos/yloop.h>
+#include <event_device.h>
+#include <easyflash.h>
 
-#include "m_database.h"
-#include "m_mqtt.h"
-#include "m_ap_config.h"
-#include "m_smartconfig.h"
-#include "app_config.h"
+#include <hal_sys.h>
+#include <bl_wifi.h>
+#include <hal_wifi.h>
+#include <bl_timer.h>
+#include <bl_sys_time.h>
+#include <bl_sys.h>
 
-// static const char *TAG = "m_http_server";
-// extern m_ap_around_t access_point_around;
+#include "lwip/err.h"
+#include "lwip/sys.h"
+#include "lwip/netdb.h"
 
-// static char resp_str[2048];
-// static uint8_t enable_service = 0;
-// static httpd_handle_t s_server = NULL;
+#include <wifi_mgmr_ext.h>
 
-// static void stop_webserver(void);
+#define SERVER_PORT 80
 
-// /* An HTTP WIFICONFIG POST handler */
-// static esp_err_t http_apconfig_step1(httpd_req_t *req)
-// {
-//     char buf[512];
-//     int ret, remaining = req->content_len;
+const static char http_html_hdr[] =
+    "HTTP/1.1 200 OK\r\nContent-type: text/html\r\n\r\n";
+const static char http_index_hml[] = "<!DOCTYPE html>"
+                                     "<html>\n"
+                                     "<head>\n"
+                                     "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n"
+                                     "  <style type=\"text/css\">\n"
+                                     "    html, body, iframe { margin: 0; padding: 0; height: 100%; }\n"
+                                     "    iframe { display: block; width: 100%; border: none; }\n"
+                                     "  </style>\n"
+                                     "<title>HELLO Ai-WB2 module</title>\n"
+                                     "</head>\n"
+                                     "<body>\n"
+                                     "<h1>Hello World, from Ai-WB2 module</h1>\n"
+                                     "</body>\n"
+                                     "</html>\n";
 
-//     os_trace("\tApconfig step 1\n");
-//     memset(buf, 0, sizeof(buf));
+static void web_http_server(struct netconn *conn)
+{
+    struct netbuf *inputbuf;
+    char *buf;
+    u16_t buflen;
+    err_t err;
 
-//     while (remaining > 0) {
-//         /* Read the data for the request */
-//         if ((ret = httpd_req_recv(req, buf, MIN(remaining, sizeof(buf)))) <= 0) {
-//             if (ret == HTTPD_SOCK_ERR_TIMEOUT) {
-//                 /* Retry receiving if timeout occurred */
-//                 continue;
-//             }
-//             return ESP_FAIL;
-//         }
+    err = netconn_recv(conn, &inputbuf);
+    if (err == ERR_OK)
+    {
+        netbuf_data(inputbuf, (void **)&buf, &buflen);
+        printf("the received data:\n%s\n", buf);
         
-//         remaining -= ret;
+        /* Judge if this is an HTTP GET command */
+        if (buflen >= 5 && buf[0] == 'G' && buf[1] == 'E' && buf[2] == 'T' && buf[3] == ' ' && buf[4] == '/')
+        {
+            netconn_write(conn, http_html_hdr, sizeof(http_html_hdr) - 1, NETCONN_NOCOPY);
 
-//     }
+            if (buf[5] == 'h')
+            {
+                netconn_write(conn, http_index_hml, sizeof(http_index_hml) - 1, NETCONN_NOCOPY);
+            }
+            else if (buf[5] == 'l')
+            {
+                netconn_write(conn, http_index_hml, sizeof(http_index_hml) - 1, NETCONN_NOCOPY);
+            }
+            else
+            {
+                netconn_write(conn, http_index_hml, sizeof(http_index_hml) - 1, NETCONN_NOCOPY);
+            }
+        }
+    }
+    netconn_close(conn);
+    netbuf_delete(inputbuf);
+}
 
-//     /* Send response */
-//     httpd_resp_send_chunk(req, "{\"result\": 1}", strlen("{\"result\": 1}"));
-//     httpd_resp_send_chunk(req, NULL, 0);
+void http_server_start(void *pvParameters)
+{
+    struct netconn *conn, *newconn;
+    err_t err;
+    conn = netconn_new(NETCONN_TCP);
+    netconn_bind(conn, NULL, SERVER_PORT);
+    netconn_listen(conn);
+    while (1)
+    {
+        err = netconn_accept(conn, &newconn);
+        if (err == ERR_OK)
+        {
+            web_http_server(newconn);
+            netconn_delete(newconn);
+        }
+        else
+        {
+            netconn_close(conn);
+            netconn_delete(conn);
+            break;
+        }
+    }
+}
 
-//     /* parser data to get info of wifi & mqtt server */
-//     os_trace("m_http_server receive: [%s]", buf);
-//     apconfig_parse_wifi_info(buf);
-    
-//     stop_webserver();
-
-//     return ESP_OK;
-// }
-
-// httpd_uri_t wificonfig = {
-//     .uri       = "/wificonfig",
-//     .method    = HTTP_POST,
-//     .handler   = http_apconfig_step1,
-//     .user_ctx  = NULL
-// };
-
-// /* An HTTP GET handler */
-// static  esp_err_t http_apconfig_step2(httpd_req_t *req)
-// {
-//     int n = 0;
-
-//     os_trace("\tApconfig step 2\n");
-
-//     /* create respond */
-//     memset(resp_str, 0, sizeof(resp_str));
-//     n = sprintf(resp_str, "{\"APs\": [");
-//     for (uint8_t i = 0; i < MIN(access_point_around.num_ap_available, MAX_SSID_SCAN); i++) {
-//         n += sprintf(&resp_str[n], "{\"id\": %d, \"rssi\": %d, \"ssid\": \"%s\"},",
-//                                     i, access_point_around.rssi[i], access_point_around.ssid[i]);
-//     }
-//     n += sprintf(&resp_str[n-1], "], \"device_id\": \"%s\", \"extra\": %d, \"type\": \"%s\"}", 
-//                                 m_db_get_instance()->_get_dev_id(), EXTRAS, gs_dev_type[device_type]);
-
-//      /* send wifi ap around */
-//     httpd_resp_send(req, resp_str, strlen(resp_str));
-//     os_trace("%s\n", resp_str);
-
-//     return ESP_OK;
-// }
-
-// httpd_uri_t apconfig = {
-//     .uri       = "/apconfig",
-//     .method    = HTTP_GET,
-//     .handler   = http_apconfig_step2,
-//     .user_ctx  = NULL
-// };
-
-// static  esp_err_t http_smartconfig_step1(httpd_req_t *req)
-// {
-//     os_trace("\nSmartconfig http step 1 \n");
-
-//     /* Send response with custom headers and body set as the string passed in user context*/
-//     memset(resp_str, 0, sizeof(resp_str));
-//     sprintf(resp_str, "{\"id\":\"%s\",\"version\":\"%s\"}",  
-//                         m_db_get_instance()->_get_dev_id(),
-//                         FIRMWARE_VERSION);
-    
-//     httpd_resp_send(req, resp_str, strlen(resp_str));
-//     os_trace("%s\n", resp_str);
-
-//     return ESP_OK;
-// }
-
-// httpd_uri_t root = {
-//     .uri       = "/",
-//     .method    = HTTP_GET,
-//     .handler   = http_smartconfig_step1,
-//     .user_ctx  = NULL
-// };
-
-// /* An HTTP POST handler */
-// static esp_err_t http_smartconfig_step2(httpd_req_t *req)
-// {
-//     char buf[1024];
-//     int ret, remaining = req->content_len;
-
-//     os_trace("\nSmartconfig http step 2 \n");
-
-//     memset(buf, 0, sizeof(buf));
-//     while (remaining > 0) {
-//         if ((ret = httpd_req_recv(req, buf, MIN(remaining, sizeof(buf)))) <= 0) {
-//             if (ret == HTTPD_SOCK_ERR_TIMEOUT)
-//                 continue;
-
-//             return ESP_FAIL;
-//         }
-//         remaining -= ret;
-//     }
-
-//     /* Send response */
-//     httpd_resp_send_chunk(req, "{\"result\": 1}", strlen("{\"result\": 1}"));
-//     httpd_resp_send_chunk(req, NULL, 0);
-
-//     /* parser data to get info of mqtt server */
-//     os_trace("m_http_server receive: [%s]", buf);
-//     if (m_smartconfig_parse_data(buf) != true) {
-//         os_trace("Smartconfig - http parse wifi fail\n");
-//     }
-
-//     stop_webserver();
-
-//     return ESP_OK;
-// }
-
-// httpd_uri_t setting = {
-//     .uri       = "/setting/",
-//     .method    = HTTP_POST,
-//     .handler   = http_smartconfig_step2,
-//     .user_ctx  = NULL
-// };
-
-// static void stop_webserver(void)
-// {
-//     os_trace("stop web server\n");
-//     enable_service = 0;
-// }
-
-// void start_webserver(void)
-// {
-//     os_trace("Start web server\n");
-//     enable_service = 1;
-// }
-
-// void http_server_init(void)
-// {
-//     ESP_LOGI(TAG, "Starting http s_server");
-
-//     if (s_server == NULL) {
-//         httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-
-//         if (httpd_start(&s_server, &config) == ESP_OK) {
-//             ESP_LOGI(TAG, "Registering URI handlers");
-
-//             httpd_register_uri_handler(s_server, &root);
-//             httpd_register_uri_handler(s_server, &apconfig);
-//             httpd_register_uri_handler(s_server, &setting);
-//             httpd_register_uri_handler(s_server, &wificonfig);
-//         } else {
-//             os_trace("Cannot start http server");
-//         }
-//     }
-// }
+void m_http_init(void)
+{
+   xTaskCreate(http_server_start, (char *)"http server", 1024 * 4, NULL, 15, NULL);
+}

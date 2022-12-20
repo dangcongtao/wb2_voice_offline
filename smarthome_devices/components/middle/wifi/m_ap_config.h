@@ -6,7 +6,6 @@
 
 #define MAX_SSID_SCAN      20
 
-
 typedef enum {
     START_APCONFIG = 0,
     SCAN_WIFI_AP,
@@ -24,11 +23,11 @@ typedef struct {
     uint32_t num_ap_available;
 } m_ap_around_t;
 
-void start_webserver(void);
-
 m_apconfig_step_t apconfig_start(void);
-void reset_ap_config(void);
-
 bool apconfig_parse_wifi_info(char* json);
+
+uint8_t is_ap_config_done(void);
+void clear_user_config_state(void);
+
 
 #endif 

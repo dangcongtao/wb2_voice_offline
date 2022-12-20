@@ -100,3 +100,13 @@ json_parse_fail:
 
     return true;
 }
+
+void clear_user_config_state(void)
+{
+    user_config_done = 0;
+}
+
+uint8_t is_ap_config_done(void)
+{
+    return user_config_done;
+}
