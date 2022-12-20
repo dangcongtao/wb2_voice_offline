@@ -33,7 +33,7 @@ void m_db_read_device_id(void)
     // uint32_t len_device_id = sizeof(s_device_id);
     // flash_read_device_id((void*)(&s_device_id), len_device_id);
     memset(s_device_id, 0, sizeof(s_device_id));
-    sprintf(s_device_id, "HUN21210803110509154wswitch2v2");
+    sprintf(s_device_id, "HUN21210803110509154wswitch2v4");
     os_trace("m_db_read_device_id: %s\r\r\n", s_device_id);
 
     max_number_channel = s_device_id[strlen(s_device_id)-1] - '0';
@@ -207,10 +207,6 @@ static void m_load_databse(void)
 extern void clear_cyclic_timer(void);
 static void m_database_sync_task(void *param)
 {
-    flash_init();
-    m_load_databse();
-    generate_aes_key_iv();
-
     while(1) {
         if (s_request_reset_db) {
             os_trace("have reset factory request\r\n");
@@ -271,6 +267,9 @@ void m_database_init(void)
     s_m_database._set_lock_channel_cb = set_lock_channel;
     s_m_database._set_time_release_cb = set_time_release;
     s_m_database._get_time_release_cb = get_time_release;
+
+    m_load_databse();
+    generate_aes_key_iv();
 
     xTaskCreate(m_database_sync_task,       /* Function that implements the task. */
                 "m_database_sync_task",          /* Text name for the task. */

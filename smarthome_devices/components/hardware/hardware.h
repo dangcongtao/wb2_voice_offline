@@ -13,19 +13,19 @@
 #define LED_STT_ON      0
 #define LED_STT_OFF     1
 
-#define MAX_NUM_BUTTON  1
+#define MAX_NUM_BUTTON  4
 #define BTN_IDLE_LEVEL  1
-#define BUTTON1 5
-#define BUTTON2 1
-#define BUTTON3 8
-#define BUTTON4 5
+#define BUTTON1 2
+#define BUTTON2 21
+#define BUTTON3 5
+#define BUTTON4 1
 
-#define MAX_NUM_SWITCH          1
+#define MAX_NUM_SWITCH          4
 #define SWITCH_IDLE_LEVEL       1
 #define SWITCH_ACTIVE_LEVEL     0
-#define SWITCH1 17
-#define SWITCH2 14
-#define SWITCH3 14
+#define SWITCH1 14
+#define SWITCH2 17
+#define SWITCH3 4
 #define SWITCH4 3
 
 extern uint32_t max_number_channel;

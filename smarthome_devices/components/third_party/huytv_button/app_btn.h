@@ -5,7 +5,7 @@
 #include "hardware.h"
 
 #ifndef APP_BTN_MAX_BTN_SUPPORT
-#define APP_BTN_MAX_BTN_SUPPORT                  (2) 
+#define APP_BTN_MAX_BTN_SUPPORT                  (4) 
 #endif
 
 #ifndef APP_BTN_SCAN_PERIOD_MS

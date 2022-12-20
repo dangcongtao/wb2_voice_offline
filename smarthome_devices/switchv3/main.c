@@ -58,5 +58,5 @@ void main(void)
     m_switch_init();
     m_led_stt_init();
 
-    m_stack_start();
+    // m_stack_start();
 }

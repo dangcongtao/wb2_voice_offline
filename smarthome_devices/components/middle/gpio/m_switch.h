@@ -8,6 +8,8 @@
 
 #include "system_typedef.h"
 
+#define APP_MAX_CHANNEL_SUPPORT 4
+
 typedef enum {
 	APP_SWITCH_ONE = 0,
 	APP_SWITCH_TWO = 1,

@@ -99,7 +99,7 @@ static void m_button_config(void)
 
     app_btn_config_t conf;
     conf.config = &m_hw_button_initialize_value[0];
-    conf.btn_count = MAX_NUM_BUTTON;
+    conf.btn_count = max_number_channel;
     conf.get_tick_cb = sys_get_tick_ms;
     conf.btn_initialize = hw_button_config;
     conf.btn_read = hw_btn_read;
@@ -130,7 +130,7 @@ void m_button_init(void)
 {
     m_button_config();
     
-    os_trace("m_button_init\n");
+    os_trace("m_button_init: %d\n", max_number_channel);
     xTaskCreate(button_scan_task,  /* Function that implements the task. */
                 "led_button_task", /* Text name for the task. */
                 1024 * 3,          /* Stack size in words, not bytes. */

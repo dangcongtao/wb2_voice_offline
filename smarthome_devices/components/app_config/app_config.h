@@ -16,7 +16,6 @@ void m_log(const char *fmt, ...);
 #endif
 
 /* config for type of device, that will be used to parse json message */
-#define APP_MAX_CHANNEL_SUPPORT 4
 #define EXTRAS              1514
 #define FIRMWARE_VERSION    "221007"
 #define HARDWARE_VERSION    "210807"

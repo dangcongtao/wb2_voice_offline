@@ -221,6 +221,8 @@ static void control_switch_default_state(void)
 /************************* public api ****************************/
 void m_switch_init(void)
 {
+    os_trace("m_switch_init: %d\n", max_number_channel);
+
     s_switch_obj.max_number_channel = max_number_channel;
     s_switch_obj._switch_cfg_cb = hw_switch_cfg;
     s_switch_obj._read_switch_cb = hw_read_switch_pin;
