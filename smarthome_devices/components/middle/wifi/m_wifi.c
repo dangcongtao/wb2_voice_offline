@@ -17,9 +17,9 @@
 #include "app_config.h"
 #include "m_ota.h"
 
-#define ESP_MAXIMUM_RETRY       5
+#define ESP_MAXIMUM_RETRY 5
 
-#define TAG                 "m_wifi"
+#define TAG "m_wifi"
 
 static m_wifi_t s_wifi_obj;
 
@@ -44,32 +44,35 @@ static void m_wifi_start_apconfig()
     s_wifi_obj.wifi_state = WIFI_APCONFIG;
 }
 
-static void m_wifi_set_ssid(char* ssid, size_t len)
+static void m_wifi_set_ssid(char *ssid, size_t len)
 {
-    if (len <= sizeof(s_wifi_obj.wifi_info->_ssid)) {
+    if (len <= sizeof(s_wifi_obj.wifi_info->_ssid))
+    {
         memset(s_wifi_obj.wifi_info->_ssid, 0, sizeof(s_wifi_obj.wifi_info->_ssid));
         memcpy(s_wifi_obj.wifi_info->_ssid, ssid, len);
     }
 }
 
-static void m_wifi_set_passwd(char* passwd, size_t len)
+static void m_wifi_set_passwd(char *passwd, size_t len)
 {
-    if (len <= sizeof(s_wifi_obj.wifi_info->_passwd)) {
+    if (len <= sizeof(s_wifi_obj.wifi_info->_passwd))
+    {
         memset(s_wifi_obj.wifi_info->_passwd, 0, sizeof(s_wifi_obj.wifi_info->_passwd));
         memcpy(s_wifi_obj.wifi_info->_passwd, passwd, len);
     }
 }
 
-static void m_wifi_change_wifi(char* ssid, char* passwd)
+static void m_wifi_change_wifi(char *ssid, char *passwd)
 {
     m_wifi_get_instance().wifi_set_ssid_cb(ssid, strlen(ssid));
     m_wifi_get_instance().wifi_set_passwd_cb(passwd, strlen(passwd));
     m_wifi_get_instance().wifi_set_state_cb(WIFI_DISCONNECT);
 }
 
-static void m_wifi_save_ip(char* ip, size_t len)
+static void m_wifi_save_ip(char *ip, size_t len)
 {
-    if (len <= sizeof(s_wifi_obj.wifi_info->_ip)) {
+    if (len <= sizeof(s_wifi_obj.wifi_info->_ip))
+    {
         memset(s_wifi_obj.wifi_info->_ip, 0, sizeof(s_wifi_obj.wifi_info->_ip));
         memcpy(s_wifi_obj.wifi_info->_ip, ip, len);
     }
@@ -84,9 +87,8 @@ static void wifi_initialize()
 {
 }
 
-void m_wifi_connect(char* ssid, char* password)
+void m_wifi_connect(char *ssid, char *password)
 {
-
 }
 
 void m_wifi_retry_connect(void)
@@ -94,16 +96,15 @@ void m_wifi_retry_connect(void)
     static uint32_t time_reconnect;
 
     time_reconnect += 50;
-    if (time_reconnect < 5000) {
+    if (time_reconnect < 5000)
+    {
         return;
     }
     time_reconnect = 0;
-
 }
 
 static void m_wifi_sync_rssi(void)
 {
-
 }
 
 void wifi_task(void *param)
@@ -111,6 +112,112 @@ void wifi_task(void *param)
     /* load database */
     while (true)
     {
+        switch (s_wifi_obj.wifi_state)
+        {
+        case WIFI_START:
+        {
+            /* if device was configured */
+            if (m_db_get_instance()->_get_dev_pair_state())
+            {
+                m_wifi_connect(s_wifi_obj.wifi_info->_ssid, s_wifi_obj.wifi_info->_passwd);
+            }
+            /* wait user config */
+            s_wifi_obj.wifi_state = WIFI_WAIT_EVENT;
+        }
+        break;
+
+        case WIFI_SMARTCONFIG:
+        {
+            os_trace("m_wifi: Wifi Smartconfig\n");
+            m_led_stt_get_instance()._set_led_stt_smart_config_cb();
+            s_wifi_obj.wifi_state = WIFI_WAIT_SMARTCONFIG_DONE;
+        }
+        break;
+
+        case WIFI_WAIT_SMARTCONFIG_DONE:
+        {
+            // if (start_smartconfig() == SMARTCONFIG_DONE)
+            // {
+            //     os_trace("\nsmart config done\n");
+            //     s_wifi_obj.wifi_state = WIFI_CONFIG_DONE;
+            // }
+        }
+        break;
+
+        case WIFI_APCONFIG:
+        {
+            // ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler));
+            // ESP_ERROR_CHECK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler));
+            // reset_ap_config();
+            s_wifi_obj.wifi_state = WIFI_WAIT_APCONFIG_DONE;
+        }
+        break;
+
+        case WIFI_WAIT_APCONFIG_DONE:
+        {
+            // if (apconfig_start() == AP_CONFIG_DONE)
+            //     s_wifi_obj.wifi_state = WIFI_APCONFIG_DONE;
+        }
+        break;
+
+        case WIFI_APCONFIG_DONE:
+        {
+            os_trace("Ap config done\n");
+            s_wifi_obj.wifi_state = WIFI_CONFIG_DONE;
+        }
+        break;
+
+        case WIFI_CONFIG_DONE:
+        {
+            os_trace("m_wifi: Wifi config done\n");
+            // vTaskDelay(pdMS_TO_TICKS(2000));
+            // esp_restart();
+            // ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL));
+            // ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler, NULL));
+            // s_wifi_obj.wifi_state = WIFI_DEV_ACTIVE;
+        }
+        break;
+
+        case WIFI_DISCONNECT:
+        {
+            m_led_stt_get_instance()._set_led_stt_not_config_cb();
+            m_wifi_retry_connect();
+        }
+        break;
+
+        case WIFI_CONNECTED:
+        {
+            os_trace("m_wifi: Wifi connected\n");
+            /* mqtt start */
+            // m_mqtt_get_instance()._mqtt_stop();
+            // m_mqtt_get_instance()._mqtt_start();
+            s_wifi_obj.wifi_state = WIFI_DEV_ACTIVE;
+        }
+        break;
+
+        case WIFI_DEV_ACTIVE:
+        {
+            m_wifi_sync_rssi();
+            // m_mqtt_get_instance()._mqtt_loop();
+        }
+        break;
+
+        case WIFI_WAIT_EVENT:
+        {
+        }
+        break;
+
+        default:
+            break;
+        }
+
+        static uint32_t old = 0;
+        old += 100;
+        if (old > 2000)
+        {
+            // ESP_LOGI(TAG, "[APP] Free memory: %d bytes", esp_get_free_heap_size());
+            old = 0;
+        }
         vTaskDelay(pdMS_TO_TICKS(100)); /* should be 500ms to make it's priority low */
     }
 }

@@ -28,6 +28,8 @@ typedef enum {
     MQTT_UNSUBSUBSCRIBE,
 } m_mqtt_state_t;
 
+typedef void (*p_set_data_t)(char* data, uint32_t len);
+typedef void (*p_set_num_t)(uint32_t);
 
 typedef void (*p_mqtt_publish_t)(char *topic, char* data, uint32_t data_len);
 typedef void (*p_mqtt_subscribe_t)(char *topic, uint32_t topic_len);
@@ -59,11 +61,18 @@ typedef struct  {
     m_mqtt_state_t _mqtt_state;
 
 /* public methods */
-    p_mqtt_publish_t _mqtt_publish;
+    p_mqtt_publish_t    _mqtt_publish;
     p_mqtt_start_t      _mqtt_start;
     p_mqtt_stop_t       _mqtt_stop;
     p_mqtt_task_t       _mqtt_loop;
     p_mqtt_get_state_t  _mqtt_get_state_cb;
+
+    p_set_data_t set_mqtt_server;
+    p_set_num_t set_mqtt_port;
+    p_set_data_t set_mqtt_user;
+    p_set_data_t set_mqtt_passwd;
+    p_set_data_t set_mqtt_topic_sub;
+    p_set_data_t set_mqtt_topic_pub;
 
 /* private method */
     p_mqtt_handler_msg_t _mqtt_handler_msg;
@@ -75,6 +84,7 @@ void m_mqtt_register_msg_handler(p_mqtt_handler_msg_t handler);
 void m_mqtt_command_startup_register_handler(p_mqtt_publish_startup_msg_t handler);
 
 void m_mqtt_init(void);
-m_mqtt_t* m_mqtt_get_instance(void);
+m_mqtt_t m_mqtt_get_instance(void);
+m_mqtt_info_t* m_mqtt_get_info_reference(void);
 
 #endif /* _M_MQTT_ */

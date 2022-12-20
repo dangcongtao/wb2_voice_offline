@@ -1,10 +1,12 @@
 #include "m_database.h"
+#include "m_mqtt.h"
+#include "flash_api.h"
 
 #include <string.h>
 #include <stdio.h>
 
 #include "app_config.h"
-#include "../../third_party/aes/aes_cbc128.h"
+#include "aes_cbc128.h"
 
 #include <FreeRTOS.h>
 #include <task.h>
@@ -158,18 +160,17 @@ static void m_load_databse(void)
     
     os_trace("=============== app load database ===============\r\n");
     uint32_t len_database = sizeof(m_device_t);
-    uint32_t len_device_id = sizeof(s_device_id);
 
     m_db_read_device_id();
-    // flash_read_database((void*)(&s_m_database._m_device), &len_database);
+    flash_read_database((void*)(&s_m_database._m_device), &len_database);
 
     os_trace("device_id: %s\r\n", s_device_id);
-    os_trace("server: %s\r\n", s_m_database._m_device._mqtt_info.server);
-    os_trace("port: %ld\r\n", s_m_database._m_device._mqtt_info.port);
-    os_trace("username: %s\r\n", s_m_database._m_device._mqtt_info.username);
-    os_trace("passwd: %s\r\n", s_m_database._m_device._mqtt_info.passwd);
-    os_trace("topic_pub: %s\r\n", s_m_database._m_device._mqtt_info.topic_pub);
-    os_trace("topic_sub: %s\r\n", s_m_database._m_device._mqtt_info.topic_sub);
+    os_trace("server: %s\r\n", s_m_database._m_device._mqtt_info->server);
+    os_trace("port: %ld\r\n", s_m_database._m_device._mqtt_info->port);
+    os_trace("username: %s\r\n", s_m_database._m_device._mqtt_info->username);
+    os_trace("passwd: %s\r\n", s_m_database._m_device._mqtt_info->passwd);
+    os_trace("topic_pub: %s\r\n", s_m_database._m_device._mqtt_info->topic_pub);
+    os_trace("topic_sub: %s\r\n", s_m_database._m_device._mqtt_info->topic_sub);
 
     os_trace("default state: ");
     for (i = 0; i < m_db_get_number_channel(); i++) {
@@ -257,6 +258,7 @@ void m_database_init(void)
     m_load_databse();
     generate_aes_key_iv();
 
+    s_m_database._m_device._mqtt_info = m_mqtt_get_info_reference();
     s_m_database._set_dev_pair_state = m_db_dev_set_pair;
     s_m_database._get_dev_pair_state = m_db_dev_get_pair;
     s_m_database._get_dev_id = m_get_dev_id;
@@ -282,12 +284,6 @@ m_wifi_info_t* m_db_get_wifi_reference(void)
 {
     m_wifi_info_t* p_wifi_reference = &s_m_database._m_device._wifi_info;
     return p_wifi_reference;
-}
-
-m_mqtt_info_t* m_db_get_mqtt_reference(void)
-{
-    m_mqtt_info_t* p_mqtt_reference = &s_m_database._m_device._mqtt_info;
-    return p_mqtt_reference;
 }
 
 m_database_t *m_db_get_instance(void)

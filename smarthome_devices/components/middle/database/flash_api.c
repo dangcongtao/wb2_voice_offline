@@ -53,13 +53,7 @@ char* release_modes[] = {RELEASE_MODE0, RELEASE_MODE1, RELEASE_MODE2, RELEASE_MO
 #define MQTT_USERNAME "username"
 #define MQTT_PASSWD "passwd"
 
-nvs_handle_t nvs_wifi_handler;
-nvs_handle_t nvs_mqtt_handler;
-nvs_handle_t nvs_switch_handler;
-nvs_handle_t nvs_device_id_handler;
-nvs_handle_t nvs_setting_handler;
-
-void flash_init(void) { nvsInit(); }
+void flash_init(void) {}
 
 void flash_write_database(const m_device_t object_data, uint32_t _size)
 {
@@ -67,69 +61,69 @@ void flash_write_database(const m_device_t object_data, uint32_t _size)
 
     /* write wifo info */
     size = sizeof(object_data._wifi_info._ssid);
-    ef_set_bytes(WIFI_SSID, object_data._wifi_info._ssid, size);
+    ef_set_bytes(WIFI_SSID, (uint8_t*)object_data._wifi_info._ssid, size);
     size = sizeof(object_data._wifi_info._passwd);
-    ef_set_bytes(WIFI_PASS, object_data._wifi_info._passwd, size);
+    ef_set_bytes(WIFI_PASS, (uint8_t*)object_data._wifi_info._passwd, size);
 
     /* write mqtt info */
-    size = sizeof(object_data._mqtt_info.topic_pub);
-    ef_set_bytes(MQTT_TOPIC_PUB, object_data._mqtt_info.topic_pub, size);
-    size = sizeof(object_data._mqtt_info.topic_sub);
-    ef_set_bytes(MQTT_TOPIC_SUB, object_data._mqtt_info.topic_sub, size);
-    size = sizeof(object_data._mqtt_info.server);
-    ef_set_bytes(MQTT_SERVER, object_data._mqtt_info.server, size);
-    size = sizeof(object_data._mqtt_info.port);
-    ef_set_bytes(MQTT_PORT, object_data._mqtt_info.port);
-    size = sizeof(object_data._mqtt_info.username);
-    ef_set_bytes(MQTT_USERNAME, object_data._mqtt_info.username, size);
-    size = sizeof(object_data._mqtt_info.passwd);
-    ef_set_bytes(MQTT_PASSWD, object_data._mqtt_info.passwd, size);
+    size = sizeof(object_data._mqtt_info->topic_pub);
+    ef_set_bytes(MQTT_TOPIC_PUB, (uint8_t*)object_data._mqtt_info->topic_pub, size);
+    size = sizeof(object_data._mqtt_info->topic_sub);
+    ef_set_bytes(MQTT_TOPIC_SUB, (uint8_t*)object_data._mqtt_info->topic_sub, size);
+    size = sizeof(object_data._mqtt_info->server);
+    ef_set_bytes(MQTT_SERVER, (uint8_t*)object_data._mqtt_info->server, size);
+    ef_set_u32(MQTT_PORT, object_data._mqtt_info->port);
+    size = sizeof(object_data._mqtt_info->username);
+    ef_set_bytes(MQTT_USERNAME, (uint8_t*)object_data._mqtt_info->username, size);
+    size = sizeof(object_data._mqtt_info->passwd);
+    ef_set_bytes(MQTT_PASSWD, (uint8_t*)object_data._mqtt_info->passwd, size);
 
     /* read switch info */
+    uint32_t i;
     for (i = 0; i < max_number_channel; i++) {
-        ef_set_bytes(defaut_states[i], object_data._switch_info.default_state[i]);
-        ef_set_bytes(current_states[i], object_data._switch_info.current_state[i]);
-        ef_set_bytes(lock_states[i], object_data._switch_info.channel_lock_state[i]);
-        ef_set_bytes(time_releases[i], object_data._switch_info.time_release[i]);
-        ef_set_bytes(release_modes[i], object_data._switch_info.release_mode[i]);
+        ef_set_bytes(defaut_states[i], (uint8_t*)object_data._switch_info.default_state[i], sizeof(object_data._switch_info.default_state[i]));
+        ef_set_bytes(current_states[i], (uint8_t*)object_data._switch_info.current_state[i], sizeof(object_data._switch_info.current_state[i]));
+        ef_set_bytes(lock_states[i], (uint8_t*)object_data._switch_info.channel_lock_state[i], sizeof(object_data._switch_info.channel_lock_state[i]));
+        ef_set_bytes(time_releases[i], (uint8_t*)object_data._switch_info.time_release[i], sizeof(object_data._switch_info.time_release[i]));
+        ef_set_bytes(release_modes[i], (uint8_t*)object_data._switch_info.release_mode[i], sizeof(object_data._switch_info.release_mode[i]));
     }
 
     /* write state pair */
-    ef_get_u32(PAIR_STATE, object_data._device_is_paired);
+    ef_get_u32(PAIR_STATE, (uint32_t*)(&object_data._device_is_paired));
 }
 
 void flash_read_database(m_device_t* object_data, uint32_t* _size)
 {
     uint32_t size = 0;
-    uint32_t i = 0;
 
     /* read wifi info */
     size = sizeof(object_data->_wifi_info._ssid);
-    ef_get_bytes(WIFI_SSID, object_data->_wifi_info._ssid, size);
+    ef_get_bytes(WIFI_SSID, (uint8_t*)object_data->_wifi_info._ssid, size);
     size = sizeof(object_data->_wifi_info._passwd);
-    ef_get_bytes(WIFI_PASS, object_data->_wifi_info._passwd, size);
+    ef_get_bytes(WIFI_PASS, (uint8_t*)object_data->_wifi_info._passwd, size);
 
     /* read mqtt info */
-    size = sizeof(object_data->_mqtt_info.topic_pub);
-    ef_get_bytes(NAMESPACE_MQTT, MQTT_TOPIC_PUB, object_data->_mqtt_info.topic_pub, size);
-    size = sizeof(object_data->_mqtt_info.topic_sub);
-    ef_get_bytes(NAMESPACE_MQTT, MQTT_TOPIC_SUB, object_data->_mqtt_info.topic_sub, size);
-    size = sizeof(object_data->_mqtt_info.server);
-    ef_get_bytes(NAMESPACE_MQTT, MQTT_SERVER, object_data->_mqtt_info.server, size);
-    size = sizeof(object_data->_mqtt_info.port);
-    object_data->_mqtt_info.port = ef_get_u32(NAMESPACE_MQTT, MQTT_PORT);
-    size = sizeof(object_data->_mqtt_info.username);
-    ef_get_bytes(NAMESPACE_MQTT, MQTT_USERNAME, object_data->_mqtt_info.username, size);
-    size = sizeof(object_data->_mqtt_info.passwd);
-    ef_get_bytes(MQTT_PASSWD, object_data->_mqtt_info.passwd, size);
+    size = sizeof(object_data->_mqtt_info->topic_pub);
+    ef_get_bytes(MQTT_TOPIC_PUB, (uint8_t*)object_data->_mqtt_info->topic_pub, size);
+    size = sizeof(object_data->_mqtt_info->topic_sub);
+    ef_get_bytes(MQTT_TOPIC_SUB, (uint8_t*)object_data->_mqtt_info->topic_sub, size);
+    size = sizeof(object_data->_mqtt_info->server);
+    ef_get_bytes(MQTT_SERVER, (uint8_t*)object_data->_mqtt_info->server, size);
+    size = sizeof(object_data->_mqtt_info->port);
+    ef_get_u32(MQTT_PORT, &(object_data->_mqtt_info->port));
+    size = sizeof(object_data->_mqtt_info->username);
+    ef_get_bytes(MQTT_USERNAME, (uint8_t*)object_data->_mqtt_info->username, size);
+    size = sizeof(object_data->_mqtt_info->passwd);
+    ef_get_bytes(MQTT_PASSWD, (uint8_t*)object_data->_mqtt_info->passwd, size);
 
     /* read switch info */
+    uint32_t i;
     for (i = 0; i < max_number_channel; i++) {
-        ef_get_u32(defaut_states[i], &(object_data->_switch_info.default_state[i]));
-        ef_get_u32(current_states[i], &(object_data->_switch_info.current_state[i]));
-        ef_get_u32(lock_states[i], &(object_data->_switch_info.channel_lock_state[i]));
-        ef_get_u32(time_releases[i], &(object_data->_switch_info.time_release[i]));
-        ef_get_u32(release_modes[i], &(object_data->_switch_info.release_mode[i]));
+        ef_get_u32(defaut_states[i], (uint32_t *)&(object_data->_switch_info.default_state[i]));
+        ef_get_u32(current_states[i], (uint32_t *)&(object_data->_switch_info.current_state[i]));
+        ef_get_u32(lock_states[i], (uint32_t *)&(object_data->_switch_info.channel_lock_state[i]));
+        ef_get_u32(time_releases[i], (uint32_t *)&(object_data->_switch_info.time_release[i]));
+        ef_get_u32(release_modes[i], (uint32_t *)&(object_data->_switch_info.release_mode[i]));
         
     }
 

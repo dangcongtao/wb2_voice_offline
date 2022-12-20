@@ -10,172 +10,239 @@
 #include <queue.h>
 #include <timers.h>
 
-#include "../../third_party/cJson/cJSON.h"
-#include "../../third_party/aes/aes_cbc128.h"
+#include "cJSON.h"
+#include "aes_cbc128.h"
+#include "system_typedef.h"
 
-// extern char key[16], iv[16];
-// static const char *TAG = "MQTT_EXAMPLE";
+extern char key[16], iv[16];
 
-// static char m_message_real[MAXIMUM_SIZE_MESSAGE];
-// static uint32_t m_message_real_len = 0;
-// static bool request_send_command_online = false;
-// static QueueHandle_t xQueueMQTT_Msg_Tx;
-// static m_mqtt_t s_mqtt_obj;
+static m_mqtt_t s_mqtt_obj;
+static QueueHandle_t mqtt_tx_queue;
+static bool request_send_command_online = false;
 
-// static bool mqtt_init_queue(void)
-// {
-//     /* init queue mqtt tx */
-//     if (xQueueMQTT_Msg_Tx == NULL) {
-//         xQueueMQTT_Msg_Tx = xQueueCreate(MAXIMUM_QUEUE_ITEM, sizeof(m_mqtt_msg_pub_t));
-//         if(xQueueMQTT_Msg_Tx == NULL){
-//             os_trace("Cannot create queue send at command\r\n");
-//             return false;
-//         }
-//     }
-    
-//     os_trace("Init queue success\n");
+void set_mqtt_server(char* data, uint32_t len)
+{
+    if (len > sizeof(s_mqtt_obj.mqtt_info.server)) {
+        os_trace("fail to set mqtt server, len data too long\r\n");
+        return;
+    }
 
-//     return true;
-// }
+    memset(s_mqtt_obj.mqtt_info.server, 0, sizeof(s_mqtt_obj.mqtt_info.server));
+    memcpy(s_mqtt_obj.mqtt_info.server, data, len);
+}
 
-// static void m_mqtt_publish(char *topic, char* data, uint32_t data_len)
-// {
-//     if(mqtt_topic == NULL || mqtt_message == NULL)
-//         return;
+void set_mqtt_port(uint32_t num)
+{
+    s_mqtt_obj.mqtt_info.port = num;
+}
 
-//     m_mqtt_msg_pub_t message;
-// 	memset(&message, 0, sizeof(message));
-// 	memcpy(message.mqtt_topic_pub, mqtt_topic, strlen(mqtt_topic));
-// 	memcpy(message.mqtt_message_pub, mqtt_message, length);
-// 	message.length = length;
+void set_mqtt_user(char* data, uint32_t len)
+{
+    if (len > sizeof(s_mqtt_obj.mqtt_info.username)) {
+        os_trace("fail to set mqtt user, len data too long\r\n");
+        return;
+    }
 
-// 	if (xQueueSend(xQueueMQTT_Msg_Tx, &message, pdMS_TO_TICKS(0)) != pdPASS) {
-//         os_trace("Push to queue tx fail\n");
-//     }
-// }
+    memset(s_mqtt_obj.mqtt_info.username, 0, sizeof(s_mqtt_obj.mqtt_info.username));
+    memcpy(s_mqtt_obj.mqtt_info.username, data, len);
+}
 
-// static m_mqtt_state_t m_mqtt_get_state(void)
-// {
-//     return s_mqtt_obj._mqtt_state;
-// }
+void set_mqtt_passwd(char* data, uint32_t len)
+{
+    if (len > sizeof(s_mqtt_obj.mqtt_info.passwd)) {
+        os_trace("fail to set mqtt passwd, len data too long\r\n");
+        return;
+    }
 
-// static void mqtt_on_message(char* data, uint32_t len)
-// {
-//     char temp_data[MAXIMUM_SIZE_MESSAGE];
-//     uint32_t data_len;
-//     uint32_t m_message_real_len = 0;
-//     char m_message_real[MAXIMUM_SIZE_MESSAGE];
+    memset(s_mqtt_obj.mqtt_info.passwd, 0, sizeof(s_mqtt_obj.mqtt_info.passwd));
+    memcpy(s_mqtt_obj.mqtt_info.passwd, data, len);
+}
 
-//     /* decode data */
-//     data_len = len;
-//     memset(temp_data, 0, sizeof(temp_data));
-//     memcpy(temp_data, data, (MAXIMUM_SIZE_MESSAGE > data_len ? data_len : MAXIMUM_SIZE_MESSAGE));
+void set_mqtt_topic_sub(char* data, uint32_t len)
+{
+    if (len > sizeof(s_mqtt_obj.mqtt_info.topic_sub)) {
+        os_trace("fail to set mqtt topic_sub, len data too long\r\n");
+        return;
+    }
 
-//     memset(m_message_real, 0, sizeof(m_message_real));
-//     if (temp_data[0] != '{') {
-//         aes_cbc128_init((uint8_t *)key, (uint8_t *)iv);
-//         if (aes_cbc128_decrypt((uint8_t *)temp_data, data_len, 
-//                             (uint8_t *)m_message_real, 
-//                             (size_t *)&m_message_real_len) != AES_SUCCESS) {
-//             os_trace("Can not decrypt message\n");
-//             return;
-//         }
-//     } else {
-//         memcpy(m_message_real, temp_data, data_len);
-//         m_message_real_len = data_len;
-//     }
+    memset(s_mqtt_obj.mqtt_info.topic_sub, 0, sizeof(s_mqtt_obj.mqtt_info.topic_sub));
+    memcpy(s_mqtt_obj.mqtt_info.topic_sub, data, len);
+}
 
-//     os_trace("mqtt received: %s\n", m_message_real);
-//     s_mqtt_obj._mqtt_handler_msg(m_message_real, m_message_real_len);
-// }
+void set_mqtt_topic_pub(char* data, uint32_t len)
+{
+    if (len > sizeof(s_mqtt_obj.mqtt_info.topic_pub)) {
+        os_trace("fail to set mqtt topic_sub, len data too long\r\n");
+        return;
+    }
 
-// static void m_mqtt_start(void)
-// {
-//     os_trace("mqtt start\n");
-//     os_trace("\tserver: %s\n", s_mqtt_obj.mqtt_info->server);
-//     os_trace("\tport: %d\n", s_mqtt_obj.mqtt_info->port);
-//     os_trace("\tusername: %s\n", s_mqtt_obj.mqtt_info->username);
-//     os_trace("\tpasswd: %s\n", s_mqtt_obj.mqtt_info->passwd);
-//     os_trace("\ttopic_pub: %s\n", s_mqtt_obj.mqtt_info->topic_pub);
-//     os_trace("\ttopic_sub: %s\n", s_mqtt_obj.mqtt_info->topic_sub);
-//     s_mqtt_obj._mqtt_state = MQTT_INTIALIZED;
-// }
+    memset(s_mqtt_obj.mqtt_info.topic_pub, 0, sizeof(s_mqtt_obj.mqtt_info.topic_pub));
+    memcpy(s_mqtt_obj.mqtt_info.topic_pub, data, len);
+}
 
-// static void m_mqtt_stop(void)
-// {
-//     os_trace("\tmqtt stop\n");
-// }
+static bool mqtt_init_queue(void)
+{
+    if (mqtt_tx_queue == NULL) {
+        mqtt_tx_queue = xQueueCreate(MAXIMUM_QUEUE_ITEM, sizeof(m_mqtt_msg_pub_t));
+        if(mqtt_tx_queue == NULL){
+            os_trace("Cannot create queue send at command\r\n");
+            return false;
+        }
+    }
 
-// static void m_mqtt_publish_loop(void)
-// {
-// 	if (xQueueMQTT_Msg_Tx == NULL) {
-//         os_trace("Queue pub null");
-//         return;
-//     }
+    return true;
+}
+
+static void m_mqtt_publish(char *topic, char* data, uint32_t length)
+{
+    if(topic == NULL || data == NULL)
+        return;
+
+    m_mqtt_msg_pub_t message;
+	memset(&message, 0, sizeof(message));
+	memcpy(message.mqtt_topic_pub, topic, strlen(topic));
+	memcpy(message.mqtt_message_pub, data, length);
+	message.length = length;
+
+	if (xQueueSend(mqtt_tx_queue, &message, pdMS_TO_TICKS(0)) != pdPASS) {
+        os_trace("Push to queue tx fail\n");
+    }
+}
+
+static m_mqtt_state_t m_mqtt_get_state(void)
+{
+    return s_mqtt_obj._mqtt_state;
+}
+
+static void mqtt_on_message(char* data, uint32_t len)
+{
+    char temp_data[MAXIMUM_SIZE_MESSAGE];
+    uint32_t data_len;
+    uint32_t m_message_real_len = 0;
+    char m_message_real[MAXIMUM_SIZE_MESSAGE];
+
+    /* decode data */
+    data_len = len;
+    memset(temp_data, 0, sizeof(temp_data));
+    memcpy(temp_data, data, (MAXIMUM_SIZE_MESSAGE > data_len ? data_len : MAXIMUM_SIZE_MESSAGE));
+
+    memset(m_message_real, 0, sizeof(m_message_real));
+    if (temp_data[0] != '{') {
+        aes_cbc128_init((uint8_t *)key, (uint8_t *)iv);
+        if (aes_cbc128_decrypt((uint8_t *)temp_data, data_len, 
+                            (uint8_t *)m_message_real, 
+                            (size_t *)&m_message_real_len) != AES_SUCCESS) {
+            os_trace("Can not decrypt message\n");
+            return;
+        }
+    } else {
+        memcpy(m_message_real, temp_data, data_len);
+        m_message_real_len = data_len;
+    }
+
+    os_trace("mqtt received: %s\n", m_message_real);
+    s_mqtt_obj._mqtt_handler_msg(m_message_real, m_message_real_len);
+}
+
+static void m_mqtt_start(void)
+{
+    os_trace("mqtt start\n");
+    os_trace("\tserver: %s\n", s_mqtt_obj.mqtt_info.server);
+    os_trace("\tport: %d\n", s_mqtt_obj.mqtt_info.port);
+    os_trace("\tusername: %s\n", s_mqtt_obj.mqtt_info.username);
+    os_trace("\tpasswd: %s\n", s_mqtt_obj.mqtt_info.passwd);
+    os_trace("\ttopic_pub: %s\n", s_mqtt_obj.mqtt_info.topic_pub);
+    os_trace("\ttopic_sub: %s\n", s_mqtt_obj.mqtt_info.topic_sub);
+    s_mqtt_obj._mqtt_state = MQTT_INTIALIZED;
+    request_send_command_online = true;
+}
+
+static void m_mqtt_stop(void)
+{
+    os_trace("\tmqtt stop\n");
+}
+
+static void m_mqtt_publish_loop(void)
+{
+	if (mqtt_tx_queue == NULL) {
+        os_trace("Queue pub null");
+        return;
+    }
 	
-//     m_mqtt_msg_pub_t mqtt_msg_pub;
+    m_mqtt_msg_pub_t mqtt_msg_pub;
+    char msg_encrypted[MAXIMUM_SIZE_MESSAGE];
+    uint32_t len_msg_encrypted = MAXIMUM_SIZE_MESSAGE;
 
-//     if (xQueueReceive(xQueueMQTT_Msg_Tx, &mqtt_msg_pub, 1) == pdPASS) {
-//         char msg_to_pub[MAXIMUM_SIZE_MESSAGE];
-//         uint32_t len_to_pub = MAXIMUM_SIZE_MESSAGE;
+    if (xQueueReceive(mqtt_tx_queue, &mqtt_msg_pub, 1) == pdPASS) {
 
-//         /* Encode AES */
-//         memset(msg_to_pub, 0, sizeof(msg_to_pub));
-//         aes_cbc128_init((uint8_t *)key, (uint8_t *)iv);
-//         uint32_t aes_encrypt_result = aes_cbc128_encrypt((uint8_t *)mqtt_msg_pub.mqtt_message_pub,
-//                                                             mqtt_msg_pub.length, 
-//                                                             (uint8_t*)msg_to_pub, 
-//                                                             (size_t *)&len_to_pub);
-//         if (aes_encrypt_result != AES_SUCCESS) {
-//             os_trace("Encode fail,error-code: %d\n", aes_encrypt_result);
-//             return;
-//         }
+        /* Encode AES */
+        memset(msg_encrypted, 0, sizeof(msg_encrypted));
+        aes_cbc128_init((uint8_t *)key, (uint8_t *)iv);
+        uint32_t aes_encrypt_result = aes_cbc128_encrypt((uint8_t *)mqtt_msg_pub.mqtt_message_pub,
+                                                        mqtt_msg_pub.length, 
+                                                        (uint8_t*)msg_encrypted, 
+                                                        (size_t *)&len_msg_encrypted);
+        if (aes_encrypt_result != AES_SUCCESS) {
+            os_trace("Encode fail,error-code: %d\n", aes_encrypt_result);
+            return;
+        }
 
-//         /* call platform mqtt-publish api */
-//     }
-// }
+        /* call platform mqtt-publish api */
+    }
+}
 
-// static void m_mqtt_task_loop(void)
-// {
-//     if (request_send_command_online) {
-//         s_mqtt_obj._mqtt_pub_startup_msg();
-//         request_send_command_online = 0;
-//     }
+static void m_mqtt_task_loop(void)
+{
+    if (request_send_command_online && s_mqtt_obj._mqtt_pub_startup_msg != NULL) {
+        s_mqtt_obj._mqtt_pub_startup_msg();
+        request_send_command_online = 0;
+    }
 
-//     m_mqtt_publish_loop();
+    m_mqtt_publish_loop();
 
-//     vTaskDelay(pdMS_TO_TICKS(10));
-// }
+    vTaskDelay(pdMS_TO_TICKS(10));
+}
 
-// void m_mqtt_init(void)
-// {
-//     os_trace("m_mqtt_init\n");
+void m_mqtt_init(void)
+{
+    os_trace("m_mqtt_init\n");
 
-//     s_mqtt_obj.mqtt_info = mqtt;
-//     s_mqtt_obj._mqtt_state = MQTT_UNINTIALIZED;
-//     s_mqtt_obj._mqtt_publish = m_mqtt_publish;
-//     s_mqtt_obj._mqtt_start = m_mqtt_start;
-//     s_mqtt_obj._mqtt_stop = m_mqtt_stop;
-//     s_mqtt_obj._mqtt_loop = m_mqtt_task_loop;
-//     s_mqtt_obj._mqtt_get_state_cb = m_mqtt_get_state;
+    s_mqtt_obj._mqtt_state = MQTT_UNINTIALIZED;
+    s_mqtt_obj._mqtt_publish = m_mqtt_publish;
+    s_mqtt_obj._mqtt_start = m_mqtt_start;
+    s_mqtt_obj._mqtt_stop = m_mqtt_stop;
+    s_mqtt_obj._mqtt_loop = m_mqtt_task_loop;
+    s_mqtt_obj._mqtt_get_state_cb = m_mqtt_get_state;
 
-//     /* inti queue */
-//     mqtt_init_queue();
-// }
+    s_mqtt_obj.set_mqtt_server = set_mqtt_server;
+    s_mqtt_obj.set_mqtt_port = set_mqtt_port;
+    s_mqtt_obj.set_mqtt_server = set_mqtt_user;
+    s_mqtt_obj.set_mqtt_server = set_mqtt_passwd;
+    s_mqtt_obj.set_mqtt_topic_sub = set_mqtt_topic_sub;
+    s_mqtt_obj.set_mqtt_topic_pub = set_mqtt_topic_pub;
 
-// /* have to call this api befor start mqtt */
-// void m_mqtt_register_msg_handler(p_mqtt_handler_msg_t handler)
-// {
-//     s_mqtt_obj._mqtt_handler_msg = handler;
-// }
+    /* inti queue */
+    mqtt_init_queue();
+}
 
-// /* have to call this api befor start mqtt */
-// void m_mqtt_command_startup_register_handler(p_mqtt_publish_startup_msg_t handler)
-// {
-//     s_mqtt_obj._mqtt_pub_startup_msg = handler;
-// }
+/* have to call this api befor start mqtt */
+void m_mqtt_register_msg_handler(p_mqtt_handler_msg_t handler)
+{
+    s_mqtt_obj._mqtt_handler_msg = handler;
+}
 
-// m_mqtt_t* m_mqtt_get_instance(void)
-// {
-//     return &s_mqtt_obj;
-// }
+/* have to call this api befor start mqtt */
+void m_mqtt_command_startup_register_handler(p_mqtt_publish_startup_msg_t handler)
+{
+    s_mqtt_obj._mqtt_pub_startup_msg = handler;
+}
+
+m_mqtt_t m_mqtt_get_instance(void)
+{
+    return s_mqtt_obj;
+}
+
+m_mqtt_info_t* m_mqtt_get_info_reference(void)
+{
+    return &(s_mqtt_obj.mqtt_info);
+}
