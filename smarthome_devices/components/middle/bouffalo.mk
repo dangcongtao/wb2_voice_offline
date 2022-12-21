@@ -22,12 +22,12 @@ COMPONENT_SRCS := database/m_database.c \
 				  ota/m_ota.c \
 				  wifi/tcp_server.c \
 				  wifi/m_http_server.c \
+				  wifi/m_http_services.c \
 				  wifi/m_ap_config.c \
 				  wifi/m_smartconfig.c \
 				  wifi/m_wifi_ap.c \
 				  wifi/m_wifi_station.c \
 				  wifi/m_wifi.c \
-
 				  
 COMPONENT_OBJS := $(patsubst %.c,%.o, $(COMPONENT_SRCS))
 

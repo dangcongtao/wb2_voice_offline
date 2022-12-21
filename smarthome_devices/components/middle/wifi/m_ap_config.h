@@ -29,6 +29,8 @@ typedef struct {
 
 void ap_cfg_clear_state(void);
 uint8_t is_ap_config_done(void);
+
+void scan_ap_around(void);
 bool apconfig_parse_wifi_info(char* json);
 
 #endif 

@@ -1,6 +1,7 @@
 #include "m_wifi_ap.h"
 #include "m_ap_config.h"
 #include "m_http_server.h"
+#include "m_database.h"
 
 #include <FreeRTOS.h>
 #include <task.h>
@@ -15,13 +16,18 @@
 #include <lwip/inet.h>
 #include <blog.h>
 
-#define AP_SSID "ai-thinker"
-#define AP_PWD "12345678"
+/* if you want usb other gw ip, please change components/network/lwip_dhcpd/dhcp_server_raw.c：42   DHCPD_SERVER_IP 
+for example  gw ip:"192.168.4.1" , change DHCPD_SERVER_IP to "192.168.4.1" */
+#define IP_ADDR         "192.168.4.1"
+#define GATEWAY_ADDR    IP_ADDR
+#define NETMASK         "255.255.255.0"
 
 static wifi_conf_t ap_conf = {
     .country_code = "VN",
 };
+
 static wifi_interface_t ap_interface;
+
 /**
  * @brief wifi_ap_ip_set
  *      Set the IP address of soft AP
@@ -80,11 +86,13 @@ static void wifi_ap_ip_set(char* ip_addr, char* netmask, char* gw)
  */
 static void wifi_ap_start()
 {
+    char* ssid = m_db_get_instance()->_get_dev_id();
+    char* passwd = "";
+
     ap_interface = wifi_mgmr_ap_enable();
     wifi_mgmr_conf_max_sta(4);
-    wifi_mgmr_ap_start(ap_interface, AP_SSID, 0, AP_PWD, 6);
-    wifi_ap_ip_set("192.168.4.1", "255.255.255.0", "192.168.4.1");  //if you want usb other gw ip ,please change components/network/lwip_dhcpd/dhcp_server_raw.c：42   DHCPD_SERVER_IP 
-                                                                        //for example  gw ip:"192.168.4.1" , change DHCPD_SERVER_IP to "192.168.4.1"
+    wifi_mgmr_ap_start(ap_interface, ssid, 0, passwd, 6);
+    wifi_ap_ip_set(IP_ADDR, NETMASK, GATEWAY_ADDR);  
 }
 
 static void event_cb_wifi_event(input_event_t* event, void* private_data)
@@ -101,6 +109,7 @@ static void event_cb_wifi_event(input_event_t* event, void* private_data)
         case CODE_WIFI_ON_AP_STARTED:
             blog_info("<<<<<<<<< startt soft ap OK<<<<<<<<<<<");
             m_http_server_start();
+            scan_ap_around();
             break;
         case CODE_WIFI_ON_AP_STOPPED:
             break;
@@ -119,7 +128,6 @@ static void event_cb_wifi_event(input_event_t* event, void* private_data)
 
 static void proc_main_entry(void* pvParameters)
 {
-
     aos_register_event_filter(EV_WIFI, event_cb_wifi_event, NULL);
     hal_wifi_start_firmware_task();
     aos_post_event(EV_WIFI, CODE_WIFI_ON_INIT_DONE, 0);
