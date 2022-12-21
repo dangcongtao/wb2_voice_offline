@@ -33,6 +33,23 @@
 
 #define SERVER_PORT 80
 
+const static char http_html_hdr[] =
+    "HTTP/1.1 200 OK\r\nContent-type: text/html\r\n\r\n";
+const static char http_index_hml[] = "<!DOCTYPE html>"
+                                     "<html>\n"
+                                     "<head>\n"
+                                     "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n"
+                                     "  <style type=\"text/css\">\n"
+                                     "    html, body, iframe { margin: 0; padding: 0; height: 100%; }\n"
+                                     "    iframe { display: block; width: 100%; border: none; }\n"
+                                     "  </style>\n"
+                                     "<title>HUNONIC DEVICES</title>\n"
+                                     "</head>\n"
+                                     "<body>\n"
+                                     "<h1>Hunonic Wifi Devices - Author: Dungnt98</h1>\n"
+                                     "</body>\n"
+                                     "</html>\n";
+
 static void web_http_server(struct netconn *conn)
 {
     struct netbuf *inputbuf;
@@ -51,11 +68,18 @@ static void web_http_server(struct netconn *conn)
         if (buflen > 0)
         {
             resond = m_http_services(buf, buflen);
+
             if (resond != NULL) 
             {
-                netconn_write(conn, resond, sizeof(resond) - 1, NETCONN_NOCOPY);
+                os_trace("%s\r\n", resond);
+                netconn_write(conn, http_html_hdr, sizeof(http_html_hdr) - 1, NETCONN_NOCOPY);
+                netconn_write(conn, resond, strlen(resond), NETCONN_COPY);
+                free(resond);
+                resond = NULL;
             } else {
                 os_trace("not found any services\r\n");
+                netconn_write(conn, http_html_hdr, sizeof(http_html_hdr) - 1, NETCONN_NOCOPY);
+                netconn_write(conn, http_index_hml, sizeof(http_index_hml) - 1, NETCONN_NOCOPY);
             }
         }
     }

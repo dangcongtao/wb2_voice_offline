@@ -13,18 +13,6 @@ static wifi_interface_t g_wifi_sta_interface = NULL;
 static int g_wifi_sta_is_connected = 0;
 wifi_sta_reconnect_t sta_reconn_params = {15, 10}; // set connection interval = 15, reconntction times = 10
 
-void wifi_background_init(country_code_type country_code)
-{
-    char *country_code_string[WIFI_COUNTRY_CODE_MAX] = {"CN", "JP", "US", "EU"};
-
-    /* init wifi background*/
-    strcpy(conf.country_code, country_code_string[country_code]);
-    wifi_mgmr_start_background(&conf);
-
-    /* enable scan hide ssid */
-    wifi_mgmr_scan_filter_hidden_ssid(0);
-}
-
 int wifi_sta_connect(void)
 {
     g_wifi_sta_interface = wifi_mgmr_sta_enable();

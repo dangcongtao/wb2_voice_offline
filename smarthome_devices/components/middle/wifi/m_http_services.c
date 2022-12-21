@@ -9,14 +9,14 @@
 #include "m_smartconfig.h"
 #include <wifi_mgmr_ext.h>
 
-#define MAX_NUM_SERVICES 4
+#define MAX_NUM_SERVICES    4
+#define MAX_RESP_LEN        1024
 
 char* m_apconfig_step1(char* req);
 char* m_apconfig_step2(char* req);
 char* m_smartconfig_step1(char *req);
 char* m_smartconfig_step2(char *req);
 
-char resp[2048];
 extern uint32_t counter;
 extern wifi_mgmr_ap_item_t ap_ary_p[WIFI_SCAN_MAX_AP];
 
@@ -35,6 +35,7 @@ char* m_apconfig_step1(char* req)
     apconfig_parse_wifi_info(req);
 
     /* Send response */
+    char* resp = malloc(sizeof(char) * MAX_RESP_LEN);
     memset(resp, 0, sizeof(resp));
     sprintf(resp, "{\"result\": 1}");
 
@@ -54,6 +55,7 @@ char* m_apconfig_step2(char *req)
     os_trace("\tAPCONFIG STEP 2\r\n");
 
     /* show wifi around me */
+    char* resp = malloc(sizeof(char) * MAX_RESP_LEN);
     memset(resp, 0, sizeof(resp));
 
     n = sprintf(resp, "{\"APs\": [");
@@ -64,8 +66,6 @@ char* m_apconfig_step2(char *req)
     }
     n += sprintf(&resp[n - 1], "], \"device_id\": \"%s\", \"extra\": %d, \"type\": \"%s\"}",
                  m_db_get_instance()->_get_dev_id(), EXTRAS, gs_dev_type[device_type]);
-
-    os_trace("%s\r\n", resp);
 
     return resp;
 }
@@ -81,9 +81,9 @@ char* m_smartconfig_step1(char *req)
 {
     os_trace("SMARTCONFIG STEP 1\r\n");
 
+    char* resp = malloc(sizeof(char) * MAX_RESP_LEN);
     memset(resp, 0, sizeof(resp));
     sprintf(resp, "{\"id\":\"%s\",\"version\":\"%s\"}", m_db_get_instance()->_get_dev_id(), FIRMWARE_VERSION);
-    os_trace("%s\r\n", resp);
 
     return resp;
 }
@@ -98,6 +98,7 @@ http_service_t setting = {
 char* m_smartconfig_step2(char *req)
 {
     // os_trace("\nSmartconfig http step 2 \n");
+    char* resp = malloc(sizeof(char) * MAX_RESP_LEN);
 
     // os_trace("m_http_server receive: [%s]", req);
     // if (m_smartconfig_parse_data(req) != true)

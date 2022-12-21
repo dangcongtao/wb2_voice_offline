@@ -1,6 +1,10 @@
 #ifndef _WIFI_CFG_H_
 #define _WIFI_CFG_H_
 
+#include "lwip/err.h"
+#include "lwip/sys.h"
+#include "lwip/netdb.h"
+#include "lwip/api.h"
 #include <stdint.h>
 
 typedef char* (*p_handler_t)(char* buf);
@@ -11,6 +15,7 @@ typedef struct {
     p_handler_t handler;
 } http_service_t;
 
+void m_web_http_server(struct netconn *conn);
 char* m_http_services(char* buf, uint16_t len);
 
 #endif
