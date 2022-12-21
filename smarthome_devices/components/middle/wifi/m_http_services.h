@@ -1,6 +1,8 @@
 #ifndef _WIFI_CFG_H_
 #define _WIFI_CFG_H_
 
+#include <stdint.h>
+
 typedef char* (*p_handler_t)(char* buf);
 
 typedef struct {
@@ -9,6 +11,6 @@ typedef struct {
     p_handler_t handler;
 } http_service_t;
 
-char* m_http_services(char* buf);
+char* m_http_services(char* buf, uint16_t len);
 
 #endif

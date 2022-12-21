@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#define MAX_SSID_SCAN      20
+#define WIFI_SCAN_MAX_AP      5
 
 typedef enum {
     START_APCONFIG = 0,
@@ -20,12 +20,6 @@ typedef enum {
     CONNECT_WIFI,
     AP_CONFIG_DONE
 } m_apconfig_step_t;
-
-typedef struct {
-    char ssid[MAX_SSID_SCAN][32];
-    int8_t rssi[MAX_SSID_SCAN];
-    uint32_t num_ap_available;
-} m_ap_around_t;
 
 void ap_cfg_clear_state(void);
 uint8_t is_ap_config_done(void);

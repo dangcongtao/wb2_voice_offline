@@ -7,6 +7,7 @@
 #include "m_database.h"
 #include "m_ap_config.h"
 #include "m_smartconfig.h"
+#include <wifi_mgmr_ext.h>
 
 #define MAX_NUM_SERVICES 4
 
@@ -15,7 +16,9 @@ char* m_apconfig_step2(char* req);
 char* m_smartconfig_step1(char *req);
 char* m_smartconfig_step2(char *req);
 
-char resp[1024];
+char resp[2048];
+extern uint32_t counter;
+extern wifi_mgmr_ap_item_t ap_ary_p[WIFI_SCAN_MAX_AP];
 
 http_service_t wificonfig = {
     .uri       = "/wificonfig",
@@ -25,10 +28,10 @@ http_service_t wificonfig = {
 
 char* m_apconfig_step1(char* req)
 {
-    os_trace("\tApconfig step 1\n");
+    os_trace("APCONFIG STEP 1\r\n");
 
     /* parser data to get info of wifi & mqtt server */
-    os_trace("m_http_server receive: [%s]", req);
+    os_trace("m_http_server receive: [%s]\r\n", req);
     apconfig_parse_wifi_info(req);
 
     /* Send response */
@@ -48,19 +51,21 @@ char* m_apconfig_step2(char *req)
 {
     int n = 0;
 
-    os_trace("\tApconfig step 2\n");
+    os_trace("\tAPCONFIG STEP 2\r\n");
 
     /* show wifi around me */
-    // memset(resp, 0, sizeof(resp));
-    // n = sprintf(resp, "{\"APs\": [");
-    // for (uint8_t i = 0; i < MIN(access_point_around.num_ap_available, MAX_SSID_SCAN); i++)
-    // {
-    //     n += sprintf(&resp[n], "{\"id\": %d, \"rssi\": %d, \"ssid\": \"%s\"},",
-    //                  i, access_point_around.rssi[i], access_point_around.ssid[i]);
-    // }
-    // n += sprintf(&resp[n - 1], "], \"device_id\": \"%s\", \"extra\": %d, \"type\": \"%s\"}",
-    //              m_db_get_instance()->_get_dev_id(), EXTRAS, gs_dev_type[device_type]);
-    // os_trace("%s\n", resp);
+    memset(resp, 0, sizeof(resp));
+
+    n = sprintf(resp, "{\"APs\": [");
+    for (uint8_t i = 0; i < counter; i++)
+    {
+        n += sprintf(&resp[n], "{\"id\": %d, \"rssi\": %d, \"ssid\": \"%s\"},",
+                     i, ap_ary_p[i].rssi, ap_ary_p[i].ssid);
+    }
+    n += sprintf(&resp[n - 1], "], \"device_id\": \"%s\", \"extra\": %d, \"type\": \"%s\"}",
+                 m_db_get_instance()->_get_dev_id(), EXTRAS, gs_dev_type[device_type]);
+
+    os_trace("%s\r\n", resp);
 
     return resp;
 }
@@ -74,18 +79,18 @@ http_service_t root = {
 
 char* m_smartconfig_step1(char *req)
 {
-    os_trace("\nSmartconfig http step 1 \n");
+    os_trace("SMARTCONFIG STEP 1\r\n");
 
     memset(resp, 0, sizeof(resp));
     sprintf(resp, "{\"id\":\"%s\",\"version\":\"%s\"}", m_db_get_instance()->_get_dev_id(), FIRMWARE_VERSION);
-    os_trace("%s\n", resp);
+    os_trace("%s\r\n", resp);
 
     return resp;
 }
 
 
 http_service_t setting = {
-    .uri       = "/setting/",
+    .uri       = "/setting",
     .method    = "POST",
     .handler   = m_smartconfig_step2,
 };
@@ -106,18 +111,35 @@ char* m_smartconfig_step2(char *req)
     return resp;
 }
 
-char* m_http_services(char* buf)
+char* m_http_services(char* buf, uint16_t len)
 {
     http_service_t services[MAX_NUM_SERVICES] = {wificonfig, apconfig, root, setting};
-    int i = 0;
+    char* temp = NULL;
 
-    for ( i = 0; i < MAX_NUM_SERVICES; i++)
+    for (int i = 0; i < MAX_NUM_SERVICES; i++)
     {
-        if (strstr(buf, services[i].method) != NULL)
+        temp = strnstr(buf, services[i].method, len);
+        if (temp == &(buf[0]) && temp[strlen(services[i].method)] == ' ')
         {
-            if (services[i].handler != NULL)
+            temp = strnstr(buf, services[i].uri, len);
+            if (temp != NULL)
             {
-                return services[i].handler(buf);
+                if ((temp[strlen(services[i].uri)] == '/')) 
+                {
+                    if (temp[strlen(services[i].uri) +1] == ' ')
+                    {
+                        continue;
+                    }
+                }
+                else if (temp[strlen(services[i].uri)] != ' ')
+                {
+                    continue;
+                }
+
+                if (services[i].handler != NULL)
+                {
+                    return services[i].handler(buf);
+                }
             }
         }
     }

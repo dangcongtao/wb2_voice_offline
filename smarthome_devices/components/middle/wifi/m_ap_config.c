@@ -19,17 +19,17 @@
 #include <bl_os_private.h>
 #include <wifi_mgmr_ext.h>
 
-m_ap_around_t access_point_around;
-static uint8_t ap_cfg_get_data = 0;
+static BL_Sem_t scan_semaphore = NULL;
+uint32_t counter = 0;
+wifi_mgmr_ap_item_t ap_ary_p[WIFI_SCAN_MAX_AP];
 
-#define WIFI_SCAN_MAX_AP 20
-BL_Sem_t scan_semaphore = NULL;
+static uint8_t ap_cfg_get_data = 0;
 
 static void m_cb_scan_complete(void *data, void *param)
 {
-    wifi_mgmr_ap_item_t *ap_ary_ptr = (wifi_mgmr_ap_item_t *)data;
-    int status = *((int *)param);
-    bl_os_printf("scan complete status: %d, ssid_len = %lu\r\n", status, ap_ary_ptr->ssid_len);
+    // wifi_mgmr_ap_item_t *ap_ary_ptr = (wifi_mgmr_ap_item_t *)data;
+    // int status = *((int *)param);
+    // os_trace("scan complete status: %d, ssid_len = %lu\r\n", status, ap_ary_ptr->ssid_len);
 
     if (scan_semaphore != NULL)
     {
@@ -71,9 +71,6 @@ static void m_cb_scan_item_parse(wifi_mgmr_ap_item_t *env, uint32_t *param1, wif
 */
 void scan_ap_around(void)
 {
-    uint32_t counter = 0;
-    wifi_mgmr_ap_item_t ap_ary_p[WIFI_SCAN_MAX_AP];
-
     memset(ap_ary_p, 0, sizeof(wifi_mgmr_ap_item_t) * WIFI_SCAN_MAX_AP);
 
     scan_semaphore = bl_os_sem_create(0);
@@ -94,12 +91,11 @@ void scan_ap_around(void)
 
     bl_os_sem_delete(scan_semaphore);
 
-    int i;
-    for (i = 0; i < counter; i++) {
-        bl_os_printf("index[%02d]: rssi %3d, SSID %s\r\n",
-                    i, ap_ary_p[i].rssi, ap_ary_p[i].ssid
-        );
-    }
+    // for (uint8_t i = 0; i < counter; i++)
+    // {
+    //     bl_os_printf("index[%02d]: rssi %3d, SSID %s\r\n",
+    //                  i, ap_ary_p[i].rssi, ap_ary_p[i].ssid);
+    // }
 }
 
 bool apconfig_parse_wifi_info(char *json)

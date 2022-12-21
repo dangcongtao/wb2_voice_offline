@@ -45,15 +45,17 @@ static void web_http_server(struct netconn *conn)
     if (err == ERR_OK)
     {
         netbuf_data(inputbuf, (void **)&buf, &buflen);
-        printf("the received data:\n%s\n", buf);
+        printf("the received data:\r\n%s\r\n", buf);
 
         /* Judge if this is an HTTP GET command */
         if (buflen > 0)
         {
-            resond = m_http_services(buf);
+            resond = m_http_services(buf, buflen);
             if (resond != NULL) 
             {
                 netconn_write(conn, resond, sizeof(resond) - 1, NETCONN_NOCOPY);
+            } else {
+                os_trace("not found any services\r\n");
             }
         }
     }

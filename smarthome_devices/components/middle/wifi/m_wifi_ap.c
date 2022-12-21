@@ -73,10 +73,10 @@ static void wifi_ap_ip_set(char* ip_addr, char* netmask, char* gw)
         netif_set_netmask(ap_netif, &ap_mask);
         netif_set_gw(ap_netif, &ap_gw);
         netif_set_up(ap_netif);
-        blog_info("[softAP]:SSID:%s,PASSWORD:%s,IP addr:%s", AP_SSID, AP_PWD, ip4addr_ntoa(netif_ip4_addr(ap_netif)));
+        os_trace("[softAP]:SSID:%s@, IP addr:%s", m_db_get_instance()->_get_dev_id(), ip4addr_ntoa(netif_ip4_addr(ap_netif)));
     }
     else
-        blog_info("no find netif ap1 ");
+        os_trace("no find netif ap1 ");
 
 }
 
@@ -86,8 +86,11 @@ static void wifi_ap_ip_set(char* ip_addr, char* netmask, char* gw)
  */
 static void wifi_ap_start()
 {
-    char* ssid = m_db_get_instance()->_get_dev_id();
+    char ssid[64];
     char* passwd = "";
+
+    memset(ssid, 0, sizeof(ssid));
+    sprintf(ssid, "%s@", m_db_get_instance()->_get_dev_id());
 
     ap_interface = wifi_mgmr_ap_enable();
     wifi_mgmr_conf_max_sta(4);
@@ -99,25 +102,25 @@ static void event_cb_wifi_event(input_event_t* event, void* private_data)
 {
     switch (event->code) {
         case CODE_WIFI_ON_INIT_DONE:
-            blog_info("<<<<<<<<<  init wifi done  <<<<<<<<<<");
+            os_trace("<<<<<<<<<  init wifi done  <<<<<<<<<<");
             wifi_mgmr_start_background(&ap_conf);
             break;
         case CODE_WIFI_ON_MGMR_DONE:
-            blog_info("<<<<<<<<< startting soft ap <<<<<<<<<<<");
+            os_trace("<<<<<<<<< startting soft ap <<<<<<<<<<<");
             wifi_ap_start();
             break;
         case CODE_WIFI_ON_AP_STARTED:
-            blog_info("<<<<<<<<< startt soft ap OK<<<<<<<<<<<");
+            os_trace("<<<<<<<<< startt soft ap OK<<<<<<<<<<<");
             m_http_server_start();
             scan_ap_around();
             break;
         case CODE_WIFI_ON_AP_STOPPED:
             break;
         case CODE_WIFI_ON_AP_STA_ADD:
-            blog_info("<<<<<<<<< station connent ap <<<<<<<<<<<");
+            os_trace("<<<<<<<<< station connent ap <<<<<<<<<<<");
             break;
         case CODE_WIFI_ON_AP_STA_DEL:
-            blog_info("<<<<<<<<< station disconnet ap <<<<<<<<<<<");
+            os_trace("<<<<<<<<< station disconnet ap <<<<<<<<<<<");
 
             break;
         default:
