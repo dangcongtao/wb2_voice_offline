@@ -36,7 +36,7 @@ void m_stack_start(void)
     /* start stack */
     m_wifi_init();
     m_mqtt_init();
-    m_http_init();
+    // m_http_init();
 }
 
 void main(void)

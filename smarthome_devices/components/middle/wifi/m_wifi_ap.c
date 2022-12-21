@@ -1,4 +1,6 @@
+#include "m_wifi_ap.h"
 #include "m_ap_config.h"
+#include "m_http_server.h"
 
 #include <FreeRTOS.h>
 #include <task.h>
@@ -17,7 +19,7 @@
 #define AP_PWD "12345678"
 
 static wifi_conf_t ap_conf = {
-    .country_code = "CN",
+    .country_code = "VN",
 };
 static wifi_interface_t ap_interface;
 /**
@@ -72,12 +74,17 @@ static void wifi_ap_ip_set(char* ip_addr, char* netmask, char* gw)
 
 }
 
+/**
+ * @brief wifi_ap_start
+ *
+ */
 static void wifi_ap_start()
 {
     ap_interface = wifi_mgmr_ap_enable();
     wifi_mgmr_conf_max_sta(4);
     wifi_mgmr_ap_start(ap_interface, AP_SSID, 0, AP_PWD, 6);
-    wifi_ap_ip_set("192.168.4.1", "255.255.255.0", "8.8.8.8");
+    wifi_ap_ip_set("192.168.4.1", "255.255.255.0", "192.168.4.1");  //if you want usb other gw ip ,please change components/network/lwip_dhcpd/dhcp_server_raw.c：42   DHCPD_SERVER_IP 
+                                                                        //for example  gw ip:"192.168.4.1" , change DHCPD_SERVER_IP to "192.168.4.1"
 }
 
 static void event_cb_wifi_event(input_event_t* event, void* private_data)
@@ -93,13 +100,12 @@ static void event_cb_wifi_event(input_event_t* event, void* private_data)
             break;
         case CODE_WIFI_ON_AP_STARTED:
             blog_info("<<<<<<<<< startt soft ap OK<<<<<<<<<<<");
-
+            m_http_server_start();
             break;
         case CODE_WIFI_ON_AP_STOPPED:
             break;
         case CODE_WIFI_ON_AP_STA_ADD:
             blog_info("<<<<<<<<< station connent ap <<<<<<<<<<<");
-
             break;
         case CODE_WIFI_ON_AP_STA_DEL:
             blog_info("<<<<<<<<< station disconnet ap <<<<<<<<<<<");
@@ -120,9 +126,10 @@ static void proc_main_entry(void* pvParameters)
     vTaskDelete(NULL);
 }
 
-void m_apconfig_start(void)
+void m_wifi_ap_start(void)
 {
-    puts("[OS] Starting TCP/IP Stack...");
-    tcpip_init(NULL, NULL);
+    // puts("[OS] Starting TCP/IP Stack...");
+    // tcpip_init(NULL, NULL);
+    ap_cfg_clear_state();
     xTaskCreate(proc_main_entry, (char*)"main_entry", 1024, NULL, 15, NULL);
 }

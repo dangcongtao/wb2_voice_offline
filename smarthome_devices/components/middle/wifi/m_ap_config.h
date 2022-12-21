@@ -4,6 +4,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+
 #define MAX_SSID_SCAN      20
 
 typedef enum {
@@ -16,18 +21,14 @@ typedef enum {
     AP_CONFIG_DONE
 } m_apconfig_step_t;
 
-
 typedef struct {
     char ssid[MAX_SSID_SCAN][32];
     int8_t rssi[MAX_SSID_SCAN];
     uint32_t num_ap_available;
 } m_ap_around_t;
 
-m_apconfig_step_t apconfig_start(void);
-bool apconfig_parse_wifi_info(char* json);
-
+void ap_cfg_clear_state(void);
 uint8_t is_ap_config_done(void);
-void clear_user_config_state(void);
-
+bool apconfig_parse_wifi_info(char* json);
 
 #endif 

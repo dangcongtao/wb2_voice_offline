@@ -7,15 +7,29 @@
 #include <event_groups.h>
 
 #include <string.h>
+#include <stdio.h>
+#include <string.h>
+#include <aos/yloop.h>
+#include <aos/kernel.h>
+#include <lwip/tcpip.h>
+#include <wifi_mgmr_ext.h>
+#include <hal_wifi.h>
+#include <lwip/netif.h>
+#include <lwip/inet.h>
+#include <blog.h>
+#include "bl_sys.h"
 
-#include "m_smartconfig.h"
-#include "m_ap_config.h"
+#include "app_config.h"
 #include "m_database.h"
 #include "m_led_stt.h"
 #include "m_mqtt.h"
-#include "m_http_server.h"
-#include "app_config.h"
 #include "m_ota.h"
+
+#include "m_wifi_station.h"
+#include "m_wifi_ap.h"
+#include "m_ap_config.h"
+#include "m_smartconfig.h"
+#include "m_http_server.h"
 
 #define ESP_MAXIMUM_RETRY 5
 
@@ -85,6 +99,8 @@ static void m_wifi_set_evt_source(m_wifi_event_source_t new_event)
 
 static void wifi_initialize()
 {
+    puts("[OS] Starting TCP/IP Stack...");
+    tcpip_init(NULL, NULL);
 }
 
 void m_wifi_connect(char *ssid, char *password)
@@ -122,7 +138,7 @@ void wifi_task(void *param)
                 m_wifi_connect(s_wifi_obj.wifi_info->_ssid, s_wifi_obj.wifi_info->_passwd);
             }
             /* wait user config */
-            s_wifi_obj.wifi_state = WIFI_WAIT_EVENT;
+            s_wifi_obj.wifi_state = WIFI_APCONFIG;
         }
         break;
 
@@ -146,8 +162,8 @@ void wifi_task(void *param)
 
         case WIFI_APCONFIG:
         {
-            // ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler));
-            // ESP_ERROR_CHECK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler));
+            m_wifi_ap_start();
+            // m_wifi_sta_start();
             // reset_ap_config();
             s_wifi_obj.wifi_state = WIFI_WAIT_APCONFIG_DONE;
         }
@@ -155,8 +171,8 @@ void wifi_task(void *param)
 
         case WIFI_WAIT_APCONFIG_DONE:
         {
-            // if (apconfig_start() == AP_CONFIG_DONE)
-            //     s_wifi_obj.wifi_state = WIFI_APCONFIG_DONE;
+            if (is_ap_config_done() == AP_CONFIG_DONE)
+                s_wifi_obj.wifi_state = WIFI_APCONFIG_DONE;
         }
         break;
 
@@ -170,10 +186,8 @@ void wifi_task(void *param)
         case WIFI_CONFIG_DONE:
         {
             os_trace("m_wifi: Wifi config done\n");
-            // vTaskDelay(pdMS_TO_TICKS(2000));
-            // esp_restart();
-            // ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL));
-            // ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler, NULL));
+            vTaskDelay(pdMS_TO_TICKS(2000));
+            bl_sys_reset_system();
             // s_wifi_obj.wifi_state = WIFI_DEV_ACTIVE;
         }
         break;
@@ -189,8 +203,8 @@ void wifi_task(void *param)
         {
             os_trace("m_wifi: Wifi connected\n");
             /* mqtt start */
-            // m_mqtt_get_instance()._mqtt_stop();
-            // m_mqtt_get_instance()._mqtt_start();
+            m_mqtt_get_instance()._mqtt_stop();
+            m_mqtt_get_instance()._mqtt_start();
             s_wifi_obj.wifi_state = WIFI_DEV_ACTIVE;
         }
         break;
@@ -198,7 +212,7 @@ void wifi_task(void *param)
         case WIFI_DEV_ACTIVE:
         {
             m_wifi_sync_rssi();
-            // m_mqtt_get_instance()._mqtt_loop();
+            m_mqtt_get_instance()._mqtt_loop();
         }
         break;
 

@@ -19,12 +19,14 @@ COMPONENT_SRCS := database/m_database.c \
 				  gpio/m_switch_event.c \
 				  gpio/m_switch.c \
 				  mqtt/m_mqtt.c \
-				  wifi/m_wifi.c \
-				  wifi/m_ap_config.c \
-				  wifi/m_soft_ap.c \
-				  wifi/m_http_server.c \
-				  wifi/m_smartconfig.c \
 				  ota/m_ota.c \
+				  wifi/tcp_server.c \
+				  wifi/m_http_server.c \
+				  wifi/m_ap_config.c \
+				  wifi/m_smartconfig.c \
+				  wifi/m_wifi_ap.c \
+				  wifi/m_wifi_station.c \
+				  wifi/m_wifi.c \
 
 				  
 COMPONENT_OBJS := $(patsubst %.c,%.o, $(COMPONENT_SRCS))

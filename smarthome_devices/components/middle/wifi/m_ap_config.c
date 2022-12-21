@@ -17,7 +17,7 @@
 #include <lwip/inet.h>
 #include <blog.h>
 
-static uint8_t user_config_done = 0;
+static uint8_t ap_cfg_get_data = 0;
 
 bool apconfig_parse_wifi_info(char *json)
 {
@@ -93,7 +93,7 @@ bool apconfig_parse_wifi_info(char *json)
     m_db_get_instance()->_request_sync_db();
     vTaskDelay(pdMS_TO_TICKS(100));
 
-    user_config_done = 1;
+    ap_cfg_get_data = 1;
 
 json_parse_fail:
     cJSON_Delete(js_Root);
@@ -101,12 +101,12 @@ json_parse_fail:
     return true;
 }
 
-void clear_user_config_state(void)
+void ap_cfg_clear_state(void)
 {
-    user_config_done = 0;
+    ap_cfg_get_data = 0;
 }
 
 uint8_t is_ap_config_done(void)
 {
-    return user_config_done;
+    return ap_cfg_get_data;
 }

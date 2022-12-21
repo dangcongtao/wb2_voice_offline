@@ -1,4 +1,5 @@
 #include "m_http_server.h"
+#include "system_typedef.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -26,10 +27,6 @@
 #include <bl_timer.h>
 #include <bl_sys_time.h>
 #include <bl_sys.h>
-
-#include "lwip/err.h"
-#include "lwip/sys.h"
-#include "lwip/netdb.h"
 
 #include <wifi_mgmr_ext.h>
 
@@ -64,7 +61,7 @@ static void web_http_server(struct netconn *conn)
     {
         netbuf_data(inputbuf, (void **)&buf, &buflen);
         printf("the received data:\n%s\n", buf);
-        
+
         /* Judge if this is an HTTP GET command */
         if (buflen >= 5 && buf[0] == 'G' && buf[1] == 'E' && buf[2] == 'T' && buf[3] == ' ' && buf[4] == '/')
         {
@@ -93,13 +90,27 @@ void http_server_start(void *pvParameters)
     struct netconn *conn, *newconn;
     err_t err;
     conn = netconn_new(NETCONN_TCP);
-    netconn_bind(conn, NULL, SERVER_PORT);
+    if (conn == NULL) {
+        os_trace("Fail to allocate netconn_new\r\n");
+        return;
+    }
+
+    if (netconn_bind(conn, NULL, SERVER_PORT) != ERR_OK) {
+        os_trace("bind server port fail\r\n");
+    }
+
     netconn_listen(conn);
+
+    os_trace("http_server_start\r\n");
+
     while (1)
     {
+        os_trace("test1\r\n");
         err = netconn_accept(conn, &newconn);
+        os_trace("test2\r\n");
         if (err == ERR_OK)
         {
+            os_trace("get new connection\r\n");
             web_http_server(newconn);
             netconn_delete(newconn);
         }
@@ -109,10 +120,13 @@ void http_server_start(void *pvParameters)
             netconn_delete(conn);
             break;
         }
+
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
 
-void m_http_init(void)
+void m_http_server_start(void)
 {
-   xTaskCreate(http_server_start, (char *)"http server", 1024 * 4, NULL, 15, NULL);
+    os_trace("m_http_init\r\n");
+    xTaskCreate(http_server_start, (char *)"http server", 1024 * 4, NULL, 15, NULL);
 }
