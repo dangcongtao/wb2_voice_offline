@@ -107,12 +107,12 @@ static void event_cb_wifi_event(input_event_t* event, void* private_data)
             break;
         case CODE_WIFI_ON_MGMR_DONE:
             os_trace("<<<<<<<<< startting soft ap <<<<<<<<<<<");
+            scan_ap_around();
             wifi_ap_start();
             break;
         case CODE_WIFI_ON_AP_STARTED:
             os_trace("<<<<<<<<< startt soft ap OK<<<<<<<<<<<");
             m_http_server_start();
-            scan_ap_around();
             break;
         case CODE_WIFI_ON_AP_STOPPED:
             break;

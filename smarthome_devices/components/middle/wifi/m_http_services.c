@@ -20,39 +20,36 @@ char* m_smartconfig_step2(char *req);
 extern uint32_t counter;
 extern wifi_mgmr_ap_item_t ap_ary_p[WIFI_SCAN_MAX_AP];
 
-http_service_t wificonfig = {
-    .uri       = "/wificonfig",
-    .method    = "POST",
-    .handler   = m_apconfig_step1,
-};
-
-char* m_apconfig_step1(char* req)
-{
-    os_trace("APCONFIG STEP 1\r\n");
-
-    /* parser data to get info of wifi & mqtt server */
-    os_trace("m_http_server receive: [%s]\r\n", req);
-    apconfig_parse_wifi_info(req);
-
-    /* Send response */
-    char* resp = malloc(sizeof(char) * MAX_RESP_LEN);
-    memset(resp, 0, sizeof(resp));
-    sprintf(resp, "{\"result\": 1}");
-
-    return resp;
-}
 
 http_service_t apconfig = {
     .uri       = "/apconfig",
     .method    = "GET",
+    .handler   = m_apconfig_step1,
+};
+
+http_service_t wificonfig = {
+    .uri       = "/wificonfig",
+    .method    = "POST",
     .handler   = m_apconfig_step2,
 };
 
-char* m_apconfig_step2(char *req)
+http_service_t root = {
+    .uri       = "/",
+    .method    = "GET",
+    .handler   = m_smartconfig_step1,
+};
+
+http_service_t setting = {
+    .uri       = "/setting",
+    .method    = "POST",
+    .handler   = m_smartconfig_step2,
+};
+
+char* m_apconfig_step1(char *req)
 {
     int n = 0;
 
-    os_trace("\tAPCONFIG STEP 2\r\n");
+    os_trace("\tAPCONFIG STEP 1\r\n");
 
     /* show wifi around me */
     char* resp = malloc(sizeof(char) * MAX_RESP_LEN);
@@ -70,12 +67,20 @@ char* m_apconfig_step2(char *req)
     return resp;
 }
 
+char* m_apconfig_step2(char* req)
+{
+    os_trace("APCONFIG STEP 2\r\n");
 
-http_service_t root = {
-    .uri       = "/",
-    .method    = "GET",
-    .handler   = m_smartconfig_step1,
-};
+    /* parser data to get info of wifi & mqtt server */
+    apconfig_parse_wifi_info(req);
+
+    /* Send response */
+    char* resp = malloc(sizeof(char) * MAX_RESP_LEN);
+    memset(resp, 0, sizeof(resp));
+    sprintf(resp, "{\"result\": 1}");
+
+    return resp;
+}
 
 char* m_smartconfig_step1(char *req)
 {
@@ -87,13 +92,6 @@ char* m_smartconfig_step1(char *req)
 
     return resp;
 }
-
-
-http_service_t setting = {
-    .uri       = "/setting",
-    .method    = "POST",
-    .handler   = m_smartconfig_step2,
-};
 
 char* m_smartconfig_step2(char *req)
 {

@@ -100,6 +100,8 @@ void scan_ap_around(void)
 
 bool apconfig_parse_wifi_info(char *json)
 {
+    os_trace("apconfig_parse_wifi_info\r\n");
+    
     cJSON *js_Root, *jsGetObject;
     char temp[256];
     uint32_t mqtt_port = 0;
