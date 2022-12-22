@@ -32,7 +32,7 @@ void start_cylcic_timer(switch_action_t action, uint32_t time_act1, uint32_t tim
 void stop_cylcic_timer(uint32_t channel_index)
 {
     uint8_t index = channel_index - 1;
-    os_trace("stop_cylcic_timer %d\n", index);
+    os_trace("stop_cylcic_timer %d\r\n", index);
 
     cyclic_timer_arr[index].enable = 0;
     cyclic_timer_arr[index].time_on = 0;
@@ -42,7 +42,7 @@ void stop_cylcic_timer(uint32_t channel_index)
 /* just use for reset factory database */
 void clear_cyclic_timer(void)
 {
-    os_trace("clear_cyclic_timer - number channel: %d\n", m_switch_get_instance().max_number_channel);
+    os_trace("clear_cyclic_timer - number channel: %d\r\n", m_switch_get_instance().max_number_channel);
 
     /* start from 1 because mobie app also start from at this point */
     for (uint8_t i = 1; i <= m_switch_get_instance().max_number_channel; i++)
@@ -133,7 +133,7 @@ void m_switch_press_release_loop(void)
             mode = m_db_get_instance()->_m_device._switch_info.release_mode[i];
             current_state = (m_control_get_status_switch(i) % 2) ? 1 : 2;
 
-            os_trace("release mode/state [%ld:%ld]\n", mode, current_state);
+            os_trace("release mode/state [%ld:%ld]\r\n", mode, current_state);
 
             if (mode == MODE_BOTH)
             {

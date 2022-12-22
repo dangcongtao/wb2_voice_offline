@@ -177,8 +177,6 @@ bool apconfig_parse_wifi_info(char *json)
     snprintf(temp, sizeof(temp), "%s", jsGetObject->valuestring);
     mqtt.set_mqtt_topic_sub(temp, strlen(temp));
 
-    os_trace("have database\r\n");
-
     m_db_get_instance()->_set_dev_pair_state(true);
     m_db_get_instance()->_request_sync_db();
     vTaskDelay(pdMS_TO_TICKS(100));

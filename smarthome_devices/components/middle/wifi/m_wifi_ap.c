@@ -73,7 +73,9 @@ static void wifi_ap_ip_set(char* ip_addr, char* netmask, char* gw)
         netif_set_netmask(ap_netif, &ap_mask);
         netif_set_gw(ap_netif, &ap_gw);
         netif_set_up(ap_netif);
-        os_trace("[softAP]:SSID:%s@, IP addr:%s", m_db_get_instance()->_get_dev_id(), ip4addr_ntoa(netif_ip4_addr(ap_netif)));
+        os_trace("[softAP]: SSID:%s@, IP addr:%s\r\n", 
+                m_db_get_instance()->_get_dev_id(),
+                ip4addr_ntoa(netif_ip4_addr(ap_netif)));
     }
     else
         os_trace("no find netif ap1 ");
@@ -102,25 +104,25 @@ static void event_cb_wifi_event(input_event_t* event, void* private_data)
 {
     switch (event->code) {
         case CODE_WIFI_ON_INIT_DONE:
-            os_trace("<<<<<<<<<  init wifi done  <<<<<<<<<<");
+            os_trace("<<<<<<<<<  init wifi done  <<<<<<<<<\r\n");
             wifi_mgmr_start_background(&ap_conf);
             break;
         case CODE_WIFI_ON_MGMR_DONE:
-            os_trace("<<<<<<<<< startting soft ap <<<<<<<<<<<");
+            os_trace("<<<<<<<<< startting soft ap <<<<<<<<<<\r\n");
             scan_ap_around();
             wifi_ap_start();
             break;
         case CODE_WIFI_ON_AP_STARTED:
-            os_trace("<<<<<<<<< startt soft ap OK<<<<<<<<<<<");
+            os_trace("<<<<<<<<< startt soft ap OK<<<<<<<<<<\r\n");
             m_http_server_start();
             break;
         case CODE_WIFI_ON_AP_STOPPED:
             break;
         case CODE_WIFI_ON_AP_STA_ADD:
-            os_trace("<<<<<<<<< station connent ap <<<<<<<<<<<");
+            os_trace("<<<<<<<<< station connent ap <<<<<<<<<<\r\n");
             break;
         case CODE_WIFI_ON_AP_STA_DEL:
-            os_trace("<<<<<<<<< station disconnet ap <<<<<<<<<<<");
+            os_trace("<<<<<<<<< station disconnet ap <<<<<<<<<<\r\n");
 
             break;
         default:
