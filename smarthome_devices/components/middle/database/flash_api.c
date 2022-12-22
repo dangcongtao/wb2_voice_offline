@@ -69,6 +69,10 @@ void flash_write_database(const m_device_t object_data, uint32_t _size)
     ef_set_bytes(WIFI_PASS, (uint8_t*)object_data._wifi_info._passwd, size);
 
     /* write mqtt info */
+    os_trace("write mqtt info\r\n");
+    if (object_data._mqtt_info == NULL) {
+        os_trace("object_data._mqtt_info NULL\r\n");
+    }
     size = sizeof(object_data._mqtt_info->topic_pub);
     ef_set_bytes(MQTT_TOPIC_PUB, (uint8_t*)object_data._mqtt_info->topic_pub, size);
     size = sizeof(object_data._mqtt_info->topic_sub);
@@ -84,13 +88,15 @@ void flash_write_database(const m_device_t object_data, uint32_t _size)
     /* read switch info */
     uint32_t i;
     for (i = 0; i < max_number_channel; i++) {
-        ef_set_bytes(defaut_states[i], (uint8_t*)object_data._switch_info.default_state[i], sizeof(object_data._switch_info.default_state[i]));
-        ef_set_bytes(current_states[i], (uint8_t*)object_data._switch_info.current_state[i], sizeof(object_data._switch_info.current_state[i]));
-        ef_set_bytes(lock_states[i], (uint8_t*)object_data._switch_info.channel_lock_state[i], sizeof(object_data._switch_info.channel_lock_state[i]));
-        ef_set_bytes(time_releases[i], (uint8_t*)object_data._switch_info.time_release[i], sizeof(object_data._switch_info.time_release[i]));
-        ef_set_bytes(release_modes[i], (uint8_t*)object_data._switch_info.release_mode[i], sizeof(object_data._switch_info.release_mode[i]));
+        os_trace("write switch info %ld\r\n", i);
+        ef_set_u32(defaut_states[i], object_data._switch_info.default_state[i]);
+        ef_set_u32(current_states[i], object_data._switch_info.current_state[i]);
+        ef_set_u32(lock_states[i], object_data._switch_info.channel_lock_state[i]);
+        ef_set_u32(time_releases[i], object_data._switch_info.time_release[i]);
+        ef_set_u32(release_modes[i], object_data._switch_info.release_mode[i]);
     }
 
+    os_trace("write state pair\r\n");
     /* write state pair */
     ef_set_u32(PAIR_STATE, object_data._device_is_paired);
 }

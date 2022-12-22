@@ -74,6 +74,7 @@ m_wifi_info_t* m_db_get_wifi_reference(void);
 m_switch_info_t* m_db_get_switch_reference(void);
 
 void m_database_init(void);
+void m_database_task_start(void);
 m_database_t* m_db_get_instance(void);
 
 void m_db_read_device_id(void); /* just only be called in main function to get type device and init hardware. Not call in other place */

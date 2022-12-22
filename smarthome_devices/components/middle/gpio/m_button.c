@@ -53,7 +53,7 @@ void on_button_event_cb(int button_pin, int event, void *data)
         /* factory reset database */
         m_led_stt_get_instance()._set_led_stt_smart_config_cb();
         // m_wifi_get_instance().start_smart_config_cb();
-        // m_db_get_instance()->_reset_db_cb();
+        m_db_get_instance()->_reset_db_cb();
         ignore_event_release[button_pin] = 1;
     }
     break;
@@ -65,7 +65,7 @@ void on_button_event_cb(int button_pin, int event, void *data)
 
         /* factory reset database */
         m_led_stt_get_instance()._set_led_stt_ap_config_cb();
-        // m_wifi_get_instance().start_ap_config_cb();
+        m_wifi_get_instance().start_ap_config_cb();
         ignore_event_release[button_pin] = 2;
     }
     break;

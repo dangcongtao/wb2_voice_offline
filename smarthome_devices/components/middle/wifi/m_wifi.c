@@ -171,7 +171,7 @@ void wifi_task(void *param)
 
         case WIFI_WAIT_APCONFIG_DONE:
         {
-            if (is_ap_config_done() == AP_CONFIG_DONE)
+            if (is_ap_config_done())
                 s_wifi_obj.wifi_state = WIFI_APCONFIG_DONE;
         }
         break;
