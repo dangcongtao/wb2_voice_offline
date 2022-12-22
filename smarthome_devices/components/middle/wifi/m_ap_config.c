@@ -91,11 +91,11 @@ void scan_ap_around(void)
 
     bl_os_sem_delete(scan_semaphore);
 
-    // for (uint8_t i = 0; i < counter; i++)
-    // {
-    //     bl_os_printf("index[%02d]: rssi %3d, SSID %s\r\n",
-    //                  i, ap_ary_p[i].rssi, ap_ary_p[i].ssid);
-    // }
+    for (uint8_t i = 0; i < counter; i++)
+    {
+        bl_os_printf("index[%02d]: rssi %3d, SSID %s\r\n",
+                     i, ap_ary_p[i].rssi, ap_ary_p[i].ssid);
+    }
 }
 
 bool apconfig_parse_wifi_info(char *json)

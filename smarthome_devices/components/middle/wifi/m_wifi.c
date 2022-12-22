@@ -136,9 +136,12 @@ void wifi_task(void *param)
             if (m_db_get_instance()->_get_dev_pair_state())
             {
                 m_wifi_connect(s_wifi_obj.wifi_info->_ssid, s_wifi_obj.wifi_info->_passwd);
+                s_wifi_obj.wifi_state = WIFI_WAIT_EVENT;
+            } 
+            else {
+                /* wait user config */
+                s_wifi_obj.wifi_state = WIFI_APCONFIG;
             }
-            /* wait user config */
-            s_wifi_obj.wifi_state = WIFI_APCONFIG;
         }
         break;
 

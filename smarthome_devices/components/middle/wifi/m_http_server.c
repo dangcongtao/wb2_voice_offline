@@ -76,8 +76,6 @@ static void web_http_server(struct netconn *conn)
         memcpy(request, buf, buflen);
         request_len = buflen;
 
-        os_trace("request [%ld]:\r\n[%s]\r\n", request_len, request);
-
         /* HTTP POST was divided into 2 requests, need read here to get body content */
         if (strstr(buf, "POST"))
         {
@@ -91,8 +89,6 @@ static void web_http_server(struct netconn *conn)
                     netbuf_delete(inputbuf2);
                     goto close_connection;
                 }
-
-                os_trace("request [%d]:\r\n[%s]\r\n", buflen2, buf2);
 
                 if (buflen2 + request_len < MAX_LEN_HTTP_REQUEST)
                 {
@@ -114,6 +110,11 @@ static void web_http_server(struct netconn *conn)
             }
 
             netbuf_delete(inputbuf2);
+            // os_trace("request [%ld]:\r\n[%s]\r\n", request_len, request);
+        }
+        else
+        {
+            // os_trace("request [%ld]:\r\n[%s]\r\n", request_len, request);
         }
 
         /* Judge if this is an HTTP GET command */
@@ -122,7 +123,7 @@ static void web_http_server(struct netconn *conn)
             resond = m_http_services(request, request_len);
             if (resond != NULL)
             {
-                os_trace("%s\r\n", resond);
+                // os_trace("%s\r\n", resond);
                 netconn_write(conn, http_html_hdr, sizeof(http_html_hdr) - 1, NETCONN_NOCOPY);
                 netconn_write(conn, resond, strlen(resond), NETCONN_COPY);
                 free(resond);
