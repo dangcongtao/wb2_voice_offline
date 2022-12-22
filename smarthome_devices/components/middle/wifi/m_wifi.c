@@ -187,7 +187,7 @@ void wifi_task(void *param)
         {
             os_trace("m_wifi: Wifi config done\n");
             vTaskDelay(pdMS_TO_TICKS(2000));
-            bl_sys_reset_system();
+            bl_sys_reset_por();
             // s_wifi_obj.wifi_state = WIFI_DEV_ACTIVE;
         }
         break;
