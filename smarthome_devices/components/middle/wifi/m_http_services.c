@@ -71,8 +71,15 @@ char* m_apconfig_step2(char* req)
 {
     os_trace("APCONFIG STEP 2\r\n");
 
+    char* temp = strstr(req, "\r\n\r\n");
+    if (temp == NULL) {
+        os_trace("not found http header ending\r\n");
+        return NULL;
+    }
+    temp += strlen("\r\n\r\n");
+
     /* parser data to get info of wifi & mqtt server */
-    apconfig_parse_wifi_info(req);
+    apconfig_parse_wifi_info(temp);
 
     /* Send response */
     char* resp = malloc(sizeof(char) * MAX_RESP_LEN);

@@ -116,20 +116,23 @@ bool apconfig_parse_wifi_info(char *json)
     if (!jsGetObject)
         goto json_parse_fail;
     m_wifi_get_instance().wifi_set_ssid_cb(jsGetObject->valuestring, strlen(jsGetObject->valuestring));
+    os_trace("set wifi ssid\r\n");
 
     /* get wifi password */
     jsGetObject = cJSON_GetObjectItem(js_Root, "pass");
     if (!jsGetObject)
         goto json_parse_fail;
     m_wifi_get_instance().wifi_set_passwd_cb(jsGetObject->valuestring, strlen(jsGetObject->valuestring));
+    os_trace("set wifi password\r\n");
 
     /* get server url */
     jsGetObject = cJSON_GetObjectItem(js_Root, CJSON_KEY_SERVER);
     if (!jsGetObject)
         goto json_parse_fail;
     memset(temp, 0, sizeof(temp));
-    sprintf(temp, "mqtt://%s", jsGetObject->valuestring);
+    snprintf(temp, sizeof(temp), "mqtt://%s", jsGetObject->valuestring);
     mqtt.set_mqtt_server(temp, strlen(temp));
+    os_trace("set_mqtt_server\r\n");
 
     /* get server port */
     jsGetObject = cJSON_GetObjectItem(js_Root, CJSON_KEY_S_PORT);
@@ -137,38 +140,44 @@ bool apconfig_parse_wifi_info(char *json)
         return false;
     mqtt_port = jsGetObject->valueint;
     mqtt.set_mqtt_port(mqtt_port);
+    os_trace("set_mqtt_port\r\n");
 
     /* get user name */
     jsGetObject = cJSON_GetObjectItem(js_Root, CJSON_KEY_S_USER);
     if (!jsGetObject)
         goto json_parse_fail;
     memset(temp, 0, sizeof(temp));
-    sprintf(temp, "%s", jsGetObject->valuestring);
+    snprintf(temp, sizeof(temp), "%s", jsGetObject->valuestring);
     mqtt.set_mqtt_user(temp, strlen(temp));
+    os_trace("set_mqtt_user\r\n");
 
     /* get password */
     jsGetObject = cJSON_GetObjectItem(js_Root, CJSON_KEY_S_PASS);
     if (!jsGetObject)
         goto json_parse_fail;
     memset(temp, 0, sizeof(temp));
-    sprintf(temp, "%s", jsGetObject->valuestring);
+    snprintf(temp, sizeof(temp), "%s", jsGetObject->valuestring);
     mqtt.set_mqtt_passwd(temp, strlen(temp));
+    os_trace("set_mqtt_passwd\r\n");
 
     /* get topic publish */
     jsGetObject = cJSON_GetObjectItem(js_Root, CJSON_KEY_TOPIC_PUB);
     if (!jsGetObject)
         goto json_parse_fail;
     memset(temp, 0, sizeof(temp));
-    sprintf(temp, "%s", jsGetObject->valuestring);
+    snprintf(temp, sizeof(temp), "%s", jsGetObject->valuestring);
     mqtt.set_mqtt_topic_pub(temp, strlen(temp));
+    os_trace("set_mqtt_topic_pub\r\n");
 
     /* get topic subscribe */
     jsGetObject = cJSON_GetObjectItem(js_Root, CJSON_KEY_TOPIC_SUB);
     if (!jsGetObject)
         goto json_parse_fail;
     memset(temp, 0, sizeof(temp));
-    sprintf(temp, "%s", jsGetObject->valuestring);
+    snprintf(temp, sizeof(temp), "%s", jsGetObject->valuestring);
     mqtt.set_mqtt_topic_sub(temp, strlen(temp));
+
+    os_trace("have database\r\n");
 
     m_db_get_instance()->_set_dev_pair_state(true);
     m_db_get_instance()->_request_sync_db();

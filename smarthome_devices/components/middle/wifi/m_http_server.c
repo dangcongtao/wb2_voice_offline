@@ -92,6 +92,8 @@ static void web_http_server(struct netconn *conn)
                     goto close_connection;
                 }
 
+                os_trace("request [%d]:\r\n[%s]\r\n", buflen2, buf2);
+
                 if (buflen2 + request_len < MAX_LEN_HTTP_REQUEST)
                 {
                     memcpy(&request[request_len], buf2, buflen2);
@@ -113,8 +115,6 @@ static void web_http_server(struct netconn *conn)
 
             netbuf_delete(inputbuf2);
         }
-
-        os_trace("request [%ld]:\r\n[%s]\r\n", request_len, request);
 
         /* Judge if this is an HTTP GET command */
         if (buflen > 0)

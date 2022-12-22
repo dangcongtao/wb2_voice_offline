@@ -219,8 +219,8 @@ void m_mqtt_init(void)
 
     s_mqtt_obj.set_mqtt_server = set_mqtt_server;
     s_mqtt_obj.set_mqtt_port = set_mqtt_port;
-    s_mqtt_obj.set_mqtt_server = set_mqtt_user;
-    s_mqtt_obj.set_mqtt_server = set_mqtt_passwd;
+    s_mqtt_obj.set_mqtt_user = set_mqtt_user;
+    s_mqtt_obj.set_mqtt_passwd = set_mqtt_passwd;
     s_mqtt_obj.set_mqtt_topic_sub = set_mqtt_topic_sub;
     s_mqtt_obj.set_mqtt_topic_pub = set_mqtt_topic_pub;
 

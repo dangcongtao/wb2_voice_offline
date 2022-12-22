@@ -60,7 +60,7 @@ static void m_wifi_start_apconfig()
 
 static void m_wifi_set_ssid(char *ssid, size_t len)
 {
-    if (len <= sizeof(s_wifi_obj.wifi_info->_ssid))
+    if (len < sizeof(s_wifi_obj.wifi_info->_ssid))
     {
         memset(s_wifi_obj.wifi_info->_ssid, 0, sizeof(s_wifi_obj.wifi_info->_ssid));
         memcpy(s_wifi_obj.wifi_info->_ssid, ssid, len);
