@@ -63,19 +63,19 @@ static void m_wifi_start_apconfig()
 
 static void m_wifi_set_ssid(char *ssid, size_t len)
 {
-    if (len < sizeof(s_wifi_obj.wifi_info->_ssid))
+    if (len < sizeof(s_wifi_obj._wifi_info._ssid))
     {
-        memset(s_wifi_obj.wifi_info->_ssid, 0, sizeof(s_wifi_obj.wifi_info->_ssid));
-        memcpy(s_wifi_obj.wifi_info->_ssid, ssid, len);
+        memset(s_wifi_obj._wifi_info._ssid, 0, sizeof(s_wifi_obj._wifi_info._ssid));
+        memcpy(s_wifi_obj._wifi_info._ssid, ssid, len);
     }
 }
 
 static void m_wifi_set_passwd(char *passwd, size_t len)
 {
-    if (len <= sizeof(s_wifi_obj.wifi_info->_passwd))
+    if (len <= sizeof(s_wifi_obj._wifi_info._passwd))
     {
-        memset(s_wifi_obj.wifi_info->_passwd, 0, sizeof(s_wifi_obj.wifi_info->_passwd));
-        memcpy(s_wifi_obj.wifi_info->_passwd, passwd, len);
+        memset(s_wifi_obj._wifi_info._passwd, 0, sizeof(s_wifi_obj._wifi_info._passwd));
+        memcpy(s_wifi_obj._wifi_info._passwd, passwd, len);
     }
 }
 
@@ -88,10 +88,10 @@ static void m_wifi_change_wifi(char *ssid, char *passwd)
 
 static void m_wifi_save_ip(char *ip, size_t len)
 {
-    if (len <= sizeof(s_wifi_obj.wifi_info->_ip))
+    if (len <= sizeof(s_wifi_obj._wifi_info._ip))
     {
-        memset(s_wifi_obj.wifi_info->_ip, 0, sizeof(s_wifi_obj.wifi_info->_ip));
-        memcpy(s_wifi_obj.wifi_info->_ip, ip, len);
+        memset(s_wifi_obj._wifi_info._ip, 0, sizeof(s_wifi_obj._wifi_info._ip));
+        memcpy(s_wifi_obj._wifi_info._ip, ip, len);
     }
 }
 
@@ -141,7 +141,7 @@ void wifi_task(void *param)
             /* if device was configured */
             if (m_db_get_instance()->_get_dev_pair_state())
             {
-                m_wifi_connect(s_wifi_obj.wifi_info->_ssid, s_wifi_obj.wifi_info->_passwd);
+                m_wifi_connect(s_wifi_obj._wifi_info._ssid, s_wifi_obj._wifi_info._passwd);
                 s_wifi_obj.wifi_state = WIFI_WAIT_EVENT;
             } 
             else {
@@ -254,7 +254,6 @@ void m_wifi_init(void)
     s_wifi_obj.retry_count = 0;
     s_wifi_obj.event_source = WIFI_NORM_EVENT;
 
-    s_wifi_obj.wifi_info = m_db_get_wifi_reference();
     s_wifi_obj.start_smart_config_cb = m_wifi_start_smartconfig;
     s_wifi_obj.start_ap_config_cb = m_wifi_start_apconfig;
     s_wifi_obj.wifi_set_state_cb = m_wifi_set_wifi_state;
@@ -272,4 +271,9 @@ void m_wifi_init(void)
 m_wifi_t m_wifi_get_instance(void)
 {
     return s_wifi_obj;
+}
+
+m_wifi_info_t* m_wifi_get_info_reference(void)
+{
+    return &s_wifi_obj._wifi_info;
 }

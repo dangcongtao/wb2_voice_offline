@@ -43,9 +43,9 @@ typedef void (*p_backup_database_t)(void);
 typedef struct {
     
     uint32_t            _device_is_paired;
-    m_wifi_info_t   _wifi_info;
-    m_mqtt_info_t   *_mqtt_info;
-    m_switch_info_t _switch_info;
+    m_wifi_info_t*      _wifi_info;
+    m_mqtt_info_t*      _mqtt_info;
+    m_switch_info_t*    _switch_info;
     uint32_t checksum_crc;
 } m_device_t;
 

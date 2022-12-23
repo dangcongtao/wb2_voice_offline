@@ -62,7 +62,7 @@ static uint8_t m_control_switch(uint32_t action, uint32_t act_id, uint32_t uid, 
     m_database_t *db_instance = m_db_get_instance();
 
     os_trace("m_control_switch: %d, %d\r\n", channel_index, state);
-    
+
     if (channel_index > MAX_NUM_SWITCH)
     {
         os_trace("channel out of index\r\n");
@@ -73,7 +73,7 @@ static uint8_t m_control_switch(uint32_t action, uint32_t act_id, uint32_t uid, 
     set_user_trigger_press_event(channel_index, set_even_release, action);
     db_instance->_set_current_state_cb(channel_index, state);
     /* save current state if needed */
-    uint8_t def_state = db_instance->_m_device._switch_info.default_state[channel_index] % 3;
+    uint8_t def_state = s_switch_obj._switch_info.default_state[channel_index] % 3;
     if (def_state == SWITCH_ONE_KEEP_OLD_STATE)
     {
         db_instance->_request_sync_db();
@@ -170,7 +170,7 @@ static void control_switch_default_state(void)
 
     for (channel = 0; channel < max_number_channel; channel++)
     {
-        mode = db_instance->_m_device._switch_info.default_state[channel];
+        mode = s_switch_obj._switch_info.default_state[channel];
 
         if (mode >= 3)
             mode %= 3;
@@ -179,7 +179,7 @@ static void control_switch_default_state(void)
         {
         case SWITCH_ONE_KEEP_OLD_STATE:
         {
-            state = db_instance->_m_device._switch_info.current_state[channel] % 2;
+            state = s_switch_obj._switch_info.current_state[channel] % 2;
         }
         break;
 
@@ -206,7 +206,7 @@ static void control_switch_default_state(void)
         {
             os_trace("control_switch_default_state - %d : %s\r\n", channel, state ? "ON" : "OFF");
             s_switch_obj._write_switch_cb(channel, state);
-            
+
             /* save state to database */
             state = m_control_get_status_switch(channel);
             db_instance->_set_current_state_cb(channel, state);
@@ -233,11 +233,16 @@ void m_switch_init(void)
     uint32_t i = 0;
     for (i = 0; i < max_number_channel; i++)
         s_switch_obj._switch_cfg_cb(i);
-    
+
     control_switch_default_state();
 }
 
 m_switch_t m_switch_get_instance(void)
 {
     return s_switch_obj;
+}
+
+m_switch_info_t* m_switch_get_info_reference(void)
+{
+    return &s_switch_obj._switch_info;
 }

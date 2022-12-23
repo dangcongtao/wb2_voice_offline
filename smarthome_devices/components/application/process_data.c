@@ -86,14 +86,14 @@ static void app_startup_message(void)
                 "\"ip\":\"%s\", \"po\":[",
                 gs_dev_type[device_type],
                 m_db_get_instance()->_get_dev_id(), FIRMWARE_VERSION, EXTRAS,
-                app_databse._wifi_info._ssid, app_databse._wifi_info._passwd,
-                app_databse._wifi_info._rssi, app_databse._wifi_info._ip);
+                app_databse._wifi_info->_ssid, app_databse._wifi_info->_passwd,
+                app_databse._wifi_info->_rssi, app_databse._wifi_info->_ip);
 
     /* default state value */
     for (i = 0; i < m_db_get_number_channel(); i++)
     {
         buffer_seek += sprintf(&respond[buffer_seek], "%d,",
-                               app_databse._switch_info.default_state[i]);
+                               app_databse._switch_info->default_state[i]);
     }
     buffer_seek--; /* remove last comma */
     buffer_seek += sprintf(&respond[buffer_seek], "],");
@@ -103,7 +103,7 @@ static void app_startup_message(void)
     for (i = 0; i < m_db_get_number_channel(); i++)
     {
         buffer_seek += sprintf(&respond[buffer_seek], "%d,",
-                               app_databse._switch_info.current_state[i]);
+                               app_databse._switch_info->current_state[i]);
     }
     buffer_seek--; /* remove last comma */
     buffer_seek += sprintf(&respond[buffer_seek], "],");
@@ -113,7 +113,7 @@ static void app_startup_message(void)
     for (i = 0; i < m_db_get_number_channel(); i++)
     {
         buffer_seek += sprintf(&respond[buffer_seek], "%d,",
-                               app_databse._switch_info.channel_lock_state[i]);
+                               app_databse._switch_info->channel_lock_state[i]);
     }
     buffer_seek--; /* remove last comma */
     buffer_seek += sprintf(&respond[buffer_seek], "],");
@@ -123,7 +123,7 @@ static void app_startup_message(void)
     for (i = 0; i < m_db_get_number_channel(); i++)
     {
         buffer_seek += sprintf(&respond[buffer_seek], "%ld,",
-                               app_databse._switch_info.time_release[i]);
+                               app_databse._switch_info->time_release[i]);
     }
     buffer_seek--; /* remove last comma */
     buffer_seek += sprintf(&respond[buffer_seek], "]}");
@@ -216,14 +216,14 @@ static void app_get_info(cJSON *jsRoot)
                 "\"ip\":\"%s\", \"po\":[",
                 gs_dev_type[device_type], type,
                 m_db_get_instance()->_get_dev_id(), FIRMWARE_VERSION, EXTRAS,
-                app_databse._wifi_info._ssid, app_databse._wifi_info._passwd,
-                app_databse._wifi_info._rssi, app_databse._wifi_info._ip);
+                app_databse._wifi_info->_ssid, app_databse._wifi_info->_passwd,
+                app_databse._wifi_info->_rssi, app_databse._wifi_info->_ip);
 
     /* default state value */
     for (i = 0; i < m_db_get_number_channel(); i++)
     {
         buffer_seek += sprintf(&respond[buffer_seek], "%u,",
-                               app_databse._switch_info.default_state[i]);
+                               app_databse._switch_info->default_state[i]);
     }
     buffer_seek--; /* remove last comma */
     buffer_seek += sprintf(&respond[buffer_seek], "],");
@@ -233,7 +233,7 @@ static void app_get_info(cJSON *jsRoot)
     for (i = 0; i < m_db_get_number_channel(); i++)
     {
         buffer_seek += sprintf(&respond[buffer_seek], "%u,",
-                               app_databse._switch_info.current_state[i]);
+                               app_databse._switch_info->current_state[i]);
     }
     buffer_seek--; /* remove last comma */
     buffer_seek += sprintf(&respond[buffer_seek], "],");
@@ -243,7 +243,7 @@ static void app_get_info(cJSON *jsRoot)
     for (i = 0; i < m_db_get_number_channel(); i++)
     {
         buffer_seek += sprintf(&respond[buffer_seek], "%d,",
-                               app_databse._switch_info.channel_lock_state[i]);
+                               app_databse._switch_info->channel_lock_state[i]);
     }
     buffer_seek--; /* remove last comma */
     buffer_seek += sprintf(&respond[buffer_seek], "],");
@@ -253,7 +253,7 @@ static void app_get_info(cJSON *jsRoot)
     for (i = 0; i < m_db_get_number_channel(); i++)
     {
         buffer_seek += sprintf(&respond[buffer_seek], "%ld,",
-                               app_databse._switch_info.time_release[i]);
+                               app_databse._switch_info->time_release[i]);
     }
     buffer_seek--; /* remove last comma */
     buffer_seek += sprintf(&respond[buffer_seek], "]}");

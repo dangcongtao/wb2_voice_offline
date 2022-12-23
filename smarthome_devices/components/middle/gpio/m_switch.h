@@ -64,8 +64,9 @@ typedef struct {
 } m_switch_info_t;
 
 typedef struct {
-/* need port by hardware */
+	m_switch_info_t _switch_info;
 	uint8_t max_number_channel;
+/* need port by hardware */
 	p_switch_cfg_t _switch_cfg_cb;
 	p_read_switch_t _read_switch_cb;
 	p_write_switch_t _write_switch_cb;
@@ -78,6 +79,7 @@ typedef struct {
 /* need call from hardware at start-up */
 void m_switch_init(void);
 m_switch_t m_switch_get_instance(void);
+m_switch_info_t* m_switch_get_info_reference(void);
 m_switch_state_t m_control_get_status_switch(uint8_t index);
 
 /******************* SWITCH EVENT HANDLER ******************/

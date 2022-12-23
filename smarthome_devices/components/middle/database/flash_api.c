@@ -58,15 +58,15 @@ void flash_init(void)
     easyflash_init();
 }
 
-void flash_write_database(const m_device_t object_data, uint32_t _size)
+void flash_write_database(const m_device_t object_data)
 {
     uint32_t size = 0;
 
     /* write wifo info */
-    size = sizeof(object_data._wifi_info._ssid);
-    ef_set_bytes(WIFI_SSID, (uint8_t*)object_data._wifi_info._ssid, size);
-    size = sizeof(object_data._wifi_info._passwd);
-    ef_set_bytes(WIFI_PASS, (uint8_t*)object_data._wifi_info._passwd, size);
+    size = sizeof(object_data._wifi_info->_ssid);
+    ef_set_bytes(WIFI_SSID, (uint8_t*)object_data._wifi_info->_ssid, size);
+    size = sizeof(object_data._wifi_info->_passwd);
+    ef_set_bytes(WIFI_PASS, (uint8_t*)object_data._wifi_info->_passwd, size);
 
     /* write mqtt info */
     os_trace("write mqtt info\r\n");
@@ -89,11 +89,11 @@ void flash_write_database(const m_device_t object_data, uint32_t _size)
     uint32_t i;
     for (i = 0; i < max_number_channel; i++) {
         os_trace("write switch info %ld\r\n", i);
-        ef_set_u32(defaut_states[i], object_data._switch_info.default_state[i]);
-        ef_set_u32(current_states[i], object_data._switch_info.current_state[i]);
-        ef_set_u32(lock_states[i], object_data._switch_info.channel_lock_state[i]);
-        ef_set_u32(time_releases[i], object_data._switch_info.time_release[i]);
-        ef_set_u32(release_modes[i], object_data._switch_info.release_mode[i]);
+        ef_set_u32(defaut_states[i], object_data._switch_info->default_state[i]);
+        ef_set_u32(current_states[i], object_data._switch_info->current_state[i]);
+        ef_set_u32(lock_states[i], object_data._switch_info->channel_lock_state[i]);
+        ef_set_u32(time_releases[i], object_data._switch_info->time_release[i]);
+        ef_set_u32(release_modes[i], object_data._switch_info->release_mode[i]);
     }
 
     os_trace("write state pair\r\n");
@@ -101,15 +101,15 @@ void flash_write_database(const m_device_t object_data, uint32_t _size)
     ef_set_u32(PAIR_STATE, object_data._device_is_paired);
 }
 
-void flash_read_database(m_device_t* object_data, uint32_t* _size)
+void flash_read_database(m_device_t* object_data)
 {
     uint32_t size = 0;
 
     /* read wifi info */
-    size = sizeof(object_data->_wifi_info._ssid);
-    ef_get_bytes(WIFI_SSID, (uint8_t*)object_data->_wifi_info._ssid, size);
-    size = sizeof(object_data->_wifi_info._passwd);
-    ef_get_bytes(WIFI_PASS, (uint8_t*)object_data->_wifi_info._passwd, size);
+    size = sizeof(object_data->_wifi_info->_ssid);
+    ef_get_bytes(WIFI_SSID, (uint8_t*)object_data->_wifi_info->_ssid, size);
+    size = sizeof(object_data->_wifi_info->_passwd);
+    ef_get_bytes(WIFI_PASS, (uint8_t*)object_data->_wifi_info->_passwd, size);
 
     /* read mqtt info */
     size = sizeof(object_data->_mqtt_info->topic_pub);
@@ -128,11 +128,11 @@ void flash_read_database(m_device_t* object_data, uint32_t* _size)
     /* read switch info */
     uint32_t i;
     for (i = 0; i < max_number_channel; i++) {
-        ef_get_u32(defaut_states[i], (uint32_t *)&(object_data->_switch_info.default_state[i]));
-        ef_get_u32(current_states[i], (uint32_t *)&(object_data->_switch_info.current_state[i]));
-        ef_get_u32(lock_states[i], (uint32_t *)&(object_data->_switch_info.channel_lock_state[i]));
-        ef_get_u32(time_releases[i], (uint32_t *)&(object_data->_switch_info.time_release[i]));
-        ef_get_u32(release_modes[i], (uint32_t *)&(object_data->_switch_info.release_mode[i]));
+        ef_get_u32(defaut_states[i], (uint32_t *)&(object_data->_switch_info->default_state[i]));
+        ef_get_u32(current_states[i], (uint32_t *)&(object_data->_switch_info->current_state[i]));
+        ef_get_u32(lock_states[i], (uint32_t *)&(object_data->_switch_info->channel_lock_state[i]));
+        ef_get_u32(time_releases[i], (uint32_t *)&(object_data->_switch_info->time_release[i]));
+        ef_get_u32(release_modes[i], (uint32_t *)&(object_data->_switch_info->release_mode[i]));
         
     }
 
@@ -140,10 +140,10 @@ void flash_read_database(m_device_t* object_data, uint32_t* _size)
     if ((ef_get_u32(PAIR_STATE, &(object_data->_device_is_paired)) == false) || (object_data->_device_is_paired == 0))
     {
         os_trace("Read flash: Device was not paired\r\n");
-        object_data->_switch_info.default_state[0] = SWITCH_ONE_DEFAULT_OFF;
-        object_data->_switch_info.default_state[1] = SWITCH_TWO_DEFAULT_OFF;
-        object_data->_switch_info.default_state[2] = SWITCH_THREE_DEFAULT_OFF;
-        object_data->_switch_info.default_state[3] = SWITCH_FOUR_DEFAULT_OFF;
+        object_data->_switch_info->default_state[0] = SWITCH_ONE_DEFAULT_OFF;
+        object_data->_switch_info->default_state[1] = SWITCH_TWO_DEFAULT_OFF;
+        object_data->_switch_info->default_state[2] = SWITCH_THREE_DEFAULT_OFF;
+        object_data->_switch_info->default_state[3] = SWITCH_FOUR_DEFAULT_OFF;
     }
 }
 

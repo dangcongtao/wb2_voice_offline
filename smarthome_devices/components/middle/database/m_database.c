@@ -1,5 +1,7 @@
 #include "m_database.h"
+#include "m_wifi.h"
 #include "m_mqtt.h"
+#include "m_switch.h"
 #include "flash_api.h"
 
 #include <string.h>
@@ -95,7 +97,7 @@ static void set_current_state(uint32_t index, uint8_t action)
     if (index > m_db_get_number_channel())
         return;
 
-    s_m_database._m_device._switch_info.current_state[index] = action;
+    s_m_database._m_device._switch_info->current_state[index] = action;
 }
 
 static void set_default_state(uint32_t index, uint8_t mode)
@@ -103,7 +105,7 @@ static void set_default_state(uint32_t index, uint8_t mode)
     if (index > m_db_get_number_channel())
         return;
 
-    s_m_database._m_device._switch_info.default_state[index] = mode;
+    s_m_database._m_device._switch_info->default_state[index] = mode;
     m_db_request_sync_database();
 }
 
@@ -112,23 +114,23 @@ static void set_lock_channel(uint32_t index, uint8_t lock)
     if (index > m_db_get_number_channel())
         return;
 
-    s_m_database._m_device._switch_info.channel_lock_state[index] = lock;
+    s_m_database._m_device._switch_info->channel_lock_state[index] = lock;
     m_db_request_sync_database();
 }
 
 static void set_time_release(uint32_t index, uint32_t time, uint32_t mode)
 {
-    s_m_database._m_device._switch_info.time_release[index] = time;
-    s_m_database._m_device._switch_info.release_mode[index] = mode;
-    os_trace("mode: %ld\r\n", s_m_database._m_device._switch_info.release_mode[index]);
+    s_m_database._m_device._switch_info->time_release[index] = time;
+    s_m_database._m_device._switch_info->release_mode[index] = mode;
+    os_trace("mode: %ld\r\n", s_m_database._m_device._switch_info->release_mode[index]);
     m_db_request_sync_database();
 }
 
 static void get_time_release(uint32_t index, uint32_t *time, uint32_t *mode)
 {
-    *time = s_m_database._m_device._switch_info.time_release[index];
-    *mode = s_m_database._m_device._switch_info.release_mode[index];
-    os_trace("mode: %ld\r\n", s_m_database._m_device._switch_info.release_mode[index]);
+    *time = s_m_database._m_device._switch_info->time_release[index];
+    *mode = s_m_database._m_device._switch_info->release_mode[index];
+    os_trace("mode: %ld\r\n", s_m_database._m_device._switch_info->release_mode[index]);
 }
 
 static void generate_aes_key_iv(void)
@@ -162,13 +164,10 @@ static void generate_aes_key_iv(void)
 static void m_load_databse(void)
 {
     uint8_t i = 0;
+    m_db_read_device_id();
+    flash_read_database(&s_m_database._m_device);
 
     os_trace("=============== app load database ===============\r\n");
-    uint32_t len_database = sizeof(m_device_t);
-
-    m_db_read_device_id();
-    flash_read_database((void *)(&s_m_database._m_device), &len_database);
-
     os_trace("device_id: %s\r\n", s_device_id);
     os_trace("server: %s\r\n", s_m_database._m_device._mqtt_info->server);
     os_trace("port: %ld\r\n", s_m_database._m_device._mqtt_info->port);
@@ -180,28 +179,28 @@ static void m_load_databse(void)
     os_trace("default state: ");
     for (i = 0; i < m_db_get_number_channel(); i++)
     {
-        os_trace("%u ", s_m_database._m_device._switch_info.default_state[i]);
+        os_trace("%u ", s_m_database._m_device._switch_info->default_state[i]);
     }
     os_trace("\r\n");
 
     os_trace("current state: ");
     for (i = 0; i < m_db_get_number_channel(); i++)
     {
-        os_trace("%u ", s_m_database._m_device._switch_info.current_state[i]);
+        os_trace("%u ", s_m_database._m_device._switch_info->current_state[i]);
     }
     os_trace("\r\n");
 
     os_trace("lock mode: ");
     for (i = 0; i < m_db_get_number_channel(); i++)
     {
-        os_trace("%u ", s_m_database._m_device._switch_info.channel_lock_state[i]);
+        os_trace("%u ", s_m_database._m_device._switch_info->channel_lock_state[i]);
     }
     os_trace("\r\n");
 
     os_trace("time release: ");
     for (i = 0; i < m_db_get_number_channel(); i++)
     {
-        os_trace("%ld ", s_m_database._m_device._switch_info.time_release[i]);
+        os_trace("%ld ", s_m_database._m_device._switch_info->time_release[i]);
     }
     os_trace("\r\n");
 
@@ -235,14 +234,14 @@ static void m_database_sync_task(void *param)
 
             /* reset factory */
             clear_cyclic_timer();
-            memset(&s_m_database._m_device._switch_info, 0, sizeof(m_device_t));
-            memset(&s_m_database._m_device._wifi_info, 0, sizeof(m_wifi_info_t));
+            memset(s_m_database._m_device._switch_info, 0, sizeof(m_device_t));
+            memset(s_m_database._m_device._wifi_info, 0, sizeof(m_wifi_info_t));
             memset(s_m_database._m_device._mqtt_info, 0, sizeof(m_mqtt_info_t));
 
-            s_m_database._m_device._switch_info.default_state[0] = SWITCH_ONE_DEFAULT_OFF;
-            s_m_database._m_device._switch_info.default_state[1] = SWITCH_TWO_DEFAULT_OFF;
-            s_m_database._m_device._switch_info.default_state[2] = SWITCH_THREE_DEFAULT_OFF;
-            s_m_database._m_device._switch_info.default_state[3] = SWITCH_FOUR_DEFAULT_OFF;
+            s_m_database._m_device._switch_info->default_state[0] = SWITCH_ONE_DEFAULT_OFF;
+            s_m_database._m_device._switch_info->default_state[1] = SWITCH_TWO_DEFAULT_OFF;
+            s_m_database._m_device._switch_info->default_state[2] = SWITCH_THREE_DEFAULT_OFF;
+            s_m_database._m_device._switch_info->default_state[3] = SWITCH_FOUR_DEFAULT_OFF;
 
             s_request_reset_db = 0;
             s_request_sync_db = 1;
@@ -259,7 +258,7 @@ static void m_database_sync_task(void *param)
         if (s_request_sync_db)
         {
             os_trace("app sync database\r\n");
-            flash_write_database(s_m_database._m_device, sizeof(m_device_t));
+            flash_write_database(s_m_database._m_device);
             if (s_m_database._m_device._device_is_paired)
             {
                 s_database_was_deleted_before = false;
@@ -277,10 +276,9 @@ void m_database_init(void)
     os_trace("m_database_init\r\n");
 
     s_m_database._m_device._mqtt_info = m_mqtt_get_info_reference();
-    if (s_m_database._m_device._mqtt_info == NULL)
-    {
-        os_trace("mqtt reference NULL\r\n");
-    }
+    s_m_database._m_device._wifi_info = m_wifi_get_info_reference();
+    s_m_database._m_device._switch_info = m_switch_get_info_reference();
+
     s_m_database._set_dev_pair_state = m_db_dev_set_pair;
     s_m_database._get_dev_pair_state = m_db_dev_get_pair;
     s_m_database._get_dev_id = m_get_dev_id;
@@ -303,12 +301,6 @@ void m_database_init(void)
             NULL,                   /* Parameter passed into the task. */
             1,                      /* Priority at which the task is created. */
             NULL);
-}
-
-m_wifi_info_t *m_db_get_wifi_reference(void)
-{
-    m_wifi_info_t *p_wifi_reference = &s_m_database._m_device._wifi_info;
-    return p_wifi_reference;
 }
 
 m_database_t *m_db_get_instance(void)

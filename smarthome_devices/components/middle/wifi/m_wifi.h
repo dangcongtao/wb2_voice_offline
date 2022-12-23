@@ -46,7 +46,7 @@ typedef struct {
 
 typedef struct {
 /* properties */
-    m_wifi_info_t               *wifi_info;
+    m_wifi_info_t               _wifi_info;
     m_wifi_event_source_t       event_source;
     m_wifi_state_t              wifi_state;
     uint32_t                    retry_count;
@@ -67,5 +67,6 @@ typedef struct {
 /* public */
 void m_wifi_init(void);
 m_wifi_t m_wifi_get_instance(void);
+m_wifi_info_t* m_wifi_get_info_reference(void);
 
 #endif /* _M_WIFI_H_ */
