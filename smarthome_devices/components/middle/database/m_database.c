@@ -36,10 +36,10 @@ void m_db_read_device_id(void)
     // flash_read_device_id((void*)(&s_device_id), len_device_id);
     memset(s_device_id, 0, sizeof(s_device_id));
     sprintf(s_device_id, "HUN21210803110509154wswitch2v4");
-    os_trace("m_db_read_device_id: %s\r\r\n", s_device_id);
+    os_trace("m_db_read_device_id: %s\r\n", s_device_id);
 
     max_number_channel = s_device_id[strlen(s_device_id) - 1] - '0';
-    os_trace("max_number_channel: %ld\r\r\n", max_number_channel);
+    os_trace("max_number_channel: %ld\r\n", max_number_channel);
 
     /* get device type */
     if (strstr(s_device_id, gs_dev_type[WSWITCH]) != NULL)
@@ -73,7 +73,7 @@ static void m_db_dev_set_pair(bool new_state)
 
 static char *m_get_dev_id(void)
 {
-    os_trace("m_get_dev_id\r\r\n");
+    os_trace("m_get_dev_id\r\n");
     return s_device_id;
 }
 
@@ -169,6 +169,10 @@ static void m_load_databse(void)
 
     os_trace("=============== app load database ===============\r\n");
     os_trace("device_id: %s\r\n", s_device_id);
+
+    os_trace("ssid: %s\r\n", s_m_database._m_device._wifi_info->_ssid);
+    os_trace("pass: %s\r\n", s_m_database._m_device._wifi_info->_passwd);
+
     os_trace("server: %s\r\n", s_m_database._m_device._mqtt_info->server);
     os_trace("port: %ld\r\n", s_m_database._m_device._mqtt_info->port);
     os_trace("username: %s\r\n", s_m_database._m_device._mqtt_info->username);
@@ -176,33 +180,29 @@ static void m_load_databse(void)
     os_trace("topic_pub: %s\r\n", s_m_database._m_device._mqtt_info->topic_pub);
     os_trace("topic_sub: %s\r\n", s_m_database._m_device._mqtt_info->topic_sub);
 
-    os_trace("default state: ");
-    for (i = 0; i < m_db_get_number_channel(); i++)
-    {
-        os_trace("%u ", s_m_database._m_device._switch_info->default_state[i]);
-    }
-    os_trace("\r\n");
+    os_trace("default state: %u %u %u %u\r\n", 
+            s_m_database._m_device._switch_info->default_state[0],
+            s_m_database._m_device._switch_info->default_state[1],
+            s_m_database._m_device._switch_info->default_state[2],
+            s_m_database._m_device._switch_info->default_state[3]);
 
-    os_trace("current state: ");
-    for (i = 0; i < m_db_get_number_channel(); i++)
-    {
-        os_trace("%u ", s_m_database._m_device._switch_info->current_state[i]);
-    }
-    os_trace("\r\n");
+    os_trace("current state: %u %u %u %u\r\n",
+            s_m_database._m_device._switch_info->current_state[0],
+            s_m_database._m_device._switch_info->current_state[1],
+            s_m_database._m_device._switch_info->current_state[2],
+            s_m_database._m_device._switch_info->current_state[3]);
 
-    os_trace("lock mode: ");
-    for (i = 0; i < m_db_get_number_channel(); i++)
-    {
-        os_trace("%u ", s_m_database._m_device._switch_info->channel_lock_state[i]);
-    }
-    os_trace("\r\n");
+    os_trace("lock mode: %u %u %u %u\r\n", 
+            s_m_database._m_device._switch_info->channel_lock_state[0],
+            s_m_database._m_device._switch_info->channel_lock_state[1],
+            s_m_database._m_device._switch_info->channel_lock_state[2],
+            s_m_database._m_device._switch_info->channel_lock_state[3]);
 
-    os_trace("time release: ");
-    for (i = 0; i < m_db_get_number_channel(); i++)
-    {
-        os_trace("%ld ", s_m_database._m_device._switch_info->time_release[i]);
-    }
-    os_trace("\r\n");
+    os_trace("time release: %ld %ld %ld %ld\r\n",
+            s_m_database._m_device._switch_info->time_release[0],
+            s_m_database._m_device._switch_info->time_release[1],
+            s_m_database._m_device._switch_info->time_release[2],
+            s_m_database._m_device._switch_info->time_release[3]);
 
     if (s_m_database._m_device._device_is_paired)
     {

@@ -7,13 +7,7 @@
 
 #define DEBUG_ENABLE    1
 void m_log(const char *fmt, ...);
-#define os_trace if (DEBUG_ENABLE == 1) printf
-
-#if (DEBUG_ENABLE == 1)
-    #define USER_LOG_LEVEL	ESP_LOG_VERBOSE
-#else
-    #define USER_LOG_LEVEL	ESP_LOG_NONE
-#endif
+#define os_trace if (DEBUG_ENABLE == 1) m_log
 
 /* config for type of device, that will be used to parse json message */
 #define EXTRAS              1514

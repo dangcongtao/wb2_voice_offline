@@ -66,6 +66,8 @@ typedef struct {
 
 /* public */
 void m_wifi_init(void);
+void m_wifi_start(void);
+
 m_wifi_t m_wifi_get_instance(void);
 m_wifi_info_t* m_wifi_get_info_reference(void);
 

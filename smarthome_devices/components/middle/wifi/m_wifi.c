@@ -138,7 +138,7 @@ void wifi_task(void *param)
         {
             /* if device was configured */
             if (m_db_get_instance()->_get_dev_pair_state())
-            {
+            {   
                 m_wifi_connect(s_wifi_obj._wifi_info._ssid, s_wifi_obj._wifi_info._passwd);
                 s_wifi_obj.wifi_state = WIFI_WAIT_EVENT;
             } 
@@ -261,7 +261,10 @@ void m_wifi_init(void)
     s_wifi_obj.wifi_change_wifi_cb = m_wifi_change_wifi;
     s_wifi_obj.wifi_save_ip = m_wifi_save_ip;
     s_wifi_obj.wifi_set_source_event_cb = m_wifi_set_evt_source;
+}
 
+void m_wifi_start(void)
+{
     wifi_initialize();
     wifi_task(NULL);
 }

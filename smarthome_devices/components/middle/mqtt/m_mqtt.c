@@ -23,7 +23,7 @@ static bool request_send_command_online = false;
 void set_mqtt_server(char* data, uint32_t len)
 {
     if (len > sizeof(s_mqtt_obj.mqtt_info.server)) {
-        os_trace("fail to set mqtt server, len data too long\r\r\n");
+        os_trace("fail to set mqtt server, len data too long\r\n");
         return;
     }
 
@@ -39,7 +39,7 @@ void set_mqtt_port(uint32_t num)
 void set_mqtt_user(char* data, uint32_t len)
 {
     if (len > sizeof(s_mqtt_obj.mqtt_info.username)) {
-        os_trace("fail to set mqtt user, len data too long\r\r\n");
+        os_trace("fail to set mqtt user, len data too long\r\n");
         return;
     }
 
@@ -50,7 +50,7 @@ void set_mqtt_user(char* data, uint32_t len)
 void set_mqtt_passwd(char* data, uint32_t len)
 {
     if (len > sizeof(s_mqtt_obj.mqtt_info.passwd)) {
-        os_trace("fail to set mqtt passwd, len data too long\r\r\n");
+        os_trace("fail to set mqtt passwd, len data too long\r\n");
         return;
     }
 
@@ -61,7 +61,7 @@ void set_mqtt_passwd(char* data, uint32_t len)
 void set_mqtt_topic_sub(char* data, uint32_t len)
 {
     if (len > sizeof(s_mqtt_obj.mqtt_info.topic_sub)) {
-        os_trace("fail to set mqtt topic_sub, len data too long\r\r\n");
+        os_trace("fail to set mqtt topic_sub, len data too long\r\n");
         return;
     }
 
@@ -72,7 +72,7 @@ void set_mqtt_topic_sub(char* data, uint32_t len)
 void set_mqtt_topic_pub(char* data, uint32_t len)
 {
     if (len > sizeof(s_mqtt_obj.mqtt_info.topic_pub)) {
-        os_trace("fail to set mqtt topic_sub, len data too long\r\r\n");
+        os_trace("fail to set mqtt topic_sub, len data too long\r\n");
         return;
     }
 
@@ -85,7 +85,7 @@ static bool mqtt_init_queue(void)
     if (mqtt_tx_queue == NULL) {
         mqtt_tx_queue = xQueueCreate(MAXIMUM_QUEUE_ITEM, sizeof(m_mqtt_msg_pub_t));
         if(mqtt_tx_queue == NULL){
-            os_trace("%s fail\r\r\n", __func__);
+            os_trace("%s fail\r\n", __func__);
             return false;
         }
     }
@@ -162,7 +162,7 @@ static void m_mqtt_start(void)
 
 static void m_mqtt_stop(void)
 {
-    os_trace("mqtt stop\r\r\n");
+    os_trace("mqtt stop\r\n");
 }
 
 static void m_mqtt_publish_loop(void)
