@@ -30,10 +30,13 @@
 #include "m_ap_config.h"
 #include "m_smartconfig.h"
 #include "m_http_server.h"
+#include "m_wifi_event.h"
 
 #define ESP_MAXIMUM_RETRY 5
 
-#define TAG "m_wifi"
+static wifi_conf_t conf = {
+    .country_code = "VN",
+};
 
 static m_wifi_t s_wifi_obj;
 
@@ -101,6 +104,9 @@ static void wifi_initialize()
 {
     puts("[OS] Starting TCP/IP Stack...");
     tcpip_init(NULL, NULL);
+    aos_register_event_filter(EV_WIFI, m_wifi_event_cb, NULL);
+    hal_wifi_start_firmware_task();
+    wifi_mgmr_start_background(&conf);
 }
 
 void m_wifi_connect(char *ssid, char *password)

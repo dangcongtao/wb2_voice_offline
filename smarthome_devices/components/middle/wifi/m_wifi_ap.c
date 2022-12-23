@@ -2,6 +2,7 @@
 #include "m_ap_config.h"
 #include "m_http_server.h"
 #include "m_database.h"
+#include "system_typedef.h"
 
 #include <FreeRTOS.h>
 #include <task.h>
@@ -26,6 +27,7 @@ static wifi_conf_t ap_conf = {
     .country_code = "VN",
 };
 
+extern int g_wifi_mode;
 static wifi_interface_t ap_interface;
 
 /**
@@ -100,12 +102,12 @@ static void wifi_ap_start()
     wifi_ap_ip_set(IP_ADDR, NETMASK, GATEWAY_ADDR);  
 }
 
-static void event_cb_wifi_event(input_event_t* event, void* private_data)
+void m_wifi_ap_event_cb(input_event_t* event, void* private_data)
 {
     switch (event->code) {
         case CODE_WIFI_ON_INIT_DONE:
             os_trace("<<<<<<<<<  init wifi done  <<<<<<<<<\r\n");
-            wifi_mgmr_start_background(&ap_conf);
+            // wifi_mgmr_start_background(&ap_conf);
             break;
         case CODE_WIFI_ON_MGMR_DONE:
             os_trace("<<<<<<<<< startting soft ap <<<<<<<<<<\r\n");
@@ -133,16 +135,16 @@ static void event_cb_wifi_event(input_event_t* event, void* private_data)
 
 static void proc_main_entry(void* pvParameters)
 {
-    aos_register_event_filter(EV_WIFI, event_cb_wifi_event, NULL);
-    hal_wifi_start_firmware_task();
-    aos_post_event(EV_WIFI, CODE_WIFI_ON_INIT_DONE, 0);
+    os_trace("proc_main_entry\r\n");
+    aos_post_event(EV_WIFI, CODE_WIFI_ON_MGMR_DONE, 0);
     vTaskDelete(NULL);
 }
 
 void m_wifi_ap_start(void)
 {
+    g_wifi_mode = WIFI_SOFT_AP;
     // puts("[OS] Starting TCP/IP Stack...");
     // tcpip_init(NULL, NULL);
-    ap_cfg_clear_state();
+    m_ap_cfg_clear_state();
     xTaskCreate(proc_main_entry, (char*)"main_entry", 1024, NULL, 15, NULL);
 }

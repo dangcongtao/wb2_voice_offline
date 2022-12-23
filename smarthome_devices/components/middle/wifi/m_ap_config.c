@@ -72,6 +72,7 @@ static void m_cb_scan_item_parse(wifi_mgmr_ap_item_t *env, uint32_t *param1, wif
 void scan_ap_around(void)
 {
     memset(ap_ary_p, 0, sizeof(wifi_mgmr_ap_item_t) * WIFI_SCAN_MAX_AP);
+    counter = 0;
 
     scan_semaphore = bl_os_sem_create(0);
     if (NULL == scan_semaphore)
@@ -189,7 +190,7 @@ json_parse_fail:
     return true;
 }
 
-void ap_cfg_clear_state(void)
+void m_ap_cfg_clear_state(void)
 {
     ap_cfg_get_data = 0;
 }

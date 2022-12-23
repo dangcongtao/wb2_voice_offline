@@ -1,13 +1,15 @@
 #include "m_wifi_station.h"
 #include "m_http_server.h"
+#include "system_typedef.h"
 
 #define STA_SSID "RD HUNONIC 1"
 #define STA_PASSWORD "66668888"
 
-static wifi_conf_t conf = {
-    .country_code = "VN",
-};
+// static wifi_conf_t conf = {
+//     .country_code = "VN",
+// };
 
+extern int g_wifi_mode;
 country_code_type country_code = WIFI_COUNTRY_CODE_CN;
 static wifi_interface_t g_wifi_sta_interface = NULL;
 static int g_wifi_sta_is_connected = 0;
@@ -30,7 +32,7 @@ int wifi_sta_connect(void)
     }
 }
 
-static void wifi_event_cb(input_event_t *event, void *private_data)
+void m_wifi_sta_event_cb(input_event_t *event, void *private_data)
 {
     static char *ssid;
     static char *password;
@@ -56,7 +58,7 @@ static void wifi_event_cb(input_event_t *event, void *private_data)
     case CODE_WIFI_ON_INIT_DONE:
     {
         printf("[APP] [EVT] INIT DONE %lld\r\n", aos_now_ms());
-        wifi_mgmr_start_background(&conf);
+        // wifi_mgmr_start_background(&conf);
         wifi_sta_connect();
     }
     break;
@@ -165,20 +167,9 @@ static void wifi_event_cb(input_event_t *event, void *private_data)
 
 void wifi_execute(void *pvParameters)
 {
-    aos_register_event_filter(EV_WIFI, wifi_event_cb, NULL);
-    static uint8_t stack_wifi_init = 0;
-
-    if (1 == stack_wifi_init)
-    {
-        printf("Wi-Fi Stack Started already!!!\r\n");
-        return;
-    }
-    stack_wifi_init = 1;
-    printf("Wi-Fi init successful\r\n");
-    hal_wifi_start_firmware_task();
-    /*Trigger to start Wi-Fi*/
+    g_wifi_mode = WIFI_STATION;
     aos_post_event(EV_WIFI, CODE_WIFI_ON_INIT_DONE, 0);
-
+    
     vTaskDelete(NULL);
 }
 

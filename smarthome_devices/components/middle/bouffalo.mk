@@ -27,6 +27,7 @@ COMPONENT_SRCS := database/m_database.c \
 				  wifi/m_smartconfig.c \
 				  wifi/m_wifi_ap.c \
 				  wifi/m_wifi_station.c \
+				  wifi/m_wifi_event.c \
 				  wifi/m_wifi.c \
 				  
 COMPONENT_OBJS := $(patsubst %.c,%.o, $(COMPONENT_SRCS))

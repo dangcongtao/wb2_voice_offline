@@ -21,7 +21,7 @@ typedef enum {
     AP_CONFIG_DONE
 } m_apconfig_step_t;
 
-void ap_cfg_clear_state(void);
+void m_ap_cfg_clear_state(void);
 uint8_t is_ap_config_done(void);
 
 void scan_ap_around(void);

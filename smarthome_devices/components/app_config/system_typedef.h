@@ -82,5 +82,10 @@ typedef enum
     HIGH = !LOW,
 } state_t;
 
+typedef enum {
+    WIFI_IDLE = 0,
+    WIFI_STATION,
+    WIFI_SOFT_AP,
+} m_wifi_mode_t;
 
 #endif /* CJSON_KEYWORD_H__ */

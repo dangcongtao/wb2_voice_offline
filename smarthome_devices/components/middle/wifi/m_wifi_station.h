@@ -66,6 +66,7 @@ typedef enum
     WIFI_AUTOCONN_ENABLE,
 } wifi_auto_conn;
 
+void m_wifi_sta_event_cb(input_event_t *event, void *private_data);
 void wifi_background_init(country_code_type country_code);
 void wifi_execute(void *pvParameters);
 void m_wifi_sta_start(void);
