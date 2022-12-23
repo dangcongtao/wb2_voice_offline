@@ -102,8 +102,6 @@ static void m_wifi_set_evt_source(m_wifi_event_source_t new_event)
 
 static void wifi_initialize()
 {
-    puts("[OS] Starting TCP/IP Stack...");
-    tcpip_init(NULL, NULL);
     aos_register_event_filter(EV_WIFI, m_wifi_event_cb, NULL);
     hal_wifi_start_firmware_task();
     wifi_mgmr_start_background(&conf);

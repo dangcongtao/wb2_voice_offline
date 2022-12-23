@@ -8,6 +8,9 @@
 
 #include <FreeRTOS.h>
 #include <task.h>
+#include <lwip/tcpip.h>
+#include <lwip/netif.h>
+#include <lwip/inet.h>
 
 #include "m_button.h"
 #include "m_switch.h"
@@ -35,14 +38,16 @@ void m_stack_start(void)
 
     /* start stack */
     m_mqtt_init();
+    m_http_server_start();
     m_wifi_init();
-    // m_http_init();
 }
 
 void main(void)
 {
     bl_uart_init(0, 16, 7, 255, 255, 115200); // set uart baud 115200
     easyflash_init();
+    os_trace("[OS] Starting TCP/IP Stack...");
+    tcpip_init(NULL, NULL);
 
     m_database_init();
     m_button_init();

@@ -116,7 +116,6 @@ void m_wifi_ap_event_cb(input_event_t* event, void* private_data)
             break;
         case CODE_WIFI_ON_AP_STARTED:
             os_trace("<<<<<<<<< startt soft ap OK<<<<<<<<<<\r\n");
-            m_http_server_start();
             break;
         case CODE_WIFI_ON_AP_STOPPED:
             break;
