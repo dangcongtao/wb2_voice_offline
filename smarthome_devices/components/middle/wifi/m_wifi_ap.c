@@ -23,10 +23,6 @@ for example  gw ip:"192.168.4.1" , change DHCPD_SERVER_IP to "192.168.4.1" */
 #define GATEWAY_ADDR    IP_ADDR
 #define NETMASK         "255.255.255.0"
 
-static wifi_conf_t ap_conf = {
-    .country_code = "VN",
-};
-
 extern int g_wifi_mode;
 static wifi_interface_t ap_interface;
 
@@ -142,8 +138,6 @@ static void proc_main_entry(void* pvParameters)
 void m_wifi_ap_start(void)
 {
     g_wifi_mode = WIFI_SOFT_AP;
-    // puts("[OS] Starting TCP/IP Stack...");
-    // tcpip_init(NULL, NULL);
     m_ap_cfg_clear_state();
     xTaskCreate(proc_main_entry, (char*)"main_entry", 1024, NULL, 15, NULL);
 }

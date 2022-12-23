@@ -107,22 +107,6 @@ static void wifi_initialize()
     wifi_mgmr_start_background(&conf);
 }
 
-void m_wifi_connect(char *ssid, char *password)
-{
-}
-
-void m_wifi_retry_connect(void)
-{
-    static uint32_t time_reconnect;
-
-    time_reconnect += 50;
-    if (time_reconnect < 5000)
-    {
-        return;
-    }
-    time_reconnect = 0;
-}
-
 static void m_wifi_sync_rssi(void)
 {
 }
@@ -139,7 +123,7 @@ void wifi_task(void *param)
             /* if device was configured */
             if (m_db_get_instance()->_get_dev_pair_state())
             {   
-                m_wifi_connect(s_wifi_obj._wifi_info._ssid, s_wifi_obj._wifi_info._passwd);
+                wifi_sta_connect(s_wifi_obj._wifi_info._ssid, s_wifi_obj._wifi_info._passwd);
                 s_wifi_obj.wifi_state = WIFI_WAIT_EVENT;
             } 
             else {
@@ -169,6 +153,7 @@ void wifi_task(void *param)
 
         case WIFI_APCONFIG:
         {
+            m_wifi_sta_stop();
             m_wifi_ap_start();
             // m_wifi_sta_start();
             // reset_ap_config();
@@ -202,7 +187,7 @@ void wifi_task(void *param)
         case WIFI_DISCONNECT:
         {
             m_led_stt_get_instance()._set_led_stt_not_config_cb();
-            m_wifi_retry_connect();
+            // m_wifi_retry_connect();
         }
         break;
 

@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#define WIFI_SCAN_MAX_AP      5
+#define WIFI_SCAN_MAX_AP      20
 
 typedef enum {
     START_APCONFIG = 0,
