@@ -22,20 +22,19 @@
 
 void m_stack_start(void)
 {
+    if (m_mqtt_get_instance()._mqtt_handler_msg == NULL)
+    {
+        os_trace("m_mqtt can not start, Please call function "
+                 "m_mqtt_register_msg_handler() before start stack\n");
+        exit(0);
+    }
 
-    // if (m_mqtt_get_instance()._mqtt_handler_msg == NULL)
-    // {
-    //     os_trace("m_mqtt can not start, Please call function "
-    //              "m_mqtt_register_msg_handler() before start stack\n");
-    //     exit(0);
-    // }
-
-    // if (m_mqtt_get_instance()._mqtt_pub_startup_msg == NULL)
-    // {
-    //     os_trace("m_mqtt can not start, Please call function "
-    //              "m_mqtt_command_startup_register_handler() before start stack\n");
-    //     exit(0);
-    // }
+    if (m_mqtt_get_instance()._mqtt_pub_startup_msg == NULL)
+    {
+        os_trace("m_mqtt can not start, Please call function "
+                 "m_mqtt_command_startup_register_handler() before start stack\n");
+        exit(0);
+    }
 
     /* start stack */
     m_http_server_start();

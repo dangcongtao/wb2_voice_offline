@@ -18,7 +18,8 @@ COMPONENT_SRCS := database/m_database.c \
                   gpio/m_led_stt.c \
 				  gpio/m_switch_event.c \
 				  gpio/m_switch.c \
-				  mqtt/m_mqtt.c \
+				  mqtt/m_mqtt_client_props.c \
+				  mqtt/m_mqtt_client_method.c \
 				  ota/m_ota.c \
 				  wifi/tcp_server.c \
 				  wifi/m_http_server.c \

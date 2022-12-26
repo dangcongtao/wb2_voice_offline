@@ -9,10 +9,10 @@
 #define MAXIMUM_QUEUE_ITEM                              16
 
 typedef struct {
-	char mqtt_topic_pub[MAXIMUM_SIZE_MQTT_TOPIC];
-	char mqtt_message_pub[MAXIMUM_SIZE_MESSAGE];
+	char topic_pub[MAXIMUM_SIZE_MQTT_TOPIC];
+	char msg_pub[MAXIMUM_SIZE_MESSAGE];
 	uint32_t length;
-} m_mqtt_msg_pub_t; /* message to publish - tx */
+} m_mqtt_msg_t; /* message to publish - tx */
 
 typedef struct
 {
@@ -31,7 +31,7 @@ typedef enum {
 typedef void (*p_set_data_t)(char* data, uint32_t len);
 typedef void (*p_set_num_t)(uint32_t);
 
-typedef void (*p_mqtt_publish_t)(char *topic, char* data, uint32_t data_len);
+typedef void (*p_mqtt_publish_t)(char* data, uint32_t data_len);
 typedef void (*p_mqtt_subscribe_t)(char *topic, uint32_t topic_len);
 typedef void (*p_mqtt_unsubscribe_t)(char *topic, uint32_t topic_len);
 typedef void (*p_mqtt_connect_t)(char *topic, uint32_t topic_len);

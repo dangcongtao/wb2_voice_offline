@@ -67,8 +67,7 @@ typedef enum
 } wifi_auto_conn;
 
 void m_wifi_sta_event_cb(input_event_t *event, void *private_data);
-void m_wifi_sta_start(void);
+void m_wifi_sta_start(char* ssid, char* pass);
 void m_wifi_sta_stop(void);
-int wifi_sta_connect(char* ssid, char* pass);
 
 #endif

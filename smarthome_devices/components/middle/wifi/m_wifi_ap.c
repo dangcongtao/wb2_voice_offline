@@ -58,7 +58,6 @@ static void wifi_ap_ip_set(char* ip_addr, char* netmask, char* gw)
     }
 
     if (ap_netif) {
-
         ip_addr_t ap_ip;
         ip_addr_t ap_mask;
         ip_addr_t ap_gw;

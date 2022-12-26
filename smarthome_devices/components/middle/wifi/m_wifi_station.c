@@ -1,10 +1,17 @@
 #include "m_wifi_station.h"
+#include "m_wifi.h"
+
 #include "m_http_server.h"
 #include "system_typedef.h"
+#include "mqtt_client.h"
 
-#define STA_SSID "RD HUNONIC 1"
-#define STA_PASSWORD "66668888"
+#include <lwip/tcpip.h>
+#include <hal_wifi.h>
+#include <lwip/netif.h>
+#include <lwip/inet.h>
+#include <wifi_mgmr_ext.h>
 
+extern m_wifi_t g_wifi_obj;
 extern int g_wifi_mode;
 static int g_wifi_sta_is_connected = 0;
 static wifi_interface_t g_wifi_sta_interface = NULL;
@@ -31,6 +38,8 @@ void m_wifi_sta_event_cb(input_event_t *event, void *private_data)
 {
     static char *ssid;
     static char *password;
+    char my_ip[16];
+    ip4_addr_t ip, gw, mask, dns1, dns2;
 
     os_trace("wifi sta event->code %d\r\n", event->code);
     os_trace("[SYS] Memory left is %d Bytes\r\n", xPortGetFreeHeapSize());
@@ -52,16 +61,26 @@ void m_wifi_sta_event_cb(input_event_t *event, void *private_data)
     case CODE_WIFI_ON_DISCONNECT:
         g_wifi_sta_is_connected = 0;
         os_trace("wifi sta disconnected\r\n");
+        xMqttConnectWifiNotify(WIFI_DISCONNECTED);
+        g_wifi_obj.wifi_set_state_cb(M_WIFI_DISCONNECT);
+        break;
+
+    case CODE_WIFI_ON_GOT_IP:
+        wifi_mgmr_sta_ip_get(&ip.addr, &gw.addr, &mask.addr);
+        memset(my_ip, 0, sizeof(my_ip));
+        sprintf(my_ip, "%s", ip4addr_ntoa(&ip.addr));
+        g_wifi_obj.wifi_save_ip(my_ip, strlen(my_ip));
+        os_trace("GOT IP  :   %s \r\n", my_ip);
+
+        g_wifi_sta_is_connected = 1;
+        // Start the connection of MQTT
+        xMqttConnectWifiNotify(WIFI_CONNECTED);
+        g_wifi_obj.wifi_set_state_cb(M_WIFI_CONNECTED);
+
         break;
 
     case CODE_WIFI_ON_PRE_GOT_IP:
         os_trace("wifi sta connected\r\n");
-        break;
-
-    case CODE_WIFI_ON_GOT_IP:
-        os_trace("WIFI STA GOT IP\r\n");
-        os_trace("wifi sta GOT IP\r\n");
-        g_wifi_sta_is_connected = 1;
         break;
 
     case CODE_WIFI_ON_PROV_SSID:
@@ -100,20 +119,17 @@ void m_wifi_sta_event_cb(input_event_t *event, void *private_data)
     case CODE_WIFI_ON_PROV_CONNECT:
         os_trace("connecting to %s:%s...\r\n", ssid, password);
         break;
-    
+
     case CODE_WIFI_ON_INIT_DONE:
         os_trace("wifi sta INIT DONE\r\n");
-        // wifi_mgmr_start_background(&conf);
-        // wifi_sta_connect();
         break;
 
     case CODE_WIFI_ON_MGMR_DONE:
         os_trace("wifi sta MGMR DONE\r\n");
         break;
-        
+
     case CODE_WIFI_ON_SCAN_DONE:
         os_trace("wifi sta SCAN Done\r\n");
-        // wifi_mgmr_cli_scanlist();
         break;
 
     case CODE_WIFI_ON_PROV_DISCONNECT:
@@ -133,15 +149,9 @@ void m_wifi_sta_event_cb(input_event_t *event, void *private_data)
     }
 }
 
-void wifi_execute(void *pvParameters)
+void m_wifi_sta_start(char *ssid, char *pass)
 {
-    // aos_post_event(EV_WIFI, CODE_WIFI_ON_INIT_DONE, 0);
-    vTaskDelete(NULL);
-}
-
-void m_wifi_sta_start(void)
-{
-    xTaskCreate(wifi_execute, (char *)"wifi execute", 1024 * 3, NULL, 15, NULL);
+    wifi_sta_connect(ssid, pass);
 }
 
 void m_wifi_sta_stop(void)

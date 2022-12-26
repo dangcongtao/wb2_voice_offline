@@ -128,7 +128,7 @@ static void app_startup_message(void)
     buffer_seek--; /* remove last comma */
     buffer_seek += sprintf(&respond[buffer_seek], "]}");
 
-    m_mqtt_get_instance()._mqtt_publish(NULL, respond, strlen(respond));
+    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
 }
 
 static void app_control_pin(cJSON *jsRoot)
@@ -186,7 +186,7 @@ RESPONSE:
         respond,
         "{\"%s\":%ld, \"action\":%ld, \"u\":%ld, \"act_id\": %ld, \"result\": %d}",
         gs_dev_type[device_type], type, action, uid, act_id, result);
-    m_mqtt_get_instance()._mqtt_publish(NULL, respond, strlen(respond));
+    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
 }
 
 /* 105 */
@@ -258,7 +258,7 @@ static void app_get_info(cJSON *jsRoot)
     buffer_seek--; /* remove last comma */
     buffer_seek += sprintf(&respond[buffer_seek], "]}");
 
-    m_mqtt_get_instance()._mqtt_publish(NULL, respond, strlen(respond));
+    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
 }
 
 /* {"TYPE":121, "po":po, "u":uid} */
@@ -306,7 +306,7 @@ RESPONSE:
     memset(respond, 0, sizeof(respond));
     sprintf(respond, "{\"%s\":%ld,\"u\":%ld,\"po\":%ld, \"result\": %d}",
             gs_dev_type[device_type], type, uid, po, result);
-    m_mqtt_get_instance()._mqtt_publish(NULL, respond, strlen(respond));
+    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
 }
 
 /* {"TYPE":133, "index": i, "lock": lock,"u":uid} */
@@ -357,7 +357,7 @@ RESPONSE:
     sprintf(respond,
             "{\"%s\":%ld,\"u\":%ld,\"index\":%ld,\"lock\":%ld, \"result\": %d}",
             gs_dev_type[device_type], type, uid, index, lock, result);
-    m_mqtt_get_instance()._mqtt_publish(NULL, respond, strlen(respond));
+    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
 }
 
 /* {"TYPE":130,"u":uid, "index":i,"time":s} */
@@ -417,7 +417,7 @@ RESPONSE:
             "{\"%s\":%ld,\"u\":%ld,\"index\":%ld, \"time\":%ld, \"mode\": %ld, "
             "\"result\": %d}",
             gs_dev_type[device_type], type, uid, index, time, mode, result);
-    m_mqtt_get_instance()._mqtt_publish(NULL, respond, strlen(respond));
+    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
 }
 
 /* {"atmwifi":131, "u":1,"index":0} */
@@ -461,7 +461,7 @@ RESPONSE:
             "{\"%s\":%ld,\"u\":%ld,\"index\":%ld, \"time\":%ld, \"mode\": %ld, "
             "\"result\": %d}",
             gs_dev_type[device_type], type, uid, index, time, mode, result);
-    m_mqtt_get_instance()._mqtt_publish(NULL, respond, strlen(respond));
+    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
 }
 
 /* {"TYPE":128, "ssid":"Wifi Name", "pass":"Wifi Password", "u":uid} */
@@ -514,7 +514,7 @@ RESPONSE:
             "{\"%s\":%ld, \"ssid\":\"%s\", \"pass\":\"%s\", \"u\": %ld, "
             "\"result\": %d}",
             gs_dev_type[device_type], type, ssid, pass, uid, result);
-    m_mqtt_get_instance()._mqtt_publish(NULL, respond, strlen(respond));
+    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
 }
 
 /* {"TYPE":129, "url":url,"u":uid} */
@@ -556,7 +556,7 @@ static void app_request_ota(cJSON *jsRoot)
     memset(respond, 0, sizeof(respond));
     sprintf(respond, "{\"%s\":%ld, \"u\":%ld, \"result\": %d}",
             gs_dev_type[device_type], type, uid, result);
-    m_mqtt_get_instance()._mqtt_publish(NULL, respond, strlen(respond));
+    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
 
     /* implement here */
     m_ota_start(url);
@@ -568,7 +568,7 @@ RESPONSE:
     memset(respond, 0, sizeof(respond));
     sprintf(respond, "{\"%s\":%ld, \"u\":%ld, \"result\": %d}",
             gs_dev_type[device_type], type, uid, result);
-    m_mqtt_get_instance()._mqtt_publish(NULL, respond, strlen(respond));
+    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
 }
 
 /* {"TYPE":132, "ip":"192.168.1.100"} */
@@ -611,7 +611,7 @@ RESPONSE:
     memset(respond, 0, sizeof(respond));
     sprintf(respond, "{\"%s\":%ld, \"u\": %ld, \"ip\":\"%s\", \"result\": %d}",
             gs_dev_type[device_type], type, uid, ip, result);
-    m_mqtt_get_instance()._mqtt_publish(NULL, respond, strlen(respond));
+    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
 }
 
 /* {"TYPE":123, "u":uid} */
@@ -648,7 +648,7 @@ RESPONSE:
     memset(respond, 0, sizeof(respond));
     sprintf(respond, "{\"%s\":%ld, \"u\":%ld, \"result\": %d}",
             gs_dev_type[device_type], type, uid, result);
-    m_mqtt_get_instance()._mqtt_publish(NULL, respond, strlen(respond));
+    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
 }
 
 /* {"TYPE":64, "action":A,"t_act":T,"t_c":C} */
@@ -711,7 +711,7 @@ RESPONSE:
             "\"result\": %d}",
             gs_dev_type[device_type], type, uid, action, time_act1, time_cycle,
             result);
-    m_mqtt_get_instance()._mqtt_publish(NULL, respond, strlen(respond));
+    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
 }
 
 /* {"TYPE":65, "index":index} */
@@ -755,7 +755,7 @@ RESPONSE:
     memset(respond, 0, sizeof(respond));
     sprintf(respond, "{\"%s\":%ld, \"u\":%ld, \"index\": %ld, \"result\": %d}",
             gs_dev_type[device_type], type, uid, index, result);
-    m_mqtt_get_instance()._mqtt_publish(NULL, respond, strlen(respond));
+    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
 }
 
 /* {"TYPE":151, "u":uid, “backup”: 1} */
@@ -801,7 +801,7 @@ RESPONSE:
     memset(respond, 0, sizeof(respond));
     sprintf(respond, "{\"%s\":%ld, \"u\":%ld, \"backupt\": %ld, \"result\":%d}",
             gs_dev_type[device_type], type, uid, backup, result);
-    m_mqtt_get_instance()._mqtt_publish(NULL, respond, strlen(respond));
+    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
 }
 
 void app_handler_msg_init(void)

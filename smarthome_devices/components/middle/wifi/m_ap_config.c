@@ -180,7 +180,7 @@ bool apconfig_parse_wifi_info(char *json)
 
     m_db_get_instance()->_set_dev_pair_state(true);
     m_db_get_instance()->_request_sync_db();
-    vTaskDelay(pdMS_TO_TICKS(100));
+    vTaskDelay(pdMS_TO_TICKS(2000));
 
     ap_cfg_get_data = 1;
 
