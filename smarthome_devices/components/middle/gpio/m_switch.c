@@ -85,7 +85,7 @@ static uint8_t m_control_switch(uint32_t action, uint32_t act_id, uint32_t uid, 
         {
             char respond_msg[256];
             memset(respond_msg, 0, sizeof(respond_msg));
-            sprintf(respond_msg, "{\"%s\":%d, \"action\":%ldu,"
+            sprintf(respond_msg, "{\"%s\":%d, \"action\":%ld,"
                                  "\"u\":%ld, \"act_id\": %d}",
                                  gs_dev_type[device_type], 0, action, uid, 1);
             mqtt_obj._mqtt_publish(respond_msg, strlen(respond_msg));

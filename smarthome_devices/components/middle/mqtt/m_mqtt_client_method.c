@@ -54,7 +54,7 @@ void TaskXMqttRecieve(void *p)
                 os_trace("xQueueReceive topic: %s\r\n", rMsg.topic);
                 os_trace("xQueueReceive msg: %s\r\n", rMsg.payload);
                 os_trace("xQueueReceive len: %d\r\n", rMsg.payloadlen);
-                // mqtt_on_message((char *)rMsg.payload, rMsg.payloadlen);
+                mqtt_on_message((char *)rMsg.payload, rMsg.payloadlen);
                 break;
             // mqtt client connection succeeded
             case xMQTT_TYPE_CONNECTED:
