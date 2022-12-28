@@ -33,6 +33,8 @@ INCLUDE_COMPONENTS += httpc mbedtls_lts lwip lwip_dhcpd
 INCLUDE_COMPONENTS += wifi wifi_manager wpa_supplicant wifi_hosal hosal bl602_os_adapter blcrypto_suite
 INCLUDE_COMPONENTS +=  aws-iot       
 INCLUDE_COMPONENTS +=  coredump mqtt mqtt_client
+# MQTT
+INCLUDE_COMPONENTS    += axk_common axk_log tcp_transport axk_tls axk_mqtt http-parser
 #=======================================
 INCLUDE_COMPONENTS += dns_server netutils
 INCLUDE_COMPONENTS += $(COMPONENTS_NETWORK)

@@ -184,6 +184,7 @@ void wifi_task(void *param)
         {
             os_trace("m_wifi: Wifi connected\n");
             /* mqtt start */
+            m_mqtt_get_instance()._mqtt_stop();
             m_mqtt_get_instance()._mqtt_start();
             g_wifi_obj.wifi_state = M_WIFI_DEV_ACTIVE;
         }

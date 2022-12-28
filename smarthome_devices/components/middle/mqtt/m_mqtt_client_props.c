@@ -10,18 +10,7 @@
 #include <queue.h>
 #include <timers.h>
 
-#include <stdio.h>
-#include <string.h>
-#include <blog.h>
-#include <aos/yloop.h>
-#include <aos/kernel.h>
-#include <lwip/sockets.h>
-#include <lwip/tcpip.h>
-#include <cli.h>
-#include <hal_wifi.h>
-#include <lwip/init.h>
-#include <wifi_mgmr_ext.h>
-#include "mqtt_client.h"
+#include <mqtt_client.h>
 
 #include "cJSON.h"
 #include "aes_cbc128.h"
@@ -109,11 +98,19 @@ bool mqtt_init_queue(void)
     return true;
 }
 
+static m_mqtt_state_t m_mqtt_get_state(void)
+{
+    return s_mqtt_obj._mqtt_state;
+}
+
+
 void m_mqtt_init(void)
 {
     os_trace("m_mqtt_init\r\n");
 
     s_mqtt_obj._mqtt_state = MQTT_UNINTIALIZED;
+    s_mqtt_obj._mqtt_get_state_cb = m_mqtt_get_state;
+
     s_mqtt_obj._mqtt_publish = m_mqtt_publish;
     s_mqtt_obj._mqtt_start = m_mqtt_start;
     s_mqtt_obj._mqtt_stop = m_mqtt_stop;

@@ -61,7 +61,6 @@ void m_wifi_sta_event_cb(input_event_t *event, void *private_data)
     case CODE_WIFI_ON_DISCONNECT:
         g_wifi_sta_is_connected = 0;
         os_trace("wifi sta disconnected\r\n");
-        xMqttConnectWifiNotify(WIFI_DISCONNECTED);
         g_wifi_obj.wifi_set_state_cb(M_WIFI_DISCONNECT);
         break;
 
@@ -74,7 +73,6 @@ void m_wifi_sta_event_cb(input_event_t *event, void *private_data)
 
         g_wifi_sta_is_connected = 1;
         // Start the connection of MQTT
-        xMqttConnectWifiNotify(WIFI_CONNECTED);
         g_wifi_obj.wifi_set_state_cb(M_WIFI_CONNECTED);
 
         break;

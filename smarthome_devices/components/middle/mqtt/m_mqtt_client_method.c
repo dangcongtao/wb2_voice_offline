@@ -10,18 +10,8 @@
 #include <queue.h>
 #include <timers.h>
 
-#include <stdio.h>
-#include <string.h>
-#include <blog.h>
-#include <aos/yloop.h>
-#include <aos/kernel.h>
-#include <lwip/sockets.h>
-#include <lwip/tcpip.h>
-#include <cli.h>
-#include <hal_wifi.h>
-#include <lwip/init.h>
-#include <wifi_mgmr_ext.h>
-#include "mqtt_client.h"
+#include <mqtt_client.h>
+#include "blog.h"
 
 #include "cJSON.h"
 #include "aes_cbc128.h"
@@ -38,55 +28,62 @@ m_mqtt_msg_t mqtt_msg_pub;
 char msg_encrypted[MAXIMUM_SIZE_MESSAGE];
 uint32_t len_msg_encrypted = MAXIMUM_SIZE_MESSAGE;
 
+axk_mqtt_client_handle_t client = NULL;
+
 static void mqtt_on_message(char *data, uint32_t len);
 
-void TaskXMqttRecieve(void *p)
+static void log_error_if_nonzero(const char *message, int error_code)
 {
-    mqtt_msg_t rMsg;
-    while (1)
-    {
-        memset(&rMsg, 0, sizeof(rMsg));
-        if (mqtt_client_receive(&rMsg))
-        {
-            switch (rMsg.type)
-            {
-            // Receive new messages and send them
-            case xMQTT_TYPE_RECIEVE_MSG:
-                os_trace("xQueueReceive topic: %s\r\n", rMsg.topic);
-                os_trace("xQueueReceive msg: %s\r\n", rMsg.payload);
-                os_trace("xQueueReceive len: %d\r\n", rMsg.payloadlen);
-                mqtt_on_message((char *)rMsg.payload, rMsg.payloadlen);
-                break;
-            // mqtt client connection succeeded
-            case xMQTT_TYPE_CONNECTED:
-                memcpy(rMsg.topic, s_mqtt_obj.mqtt_info.topic_sub, strlen(s_mqtt_obj.mqtt_info.topic_sub));
-                rMsg.qos = 1;
-                mqtt_client_subscribe(&rMsg);
-                os_trace("xMQTT_TYPE_CONNECTED: %s\r\n", rMsg.topic);
-                break;
-            // The mqtt client was disconnected successfully
-            case xMQTT_TYPE_DISCONNECTED:
-                os_trace("xMQTT_TYPE_DISCONNECTED\r\n");
-                break;
-            // Connecting to MQTT server
-            case xMQTT_TYPE_CONNECTTING:
-                os_trace("xMQTT_TYPE_CONNECTTING\r\n");
-                break;
-            // Topic subscription succeeded
-            case xMQTT_TYPE_SUB_SUCCESS:
-                os_trace("xMQTT_TYPE_SUB_SUCCESS\r\n");
-                request_send_command_online = true;
-                m_led_stt_get_instance()._set_led_stt_device_active_cb();
-                break;
-            // Ping the heartbeat packet
-            case xMQTT_TYPE_SEND_PING:
-                os_trace("xMQTT_TYPE_SEND_PING\r\n");
-                break;
-            default:
-                break;
-            }
-        }
+    if (error_code != 0) {
+        blog_error("Last error %s: 0x%x", message, error_code);
     }
+}
+
+static axk_err_t mqtt_event_handler_cb(axk_mqtt_event_handle_t event)
+{
+    client = event->client;
+
+    blog_debug("Event dispatched, event_id=%d", event_id);
+
+    switch ((axk_mqtt_event_id_t)event->event_id) {
+
+    case MQTT_EVENT_CONNECTED:
+        os_trace("MQTT_EVENT_CONNECTED");
+        axk_mqtt_client_subscribe(client, s_mqtt_obj.mqtt_info.topic_sub, 0);
+        break;
+
+    case MQTT_EVENT_DISCONNECTED:
+        blog_info("MQTT_EVENT_DISCONNECTED");
+        break;
+
+    case MQTT_EVENT_SUBSCRIBED:
+        os_trace("MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
+        m_led_stt_get_instance()._set_led_stt_device_active_cb();
+        request_send_command_online = true;
+        s_mqtt_obj._mqtt_state = MQTT_SUBSCRIBE;
+        break;
+
+    case MQTT_EVENT_DATA:
+            os_trace("TOPIC=%.*s\r\n", event->topic_len, event->topic);
+			os_trace("MQTT Data[%u]: [%s]\r\n", event->data_len, event->data);
+            mqtt_on_message(event->data, event->data_len);
+        break;
+
+    case MQTT_EVENT_ERROR:
+        blog_info("MQTT_EVENT_ERROR");
+        if (event->error_handle->error_type == MQTT_ERROR_TYPE_TCP_TRANSPORT) {
+            log_error_if_nonzero("reported from axk-tls", event->error_handle->axk_tls_last_axk_err);
+            log_error_if_nonzero("reported from tls stack", event->error_handle->axk_tls_stack_err);
+            log_error_if_nonzero("captured as transport's socket errno",  event->error_handle->axk_transport_sock_errno);
+            blog_info("Last errno string (%s)", strerror(event->error_handle->axk_transport_sock_errno));
+        }
+        break;
+
+    default:
+        blog_info("Other event id:%d", event->event_id);
+        break;
+    }
+    return AXK_OK;
 }
 
 static void mqtt_on_message(char *data, uint32_t len)
@@ -141,12 +138,14 @@ void m_mqtt_publish(char *data, uint32_t length)
 
 void m_mqtt_task_loop(void)
 {
+    /* send message after online */
     if (request_send_command_online && s_mqtt_obj._mqtt_pub_startup_msg != NULL)
     {
         s_mqtt_obj._mqtt_pub_startup_msg();
         request_send_command_online = 0;
     }
 
+    /* send message during activity */
     memset(&mqtt_msg_pub, 0, sizeof(mqtt_msg_pub));
     len_msg_encrypted = MAXIMUM_SIZE_MESSAGE;
     if (xQueueReceive(mqtt_tx_queue, &mqtt_msg_pub, 1) == pdPASS)
@@ -164,70 +163,62 @@ void m_mqtt_task_loop(void)
         }
 
         /* call platform mqtt-publish api */
-        mqtt_msg_t sMsg;
-        memset(&sMsg, 0, sizeof(sMsg));
-        memcpy(sMsg.topic, s_mqtt_obj.mqtt_info.topic_pub, strlen(s_mqtt_obj.mqtt_info.topic_pub));
-        memcpy(sMsg.payload, msg_encrypted, len_msg_encrypted);
-        sMsg.payloadlen = len_msg_encrypted;
-        sMsg.qos = 0;
-        sMsg.retained = 0;
-        sMsg.dup = 0;
-        mqtt_client_publish(&sMsg);
-
-        /* message do not encrypted */
-        memset(&sMsg, 0, sizeof(sMsg));
-        memcpy(sMsg.topic, s_mqtt_obj.mqtt_info.topic_pub, strlen(s_mqtt_obj.mqtt_info.topic_pub));
-        memcpy(sMsg.payload, mqtt_msg_pub.msg_pub, len_msg_encrypted);
-        sMsg.payloadlen = mqtt_msg_pub.length;
-        sMsg.qos = 0;
-        sMsg.retained = 0;
-        sMsg.dup = 0;
-        mqtt_client_publish(&sMsg);
-        os_trace("topic: %s\r\n", sMsg.topic);
-        os_trace("publish: %s\r\n", mqtt_msg_pub.msg_pub);
+        if (client != NULL) {
+            if (axk_mqtt_client_publish(client, s_mqtt_obj.mqtt_info.topic_pub, msg_encrypted, len_msg_encrypted, 0, 0) < 0) {
+                os_trace("\tmqtt_client: publish message fail\r\n");
+            }
+        }
     }
 }
 
 void m_mqtt_stop(void)
 {
     os_trace("mqtt stop\r\n");
+
+    if (client != NULL && s_mqtt_obj._mqtt_state != MQTT_UNINTIALIZED) {
+        axk_mqtt_client_destroy(client);
+        client = NULL;
+        s_mqtt_obj._mqtt_state = MQTT_UNINTIALIZED;
+    }
 }
 
 void m_mqtt_start(void)
 {
+	char last_will_msg[128];
+	memset(last_will_msg, 0, sizeof(last_will_msg));
+	sprintf(last_will_msg,"{\"%s\":1000,\"offline\":\"device offline\"}", gs_dev_type[device_type]);
+
+    axk_mqtt_client_config_t mqtt_cfg;
+    memset(&mqtt_cfg, 0, sizeof(mqtt_cfg));
+    mqtt_cfg.uri = s_mqtt_obj.mqtt_info.server;
+    mqtt_cfg.username = s_mqtt_obj.mqtt_info.username;
+    mqtt_cfg.password = s_mqtt_obj.mqtt_info.passwd;
+    mqtt_cfg.port =  s_mqtt_obj.mqtt_info.port;
+	mqtt_cfg.keepalive = 10;
+	mqtt_cfg.lwt_msg = last_will_msg;
+	mqtt_cfg.lwt_msg_len = strlen(last_will_msg);
+	mqtt_cfg.lwt_topic = s_mqtt_obj.mqtt_info.topic_pub;
+	mqtt_cfg.lwt_qos = 0;
+    mqtt_cfg.event_handle = mqtt_event_handler_cb;
+
     os_trace("mqtt start\r\n");
-
-    if (s_mqtt_obj._mqtt_state == MQTT_INTIALIZED)
-        return;
-    s_mqtt_obj._mqtt_state = MQTT_INTIALIZED;
-
-    char *client_id = m_db_get_instance()->_get_dev_id();
-    char *server = s_mqtt_obj.mqtt_info.server;
-    server += strlen("mqtt://"); // ignore mqtt:// prefix from mqtt_server
-
-    mqtt_client_config_t xMqttConfig = {
-        .MQTTVersion = 4,
-        .borkerHost = server,
-        .borkerPort = s_mqtt_obj.mqtt_info.port,
-        .mqttCommandTimeout = 6000,
-        .username = s_mqtt_obj.mqtt_info.username,
-        .password = s_mqtt_obj.mqtt_info.passwd,
-        .clientID = client_id,
-        .keepAliveInterval = 60,
-        .cleansession = true,
-    };
-
-    os_trace("\tserver: %s\r\n", xMqttConfig.borkerHost);
-    os_trace("\tport: %ld\r\n", xMqttConfig.borkerPort);
-    os_trace("\tusername: %s\r\n", xMqttConfig.username);
-    os_trace("\tpasswd: %s\r\n", xMqttConfig.password);
+    os_trace("\tserver: %s\r\n", s_mqtt_obj.mqtt_info.server);
+    os_trace("\tport: %d\r\n", s_mqtt_obj.mqtt_info.port);
+    os_trace("\tusername: %s\r\n", s_mqtt_obj.mqtt_info.username);
+    os_trace("\tpasswd: %s\r\n", s_mqtt_obj.mqtt_info.passwd);
     os_trace("\ttopic_pub: %s\r\n", s_mqtt_obj.mqtt_info.topic_pub);
     os_trace("\ttopic_sub: %s\r\n", s_mqtt_obj.mqtt_info.topic_sub);
 
-    mqtt_client_init(&xMqttConfig);
-    mqtt_client_register_type(TaskXMqttRecieve);
+    if (client != NULL) {
+        axk_mqtt_client_destroy(client);
+        client = NULL;
+    }
 
-    // Start the connection of MQTT
-    xMqttConnectWifiNotify(WIFI_CONNECTED);
-    mqtt_client_start();
+    client = axk_mqtt_client_init(&mqtt_cfg);
+    if (axk_mqtt_client_start(client) != AXK_OK) {
+        os_trace("mqtt start failed");
+        m_wifi_get_instance().wifi_set_state_cb(M_WIFI_DISCONNECT);
+    }
+
+    s_mqtt_obj._mqtt_state = MQTT_INTIALIZED;
 }
