@@ -60,7 +60,7 @@ static uint8_t m_control_switch(uint32_t action, uint32_t act_id, uint32_t uid, 
     m_mqtt_t mqtt_obj = m_mqtt_get_instance();
     m_database_t *db_instance = m_db_get_instance();
 
-    os_trace("m_control_switch: %d, %d\r\n", channel_index, state);
+    // os_trace("m_control_switch: %d, %d\r\n", channel_index, state);
 
     if (channel_index > MAX_NUM_SWITCH)
     {

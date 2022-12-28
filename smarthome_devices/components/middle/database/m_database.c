@@ -35,7 +35,7 @@ void m_db_read_device_id(void)
     // uint32_t len_device_id = sizeof(s_device_id);
     // flash_read_device_id((void*)(&s_device_id), len_device_id);
     memset(s_device_id, 0, sizeof(s_device_id));
-    sprintf(s_device_id, "HUN167202842517wswitch2vN4");
+    sprintf(s_device_id, "HUN167204453756wswitch2vN4");
     os_trace("m_db_read_device_id: %s\r\n", s_device_id);
 
     max_number_channel = s_device_id[strlen(s_device_id) - 1] - '0';
@@ -73,7 +73,6 @@ static void m_db_dev_set_pair(bool new_state)
 
 static char *m_get_dev_id(void)
 {
-    os_trace("m_get_dev_id\r\n");
     return s_device_id;
 }
 

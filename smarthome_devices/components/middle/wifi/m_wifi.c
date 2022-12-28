@@ -205,13 +205,6 @@ void wifi_task(void *param)
             break;
         }
 
-        static uint32_t old = 0;
-        old += 100;
-        if (old > 2000)
-        {
-            // ESP_LOGI(TAG, "[APP] Free memory: %d bytes", esp_get_free_heap_size());
-            old = 0;
-        }
         vTaskDelay(pdMS_TO_TICKS(100)); /* should be 500ms to make it's priority low */
     }
 }
