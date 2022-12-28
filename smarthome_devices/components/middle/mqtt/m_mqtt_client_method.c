@@ -45,6 +45,7 @@ void TaskXMqttRecieve(void *p)
     mqtt_msg_t rMsg;
     while (1)
     {
+        memset(&rMsg, 0, sizeof(rMsg));
         if (mqtt_client_receive(&rMsg))
         {
             switch (rMsg.type)
@@ -58,7 +59,7 @@ void TaskXMqttRecieve(void *p)
                 break;
             // mqtt client connection succeeded
             case xMQTT_TYPE_CONNECTED:
-                memcpy(rMsg.topic, s_mqtt_obj.mqtt_info.topic_sub, strlen(s_mqtt_obj.mqtt_info.topic_pub));
+                memcpy(rMsg.topic, s_mqtt_obj.mqtt_info.topic_sub, strlen(s_mqtt_obj.mqtt_info.topic_sub));
                 rMsg.qos = 1;
                 mqtt_client_subscribe(&rMsg);
                 os_trace("xMQTT_TYPE_CONNECTED: %s\r\n", rMsg.topic);
@@ -103,13 +104,13 @@ static void mqtt_on_message(char *data, uint32_t len)
     memset(m_message_real, 0, sizeof(m_message_real));
     if (temp_data[0] != '{')
     {
-        aes_cbc128_init((uint8_t *)key, (uint8_t *)iv);
+    aes_cbc128_init((uint8_t *)key, (uint8_t *)iv);
         if (aes_cbc128_decrypt((uint8_t *)temp_data, data_len,
                                (uint8_t *)m_message_real,
                                (size_t *)&m_message_real_len) != AES_SUCCESS)
-        {
-            os_trace("Can not decrypt message\r\n");
-            return;
+    {
+        os_trace("Can not decrypt message\r\n");
+        return;
         }
     }
     else
@@ -146,6 +147,8 @@ void m_mqtt_task_loop(void)
         request_send_command_online = 0;
     }
 
+    memset(&mqtt_msg_pub, 0, sizeof(mqtt_msg_pub));
+    len_msg_encrypted = MAXIMUM_SIZE_MESSAGE;
     if (xQueueReceive(mqtt_tx_queue, &mqtt_msg_pub, 1) == pdPASS)
     {
         memset(msg_encrypted, 0, sizeof(msg_encrypted));
