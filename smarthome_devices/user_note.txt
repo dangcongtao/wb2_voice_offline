@@ -1,0 +1,26 @@
+Note used for wifi module Ai-Wb2 firmware development:
+======================================================
+
+1. MQTT:
+--------
+[] MQTT was updated on commit: "update mqtt protocols" (29ae25e890d3ee8a130c51dd9b95b5241e367994)
+	+ This commit port code: `axk_protocol_stack`
+	+ axk_protocol_stack source code in this commit are expicit.
+	+ After this commit, source code of `axk_protocol_stack` was hide and build to static library (.a file).
+
+[] If you want to get more understanding about MQTT protocol and implement a simple MQTT Client application.
+	+ You should read MQTT Lib from commit previous of 29ae25e890d3ee8a130c51dd9b95b5241e367994. 
+	+ For example:
+		git checkout 0ec95b88491cc6988803d1eb311ca2ffd96af6b8
+		cd /components/network/mqtt/
+
+[] To understand source code of `axk_protocol_stack`, I had traced its source code, you can follow to the below flow.
+	+ /components/network/axk_protocol_stack/tcp_transport/
+		. axk_transport_handle_t axk_transport_tcp_init(void):
+			This function used to register low level function into stack: 
+				(tcp_connect, tcp_read, tcp_write, base_close, base_poll_read, base_poll_write, base_destroy).
+	+ /components/network/axk_protocol_stack/mqtt/axk_mqtt/mqtt_client.c
+		- axk_mqtt_client_publish(): direct call to `tcp_write` to send data.
+		- mqtt_process_receive(): was call from `axk_mqtt_task()`, this function read data from `tcp_read` step by step with MQTT format package
+			then parse data to get `msg_type`. After that, depend on `msg_type` do next step. If `msg_type` is MQTT_MSG_TYPE_PUBLISH, system do call `deliver_publish()`.
+		- deliver_publish(): send the event which contain topic_name and data received from topic_sub to user space event loop by call `axk_mqtt_dispatch_event(client)`.
