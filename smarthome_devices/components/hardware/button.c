@@ -7,7 +7,7 @@ void hw_button_config(uint32_t index)
 {
     // os_trace("hw_button_config: %ld\r\n", index);
 
-    if (index >= MAX_NUM_BUTTON)
+    if (index >= max_number_channel)
         return;
 
     gpio_set_input(button_arr[index]);
@@ -17,8 +17,8 @@ uint32_t hw_btn_read(uint32_t index)
 {
     // os_trace("(%ld)hw_btn_read: %ld: %ld\r\n", sys_get_tick_ms(), index, (uint32_t)gpio_get_level(button_arr[index]));
 
-    if (index >= MAX_NUM_BUTTON)
-        return 0; /* error */
+    if (index >= max_number_channel)
+        return BTN_IDLE_LEVEL; /* error */
 
     return (uint32_t)gpio_get_level(button_arr[index]);
 }

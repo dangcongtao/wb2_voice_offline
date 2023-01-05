@@ -15,6 +15,7 @@
 #include "m_database.h"
 
 static m_button_t s_button_obj;
+extern uint32_t max_number_channel;
 uint32_t ignore_event_release[MAX_NUM_BUTTON] = {0};
 
 static const char *event_name[] = {"pressed", "release",
@@ -90,7 +91,7 @@ void on_button_event_cb(int button_pin, int event, void *data)
 static void m_button_config(void)
 {
     static app_btn_hw_config_t m_hw_button_initialize_value[MAX_NUM_BUTTON];
-    for (uint32_t i = 0; i < MAX_NUM_BUTTON; i++)
+    for (uint32_t i = 0; i < max_number_channel; i++)
     {
         m_hw_button_initialize_value[i].idle_level = BTN_IDLE_LEVEL;
         m_hw_button_initialize_value[i].last_state = BTN_IDLE_LEVEL;
