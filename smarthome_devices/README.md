@@ -6,6 +6,10 @@ cd ~/ && git clone --recursive https://github.com/Ai-Thinker-Open/Ai-Thinker-WB2
 export BL60X_SDK_PATH=~/Ai-Thinker-WB2/
 export CONFIG_CHIP_NAME=BL602
 
+cd ~/Ai-Thinker-WB2
+git submodule init
+git submodule update
+
 
 # command build and flash firmware
 docker run -it --name "hunonic-wb2" -h dungnt98 --rm -v /home/dungnt98/:/home/dungnt98/ --device=/dev/ttyUSB0 ntdungembedded98/hunonic-esp8266
