@@ -19,6 +19,7 @@
 #include "m_wifi.h"
 #include "m_http_server.h"
 #include "process_data.h"
+#include "m_ble.h"
 
 void m_stack_start(void)
 {
@@ -46,6 +47,8 @@ void main(void)
     // bl_uart_init(0, 16, 7, 255, 255, 115200); // set uart baud 115200
     easyflash_init();
     tcpip_init(NULL, NULL);
+
+    ble_init();
 
     m_wifi_init();
     m_mqtt_init();

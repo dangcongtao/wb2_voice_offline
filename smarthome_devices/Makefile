@@ -35,6 +35,14 @@ INCLUDE_COMPONENTS +=  aws-iot
 INCLUDE_COMPONENTS +=  coredump mqtt mqtt_client
 # MQTT
 INCLUDE_COMPONENTS    += axk_common axk_log tcp_transport axk_tls axk_mqtt http-parser
+
+
+# BLE
+INCLUDE_COMPONENTS += freertos_riscv_ram bl602 ble602_hal bl602_std newlibc wifi wifi_manager wpa_supplicant bl602_os_adapter wifi_hosal hosal mbedtls_lts lwip lwip_dhcpd vfs yloop utils cli netutils blog blog_testc blcrypto_suite
+INCLUDE_COMPONENTS += easyflash4 coredump
+INCLUDE_COMPONENTS += bl_os_adapter cjson 
+INCLUDE_COMPONENTS += blecontroller_602_std  blestack blecontroller
+
 #=======================================
 INCLUDE_COMPONENTS += dns_server netutils
 INCLUDE_COMPONENTS += $(COMPONENTS_NETWORK)
@@ -55,6 +63,7 @@ COMPONENT_ADD_INCLUDEDIRS += middle/mqtt
 COMPONENT_ADD_INCLUDEDIRS += middle/gpio
 COMPONENT_ADD_INCLUDEDIRS += middle/wifi
 COMPONENT_ADD_INCLUDEDIRS += middle/ota
+COMPONENT_ADD_INCLUDEDIRS += middle/ble_slave
 COMPONENT_ADD_INCLUDEDIRS += middle/database
 COMPONENT_ADD_INCLUDEDIRS += third_party/huytv_button
 COMPONENT_ADD_INCLUDEDIRS += third_party/aes
