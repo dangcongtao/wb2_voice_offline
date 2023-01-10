@@ -16,7 +16,7 @@
 
 char key[16], iv[16];
 
-static char s_device_id[64];
+char s_device_id[64];
 static bool s_request_sync_db = false;
 static bool s_request_reset_db = false;
 static bool s_request_backup_db = false;

@@ -1,9 +1,15 @@
 #include "my_ble.h"
 
+extern char s_device_id[64];
+#define NAME_DEVICE "HUN167291413297wswitch2vN1"
+
 /*自定义UUID*/
-#define MY_UUID1_USER_SER    BT_UUID_DECLARE_128(BT_UUID_128_ENCODE(0x55535343, 0xfe7d, 0x4ae5, 0x8fa9, 0x9fafd205e455))
-#define MY_UUID1_USER_TXD    BT_UUID_DECLARE_128(BT_UUID_128_ENCODE(0x49535343, 0x8841, 0x43f4, 0xa8d4, 0xecbe34729bb3))
-#define MY_UUID1_USER_RXD    BT_UUID_DECLARE_128(BT_UUID_128_ENCODE(0x49535343, 0x1e4d, 0x4bd9, 0xba61, 0x23c647249616))
+/* service UUID: 0x6e400001-0xb5a3-0xf393-0xe0a9-0xe50e24dcca9e */
+/* rx chracteristic: 0x6e400002-0xb5a3-0xf393-0xe0a9-0xe50e24dcca9e */
+/* notify chracteristic: 0x6e400003-0xb5a3-0xf393-0xe0a9-0xe50e24dcca9e */
+#define MY_UUID1_USER_SER    BT_UUID_DECLARE_128(BT_UUID_128_ENCODE(0x6e400001, 0xb5a3, 0xf393, 0xe0a9, 0xe50e24dcca9e))
+#define MY_UUID1_USER_TXD    BT_UUID_DECLARE_128(BT_UUID_128_ENCODE(0x6e400002, 0xb5a3, 0xf393, 0xe0a9, 0xe50e24dcca9e)) /* phone tx */
+#define MY_UUID1_USER_RXD    BT_UUID_DECLARE_128(BT_UUID_128_ENCODE(0x6e400003, 0xb5a3, 0xf393, 0xe0a9, 0xe50e24dcca9e)) /* phone rx */
 
 #define MY_UUID2_USER_SER    BT_UUID_DECLARE_128(BT_UUID_128_ENCODE(0x10190d0c, 0x0b0a, 0x0908, 0x0706, 0x050403020100))
 #define MY_UUID2_USER_TRD    BT_UUID_DECLARE_128(BT_UUID_128_ENCODE(0x102B0d0c, 0x0b0a, 0x0908, 0x0706, 0x050403020100))			
@@ -11,6 +17,29 @@ my_ble_recv_data_cb_t static_ble_recv_data_cb = NULL;
 my_ble_send_data_cb_t static_ble_send_data_cb = NULL;
 my_ble_connet_status_cb_t static_ble_connet_status_cb = NULL;
 static struct bt_gatt_exchange_params exchange_params;
+
+static void ccc_cfg_changed(const struct bt_gatt_attr *attr,u16_t value);
+static void connected(struct bt_conn *conn, u8_t err);
+static void disconnected(struct bt_conn *conn, u8_t reason);
+static void le_param_updated(struct bt_conn *conn, u16_t interval,u16_t latency, u16_t timeout);
+
+static void bt_ready_cb(int err);
+static ssize_t read_data(struct bt_conn *conn,const struct bt_gatt_attr *attr, void *buf,u16_t len, u16_t offset);
+static ssize_t write_data(struct bt_conn *conn, const struct bt_gatt_attr *attr, const void *buf,u16_t len, u16_t offset, u8_t flags);
+
+/*ble 属性表*/
+static struct bt_gatt_attr ble_Attributes[]=
+{
+    /*自定义主服务*/
+	BT_GATT_PRIMARY_SERVICE(MY_UUID1_USER_SER),
+    BT_GATT_CHARACTERISTIC(MY_UUID1_USER_TXD, BT_GATT_CHRC_WRITE | BT_GATT_CHRC_WRITE_WITHOUT_RESP, BT_GATT_PERM_WRITE, NULL, write_data, NULL),
+    BT_GATT_CHARACTERISTIC(MY_UUID1_USER_RXD, BT_GATT_CHRC_NOTIFY, BT_GATT_PERM_READ, read_data,NULL, NULL),
+    BT_GATT_CCC(ccc_cfg_changed, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
+
+    // BT_GATT_PRIMARY_SERVICE(MY_UUID2_USER_SER),
+    // BT_GATT_CHARACTERISTIC(MY_UUID2_USER_TRD, BT_GATT_CHRC_NOTIFY|BT_GATT_CHRC_WRITE|BT_GATT_CHRC_WRITE_WITHOUT_RESP, BT_GATT_PERM_READ|BT_GATT_PERM_WRITE,read_data,write_data,NULL),
+    // BT_GATT_CCC(ccc_cfg_changed, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
+};
 
 static void ccc_cfg_changed(const struct bt_gatt_attr *attr,u16_t value)
 {
@@ -106,20 +135,6 @@ static ssize_t write_data(struct bt_conn *conn, const struct bt_gatt_attr *attr,
     return len;
 }
 
-/*ble 属性表*/
-static struct bt_gatt_attr ble_Attributes[]=
-{
-    /*自定义主服务*/
-	BT_GATT_PRIMARY_SERVICE(MY_UUID1_USER_SER),
-    BT_GATT_CHARACTERISTIC(MY_UUID1_USER_TXD, BT_GATT_CHRC_WRITE | BT_GATT_CHRC_WRITE_WITHOUT_RESP, BT_GATT_PERM_WRITE,NULL,write_data,NULL),
-    BT_GATT_CHARACTERISTIC(MY_UUID1_USER_RXD, BT_GATT_CHRC_NOTIFY,BT_GATT_PERM_READ, read_data,NULL, NULL),
-    BT_GATT_CCC(ccc_cfg_changed, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
-    BT_GATT_PRIMARY_SERVICE(MY_UUID2_USER_SER),
-    BT_GATT_CHARACTERISTIC(MY_UUID2_USER_TRD, BT_GATT_CHRC_NOTIFY|BT_GATT_CHRC_WRITE | BT_GATT_CHRC_WRITE_WITHOUT_RESP, BT_GATT_PERM_READ|
-    BT_GATT_PERM_WRITE,read_data,write_data,NULL),
-    BT_GATT_CCC(ccc_cfg_changed, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
-};
-
 struct bt_gatt_service BLE_GATT_SER = BT_GATT_SERVICE(ble_Attributes);
 static struct bt_conn_cb conn_callbacks = {
 	.connected = connected,
@@ -145,7 +160,7 @@ void my_ble_init(void)
     notify_attrs = &ble_Attributes[4];   //对应notify 
     bt_conn_cb_register(&conn_callbacks);
     my_ble_start_advertise();//开启广播
-    bt_set_name("MY-BLE"); //设置蓝牙名称  
+    bt_set_name(NAME_DEVICE); //设置蓝牙名称  
 }
 /*注册蓝牙接收回调*/
 void my_ble_recv_register(my_ble_recv_data_cb_t ble_recv_cb)

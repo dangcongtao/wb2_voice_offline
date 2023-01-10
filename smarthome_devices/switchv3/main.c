@@ -5,6 +5,7 @@
 #include <bl_uart.h>
 #include "bl_sys.h"
 #include "easyflash_common.h"
+#include "blog.h"
 
 #include <FreeRTOS.h>
 #include <task.h>
@@ -47,8 +48,7 @@ void main(void)
     // bl_uart_init(0, 16, 7, 255, 255, 115200); // set uart baud 115200
     easyflash_init();
     tcpip_init(NULL, NULL);
-
-    ble_init();
+    blog_set_level_log_component(BLOG_LEVEL_NEVER, "axk_mqtt");
 
     m_wifi_init();
     m_mqtt_init();
@@ -59,5 +59,6 @@ void main(void)
 
     app_handler_msg_init();
 
+    ble_init();
     m_stack_start();
 }
