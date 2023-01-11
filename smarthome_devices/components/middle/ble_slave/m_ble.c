@@ -132,6 +132,9 @@ static void ble_recv_data_cb(struct bt_conn *conn, const char *buf, u16_t len)
 
 void ble_send_data(char *data, uint32_t length)
 {
+    if (bleuart_connect_status == 0)
+        return;
+                
     m_data_t message;
     memset(&message, 0, sizeof(message));
     memcpy(message.data, data, length);
@@ -163,11 +166,10 @@ static void ble_task(void *pvParameters)
 
     while (1)
     {
-        if (bleuart_connect_status)
+        memset(&message, 0, sizeof(message));
+        if (xQueueReceive(ble_tx_queue, &message, 1) == pdPASS)
         {
-            memset(&message, 0, sizeof(message));
-
-            if (xQueueReceive(ble_tx_queue, &message, 1) == pdPASS)
+            if (bleuart_connect_status)
             {
                 /* Encode AES */
                 len_aes = sizeof(msg_aes);
@@ -187,7 +189,7 @@ static void ble_task(void *pvParameters)
             }
         }
 
-        vTaskDelay(100);
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
     vTaskDelete(NULL);
 }

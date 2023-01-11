@@ -18,4 +18,7 @@ typedef struct {
 void m_web_http_server(struct netconn *conn);
 char* m_http_services(char* buf, uint16_t len);
 
+
+char* m_apconfig_step1(char *req);
+char* m_apconfig_step2(char *req);
 #endif

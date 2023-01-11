@@ -18,11 +18,12 @@
 #include <queue.h>
 #include <timers.h>
 
+#include "m_http_services.h"
+
 static char respond[512];
 extern char key[16], iv[16];
 
 static void app_startup_message(void);
-static void app_handler_msg(char *json, uint32_t len);
 static void app_control_pin(cJSON *jsRoot);
 static void app_get_info(cJSON *jsRoot);
 static void app_set_power_on(cJSON *jsRoot);
@@ -36,6 +37,8 @@ static void app_remove_device(cJSON *jsRoot);
 static void app_start_cyclic_timer(cJSON *jsRoot);
 static void app_stop_cyclic_timer(cJSON *jsRoot);
 static void app_backup_db(cJSON *jsRoot);
+static void ble_config_step1(cJSON *jsRoot);
+static void ble_config_step2(cJSON *jsRoot);
 
 wswitch_handler_t array_handler[] = {
     {app_control_pin, 0},        
@@ -50,7 +53,10 @@ wswitch_handler_t array_handler[] = {
     {app_get_time_release, 131},
     {app_set_static_ip, 132},    
     {app_set_lock, 133},
-    {app_backup_db, 151}
+    {app_backup_db, 151},
+
+    {ble_config_step1, 1}, 
+    {ble_config_step2, 2}, 
 };
 
 QueueHandle_t pqueue;
@@ -197,7 +203,7 @@ RESPONSE:
         respond,
         "{\"%s\":%ld, \"action\":%ld, \"u\":%ld, \"act_id\": %ld, \"result\": %d}",
         gs_dev_type[device_type], type, action, uid, act_id, result);
-    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
+    app_send_data(respond, strlen(respond));
 }
 
 /* 105 */
@@ -269,7 +275,7 @@ static void app_get_info(cJSON *jsRoot)
     buffer_seek--; /* remove last comma */
     buffer_seek += sprintf(&respond[buffer_seek], "]}");
 
-    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
+    app_send_data(respond, strlen(respond));
 }
 
 /* {"TYPE":121, "po":po, "u":uid} */
@@ -820,12 +826,21 @@ RESPONSE:
 */
 static void ble_config_step1(cJSON *jsRoot)
 {
+    char* respond = m_apconfig_step1(NULL);
+    app_send_data(respond, strlen(respond));
+    free(respond);
+    respond = NULL;
+}
+
+static void ble_config_step2(cJSON *jsRoot)
+{
 }
 
 void app_handler_msg_task(void * arg)
 {
     m_data_t msg;
     memset(&msg, 0, sizeof(msg));
+    char *root_type = NULL;
 
     while (1) 
     {
@@ -840,7 +855,7 @@ void app_handler_msg_task(void * arg)
             if (aes_cbc128_decrypt((uint8_t *)msg.data, msg.length, (uint8_t *)raw_data, (size_t *)&raw_len) != AES_SUCCESS)
             {
                 os_trace("Can not decrypt message\r\n");
-                return;
+                continue;
             }
             
             os_trace("raw_data received: %s\r\n", raw_data);
@@ -849,15 +864,21 @@ void app_handler_msg_task(void * arg)
             cJSON *jsRoot = cJSON_Parse(raw_data);
             if (!jsRoot) {
                 os_trace("Parse Json Fail\r\n");
-                return;
+                continue;
             }
 
-            cJSON *jsType = cJSON_GetObjectItem(jsRoot, gs_dev_type[device_type]);
+            root_type = gs_dev_type[device_type];
+            cJSON *jsType = cJSON_GetObjectItem(jsRoot, root_type);
             if (jsType == NULL)
             {
-                os_trace("Parse JSON get type fail\n");
-                cJSON_Delete(jsRoot);
-                return;
+                root_type = "cmd";
+                jsType = cJSON_GetObjectItem(jsRoot, root_type);
+                if (jsType == NULL)
+                {
+                    os_trace("Parse JSON get type fail\n");
+                    cJSON_Delete(jsRoot);
+                    continue;
+                }
             }
             uint32_t cmd = jsType->valueint;
 
@@ -875,6 +896,7 @@ void app_handler_msg_task(void * arg)
 
             cJSON_Delete(jsRoot);
         }
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
 
