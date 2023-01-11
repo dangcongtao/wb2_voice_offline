@@ -88,4 +88,20 @@ typedef enum {
     WIFI_SOFT_AP,
 } m_wifi_mode_t;
 
+typedef enum
+{
+    TRANSMIT_INVALID = 0,
+    BLE_MSG,
+    MQTT_MSG,
+} method_trasmit_t;
+
+#define DATA_MAX_LEN    512
+
+typedef struct
+{
+    char data[DATA_MAX_LEN];
+    uint32_t length;
+    uint8_t method_trasmit;
+} m_data_t;
+
 #endif /* CJSON_KEYWORD_H__ */

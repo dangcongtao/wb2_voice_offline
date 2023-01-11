@@ -14,5 +14,6 @@ typedef struct {
 
 
 void app_handler_msg_init(void);
+void app_handler_msg_loop(void);
 
 #endif /* _APP_MQTT_H_ */

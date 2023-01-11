@@ -9,8 +9,17 @@
 #include "m_ota.h"
 #include "m_switch.h"
 #include "system_typedef.h"
+#include "m_ble.h"
+
+#include "aes_cbc128.h"
+
+#include <FreeRTOS.h>
+#include <task.h>
+#include <queue.h>
+#include <timers.h>
 
 static char respond[512];
+extern char key[16], iv[16];
 
 static void app_startup_message(void);
 static void app_handler_msg(char *json, uint32_t len);
@@ -44,31 +53,33 @@ wswitch_handler_t array_handler[] = {
     {app_backup_db, 151}
 };
 
-static void app_handler_msg(char *json, uint32_t len)
+QueueHandle_t pqueue;
+
+bool pdata_queue_init(void)
 {
-    cJSON *jsRoot = cJSON_Parse(json);
-    if (!jsRoot)
-        return;
-
-    cJSON *jsType = cJSON_GetObjectItem(jsRoot, gs_dev_type[device_type]);
-
-    if (jsType == NULL)
-    {
-        os_trace("Get JSON type mqtt message fail\n");
-        cJSON_Delete(jsRoot);
-        return;
-    }
-
-    uint32_t i = 0;
-    for (; i < SIZEOF_ARRAY(array_handler); i++)
-    {
-        if (array_handler[i]._cmd_number == jsType->valueint)
-        {
-            array_handler[i]._handler(jsRoot);
+    if (pqueue == NULL) {
+        pqueue = xQueueCreate(MAXIMUM_QUEUE_ITEM, sizeof(m_data_t));
+        if(pqueue == NULL){
+            os_trace("%s fail\r\n", __func__);
+            exit(-1);
         }
     }
 
-    cJSON_Delete(jsRoot);
+    return true;
+}
+
+void push_data_to_pqueue(m_data_t *message)
+{
+    if (xQueueSend(pqueue, message, pdMS_TO_TICKS(0)) != pdPASS)
+    {
+        os_trace("Push to queue data rx fail\r\n");
+    }
+}
+
+void app_send_data(char *data, uint32_t length)
+{
+    m_mqtt_get_instance()._mqtt_publish(data, length);
+    ble_send_data(data, length);
 }
 
 static void app_startup_message(void)
@@ -804,8 +815,73 @@ RESPONSE:
     m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
 }
 
+/* 
+    @jsRoot: will be NULL, not required 
+*/
+static void ble_config_step1(cJSON *jsRoot)
+{
+}
+
+void app_handler_msg_task(void * arg)
+{
+    m_data_t msg;
+    memset(&msg, 0, sizeof(msg));
+
+    while (1) 
+    {
+        if (xQueueReceive(pqueue, &msg, 1) == pdPASS) 
+        {
+            uint32_t raw_len = 0;
+            char raw_data[MAXIMUM_SIZE_MESSAGE];
+
+            /* decode data */
+            memset(raw_data, 0, sizeof(raw_data));
+            aes_cbc128_init((uint8_t *)key, (uint8_t *)iv);
+            if (aes_cbc128_decrypt((uint8_t *)msg.data, msg.length, (uint8_t *)raw_data, (size_t *)&raw_len) != AES_SUCCESS)
+            {
+                os_trace("Can not decrypt message\r\n");
+                return;
+            }
+            
+            os_trace("raw_data received: %s\r\n", raw_data);
+
+            /* find handler of data */
+            cJSON *jsRoot = cJSON_Parse(raw_data);
+            if (!jsRoot) {
+                os_trace("Parse Json Fail\r\n");
+                return;
+            }
+
+            cJSON *jsType = cJSON_GetObjectItem(jsRoot, gs_dev_type[device_type]);
+            if (jsType == NULL)
+            {
+                os_trace("Parse JSON get type fail\n");
+                cJSON_Delete(jsRoot);
+                return;
+            }
+            uint32_t cmd = jsType->valueint;
+
+            uint32_t arr_size = sizeof(array_handler) / sizeof(array_handler[0]);
+            os_trace("arr_size: %u\r\n", arr_size);
+
+            for (uint32_t i = 0; i < arr_size; i++)
+            {
+                if (array_handler[i]._cmd_number == cmd)
+                {
+                    os_trace("_cmd_number: %d\r\n", cmd);
+                    array_handler[i]._handler(jsRoot);
+                }
+            }
+
+            cJSON_Delete(jsRoot);
+        }
+    }
+}
+
 void app_handler_msg_init(void)
 {
-    m_mqtt_register_msg_handler(app_handler_msg);
+    pdata_queue_init();
     m_mqtt_command_startup_register_handler(app_startup_message);
+
+    xTaskCreate(app_handler_msg_task, "ble slave", 1024 * 2, NULL, 15, NULL);
 }

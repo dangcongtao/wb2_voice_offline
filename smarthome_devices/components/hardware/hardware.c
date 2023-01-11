@@ -8,12 +8,12 @@ uint32_t max_number_channel = 0;
 char *gs_dev_type[] = {"wswitch2v", "lhswitch2v", "wsdatic"};
 
 #define MAX_WIDTH   100
-#define MAX_LEN     1024
+#define MAX_LEN     512
 
 void m_log(const char *fmt, ...)
 {
     int size = MAX_WIDTH;
-    char msg[MAX_WIDTH];
+    char msg[MAX_LEN];
     char *p = &msg[0];
 
     va_list args;

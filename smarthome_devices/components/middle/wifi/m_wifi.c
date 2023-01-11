@@ -32,6 +32,8 @@
 #include "m_http_server.h"
 #include "m_wifi_event.h"
 
+extern void app_handler_msg_loop(void);
+
 m_wifi_t g_wifi_obj;
 
 static wifi_conf_t conf = {

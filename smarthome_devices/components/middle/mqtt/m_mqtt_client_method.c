@@ -30,12 +30,14 @@ uint32_t len_msg_encrypted = MAXIMUM_SIZE_MESSAGE;
 
 axk_mqtt_client_handle_t client = NULL;
 
+extern void push_data_to_pqueue(m_data_t *message);
+
 static void mqtt_on_message(char *data, uint32_t len);
 
 static void log_error_if_nonzero(const char *message, int error_code)
 {
     if (error_code != 0) {
-        blog_error("Last error %s: 0x%x", message, error_code);
+        blog_error("Last error %s: 0x%x\r\n", message, error_code);
     }
 }
 
@@ -43,21 +45,21 @@ static axk_err_t mqtt_event_handler_cb(axk_mqtt_event_handle_t event)
 {
     client = event->client;
 
-    blog_debug("Event dispatched, event_id=%d", event_id);
+    blog_debug("Event dispatched, event_id=%d\r\n", event_id);
 
     switch ((axk_mqtt_event_id_t)event->event_id) {
 
     case MQTT_EVENT_CONNECTED:
-        os_trace("MQTT_EVENT_CONNECTED");
+        os_trace("MQTT_EVENT_CONNECTED\r\n");
         axk_mqtt_client_subscribe(client, s_mqtt_obj.mqtt_info.topic_sub, 0);
         break;
 
     case MQTT_EVENT_DISCONNECTED:
-        blog_info("MQTT_EVENT_DISCONNECTED");
+        os_trace("MQTT_EVENT_DISCONNECTED\r\n");
         break;
 
     case MQTT_EVENT_SUBSCRIBED:
-        os_trace("MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
+        os_trace("MQTT_EVENT_SUBSCRIBED, msg_id=%d\r\n", event->msg_id);
         m_led_stt_get_instance()._set_led_stt_device_active_cb();
         request_send_command_online = true;
         s_mqtt_obj._mqtt_state = MQTT_SUBSCRIBE;
@@ -65,59 +67,35 @@ static axk_err_t mqtt_event_handler_cb(axk_mqtt_event_handle_t event)
 
     case MQTT_EVENT_DATA:
             os_trace("TOPIC=%.*s\r\n", event->topic_len, event->topic);
-			os_trace("MQTT Data[%u]: [%s]\r\n", event->data_len, event->data);
-            mqtt_on_message(event->data, event->data_len);
+			// os_trace("MQTT Data[%u]: [%s]\r\n", event->data_len, event->data);
+            // mqtt_on_message(event->data, event->data_len);
+
+            if (event->data_len < DATA_MAX_LEN) 
+            {
+                m_data_t message;
+                memset(&message, 0, sizeof(message));
+                memcpy(message.data, event->data, event->data_len);
+                message.length = event->data_len;
+                message.method_trasmit = MQTT_MSG;
+                push_data_to_pqueue(&message);
+            }
         break;
 
     case MQTT_EVENT_ERROR:
-        blog_info("MQTT_EVENT_ERROR");
+        os_trace("MQTT_EVENT_ERROR\r\n");
         if (event->error_handle->error_type == MQTT_ERROR_TYPE_TCP_TRANSPORT) {
             log_error_if_nonzero("reported from axk-tls", event->error_handle->axk_tls_last_axk_err);
             log_error_if_nonzero("reported from tls stack", event->error_handle->axk_tls_stack_err);
             log_error_if_nonzero("captured as transport's socket errno",  event->error_handle->axk_transport_sock_errno);
-            blog_info("Last errno string (%s)", strerror(event->error_handle->axk_transport_sock_errno));
+            os_trace("Last errno string (%s)", strerror(event->error_handle->axk_transport_sock_errno));
         }
         break;
 
     default:
-        blog_info("Other event id:%d", event->event_id);
+        os_trace("Other event id:%d", event->event_id);
         break;
     }
     return AXK_OK;
-}
-
-static void mqtt_on_message(char *data, uint32_t len)
-{
-    char temp_data[MAXIMUM_SIZE_MESSAGE];
-    uint32_t data_len;
-    uint32_t m_message_real_len = 0;
-    char m_message_real[MAXIMUM_SIZE_MESSAGE];
-
-    /* decode data */
-    data_len = len;
-    memset(temp_data, 0, sizeof(temp_data));
-    memcpy(temp_data, data, (MAXIMUM_SIZE_MESSAGE > data_len ? data_len : MAXIMUM_SIZE_MESSAGE));
-
-    memset(m_message_real, 0, sizeof(m_message_real));
-    if (temp_data[0] != '{')
-    {
-    aes_cbc128_init((uint8_t *)key, (uint8_t *)iv);
-        if (aes_cbc128_decrypt((uint8_t *)temp_data, data_len,
-                               (uint8_t *)m_message_real,
-                               (size_t *)&m_message_real_len) != AES_SUCCESS)
-    {
-        os_trace("Can not decrypt message\r\n");
-        return;
-        }
-    }
-    else
-    {
-        memcpy(m_message_real, temp_data, data_len);
-        m_message_real_len = data_len;
-    }
-
-    os_trace("mqtt received: %s\r\n", m_message_real);
-    s_mqtt_obj._mqtt_handler_msg(m_message_real, m_message_real_len);
 }
 
 void m_mqtt_publish(char *data, uint32_t length)
@@ -171,17 +149,6 @@ void m_mqtt_task_loop(void)
     }
 }
 
-void m_mqtt_stop(void)
-{
-    os_trace("mqtt stop\r\n");
-
-    if (client != NULL && s_mqtt_obj._mqtt_state != MQTT_UNINTIALIZED) {
-        axk_mqtt_client_destroy(client);
-        client = NULL;
-        s_mqtt_obj._mqtt_state = MQTT_UNINTIALIZED;
-    }
-}
-
 void m_mqtt_start(void)
 {
 	char last_will_msg[128];
@@ -216,9 +183,20 @@ void m_mqtt_start(void)
 
     client = axk_mqtt_client_init(&mqtt_cfg);
     if (axk_mqtt_client_start(client) != AXK_OK) {
-        os_trace("mqtt start failed");
+        os_trace("mqtt start failed\r\n");
         m_wifi_get_instance().wifi_set_state_cb(M_WIFI_DISCONNECT);
     }
 
     s_mqtt_obj._mqtt_state = MQTT_INTIALIZED;
+}
+
+void m_mqtt_stop(void)
+{
+    os_trace("mqtt stop\r\n");
+
+    if (client != NULL && s_mqtt_obj._mqtt_state != MQTT_UNINTIALIZED) {
+        axk_mqtt_client_destroy(client);
+        client = NULL;
+        s_mqtt_obj._mqtt_state = MQTT_UNINTIALIZED;
+    }
 }
