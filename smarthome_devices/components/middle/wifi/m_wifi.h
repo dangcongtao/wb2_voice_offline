@@ -18,6 +18,8 @@ typedef enum {
     M_WIFI_APCONFIG_DONE,
     M_WIFI_CONFIG_DONE,
     M_WIFI_WAIT_EVENT,
+    M_WIFI_GET_MQTT,
+    M_WIFI_CONN_MQTT,
     M_WIFI_DEV_ACTIVE,
 } m_wifi_state_t;
 

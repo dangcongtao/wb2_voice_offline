@@ -83,7 +83,7 @@ static void wifi_ap_ip_set(char* ip_addr, char* netmask, char* gw)
  * @brief wifi_ap_start
  *
  */
-static void wifi_ap_start()
+static void wifi_ap_start(void)
 {
     char ssid[64];
     char* passwd = "";
@@ -91,10 +91,18 @@ static void wifi_ap_start()
     memset(ssid, 0, sizeof(ssid));
     sprintf(ssid, "%s@", m_db_get_instance()->_get_dev_id());
 
+    /* start soft0-ap */
     ap_interface = wifi_mgmr_ap_enable();
-    wifi_mgmr_conf_max_sta(4);
     wifi_mgmr_ap_start(ap_interface, ssid, 0, passwd, 6);
+
+    /* some setting for soft-ap */
+    wifi_mgmr_conf_max_sta(4);
     wifi_ap_ip_set(IP_ADDR, NETMASK, GATEWAY_ADDR);  
+}
+
+void wifi_ap_stop(void)
+{
+    wifi_mgmr_ap_stop(NULL);
 }
 
 void m_wifi_ap_event_cb(input_event_t* event, void* private_data)

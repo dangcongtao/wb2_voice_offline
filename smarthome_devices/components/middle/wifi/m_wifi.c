@@ -139,10 +139,10 @@ void wifi_task(void *param)
 
         case M_WIFI_WAIT_SMARTCONFIG_DONE:
         {
-            // if (start_smartconfig() == SMARTCONFIG_DONE)
-            // {
-            //     g_wifi_obj.wifi_state = M_WIFI_CONFIG_DONE;
-            // }
+            if (start_smartconfig() == SMARTCONFIG_DONE)
+            {
+                g_wifi_obj.wifi_state = M_WIFI_CONFIG_DONE;
+            }
         }
         break;
 
@@ -186,12 +186,34 @@ void wifi_task(void *param)
         case M_WIFI_CONNECTED:
         {
             os_trace("m_wifi: Wifi connected\n");
+            g_wifi_obj.wifi_state = M_WIFI_GET_MQTT;
+        }
+        break;
+
+        case M_WIFI_GET_MQTT:
+        {
+            /* check mqtt info */
+            if (strlen(m_mqtt_get_instance().mqtt_info.server)  == 0    || 
+                strlen(m_mqtt_get_instance().mqtt_info.port) == 0       || 
+                strlen(m_mqtt_get_instance().mqtt_info.username) == 0   || 
+                strlen(m_mqtt_get_instance().mqtt_info.username) == 0)
+            {
+                /* get mqtt info if it was not existed */
+
+            }
+            /* jump to connect mqtt */
+            g_wifi_obj.wifi_state = M_WIFI_CONN_MQTT;
+        }
+        break;
+
+        case M_WIFI_CONN_MQTT: 
+        {
+            os_trace("m_wifi: Wifi connected\n");
             /* mqtt start */
             m_mqtt_get_instance()._mqtt_stop();
             m_mqtt_get_instance()._mqtt_start();
             g_wifi_obj.wifi_state = M_WIFI_DEV_ACTIVE;
         }
-        break;
 
         case M_WIFI_DEV_ACTIVE:
         {

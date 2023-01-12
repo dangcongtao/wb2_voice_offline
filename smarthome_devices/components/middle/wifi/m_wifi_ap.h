@@ -77,6 +77,7 @@
 //     WIFI_AUTOCONN_ENABLE,
 // } wifi_auto_conn;
 
+void wifi_ap_stop(void);
 void m_wifi_ap_start(void);
 void m_wifi_ap_event_cb(input_event_t* event, void* private_data);
 
