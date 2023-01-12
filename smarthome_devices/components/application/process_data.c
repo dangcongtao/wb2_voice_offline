@@ -19,6 +19,7 @@
 #include <timers.h>
 
 #include "m_http_services.h"
+#include "m_ap_config.h"
 
 static char respond[512];
 extern char key[16], iv[16];
@@ -76,6 +77,7 @@ bool pdata_queue_init(void)
 
 void push_data_to_pqueue(m_data_t *message)
 {
+    os_trace("push_data_to_pqueue\r\n");
     if (xQueueSend(pqueue, message, pdMS_TO_TICKS(0)) != pdPASS)
     {
         os_trace("Push to queue data rx fail\r\n");
@@ -826,10 +828,12 @@ RESPONSE:
 */
 static void ble_config_step1(cJSON *jsRoot)
 {
-    char* respond = m_apconfig_step1(NULL);
-    app_send_data(respond, strlen(respond));
-    free(respond);
-    respond = NULL;
+    // while (m_wifi_get_instance().wifi_get_state_cb() != M_WIFI_WAIT_SMARTCONFIG_DONE)
+    // {
+    //     vTaskDelay(pdMS_TO_TICKS(50));
+    // }
+
+    m_ble_config_step1();
 }
 
 static void ble_config_step2(cJSON *jsRoot)
@@ -891,6 +895,7 @@ void app_handler_msg_task(void * arg)
                 {
                     os_trace("_cmd_number: %d\r\n", cmd);
                     array_handler[i]._handler(jsRoot);
+                    break;
                 }
             }
 
@@ -905,5 +910,5 @@ void app_handler_msg_init(void)
     pdata_queue_init();
     m_mqtt_command_startup_register_handler(app_startup_message);
 
-    xTaskCreate(app_handler_msg_task, "ble slave", 1024 * 2, NULL, 15, NULL);
+    xTaskCreate(app_handler_msg_task, "ble slave", 1024 * 3, NULL, 15, NULL);
 }

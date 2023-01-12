@@ -21,4 +21,9 @@ char* m_http_services(char* buf, uint16_t len);
 
 char* m_apconfig_step1(char *req);
 char* m_apconfig_step2(char *req);
+
+void m_ble_config_step1(void);
+
+
+
 #endif

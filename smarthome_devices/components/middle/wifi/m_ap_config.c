@@ -94,8 +94,7 @@ void scan_ap_around(void)
 
     for (uint8_t i = 0; i < counter; i++)
     {
-        bl_os_printf("index[%02d]: rssi %3d, SSID %s\r\n",
-                     i, ap_ary_p[i].rssi, ap_ary_p[i].ssid);
+        printf("rssi %3d, SSID %s\r\n", ap_ary_p[i].rssi, ap_ary_p[i].ssid);
     }
 }
 

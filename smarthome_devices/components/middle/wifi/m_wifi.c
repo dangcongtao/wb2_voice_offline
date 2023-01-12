@@ -132,6 +132,7 @@ void wifi_task(void *param)
         {
             os_trace("m_wifi: Wifi Smartconfig\n");
             m_led_stt_get_instance()._set_led_stt_smart_config_cb();
+            scan_ap_around();
             g_wifi_obj.wifi_state = M_WIFI_WAIT_SMARTCONFIG_DONE;
         }
         break;
@@ -206,6 +207,13 @@ void wifi_task(void *param)
 
         default:
             break;
+        }
+
+        static uint32_t old = 0;
+        old += 100;
+        if (old > 2000) {
+            os_trace("[APP] Free memory: %d bytes\r\n", xPortGetFreeHeapSize());
+            old = 0;
         }
 
         vTaskDelay(pdMS_TO_TICKS(100)); /* should be 500ms to make it's priority low */
