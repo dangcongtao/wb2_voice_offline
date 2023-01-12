@@ -23,7 +23,6 @@ char* m_apconfig_step1(char *req);
 char* m_apconfig_step2(char *req);
 
 void m_ble_config_step1(void);
-
-
+void m_ble_config_step2(void);
 
 #endif

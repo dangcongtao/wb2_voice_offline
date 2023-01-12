@@ -92,7 +92,7 @@ void m_ble_config_step1(void)
         memset(resp, 0, sizeof(resp));
         sprintf(resp, "{\"cmd\": 2, \"wfs\": ["
                         "{\"rssi\": %d, \"ssid\": \"%s\"}," 
-                        "{\"rssi\": %d, \"ssid\": \"%s\"}"
+                        "{\"rssi\": %d, \"ssid\": \"%s\"},"
                         "{\"rssi\": %d, \"ssid\": \"%s\"}"
                         "]}",
                         ap_ary_p[i].rssi, ap_ary_p[i].ssid,
@@ -101,8 +101,7 @@ void m_ble_config_step1(void)
         ble_send_data(resp, strlen(resp));
     }
 
-    for (; i < counter - 2; i += 3)
-    {
+    if (counter % 3 == 1) {
         memset(resp, 0, sizeof(resp));
         sprintf(resp, "{\"cmd\": 2, \"wfs\": ["
                         "{\"rssi\": %d, \"ssid\": \"%s\"}"
@@ -110,6 +109,31 @@ void m_ble_config_step1(void)
                         ap_ary_p[i].rssi, ap_ary_p[i].ssid);
         ble_send_data(resp, strlen(resp));
     }
+    else if (counter % 3 == 2) {
+        memset(resp, 0, sizeof(resp));
+        sprintf(resp, "{\"cmd\": 2, \"wfs\": ["
+                        "{\"rssi\": %d, \"ssid\": \"%s\"},"
+                        "{\"rssi\": %d, \"ssid\": \"%s\"}"
+                        "]}",
+                        ap_ary_p[i].rssi, ap_ary_p[i].ssid,
+                        ap_ary_p[i+1].rssi, ap_ary_p[i+1].ssid);
+        ble_send_data(resp, strlen(resp));
+    }
+
+    memset(resp, 0, sizeof(resp));
+    sprintf(resp, "{\"cmd\": 2, \"wfs\": []}");
+    ble_send_data(resp, strlen(resp));
+}
+
+void m_ble_config_step2(void)
+{
+    os_trace("\tm_ble_config_step1\r\n");
+
+    /* show wifi around me */
+    char resp[256];
+    memset(resp, 0, sizeof(resp));
+    sprintf(resp, "{\"cmd\": 4, \"result\": 1}");
+    ble_send_data(resp, strlen(resp));
 }
 
 char* m_http_services(char* buf, uint16_t len)

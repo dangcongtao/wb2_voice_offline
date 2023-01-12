@@ -95,7 +95,6 @@ static void ble_connect_status_cb(uint8_t status, char *addr)
 
 static void ble_recv_data_cb(struct bt_conn *conn, const char *buf, u16_t len)
 {
-    os_trace("ble receive[%d]\r\n", len);
 
     if (len >= BLE_DATA_MAX_LEN)
     {
@@ -108,6 +107,8 @@ static void ble_recv_data_cb(struct bt_conn *conn, const char *buf, u16_t len)
     memcpy(message.data, buf, len);
     message.length = len;
     message.method_trasmit = BLE_MSG;
+    
+    os_trace("ble receive[%d] %s\r\n", len, message.data);
     push_data_to_pqueue(&message);
 
     memset((void *)buf, 0, sizeof(buf));

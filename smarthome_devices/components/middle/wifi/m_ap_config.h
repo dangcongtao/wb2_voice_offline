@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-
+#include "cJSON.h"
 #define WIFI_SCAN_MAX_AP      20
 
 typedef enum {
@@ -26,5 +26,6 @@ uint8_t is_ap_config_done(void);
 
 void scan_ap_around(void);
 bool apconfig_parse_wifi_info(char* json);
+uint8_t ble_cfg_parse_data(cJSON *js_Root);
 
 #endif 

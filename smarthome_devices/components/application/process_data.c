@@ -57,7 +57,7 @@ wswitch_handler_t array_handler[] = {
     {app_backup_db, 151},
 
     {ble_config_step1, 1}, 
-    {ble_config_step2, 2}, 
+    {ble_config_step2, 3}, 
 };
 
 QueueHandle_t pqueue;
@@ -77,7 +77,6 @@ bool pdata_queue_init(void)
 
 void push_data_to_pqueue(m_data_t *message)
 {
-    os_trace("push_data_to_pqueue\r\n");
     if (xQueueSend(pqueue, message, pdMS_TO_TICKS(0)) != pdPASS)
     {
         os_trace("Push to queue data rx fail\r\n");
@@ -828,16 +827,22 @@ RESPONSE:
 */
 static void ble_config_step1(cJSON *jsRoot)
 {
-    // while (m_wifi_get_instance().wifi_get_state_cb() != M_WIFI_WAIT_SMARTCONFIG_DONE)
-    // {
-    //     vTaskDelay(pdMS_TO_TICKS(50));
-    // }
+    while (m_wifi_get_instance().wifi_get_state_cb() != M_WIFI_WAIT_SMARTCONFIG_DONE)
+    {
+        vTaskDelay(pdMS_TO_TICKS(50));
+    }
 
     m_ble_config_step1();
 }
 
+/* {"cmd":3,"pub":"u/15/HUN167291413297wswitch2vN1/1673509108/ok",
+    "sub":"u/15/HUN167291413297wswitch2vN1/1673509108",
+    "ssid":"RD HUNONIC 1","pass":"66668888"} */
 static void ble_config_step2(cJSON *jsRoot)
 {
+    ble_cfg_parse_data(jsRoot);
+
+    m_ble_config_step2();
 }
 
 void app_handler_msg_task(void * arg)
@@ -845,13 +850,15 @@ void app_handler_msg_task(void * arg)
     m_data_t msg;
     memset(&msg, 0, sizeof(msg));
     char *root_type = NULL;
+    uint32_t raw_len = 0;
+    char raw_data[MAXIMUM_SIZE_MESSAGE];
+    cJSON *jsRoot = NULL, *jsType = NULL;
 
     while (1) 
     {
         if (xQueueReceive(pqueue, &msg, 1) == pdPASS) 
         {
-            uint32_t raw_len = 0;
-            char raw_data[MAXIMUM_SIZE_MESSAGE];
+            os_trace("raw_data received: %s\r\n", msg.data);
 
             /* decode data */
             memset(raw_data, 0, sizeof(raw_data));
@@ -862,17 +869,17 @@ void app_handler_msg_task(void * arg)
                 continue;
             }
             
-            os_trace("raw_data received: %s\r\n", raw_data);
+            os_trace("decoded: %s\r\n", raw_data);
 
             /* find handler of data */
-            cJSON *jsRoot = cJSON_Parse(raw_data);
+            jsRoot = cJSON_Parse(raw_data);
             if (!jsRoot) {
                 os_trace("Parse Json Fail\r\n");
                 continue;
             }
 
             root_type = gs_dev_type[device_type];
-            cJSON *jsType = cJSON_GetObjectItem(jsRoot, root_type);
+            jsType = cJSON_GetObjectItem(jsRoot, root_type);
             if (jsType == NULL)
             {
                 root_type = "cmd";
