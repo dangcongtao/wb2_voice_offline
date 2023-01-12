@@ -123,7 +123,7 @@ void wifi_task(void *param)
             } 
             else {
                 /* wait user config */
-                g_wifi_obj.wifi_state = M_WIFI_APCONFIG;
+                g_wifi_obj.wifi_state = M_WIFI_WAIT_EVENT;
             }
         }
         break;

@@ -104,4 +104,13 @@ typedef struct
     uint8_t method_trasmit;
 } m_data_t;
 
+#define BLE_DATA_MAX_LEN    256
+
+typedef struct
+{
+    char data[BLE_DATA_MAX_LEN];
+    uint32_t length;
+    uint8_t method_trasmit;
+} m_ble_data_t;
+
 #endif /* CJSON_KEYWORD_H__ */

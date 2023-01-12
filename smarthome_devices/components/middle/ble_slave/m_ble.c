@@ -58,7 +58,7 @@
 #include "system_typedef.h"
 #include "aes_cbc128.h"
 
-#define BLE_MAX_QUEUE_ITEM 5
+#define BLE_MAX_QUEUE_ITEM 10
 
 static struct bt_gatt_exchange_params exchange_params;
 extern unsigned char bleuart_connect_status;
@@ -97,7 +97,7 @@ static void ble_recv_data_cb(struct bt_conn *conn, const char *buf, u16_t len)
 {
     os_trace("ble receive[%d]\r\n", len);
 
-    if (len >= DATA_MAX_LEN)
+    if (len >= BLE_DATA_MAX_LEN)
     {
         os_trace("buf len overflow\r\n");
         return;
@@ -120,11 +120,11 @@ void ble_send_data(char *data, uint32_t length)
                 
     os_trace("%s\r\n", data);
 
-    m_data_t message;
+    m_ble_data_t message;
     memset(&message, 0, sizeof(message));
 
     if (length > DATA_MAX_LEN) {
-        os_trace("data ble too long to send\r\n");
+        os_trace("data ble too long to send %u\r\n", length);
         return;
     }
     
@@ -158,40 +158,42 @@ static void ble_user_init(void)
 static void ble_task(void *pvParameters)
 {
     char msg_aes[DATA_MAX_LEN];
-    uint32_t len_aes = sizeof(msg_aes);
+    uint32_t len_aes = DATA_MAX_LEN;
     uint32_t aes_encrypt_result = 0;
-    m_data_t message;
+    m_ble_data_t message;
 
     bl_sys_init(); // if use ble ,must init
     ble_user_init();
 
+    memset(&message, 0, sizeof(message));
+    memset(msg_aes, 0, sizeof(msg_aes));
     while (1)
     {
-        // memset(&message, 0, sizeof(message));
-        // if (xQueueReceive(ble_tx_queue, &message, 1) == pdPASS)
-        // {
-        //     os_trace("ble_send[%d]: %s\r\n", message.data, message.length);
+        if (xQueueReceive(ble_tx_queue, &message, 1) == pdPASS)
+        {
+            os_trace("[%d]:\r\n", message.length);
 
-            // /* Encode AES */
-            // len_aes = DATA_MAX_LEN;
-            // memset(msg_aes, 0, len_aes);
+            /* Encode AES */
+            len_aes = DATA_MAX_LEN;
+            memset(msg_aes, 0, len_aes);
 
-            // aes_cbc128_init((uint8_t *)key, (uint8_t *)iv);
-            // aes_encrypt_result = aes_cbc128_encrypt((uint8_t *)message.data, message.length,
-            //                                         (uint8_t *)msg_aes, (size_t *)&len_aes);
-            // if (aes_encrypt_result != AES_SUCCESS)
-            // {
-            //     os_trace("Encode fail,error-code: %ld\r\n", aes_encrypt_result);
-            //     break;
-            // }
+            aes_cbc128_init((uint8_t *)key, (uint8_t *)iv);
+            aes_encrypt_result = aes_cbc128_encrypt((uint8_t *)message.data, message.length,
+                                                    (uint8_t *)msg_aes, (size_t *)&len_aes);
+            if (aes_encrypt_result != AES_SUCCESS)
+            {
+                os_trace("Encode fail,error-code: %ld\r\n", aes_encrypt_result);
+                break;
+            }
 
-            // /* call platform mqtt-publish api */
-            // my_ble_notify(pconn, msg_aes, len_aes);
-        // }
+            /* call platform mqtt-publish api */
+            my_ble_notify(pconn, msg_aes, len_aes);
+
+            memset(&message, 0, sizeof(message));
+        }
 
         vTaskDelay(pdMS_TO_TICKS(100));
     }
-    vTaskDelete(NULL);
 }
 
 bool ble_init_queue(void)
