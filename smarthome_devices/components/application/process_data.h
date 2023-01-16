@@ -13,7 +13,7 @@ typedef struct {
 } wswitch_handler_t;
 
 
-void app_handler_msg_init(void);
+void process_data_init(void);
 void app_handler_msg_loop(void);
 
 #endif /* _APP_MQTT_H_ */

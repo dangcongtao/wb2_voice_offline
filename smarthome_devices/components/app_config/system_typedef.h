@@ -113,4 +113,38 @@ typedef struct
     uint8_t method_trasmit;
 } m_ble_data_t;
 
+typedef enum {
+    M_WIFI_START = 0,
+    M_WIFI_DISCONNECT,
+    M_WIFI_CONNECTED,
+    M_WIFI_SMARTCONFIG,
+    M_WIFI_WAIT_SMARTCONFIG_DONE,
+    M_WIFI_APCONFIG,
+    M_WIFI_WAIT_APCONFIG_DONE,
+    M_WIFI_APCONFIG_DONE,
+    M_WIFI_CONFIG_DONE,
+    M_WIFI_WAIT_EVENT,
+    M_WIFI_GET_MQTT,
+    M_WIFI_CONN_MQTT,
+    M_WIFI_DEV_ACTIVE,
+    M_WIFI_NOT_CFG,
+} m_state_t;
+
+typedef enum {
+	SIG_SMART_CFG = 0,
+    SIG_SMART_CFG_DONE,
+	SIG_AP_CFG,
+    SIG_AP_CFG_DONE,
+	SIG_WIFI_DISCONNECT,
+    SIG_MQTT_GOT_INFO,
+    SIG_MQTT_CONNECTED,
+} m_signal_t;
+
+typedef struct {
+	m_state_t context;
+	m_signal_t signal;
+	m_state_t next_state;
+    void (*signal_handler_cb)(void * arg);
+} m_state_transmit_t;
+
 #endif /* CJSON_KEYWORD_H__ */

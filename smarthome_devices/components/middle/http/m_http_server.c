@@ -34,6 +34,8 @@
 #define SERVER_PORT 80
 #define MAX_LEN_HTTP_REQUEST 1024
 
+static uint8_t stop_http_server = 0;
+
 const static char http_html_hdr[] =
     "HTTP/1.1 200 OK\r\nContent-type: text/html\r\n\r\n";
 const static char http_index_hml[] = "<!DOCTYPE html>"
@@ -143,10 +145,11 @@ close_connection:
     netbuf_delete(inputbuf);
 }
 
-void http_server_start(void *pvParameters)
+void http_server_task(void *pvParameters)
 {
     struct netconn *conn, *newconn;
     err_t err;
+    
     conn = netconn_new(NETCONN_TCP);
     if (conn == NULL)
     {
@@ -160,14 +163,19 @@ void http_server_start(void *pvParameters)
     }
 
     netconn_listen(conn);
-
     os_trace("http_server_start\r\n");
 
     while (1)
     {
-        os_trace("test1\r\n");
+        if (stop_http_server) {
+            os_trace("Http server stop\r\n");
+            netconn_close(conn);
+            netconn_delete(conn);
+            break;
+        }
+
         err = netconn_accept(conn, &newconn);
-        os_trace("test2\r\n");
+
         if (err == ERR_OK)
         {
             os_trace("get new connection\r\n");
@@ -183,10 +191,17 @@ void http_server_start(void *pvParameters)
 
         vTaskDelay(pdMS_TO_TICKS(100));
     }
+
+    vTaskDelete(NULL);
 }
 
 void m_http_server_start(void)
 {
-    os_trace("m_http_init\r\n");
-    xTaskCreate(http_server_start, (char *)"http server", 1024 * 4, NULL, 15, NULL);
+    os_trace("m_http_server_start\r\n");
+    xTaskCreate(http_server_task, (char *)"http server", 1024 * 4, NULL, 15, NULL);
+}
+
+void m_http_stop(void)
+{
+    stop_http_server = 1;
 }

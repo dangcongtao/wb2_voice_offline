@@ -220,3 +220,11 @@ void ble_init(void)
     ble_init_queue();
     xTaskCreate(ble_task, "ble slave", 1024 * 3, NULL, 15, NULL);
 }
+
+void ble_deinit(void)
+{
+    os_trace("MY BLE SLAVE\r\n");
+    my_ble_deinit();
+    xTaskCreate(ble_task, "ble slave", 1024 * 3, NULL, 15, NULL);
+    vQueueDelete(ble_tx_queue);
+}

@@ -5,9 +5,10 @@
 #include "app_config.h"
 #include "system_typedef.h"
 #include "m_database.h"
-#include "m_ap_config.h"
-#include "m_smartconfig.h"
+#include "m_wf_ap_config.h"
+#include "m_wf_ble_cfg.h"
 #include <wifi_mgmr_ext.h>
+#include "m_wf_scan.h"
 
 #define MAX_NUM_SERVICES    4
 #define MAX_RESP_LEN        1024

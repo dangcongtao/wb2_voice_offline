@@ -184,7 +184,6 @@ void m_mqtt_start(void)
     client = axk_mqtt_client_init(&mqtt_cfg);
     if (axk_mqtt_client_start(client) != AXK_OK) {
         os_trace("mqtt start failed\r\n");
-        m_wifi_get_instance().wifi_set_state_cb(M_WIFI_DISCONNECT);
     }
 
     s_mqtt_obj._mqtt_state = MQTT_INTIALIZED;

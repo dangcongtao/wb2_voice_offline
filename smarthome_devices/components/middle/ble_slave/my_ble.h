@@ -22,6 +22,7 @@ void my_bleuart_send(char *buf, u16_t len);
 void my_ble_notify(struct bt_conn *conn, char *buf, u16_t len);
 void my_ble_start_advertise();
 void my_ble_init(void);
+void my_ble_deinit(void);
 void my_ble_recv_register(my_ble_recv_data_cb_t ble_reve_cb);
 void my_ble_connect_register(my_ble_connet_status_cb_t ble_connet_cb);
 

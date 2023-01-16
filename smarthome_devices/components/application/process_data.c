@@ -10,6 +10,7 @@
 #include "m_switch.h"
 #include "system_typedef.h"
 #include "m_ble.h"
+#include "m_wf_ble_cfg.h"
 
 #include "aes_cbc128.h"
 
@@ -19,7 +20,6 @@
 #include <timers.h>
 
 #include "m_http_services.h"
-#include "m_ap_config.h"
 
 static char respond[512];
 extern char key[16], iv[16];
@@ -38,6 +38,7 @@ static void app_remove_device(cJSON *jsRoot);
 static void app_start_cyclic_timer(cJSON *jsRoot);
 static void app_stop_cyclic_timer(cJSON *jsRoot);
 static void app_backup_db(cJSON *jsRoot);
+
 static void ble_config_step1(cJSON *jsRoot);
 static void ble_config_step2(cJSON *jsRoot);
 
@@ -827,11 +828,6 @@ RESPONSE:
 */
 static void ble_config_step1(cJSON *jsRoot)
 {
-    while (m_wifi_get_instance().wifi_get_state_cb() != M_WIFI_WAIT_SMARTCONFIG_DONE)
-    {
-        vTaskDelay(pdMS_TO_TICKS(50));
-    }
-
     m_ble_config_step1();
 }
 
@@ -912,7 +908,7 @@ void app_handler_msg_task(void * arg)
     }
 }
 
-void app_handler_msg_init(void)
+void process_data_init(void)
 {
     pdata_queue_init();
     m_mqtt_command_startup_register_handler(app_startup_message);

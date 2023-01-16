@@ -49,36 +49,8 @@
                                  ((uint32_t)((c)&0xff) << 16) | \
                                  ((uint32_t)((d)&0xff) << 24))
 
-// typedef enum
-// {
-//     WIFI_COUNTRY_CODE_CN = 0,
-//     WIFI_COUNTRY_CODE_JP,
-//     WIFI_COUNTRY_CODE_US,
-//     WIFI_COUNTRY_CODE_EU,
-//     WIFI_COUNTRY_CODE_MAX
-// } country_code_type;
-
-// typedef struct
-// {
-//     uint16_t interval_second;
-//     uint16_t reconn_count;
-// } wifi_sta_reconnect_t;
-
-// typedef struct
-// {
-//     uint32_t ip;
-//     uint32_t gateway;
-//     uint32_t netmask;
-// } wifi_ip_params_t;
-
-// typedef enum
-// {
-//     WIFI_AUTOCONN_DISABLE = 0,
-//     WIFI_AUTOCONN_ENABLE,
-// } wifi_auto_conn;
-
-void wifi_ap_stop(void);
 void m_wifi_ap_start(void);
+void m_wifi_ap_stop(void);
 void m_wifi_ap_event_cb(input_event_t* event, void* private_data);
 
 #endif 

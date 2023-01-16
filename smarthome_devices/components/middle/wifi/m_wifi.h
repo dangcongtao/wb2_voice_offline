@@ -7,30 +7,19 @@
 
 #include "system_typedef.h"
 
-typedef enum {
-    M_WIFI_START = 0,
-    M_WIFI_DISCONNECT,
-    M_WIFI_CONNECTED,
-    M_WIFI_SMARTCONFIG,
-    M_WIFI_WAIT_SMARTCONFIG_DONE,
-    M_WIFI_APCONFIG,
-    M_WIFI_WAIT_APCONFIG_DONE,
-    M_WIFI_APCONFIG_DONE,
-    M_WIFI_CONFIG_DONE,
-    M_WIFI_WAIT_EVENT,
-    M_WIFI_GET_MQTT,
-    M_WIFI_CONN_MQTT,
-    M_WIFI_DEV_ACTIVE,
-} m_wifi_state_t;
-
+typedef void (*p_wifi_sync_rssi_t)(void);
 typedef void (*p_smart_config_start_t)(void);
 typedef void (*p_ap_config_start_t)(void);
 typedef void (*p_wifi_set_ssid_t)(char* ssid, size_t len);
 typedef void (*p_wifi_set_passwd_t)(char* passwd, size_t len);
 typedef void (*p_wifi_change_wifi_t)(char* ssid, char* passwd);
-typedef void (*p_wifi_set_state_t)(m_wifi_state_t _new_state);
-typedef m_wifi_state_t (*p_wifi_get_state_t)(void);
 typedef void (*p_wifi_save_ip_t)(char* ip, size_t len);
+
+typedef void (*p_wifi_sta_start_t)(char* ssid, char* passwd);
+typedef void (*p_wifi_sta_stop_t)(void);
+typedef void (*p_wifi_ap_start_t)(void);
+typedef void (*p_wifi_ap_stop_t)(void);
+typedef void (*p_wifi_scan_t)(void);
 
 typedef struct {
     char                     _ssid[32];
@@ -42,17 +31,22 @@ typedef struct {
 typedef struct {
 /* properties */
     m_wifi_info_t               _wifi_info;
-    m_wifi_state_t              wifi_state;
 
 /* method */
-    p_smart_config_start_t      start_smart_config_cb;
-    p_ap_config_start_t         start_ap_config_cb;
-    p_wifi_set_state_t          wifi_set_state_cb;
-    p_wifi_get_state_t          wifi_get_state_cb;
     p_wifi_set_ssid_t           wifi_set_ssid_cb;
     p_wifi_set_passwd_t         wifi_set_passwd_cb;
     p_wifi_change_wifi_t        wifi_change_wifi_cb;
     p_wifi_save_ip_t            wifi_save_ip;
+    p_wifi_sync_rssi_t          wifi_sync_rssi_cb;
+
+    p_ap_config_start_t         start_ap_config_cb;
+    p_smart_config_start_t      start_smart_config_cb;
+    
+    p_wifi_scan_t               wifi_scan_cb;
+    p_wifi_ap_stop_t            wifi_ap_stop_cb;
+    p_wifi_ap_start_t           wifi_ap_start_cb;
+    p_wifi_sta_stop_t           wifi_sta_stop_cb;
+    p_wifi_sta_start_t          wifi_sta_start_cb;
 } m_wifi_t;
 
 /* public */

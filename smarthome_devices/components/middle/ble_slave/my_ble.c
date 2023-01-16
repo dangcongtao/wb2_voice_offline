@@ -173,5 +173,11 @@ void my_ble_connect_register(my_ble_connet_status_cb_t ble_connet_cb)
     static_ble_connet_status_cb = ble_connet_cb;
 }
 
+void my_ble_deinit(void)
+{                                                        
+    printf("my_ble_deinit\r\n");
 
+    ble_controller_deinit();
+    bt_disable();
+}
  

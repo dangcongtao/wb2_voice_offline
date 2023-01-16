@@ -1,5 +1,5 @@
 #include "m_wifi_ap.h"
-#include "m_ap_config.h"
+#include "m_wf_ap_config.h"
 #include "m_http_server.h"
 #include "m_database.h"
 #include "system_typedef.h"
@@ -16,6 +16,54 @@
 #include <lwip/netif.h>
 #include <lwip/inet.h>
 #include <blog.h>
+
+#include <stdint.h>
+#include <stdbool.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+
+#include <FreeRTOS.h>
+#include "portmacro.h"
+#include <task.h>
+#include <timers.h>
+#include "event_groups.h"
+#include <aos/kernel.h>
+#include <aos/yloop.h>
+#include <event_device.h>
+#include <easyflash.h>
+
+#include <hal_sys.h>
+#include <bl_wifi.h>
+#include <hal_wifi.h>
+#include <bl_timer.h>
+#include <bl_sys_time.h>
+#include <bl_sys.h>
+
+#include "lwip/err.h"
+#include "lwip/sys.h"
+#include "lwip/netdb.h"
+
+#include <wifi_mgmr_ext.h>
+#include "FreeRTOS.h"
+#include "portmacro.h"
+#include "event_groups.h"
+#include "lwip/err.h"
+#include "string.h"
+#include "lwip/sys.h"
+#include "lwip/netdb.h"
+#include "lwip/api.h"
+#include "web_server.h"
+
+#define WIFI_RECONN_INTERVAL_SEC 15
+#define WIFI_RECONN_REPEAT_TIMES 10
+
+#define IP_SET_ADDR(a, b, c, d) (((uint32_t)((a)&0xff)) |       \
+                                 ((uint32_t)((b)&0xff) << 8) |  \
+                                 ((uint32_t)((c)&0xff) << 16) | \
+                                 ((uint32_t)((d)&0xff) << 24))
 
 /* if you want usb other gw ip, please change components/network/lwip_dhcpd/dhcp_server_raw.c：42   DHCPD_SERVER_IP 
 for example  gw ip:"192.168.4.1" , change DHCPD_SERVER_IP to "192.168.4.1" */
@@ -100,11 +148,6 @@ static void wifi_ap_start(void)
     wifi_ap_ip_set(IP_ADDR, NETMASK, GATEWAY_ADDR);  
 }
 
-void wifi_ap_stop(void)
-{
-    wifi_mgmr_ap_stop(NULL);
-}
-
 void m_wifi_ap_event_cb(input_event_t* event, void* private_data)
 {
     switch (event->code) {
@@ -114,7 +157,7 @@ void m_wifi_ap_event_cb(input_event_t* event, void* private_data)
             break;
         case CODE_WIFI_ON_MGMR_DONE:
             os_trace("<<<<<<<<< startting soft ap <<<<<<<<<<\r\n");
-            scan_ap_around();
+            // scan_ap_around();
             wifi_ap_start();
             break;
         case CODE_WIFI_ON_AP_STARTED:
@@ -147,4 +190,9 @@ void m_wifi_ap_start(void)
     g_wifi_mode = WIFI_SOFT_AP;
     m_ap_cfg_clear_state();
     xTaskCreate(proc_main_entry, (char*)"main_entry", 1024, NULL, 15, NULL);
+}
+
+void m_wifi_ap_stop(void)
+{
+    wifi_mgmr_ap_stop(NULL);
 }

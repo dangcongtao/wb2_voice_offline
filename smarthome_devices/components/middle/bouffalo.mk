@@ -31,6 +31,7 @@ COMPONENT_ADD_INCLUDEDIRS += 	database \
 								wifi \
 								ota \
 								ble_slave \
+								http \
 
 ## not be exported to project level
 COMPONENT_PRIV_INCLUDEDIRS :=
@@ -46,26 +47,20 @@ COMPONENT_SRCS := database/m_database.c \
 				  mqtt/m_mqtt_client_props.c \
 				  mqtt/m_mqtt_client_method.c \
 				  ota/m_ota.c \
-				  wifi/tcp_server.c \
-				  wifi/m_http_server.c \
-				  wifi/m_http_services.c \
-				  wifi/m_ap_config.c \
-				  wifi/m_smartconfig.c \
+				  http/m_http_server.c \
+				  http/m_http_services.c \
 				  wifi/m_wifi_ap.c \
 				  wifi/m_wifi_station.c \
-				  wifi/m_wifi_event.c \
+				  wifi/m_wf_ap_config.c \
+				  wifi/m_wf_ble_cfg.c \
+				  wifi/m_wf_scan.c \
 				  wifi/m_wifi.c \
 				  ble_slave/m_ble.c \
 				  ble_slave/my_ble.c \
 				  
 COMPONENT_OBJS := $(patsubst %.c,%.o, $(COMPONENT_SRCS))
 
-COMPONENT_SRCDIRS := 	database \
-						gpio \
-						mqtt \
-						wifi \
-						ota \
-						ble_slave \
+COMPONENT_SRCDIRS := $(COMPONENT_ADD_INCLUDEDIRS)
 					 
 
 

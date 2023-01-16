@@ -16,24 +16,6 @@ extern int g_wifi_mode;
 static int g_wifi_sta_is_connected = 0;
 static wifi_interface_t g_wifi_sta_interface = NULL;
 
-int wifi_sta_connect(char *ssid, char *pass)
-{
-    g_wifi_mode = WIFI_STATION;
-
-    g_wifi_sta_interface = wifi_mgmr_sta_enable();
-    if (g_wifi_sta_is_connected == 1)
-    {
-        os_trace("sta has connect\r\n");
-        return 0;
-    }
-    else
-    {
-        wifi_mgmr_sta_autoconnect_set(WIFI_RECONN_INTERVAL_SEC, WIFI_RECONN_REPEAT_TIMES);
-        wifi_mgmr_sta_autoconnect_enable();
-        return wifi_mgmr_sta_connect(g_wifi_sta_interface, ssid, pass, NULL, NULL, 0, 0);
-    }
-}
-
 void m_wifi_sta_event_cb(input_event_t *event, void *private_data)
 {
     static char *ssid;
@@ -61,7 +43,7 @@ void m_wifi_sta_event_cb(input_event_t *event, void *private_data)
     case CODE_WIFI_ON_DISCONNECT:
         g_wifi_sta_is_connected = 0;
         os_trace("wifi sta disconnected\r\n");
-        g_wifi_obj.wifi_set_state_cb(M_WIFI_DISCONNECT);
+        // g_wifi_obj.wifi_set_state_cb(M_WIFI_DISCONNECT);
         break;
 
     case CODE_WIFI_ON_GOT_IP:
@@ -72,8 +54,9 @@ void m_wifi_sta_event_cb(input_event_t *event, void *private_data)
         os_trace("GOT IP  :   %s \r\n", my_ip);
 
         g_wifi_sta_is_connected = 1;
+        
         // Start the connection of MQTT
-        g_wifi_obj.wifi_set_state_cb(M_WIFI_CONNECTED);
+        // g_wifi_obj.wifi_set_state_cb(M_WIFI_CONNECTED);
 
         break;
 
@@ -144,6 +127,24 @@ void m_wifi_sta_event_cb(input_event_t *event, void *private_data)
 
     default:
         os_trace("%*s %u, %lld\r\n", 100, "wifi sta Unknown code", event->code, aos_now_ms());
+    }
+}
+
+static int wifi_sta_connect(char *ssid, char *pass)
+{
+    g_wifi_mode = WIFI_STATION;
+
+    g_wifi_sta_interface = wifi_mgmr_sta_enable();
+    if (g_wifi_sta_is_connected == 1)
+    {
+        os_trace("sta has connect\r\n");
+        return 0;
+    }
+    else
+    {
+        wifi_mgmr_sta_autoconnect_set(WIFI_RECONN_INTERVAL_SEC, WIFI_RECONN_REPEAT_TIMES);
+        wifi_mgmr_sta_autoconnect_enable();
+        return wifi_mgmr_sta_connect(g_wifi_sta_interface, ssid, pass, NULL, NULL, 0, 0);
     }
 }
 
