@@ -1,7 +1,7 @@
 #include "my_ble.h"
 
 extern char s_device_id[64];
-#define NAME_DEVICE "HUN167291413297wswitch2vN1"
+// #define NAME_DEVICE "HUN167291413297wswitch2vN1"
 
 /*自定义UUID*/
 /* service UUID: 0x6e400001-0xb5a3-0xf393-0xe0a9-0xe50e24dcca9e */
@@ -152,7 +152,7 @@ void my_ble_notify(struct bt_conn *conn, char *buf, u16_t len)
 /*BLE初始化函数*/
 void my_ble_init(void)
 {                                                        
-    printf("my_ble_init\r\n");
+    printf("%*s: %s\r\n", 100, "my_ble_init: ", s_device_id);
     ble_controller_init(configMAX_PRIORITIES - 1); //ble协议栈初始化
     hci_driver_init();//初始化驱动
     bt_enable(bt_ready_cb);
@@ -160,7 +160,7 @@ void my_ble_init(void)
     notify_attrs = &ble_Attributes[4];   //对应notify 
     bt_conn_cb_register(&conn_callbacks);
     my_ble_start_advertise();//开启广播
-    bt_set_name(NAME_DEVICE); //设置蓝牙名称  
+    bt_set_name(s_device_id); //设置蓝牙名称  
 }
 /*注册蓝牙接收回调*/
 void my_ble_recv_register(my_ble_recv_data_cb_t ble_recv_cb)

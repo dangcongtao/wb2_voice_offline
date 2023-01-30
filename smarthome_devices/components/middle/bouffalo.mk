@@ -32,6 +32,7 @@ COMPONENT_ADD_INCLUDEDIRS += 	database \
 								ota \
 								ble_slave \
 								http \
+								event_driven \
 
 ## not be exported to project level
 COMPONENT_PRIV_INCLUDEDIRS :=
@@ -57,6 +58,10 @@ COMPONENT_SRCS := database/m_database.c \
 				  wifi/m_wifi.c \
 				  ble_slave/m_ble.c \
 				  ble_slave/my_ble.c \
+				  event_driven/event_apconfig.c \
+				  event_driven/event_smartconfig.c \
+				  event_driven/event_device_active.c \
+				  event_driven/event_driven.c \
 				  
 COMPONENT_OBJS := $(patsubst %.c,%.o, $(COMPONENT_SRCS))
 

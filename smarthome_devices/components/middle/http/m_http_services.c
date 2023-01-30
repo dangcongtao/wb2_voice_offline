@@ -128,9 +128,8 @@ void m_ble_config_step1(void)
 
 void m_ble_config_step2(void)
 {
-    os_trace("\tm_ble_config_step1\r\n");
+    os_trace("\tm_ble_config_step2\r\n");
 
-    /* show wifi around me */
     char resp[256];
     memset(resp, 0, sizeof(resp));
     sprintf(resp, "{\"cmd\": 4, \"result\": 1}");

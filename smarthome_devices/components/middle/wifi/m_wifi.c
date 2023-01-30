@@ -31,6 +31,7 @@
 #include "m_wf_ble_cfg.h"
 #include "m_http_server.h"
 #include "m_wf_scan.h"
+#include "event_driven.h"
 
 static wifi_conf_t conf = {
     .country_code = "VN",
@@ -52,10 +53,12 @@ static void m_wifi_event_cb(input_event_t *event, void *private_data)
 
 static void m_wifi_start_smartconfig()
 {
+    signal_post(SIG_SMART_CFG);
 }
 
 static void m_wifi_start_apconfig()
 {
+    signal_post(SIG_AP_CFG);
 }
 
 static void m_wifi_set_ssid(char *ssid, size_t len)

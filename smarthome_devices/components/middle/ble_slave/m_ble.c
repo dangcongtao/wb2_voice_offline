@@ -60,11 +60,12 @@
 
 #define BLE_MAX_QUEUE_ITEM 10
 
-static struct bt_gatt_exchange_params exchange_params;
-extern unsigned char bleuart_connect_status;
-
 extern char key[16], iv[16];
-QueueHandle_t ble_tx_queue;
+
+extern unsigned char bleuart_connect_status;
+static struct bt_gatt_exchange_params exchange_params;
+static QueueHandle_t ble_tx_queue;
+static TaskHandle_t xHandle = NULL;
 
 extern void push_data_to_pqueue(m_data_t *message);
 
@@ -107,45 +108,11 @@ static void ble_recv_data_cb(struct bt_conn *conn, const char *buf, u16_t len)
     memcpy(message.data, buf, len);
     message.length = len;
     message.method_trasmit = BLE_MSG;
-    
+
     os_trace("ble receive[%d] %s\r\n", len, message.data);
     push_data_to_pqueue(&message);
 
     memset((void *)buf, 0, sizeof(buf));
-}
-
-void ble_send_data(char *data, uint32_t length)
-{
-    if (bleuart_connect_status == 0)
-        return;
-                
-    os_trace("%s\r\n", data);
-
-    m_ble_data_t message;
-    memset(&message, 0, sizeof(message));
-
-    if (length > DATA_MAX_LEN) {
-        os_trace("data ble too long to send %u\r\n", length);
-        return;
-    }
-    
-    memcpy(message.data, data, length);
-    message.length = length;
-    
-    if (ble_tx_queue == NULL) {
-        os_trace("ble_tx_queue NULL\r\n");
-        return;
-    }
-
-    if (xQueueSend(ble_tx_queue, &message, pdMS_TO_TICKS(10)) != pdPASS)
-    {
-        os_trace("Push to ble_tx_queue fail\r\n");
-        os_trace("\r\n");
-        return;
-    }
-
-    os_trace("Push to ble_tx_queue success\r\n");
-    os_trace("\r\n");
 }
 
 static void ble_user_init(void)
@@ -154,6 +121,24 @@ static void ble_user_init(void)
     my_ble_recv_register(ble_recv_data_cb);
     my_ble_connect_register(ble_connect_status_cb);
     bleuart_connect_status = 0;
+}
+
+static bool ble_init_queue(void)
+{
+    if (ble_tx_queue == NULL)
+    {
+        ble_tx_queue = xQueueCreate(BLE_MAX_QUEUE_ITEM, sizeof(m_data_t));
+        if (ble_tx_queue == NULL)
+        {
+            os_trace("%s fail\r\n", __func__);
+            while (1)
+                ;
+        }
+    }
+
+    os_trace("BLE create queue success\r\n");
+
+    return true;
 }
 
 static void ble_task(void *pvParameters)
@@ -168,6 +153,7 @@ static void ble_task(void *pvParameters)
 
     memset(&message, 0, sizeof(message));
     memset(msg_aes, 0, sizeof(msg_aes));
+
     while (1)
     {
         if (xQueueReceive(ble_tx_queue, &message, 1) == pdPASS)
@@ -197,34 +183,64 @@ static void ble_task(void *pvParameters)
     }
 }
 
-bool ble_init_queue(void)
+void ble_send_data(char *data, uint32_t length)
 {
-    if (ble_tx_queue == NULL)
+    if (bleuart_connect_status == 0)
+        return;
+
+    os_trace("%s\r\n", data);
+
+    m_ble_data_t message;
+    memset(&message, 0, sizeof(message));
+
+    if (length > DATA_MAX_LEN)
     {
-        ble_tx_queue = xQueueCreate(BLE_MAX_QUEUE_ITEM, sizeof(m_data_t));
-        if (ble_tx_queue == NULL)
-        {
-            os_trace("%s fail\r\n", __func__);
-            while(1);
-        }
+        os_trace("data ble too long to send %u\r\n", length);
+        return;
     }
 
-    os_trace("BLE create queue success\r\n");
+    memcpy(message.data, data, length);
+    message.length = length;
 
-    return true;
+    if (ble_tx_queue == NULL)
+    {
+        os_trace("ble_tx_queue NULL\r\n");
+        return;
+    }
+
+    if (xQueueSend(ble_tx_queue, &message, pdMS_TO_TICKS(10)) != pdPASS)
+    {
+        os_trace("Push to ble_tx_queue fail\r\n");
+        os_trace("\r\n");
+        return;
+    }
+
+    os_trace("Push to ble_tx_queue success\r\n");
+    os_trace("\r\n");
 }
 
 void ble_init(void)
 {
     os_trace("MY BLE SLAVE\r\n");
+
+    if (xHandle != NULL)
+        return;
+        
     ble_init_queue();
-    xTaskCreate(ble_task, "ble slave", 1024 * 3, NULL, 15, NULL);
+    xTaskCreate(ble_task, "ble slave", 1024 * 3, NULL, 15, &xHandle);
 }
 
 void ble_deinit(void)
 {
     os_trace("MY BLE SLAVE\r\n");
+
+    if (xHandle == NULL)
+        return;
+    
     my_ble_deinit();
-    xTaskCreate(ble_task, "ble slave", 1024 * 3, NULL, 15, NULL);
+
+    vTaskDelete(xHandle);
+    xHandle = NULL;
+    
     vQueueDelete(ble_tx_queue);
 }

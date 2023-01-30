@@ -1,0 +1,55 @@
+#include "event_driven.h"
+
+#include "m_ble.h"
+#include "m_wifi.h"
+#include "m_led_stt.h"
+#include "m_database.h"
+#include "m_http_server.h"
+
+extern m_state_t current_state;
+
+// {M_WIFI_NOT_CFG, SIG_AP_CFG, M_WIFI_APCONFIG},
+void wifi_not_cfg_to_ap_cfg_handler(void *arg)
+{
+    // scan wifi
+    m_wifi_get_instance().wifi_scan_cb();
+
+    // start http server
+    m_http_server_start();
+
+    // start ap
+    m_wifi_get_instance().wifi_ap_start_cb();
+}
+m_state_transmit_t not_cfg_to_ap_cfg = {
+    .context = M_WIFI_NOT_CFG,
+    .signal = SIG_AP_CFG,
+    .next_state = M_WIFI_APCONFIG,
+    .signal_handler_cb = wifi_not_cfg_to_ap_cfg_handler};
+
+// {M_WIFI_DEV_ACTIVE, SIG_AP_CFG, M_WIFI_APCONFIG},
+void wifi_actived_to_ap_cfg_handler(void *arg)
+{
+    // stop sta
+    // stop mqtt
+    // stop ble
+
+    // start http server
+    // scan wifi
+    // start ap
+}
+m_state_transmit_t dev_actived_to_ap_cfg = {
+    .context = M_WIFI_DEV_ACTIVE,
+    .signal = SIG_AP_CFG,
+    .next_state = M_WIFI_APCONFIG,
+    .signal_handler_cb = wifi_actived_to_ap_cfg_handler};
+
+// {M_WIFI_APCONFIG, SIG_AP_CFG_DONE, M_WIFI_GET_MQTT},
+void ap_config_done_handler(void *arg)
+{
+    // get mqtt info
+}
+m_state_transmit_t ap_config_done = {
+    .context = M_WIFI_APCONFIG,
+    .signal = SIG_AP_CFG_DONE,
+    .next_state = M_WIFI_GET_MQTT,
+    .signal_handler_cb = ap_config_done_handler};
