@@ -905,6 +905,9 @@ void app_handler_msg_task(void * arg)
 
             cJSON_Delete(jsRoot);
         }
+
+        m_mqtt_get_instance()._mqtt_loop();
+        
         vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
