@@ -65,11 +65,9 @@ uint8_t ble_cfg_parse_data(cJSON *js_Root)
 
     smart_cfg_get_data = 1;
 
-    cJSON_Delete(js_Root);
     return 1;
 
 json_parse_fail:
-    cJSON_Delete(js_Root);
     return 0;
 }
 

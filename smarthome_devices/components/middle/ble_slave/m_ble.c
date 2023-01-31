@@ -188,7 +188,7 @@ void ble_send_data(char *data, uint32_t length)
     if (bleuart_connect_status == 0)
         return;
 
-    os_trace("%s\r\n", data);
+    os_trace("ble_send: %s\r\n", data);
 
     m_ble_data_t message;
     memset(&message, 0, sizeof(message));
