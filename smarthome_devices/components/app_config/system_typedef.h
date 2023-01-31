@@ -26,8 +26,8 @@
 /* JSON KEY USE FOR CONFIGURATION PROCESSING */
 #define CJSON_KEY_SERVER        "server"
 #define CJSON_KEY_S_PORT        "port"
-#define CJSON_KEY_S_USER        "su"
-#define CJSON_KEY_S_PASS        "sp"
+#define CJSON_KEY_S_USER        "user"
+#define CJSON_KEY_S_PASS        "pass"
 #define CJSON_KEY_TOPIC_PUB     "pub"
 #define CJSON_KEY_TOPIC_SUB     "sub"
 

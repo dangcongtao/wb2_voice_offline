@@ -6,16 +6,17 @@
 #include "m_database.h"
 #include "m_http_server.h"
 
-#define MAX_STATE_MACHINE 8
+#define MAX_STATE_MACHINE 10
 
 static m_signal_t signal;
 static uint8_t num_state_in_used = 0;
 m_state_t current_state;
 m_state_transmit_t state_array[MAX_STATE_MACHINE] = {0};
 
-extern m_state_transmit_t smartconfig_done;
-extern m_state_transmit_t dev_actived_to_smart_cfg;
 extern m_state_transmit_t not_cfg_to_smart_cfg;
+extern m_state_transmit_t dev_actived_to_smart_cfg;
+extern m_state_transmit_t wait_mqtt_connect_to_smartcfg;
+extern m_state_transmit_t smartconfig_done;
 
 extern m_state_transmit_t not_cfg_to_ap_cfg;
 extern m_state_transmit_t dev_actived_to_ap_cfg;
@@ -23,6 +24,7 @@ extern m_state_transmit_t ap_config_done;
 
 extern m_state_transmit_t dev_get_mqtt;
 extern m_state_transmit_t dev_conn_mqtt;
+extern m_state_transmit_t dev_conn_mqtt_on_init;
 extern m_state_transmit_t dev_actived;
 
 void signal_handler_register(m_state_transmit_t new_state)
@@ -55,7 +57,9 @@ void m_event_init(void)
     signal_handler_register(dev_get_mqtt);
     signal_handler_register(dev_conn_mqtt);
     signal_handler_register(dev_actived);
-
+    signal_handler_register(dev_conn_mqtt_on_init);
+    signal_handler_register(wait_mqtt_connect_to_smartcfg);
+    
     /* check pair state */
     if (m_db_get_instance()->_get_dev_pair_state())
     {

@@ -110,7 +110,7 @@ void http_get(char *url, char* output)
 	}
 
 	/* get raw data */
-	char *raw_data = strstr(recv_buf, "\r\n\r\n\r\n");
+	char *raw_data = strstr(recv_buf, "\r\n\r\n");
 	if (raw_data == NULL) {
 		os_trace("raw data not found\r\n");
 		return;
@@ -140,7 +140,7 @@ void get_mqtt_info(void)
     if (!js_Root)
         return false;
 
-    cJSON *jsGetObject = cJSON_GetObjectItem(js_Root, "data\r\n");
+    cJSON *jsGetObject = cJSON_GetObjectItem(js_Root, "data");
     if (!jsGetObject)
         goto json_parse_fail;
     
@@ -151,9 +151,9 @@ void get_mqtt_info(void)
     /* Decode base 64 */
     uint16_t base64_len;
     uint8_t base64_data[MQTT_INFO_LEN];
-    memset(mqtt_info, 0, sizeof(mqtt_info));
+    memset(base64_data, 0, sizeof(base64_data));
     base64_len = b64_decode((uint8_t *)mqtt_info, strlen(mqtt_info), base64_data);
-    
+
     /* Decode AES */
     char real_msg[MQTT_INFO_LEN];
     size_t real_msg_len = 0;

@@ -24,12 +24,23 @@ m_state_transmit_t dev_get_mqtt = {
 void connect_mqtt_broker_handler(void *arg)
 {
     os_trace("connect_mqtt_broker_handler\r\n");
+
+    /* stop ble */
+    ble_deinit();
+
     /* mqtt start */
     m_mqtt_get_instance()._mqtt_start();
 }
 m_state_transmit_t dev_conn_mqtt = {
     .context = M_WIFI_CONN_MQTT,
     .signal = SIG_MQTT_GOT_INFO,
+    .next_state = M_WIFI_WAIT_MQTT_CONNECTED,
+    .signal_handler_cb = connect_mqtt_broker_handler
+};
+
+m_state_transmit_t dev_conn_mqtt_on_init = {
+    .context = M_WIFI_NOT_CFG,
+    .signal = SIG_WIFI_CONNECTED,
     .next_state = M_WIFI_WAIT_MQTT_CONNECTED,
     .signal_handler_cb = connect_mqtt_broker_handler
 };
@@ -66,4 +77,5 @@ m_state_transmit_t dev_actived_to_smart_cfg = {
     .context = M_WIFI_DEV_ACTIVE,
     .signal = SIG_SMART_CFG,
     .next_state = M_WIFI_SMARTCONFIG,
-    .signal_handler_cb = dev_actived_to_smart_cfg_handler};
+    .signal_handler_cb = dev_actived_to_smart_cfg_handler
+};

@@ -235,8 +235,10 @@ void ble_deinit(void)
     os_trace("MY BLE SLAVE ble_deinit\r\n");
 
     m_ble_data_t message;
-    while (xQueuePeek(ble_tx_queue, &message, (TickType_t)10) != pdFALSE)
-    {
+    if (ble_tx_queue != NULL) {
+        while (xQueuePeek(ble_tx_queue, &message, (TickType_t)10) != pdFALSE)
+        {
+        }
     }
 
     if (xHandle == NULL)
@@ -247,5 +249,10 @@ void ble_deinit(void)
     vTaskDelete(xHandle);
     xHandle = NULL;
 
-    vQueueDelete(ble_tx_queue);
+    if (ble_tx_queue != NULL) {
+        vQueueDelete(ble_tx_queue);
+        ble_tx_queue = NULL;
+    }
+
+    vTaskDelay(500);
 }
