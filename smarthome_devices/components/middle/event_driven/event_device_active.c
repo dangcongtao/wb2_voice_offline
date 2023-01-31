@@ -7,12 +7,13 @@
 #include "m_http_server.h"
 #include "m_http_client.h"
 
+extern char s_device_id[64];
+
 void get_mqtt_info_handler(void *arg)
 {
     // http client send GET request
     os_trace("get_mqtt_info_handler\r\n");
     get_mqtt_info();
-    *((m_signal_t *)arg) = SIG_MQTT_GOT_INFO;
 }
 m_state_transmit_t dev_get_mqtt = {
     .context = M_WIFI_GET_MQTT,
@@ -34,25 +35,26 @@ void connect_mqtt_broker_handler(void *arg)
 m_state_transmit_t dev_conn_mqtt = {
     .context = M_WIFI_CONN_MQTT,
     .signal = SIG_MQTT_GOT_INFO,
-    .next_state = M_WIFI_WAIT_MQTT_CONNECTED,
+    .next_state = M_WIFI_MQTT_CONNECTING,
     .signal_handler_cb = connect_mqtt_broker_handler
 };
 
 m_state_transmit_t dev_conn_mqtt_on_init = {
     .context = M_WIFI_NOT_CFG,
     .signal = SIG_WIFI_CONNECTED,
-    .next_state = M_WIFI_WAIT_MQTT_CONNECTED,
+    .next_state = M_WIFI_MQTT_CONNECTING,
     .signal_handler_cb = connect_mqtt_broker_handler
 };
 
 void device_active_handler(void *arg)
 {
     os_trace("device_active_handler\r\n");
-    // ble init
+    /* ble rename */
+    ble_set_name("Dungnt98");
     ble_init();
 }
 m_state_transmit_t dev_actived = {
-    .context = M_WIFI_WAIT_MQTT_CONNECTED,
+    .context = M_WIFI_MQTT_CONNECTING,
     .signal = SIG_MQTT_CONNECTED,
     .next_state = M_WIFI_DEV_ACTIVE,
     .signal_handler_cb = device_active_handler
@@ -61,13 +63,16 @@ m_state_transmit_t dev_actived = {
 /* device was actived */
 void dev_actived_to_smart_cfg_handler(void *arg)
 {
+    os_trace("dev_actived_to_smart_cfg_handler\r\n");
+
     // stop sta
-    m_wifi_get_instance().wifi_ap_stop_cb();
+    m_wifi_get_instance().wifi_sta_stop_cb();
 
     // stop mqtt
     m_mqtt_get_instance()._mqtt_stop();
 
     // enable ble
+    ble_set_name(s_device_id);
     ble_init();
     
     // scan wifi

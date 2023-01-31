@@ -142,7 +142,10 @@ static int wifi_sta_connect(char *ssid, char *pass)
     if (g_wifi_sta_is_connected == 1)
     {
         os_trace("sta has been connected\r\n");
-        return 0;
+        wifi_mgmr_sta_disconnect();
+        wifi_mgmr_sta_autoconnect_set(WIFI_RECONN_INTERVAL_SEC, WIFI_RECONN_REPEAT_TIMES);
+        wifi_mgmr_sta_autoconnect_enable();
+        return wifi_mgmr_sta_connect(g_wifi_sta_interface, ssid, pass, NULL, NULL, 0, 0);
     }
     else
     {
@@ -154,15 +157,19 @@ static int wifi_sta_connect(char *ssid, char *pass)
 
 void m_wifi_sta_start(char *ssid, char *pass)
 {
+    os_trace("m_wifi_sta_start\r\n");
     wifi_sta_connect(ssid, pass);
 }
 
 void m_wifi_sta_stop(void)
 {
+    os_trace("m_wifi_sta_stop\r\n");
+
     wifi_mgmr_sta_disconnect();
-    vTaskDelay(1000);
+    while(g_wifi_sta_is_connected)
+        vTaskDelay(100);
+
     wifi_mgmr_sta_disable(NULL);
     vTaskDelay(100);
-
-    g_wifi_sta_is_connected = 0;
+    os_trace("wifi_mgmr_sta_disable\r\n");
 }

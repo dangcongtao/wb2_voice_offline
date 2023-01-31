@@ -30,6 +30,7 @@ uint32_t len_msg_encrypted = MAXIMUM_SIZE_MESSAGE;
 
 axk_mqtt_client_handle_t client = NULL;
 
+extern void signal_post(m_signal_t sig);
 extern void push_data_to_pqueue(m_data_t *message);
 
 static void mqtt_on_message(char *data, uint32_t len);
@@ -52,6 +53,7 @@ static axk_err_t mqtt_event_handler_cb(axk_mqtt_event_handle_t event)
     case MQTT_EVENT_CONNECTED:
         os_trace("MQTT_EVENT_CONNECTED\r\n");
         axk_mqtt_client_subscribe(client, s_mqtt_obj.mqtt_info.topic_sub, 0);
+        signal_post(SIG_MQTT_CONNECTED);
         break;
 
     case MQTT_EVENT_DISCONNECTED:

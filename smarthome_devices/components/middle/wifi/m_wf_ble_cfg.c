@@ -103,7 +103,7 @@ bool save_mqtt_info(char *json)
     /* get server port */
     jsGetObject = cJSON_GetObjectItem(js_Root, CJSON_KEY_S_PORT);
     if (!jsGetObject)
-        return false;
+        goto json_parse_fail;
     mqtt_port = jsGetObject->valueint;
     mqtt.set_mqtt_port(mqtt_port);
     os_trace("set_mqtt_port\r\n");
@@ -129,10 +129,15 @@ bool save_mqtt_info(char *json)
     m_db_get_instance()->_request_sync_db();
     vTaskDelay(pdMS_TO_TICKS(2000));
 
+    cJSON_Delete(js_Root);
+
+    signal_post(SIG_MQTT_GOT_INFO);
+
+    return true;
+
 json_parse_fail:
     cJSON_Delete(js_Root);
-    
-    return true;
+    return false;
 }
 
 void m_ble_cfg_clear_state(void)

@@ -234,15 +234,15 @@ void ble_deinit(void)
 {
     os_trace("MY BLE SLAVE ble_deinit\r\n");
 
+    if (xHandle == NULL)
+        return;
+
     m_ble_data_t message;
     if (ble_tx_queue != NULL) {
         while (xQueuePeek(ble_tx_queue, &message, (TickType_t)10) != pdFALSE)
         {
         }
     }
-
-    if (xHandle == NULL)
-        return;
 
     my_ble_deinit();
 
@@ -255,4 +255,10 @@ void ble_deinit(void)
     }
 
     vTaskDelay(500);
+}
+
+
+void ble_set_name(char* name)
+{
+    my_ble_set_name(name);
 }

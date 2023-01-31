@@ -10,11 +10,14 @@
 #include "m_database.h"
 #include "m_http_server.h"
 
+extern char s_device_id[64];
+
 void wifi_not_cfg_to_smart_cfg_handler(void *arg)
 {
     os_trace("wifi_not_cfg_to_smart_cfg_handler\r\n");
 
     // enable ble
+    ble_set_name(s_device_id);
     ble_init();
 
     // stop wifi sta
@@ -31,7 +34,7 @@ m_state_transmit_t not_cfg_to_smart_cfg = {
 };
 
 m_state_transmit_t wait_mqtt_connect_to_smartcfg = {
-    .context = M_WIFI_WAIT_MQTT_CONNECTED,
+    .context = M_WIFI_MQTT_CONNECTING,
     .signal = SIG_SMART_CFG,
     .next_state = M_WIFI_SMARTCONFIG,
     .signal_handler_cb = wifi_not_cfg_to_smart_cfg_handler

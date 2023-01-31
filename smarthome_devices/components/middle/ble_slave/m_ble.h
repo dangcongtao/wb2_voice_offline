@@ -11,5 +11,6 @@
 void ble_init(void);
 void ble_deinit(void);
 void ble_send_data(char *data, uint32_t length);
+void ble_set_name(char* name);
 
 #endif

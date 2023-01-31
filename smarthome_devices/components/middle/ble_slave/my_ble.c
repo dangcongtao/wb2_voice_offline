@@ -1,6 +1,15 @@
 #include "my_ble.h"
+#include <string.h>
 
-extern char s_device_id[64];
+#include <FreeRTOS.h>
+#include <task.h>
+
+#include "gatt.h"
+#include "conn.h"
+#include "conn_internal.h"
+#include "hci_core.h"
+
+static char ble_name[64];
 // #define NAME_DEVICE "HUN167291413297wswitch2vN1"
 
 /*自定义UUID*/
@@ -149,18 +158,29 @@ void my_ble_notify(struct bt_conn *conn, char *buf, u16_t len)
     bt_gatt_notify(conn, notify_attrs, buf, len);
 }
 
+static void ble_stack_start(void)
+{
+    // Initialize BLE controller
+    ble_controller_init(configMAX_PRIORITIES - 1);
+    // Initialize BLE Host stack
+    hci_driver_init();
+    bt_enable(bt_ready_cb);
+}
+
 /*BLE初始化函数*/
 void my_ble_init(void)
 {                                                        
-    printf("%*s: %s\r\n", 100, "my_ble_init: ", s_device_id);
-    ble_controller_init(configMAX_PRIORITIES - 1); //ble协议栈初始化
-    hci_driver_init();//初始化驱动
-    bt_enable(bt_ready_cb);
+    printf("my_ble_init\r\n");
+
+    ble_stack_start();
     bt_gatt_service_register((struct bt_gatt_service *)&BLE_GATT_SER); //注册GATT服务     
     notify_attrs = &ble_Attributes[4];   //对应notify 
     bt_conn_cb_register(&conn_callbacks);
+    
     my_ble_start_advertise();//开启广播
-    bt_set_name(s_device_id); //设置蓝牙名称  
+
+    printf("BLE naem: %s\r\n", ble_name);
+    bt_set_name(ble_name); //设置蓝牙名称  
 }
 /*注册蓝牙接收回调*/
 void my_ble_recv_register(my_ble_recv_data_cb_t ble_recv_cb)
@@ -173,11 +193,49 @@ void my_ble_connect_register(my_ble_connet_status_cb_t ble_connet_cb)
     static_ble_connet_status_cb = ble_connet_cb;
 }
 
+static void ble_disconnect_all(struct bt_conn *conn, void *data)
+{
+    if (conn->state == BT_CONN_CONNECTED)
+    {
+        printf("[BLE] disconn id:%d \r\n", conn->id);
+        bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+    }
+}
+
 void my_ble_deinit(void)
-{                                                        
+{
     printf("my_ble_deinit\r\n");
 
-    ble_controller_deinit();
-    bt_disable();
+    bt_conn_foreach(BT_CONN_TYPE_ALL, ble_disconnect_all, NULL);
+
+    /* wait for all connection to be disconnected */
+    int disconn_cnt = 0;
+    while (le_check_valid_conn() && disconn_cnt++ < 10) {
+        printf("[BLE] wait for ble_disconnect_all\r\n");
+        vTaskDelay(pdMS_TO_TICKS(500));
+    }
+
+    bt_gatt_service_unregister((struct bt_gatt_service *)&BLE_GATT_SER);
+    
+    bt_le_adv_stop();
+
+    int err = bt_disable();
+    if (err)
+    {
+        printf("Fail to disable bt, there is existed scan/adv/conn event\r\n");
+    }
+    else
+    {
+        printf("Disable bt successfully\r\n");
+    }
 }
- 
+
+void my_ble_set_name(char* name)
+{
+    // bt_le_adv_stop();
+    // my_ble_start_advertise();
+    // bt_set_name(name);
+    int len = strlen(name) > sizeof(ble_name) ? sizeof(ble_name): strlen(name);
+    memset(ble_name, 0, sizeof(ble_name));
+    memcpy(ble_name, name, len);
+}

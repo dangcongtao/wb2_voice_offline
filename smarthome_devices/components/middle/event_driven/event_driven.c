@@ -8,6 +8,25 @@
 
 #define MAX_STATE_MACHINE 10
 
+const char* state_machine[] = {
+    "M_WIFI_START",
+    "M_WIFI_DISCONNECT",
+    "M_WIFI_CONNECTED",
+    "M_WIFI_SMARTCONFIG",
+    "M_WIFI_WAIT_SMARTCONFIG_DONE",
+    "M_WIFI_APCONFIG",
+    "M_WIFI_WAIT_APCONFIG_DONE",
+    "M_WIFI_APCONFIG_DONE",
+    "M_WIFI_CONFIG_DONE",
+    "M_WIFI_WAIT_EVENT",
+    "M_WIFI_GET_MQTT",
+    "M_WIFI_CONN_MQTT",
+    "M_WIFI_MQTT_CONNECTING",
+    "M_WIFI_DEV_ACTIVE",
+    "M_WIFI_NOT_CFG",
+    NULL
+};
+
 static m_signal_t signal;
 static uint8_t num_state_in_used = 0;
 m_state_t current_state;
@@ -75,9 +94,14 @@ void m_event_loop(void)
     {
         if ((signal == state_array[i].signal) && (current_state == state_array[i].context))
         {
-            if (state_array[i].signal_handler_cb)
-                state_array[i].signal_handler_cb(&signal);
+            if (state_array[i].signal_handler_cb) {
+                signal = SIG_NONE;
+                state_array[i].signal_handler_cb(NULL);
+            }
             current_state = state_array[i].next_state;
+
+            os_trace("From %s Change to %s\r\n", 
+                    state_machine[state_array[i].context], state_machine[current_state]);
             break;
         }
         else if (i == (SIZEOF_ARRAY(state_array) - 1))
