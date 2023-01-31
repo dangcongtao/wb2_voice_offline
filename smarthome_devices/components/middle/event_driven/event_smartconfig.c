@@ -1,5 +1,9 @@
 #include "event_driven.h"
 
+#include <FreeRTOS.h>
+#include <task.h>
+#include <timers.h>
+
 #include "m_ble.h"
 #include "m_wifi.h"
 #include "m_led_stt.h"
@@ -23,8 +27,14 @@ m_state_transmit_t not_cfg_to_smart_cfg = {
 void smartconfig_done_handler(void *arg)
 {
     os_trace("smartconfig_done_handler\r\n");
+    
+    vTaskDelay(pdMS_TO_TICKS(500));
+
     // stop ble
     ble_deinit();
+
+    // stop wifi sta
+    m_wifi_get_instance().wifi_sta_stop_cb();
 
     // wifi sta start
     char *ssid = m_wifi_get_instance()._wifi_info._ssid;

@@ -158,7 +158,7 @@ void get_mqtt_info(void)
     char real_msg[MQTT_INFO_LEN];
     size_t real_msg_len = 0;
     memset(real_msg, 0, sizeof(real_msg));
-    aes_cbc128_init(DEF_AES_KEY, DEF_AES_IV);
+    aes_cbc128_init((uint8_t*)DEF_AES_KEY, (uint8_t*)DEF_AES_IV);
     if (aes_cbc128_decrypt((uint8_t *)base64_data, base64_len, (uint8_t *)real_msg, &real_msg_len) != AES_SUCCESS) {
         goto json_parse_fail;
     }

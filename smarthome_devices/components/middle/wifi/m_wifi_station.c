@@ -16,6 +16,8 @@ extern int g_wifi_mode;
 static int g_wifi_sta_is_connected = 0;
 static wifi_interface_t g_wifi_sta_interface = NULL;
 
+extern void signal_post(m_signal_t sig);
+
 void m_wifi_sta_event_cb(input_event_t *event, void *private_data)
 {
     static char *ssid;
@@ -44,6 +46,7 @@ void m_wifi_sta_event_cb(input_event_t *event, void *private_data)
         g_wifi_sta_is_connected = 0;
         os_trace("wifi sta disconnected\r\n");
         // g_wifi_obj.wifi_set_state_cb(M_WIFI_DISCONNECT);
+        signal_post(SIG_WIFI_DISCONNECT);
         break;
 
     case CODE_WIFI_ON_GOT_IP:
@@ -57,6 +60,7 @@ void m_wifi_sta_event_cb(input_event_t *event, void *private_data)
         
         // Start the connection of MQTT
         // g_wifi_obj.wifi_set_state_cb(M_WIFI_CONNECTED);
+        signal_post(SIG_WIFI_CONNECTED);
 
         break;
 
@@ -137,7 +141,7 @@ static int wifi_sta_connect(char *ssid, char *pass)
     g_wifi_sta_interface = wifi_mgmr_sta_enable();
     if (g_wifi_sta_is_connected == 1)
     {
-        os_trace("sta has connect\r\n");
+        os_trace("sta has been connected\r\n");
         return 0;
     }
     else
@@ -159,4 +163,6 @@ void m_wifi_sta_stop(void)
     vTaskDelay(1000);
     wifi_mgmr_sta_disable(NULL);
     vTaskDelay(100);
+
+    g_wifi_sta_is_connected = 0;
 }

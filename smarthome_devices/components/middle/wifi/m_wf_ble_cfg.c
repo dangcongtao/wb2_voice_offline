@@ -19,6 +19,8 @@
 #include <bl_os_private.h>
 #include <wifi_mgmr_ext.h>
 
+extern void signal_post(m_signal_t sig);
+
 static uint8_t smart_cfg_get_data = 0;
 
 uint8_t ble_cfg_parse_data(cJSON *js_Root)
@@ -64,6 +66,7 @@ uint8_t ble_cfg_parse_data(cJSON *js_Root)
     vTaskDelay(pdMS_TO_TICKS(2000));
 
     smart_cfg_get_data = 1;
+    signal_post(SIG_SMART_CFG_DONE);
 
     return 1;
 

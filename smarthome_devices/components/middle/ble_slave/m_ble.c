@@ -221,26 +221,31 @@ void ble_send_data(char *data, uint32_t length)
 
 void ble_init(void)
 {
-    os_trace("MY BLE SLAVE\r\n");
+    os_trace("MY BLE SLAVE ble_init\r\n");
 
     if (xHandle != NULL)
         return;
-        
+
     ble_init_queue();
     xTaskCreate(ble_task, "ble slave", 1024 * 3, NULL, 15, &xHandle);
 }
 
 void ble_deinit(void)
 {
-    os_trace("MY BLE SLAVE\r\n");
+    os_trace("MY BLE SLAVE ble_deinit\r\n");
+
+    m_ble_data_t message;
+    while (xQueuePeek(ble_tx_queue, &message, (TickType_t)10) != pdFALSE)
+    {
+    }
 
     if (xHandle == NULL)
         return;
-    
+
     my_ble_deinit();
 
     vTaskDelete(xHandle);
     xHandle = NULL;
-    
+
     vQueueDelete(ble_tx_queue);
 }

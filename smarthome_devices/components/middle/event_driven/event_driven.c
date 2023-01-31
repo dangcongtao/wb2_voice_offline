@@ -21,6 +21,7 @@ extern m_state_transmit_t not_cfg_to_ap_cfg;
 extern m_state_transmit_t dev_actived_to_ap_cfg;
 extern m_state_transmit_t ap_config_done;
 
+extern m_state_transmit_t dev_get_mqtt;
 extern m_state_transmit_t dev_conn_mqtt;
 extern m_state_transmit_t dev_actived;
 
@@ -51,6 +52,7 @@ void m_event_init(void)
     signal_handler_register(smartconfig_done);
     signal_handler_register(not_cfg_to_ap_cfg);
     signal_handler_register(ap_config_done);
+    signal_handler_register(dev_get_mqtt);
     signal_handler_register(dev_conn_mqtt);
     signal_handler_register(dev_actived);
 
