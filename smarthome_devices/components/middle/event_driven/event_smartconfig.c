@@ -17,8 +17,9 @@ void wifi_not_cfg_to_smart_cfg_handler(void *arg)
     os_trace("wifi_not_cfg_to_smart_cfg_handler\r\n");
 
     // enable ble
-    ble_set_name(s_device_id);
-    ble_init();
+    // ble_deinit();
+    ble_set_name(s_device_id, 1);
+    // ble_init();
 
     // stop wifi sta
     m_wifi_get_instance().wifi_sta_stop_cb();
@@ -47,7 +48,7 @@ void smartconfig_done_handler(void *arg)
     vTaskDelay(pdMS_TO_TICKS(500));
 
     // stop ble
-    ble_deinit();
+    // ble_deinit();
 
     // stop wifi sta
     m_wifi_get_instance().wifi_sta_stop_cb();

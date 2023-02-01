@@ -68,7 +68,7 @@ void main(void)
     m_led_stt_init();
 
     process_data_init();
-    // ble_init();
+    ble_init();
     m_event_init();
     
     /* start stack */

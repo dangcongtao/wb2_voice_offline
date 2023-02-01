@@ -9,7 +9,7 @@
 #include "conn_internal.h"
 #include "hci_core.h"
 
-static char ble_name[64];
+static char ble_name[64] = {0};
 // #define NAME_DEVICE "HUN167291413297wswitch2vN1"
 
 /*自定义UUID*/
@@ -179,7 +179,13 @@ void my_ble_init(void)
     
     my_ble_start_advertise();//开启广播
 
-    printf("BLE naem: %s\r\n", ble_name);
+    if (strlen(ble_name) == 0)
+    {
+
+        sprintf(ble_name, "dungnt98");
+        printf("BLE name: %s\r\n", ble_name);
+    }
+
     bt_set_name(ble_name); //设置蓝牙名称  
 }
 /*注册蓝牙接收回调*/
@@ -230,12 +236,24 @@ void my_ble_deinit(void)
     }
 }
 
-void my_ble_set_name(char* name)
+void my_ble_set_name(char* name, uint8_t is_restart_adv)
 {
-    // bt_le_adv_stop();
-    // my_ble_start_advertise();
-    // bt_set_name(name);
     int len = strlen(name) > sizeof(ble_name) ? sizeof(ble_name): strlen(name);
     memset(ble_name, 0, sizeof(ble_name));
     memcpy(ble_name, name, len);
+
+    if (is_restart_adv) 
+    {
+        /* stop adv */
+        if (bt_le_adv_stop()) 
+        {
+            printf("Fail to stop adv\r\n");
+        }
+
+        /* set new name */
+        bt_set_name(ble_name);
+        
+        /* re-start adv */
+        my_ble_start_advertise();
+    }
 }

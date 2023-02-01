@@ -27,7 +27,7 @@ void connect_mqtt_broker_handler(void *arg)
     os_trace("connect_mqtt_broker_handler\r\n");
 
     /* stop ble */
-    ble_deinit();
+    // ble_deinit();
 
     /* mqtt start */
     m_mqtt_get_instance()._mqtt_start();
@@ -50,8 +50,8 @@ void device_active_handler(void *arg)
 {
     os_trace("device_active_handler\r\n");
     /* ble rename */
-    ble_set_name("Dungnt98");
-    ble_init();
+    ble_set_name("Dungnt98", 1);
+    // ble_init();
 }
 m_state_transmit_t dev_actived = {
     .context = M_WIFI_MQTT_CONNECTING,
@@ -71,9 +71,10 @@ void dev_actived_to_smart_cfg_handler(void *arg)
     // stop mqtt
     m_mqtt_get_instance()._mqtt_stop();
 
-    // enable ble
-    ble_set_name(s_device_id);
-    ble_init();
+    // re-enable ble
+    // ble_deinit();
+    ble_set_name(s_device_id, 1);
+    // ble_init();
     
     // scan wifi
     m_wifi_get_instance().wifi_scan_cb();
