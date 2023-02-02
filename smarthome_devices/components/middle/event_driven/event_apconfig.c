@@ -60,6 +60,6 @@ void ap_config_done_handler(void *arg)
 m_state_transmit_t ap_config_done = {
     .context = M_WIFI_APCONFIG,
     .signal = SIG_AP_CFG_DONE,
-    .next_state = M_WIFI_GET_MQTT,
+    .next_state = M_WIFI_CONNECTING,
     .signal_handler_cb = ap_config_done_handler
 };

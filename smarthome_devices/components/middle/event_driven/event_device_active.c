@@ -6,17 +6,34 @@
 #include "m_database.h"
 #include "m_http_server.h"
 #include "m_http_client.h"
+#include "m_mqtt.h"
 
 extern char s_device_id[64];
+extern void signal_post(m_signal_t sig);
 
 void get_mqtt_info_handler(void *arg)
 {
     // http client send GET request
     os_trace("get_mqtt_info_handler\r\n");
+
+    // uint32_t port = m_mqtt_get_instance().mqtt_info.port;
+    // char* server = m_mqtt_get_instance().mqtt_info.server;
+    // char* user = m_mqtt_get_instance().mqtt_info.username;
+    // char* passwd = m_mqtt_get_instance().mqtt_info.passwd;
+
+    os_trace("check\r\n");
+    if (port != 0 && strlen(server) > 0 /* && strlen(user) > 0 && strlen(passwd) > 0 */)
+    {
+        os_trace("Device had been actived ago\r\n");
+        // signal_post(SIG_MQTT_GOT_INFO);
+        // *(m_signal_t*)arg = SIG_MQTT_GOT_INFO;
+        return;
+    }
+
     get_mqtt_info();
 }
 m_state_transmit_t dev_get_mqtt = {
-    .context = M_WIFI_GET_MQTT,
+    .context = M_WIFI_CONNECTING,
     .signal = SIG_WIFI_CONNECTED,
     .next_state = M_WIFI_CONN_MQTT,
     .signal_handler_cb = get_mqtt_info_handler
@@ -35,13 +52,6 @@ void connect_mqtt_broker_handler(void *arg)
 m_state_transmit_t dev_conn_mqtt = {
     .context = M_WIFI_CONN_MQTT,
     .signal = SIG_MQTT_GOT_INFO,
-    .next_state = M_WIFI_MQTT_CONNECTING,
-    .signal_handler_cb = connect_mqtt_broker_handler
-};
-
-m_state_transmit_t dev_conn_mqtt_on_init = {
-    .context = M_WIFI_NOT_CFG,
-    .signal = SIG_WIFI_CONNECTED,
     .next_state = M_WIFI_MQTT_CONNECTING,
     .signal_handler_cb = connect_mqtt_broker_handler
 };

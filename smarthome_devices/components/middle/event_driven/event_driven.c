@@ -43,7 +43,6 @@ extern m_state_transmit_t ap_config_done;
 
 extern m_state_transmit_t dev_get_mqtt;
 extern m_state_transmit_t dev_conn_mqtt;
-extern m_state_transmit_t dev_conn_mqtt_on_init;
 extern m_state_transmit_t dev_actived;
 
 void signal_handler_register(m_state_transmit_t new_state)
@@ -76,7 +75,6 @@ void m_event_init(void)
     signal_handler_register(dev_get_mqtt);
     signal_handler_register(dev_conn_mqtt);
     signal_handler_register(dev_actived);
-    signal_handler_register(dev_conn_mqtt_on_init);
     signal_handler_register(wait_mqtt_connect_to_smartcfg);
     
     /* check pair state */
@@ -85,6 +83,7 @@ void m_event_init(void)
         char *ssid = m_wifi_get_instance()._wifi_info._ssid;
         char *pass = m_wifi_get_instance()._wifi_info._passwd;
         m_wifi_get_instance().wifi_sta_start_cb(ssid, pass);
+        current_state = M_WIFI_CONNECTING;
     }
 }
 
@@ -96,7 +95,7 @@ void m_event_loop(void)
         {
             if (state_array[i].signal_handler_cb) {
                 signal = SIG_NONE;
-                state_array[i].signal_handler_cb(NULL);
+                state_array[i].signal_handler_cb(&signal);
             }
             current_state = state_array[i].next_state;
 
