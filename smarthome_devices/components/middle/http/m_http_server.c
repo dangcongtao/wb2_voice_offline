@@ -80,9 +80,9 @@ static void tcp_accept_handle_cb(void *arg)
     int ret = 0;
     char data[MAX_HTTP_REQUEST_LEN] = {0};
     char *respond;
-
-    // while (1) 
-    // {
+    int timeout_retry_ms = 500;
+    do 
+    {
         memset(data, 0, sizeof(data));
         ret = tcp_server_receive(tcp_client_msg->socket_id, data);
         if (ret > 0)
@@ -121,11 +121,17 @@ static void tcp_accept_handle_cb(void *arg)
                 tcp_server_send(tcp_client_msg->socket_id, http_index_hml);
             }
 
-            // break;
+            break;
+        }
+        else if (ret < 0 ) {
+            timeout_retry_ms -= 100;
+        }
+        else {
+            break;
         }
 
         vTaskDelay(pdMS_TO_TICKS(100));
-    // }
+    } while (timeout_retry_ms);
 
     tcp_server_close(tcp_client_msg->socket_id);
     os_trace("tcp_accept_handle_cb delete task\r\n");
