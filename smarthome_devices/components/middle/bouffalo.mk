@@ -48,6 +48,7 @@ COMPONENT_SRCS := database/m_database.c \
 				  mqtt/m_mqtt_client_props.c \
 				  mqtt/m_mqtt_client_method.c \
 				  ota/m_ota.c \
+				  http/tcp_server.c \
 				  http/m_http_client.c \
 				  http/m_http_server.c \
 				  http/m_http_services.c \

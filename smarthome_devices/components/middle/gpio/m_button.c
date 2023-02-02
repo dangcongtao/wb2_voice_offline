@@ -18,6 +18,9 @@ static m_button_t s_button_obj;
 extern uint32_t max_number_channel;
 uint32_t ignore_event_release[MAX_NUM_BUTTON] = {0};
 
+#define EVENT_BTN_HOLD          1
+#define EVENT_BTN_HOLD_SO_LONG  2
+
 static const char *event_name[] = {"pressed", "release",
                                    "hold", "hold so long",
                                    "double click", "tripple click",
@@ -39,11 +42,22 @@ void on_button_event_cb(int button_pin, int event, void *data)
 
     case APP_BTN_EVT_RELEASED:
     {
-        if (ignore_event_release[button_pin])
+        if (ignore_event_release[button_pin] == EVENT_BTN_HOLD)
         {
+            m_db_get_instance()->_reset_db_cb();
+            m_wifi_get_instance().start_smart_config_cb();
             ignore_event_release[button_pin] = 0;
             return;
         }
+
+        else if (ignore_event_release[button_pin] == EVENT_BTN_HOLD_SO_LONG)
+        {
+            m_db_get_instance()->_reset_db_cb();
+            m_wifi_get_instance().start_ap_config_cb();
+            ignore_event_release[button_pin] = 0;
+            return;
+        }
+
         /* just support buttons, not support sensor */
         m_switch_get_instance()._toggle_switch_cb(button_pin, 1, true, true);
     }
@@ -53,21 +67,18 @@ void on_button_event_cb(int button_pin, int event, void *data)
     {
         /* factory reset database */
         m_led_stt_get_instance()._set_led_stt_smart_config_cb();
-        m_wifi_get_instance().start_smart_config_cb();
-        m_db_get_instance()->_reset_db_cb();
-        ignore_event_release[button_pin] = 1;
+        ignore_event_release[button_pin] = EVENT_BTN_HOLD;
     }
     break;
 
     case APP_BTN_EVT_HOLD_SO_LONG:
     {
-        if (ignore_event_release[button_pin] == 2)
+        if (ignore_event_release[button_pin] == EVENT_BTN_HOLD_SO_LONG)
             return;
 
         /* factory reset database */
         m_led_stt_get_instance()._set_led_stt_ap_config_cb();
-        m_wifi_get_instance().start_ap_config_cb();
-        ignore_event_release[button_pin] = 2;
+        ignore_event_release[button_pin] = EVENT_BTN_HOLD_SO_LONG;
     }
     break;
 

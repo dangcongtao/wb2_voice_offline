@@ -7,6 +7,9 @@
 #include "lwip/api.h"
 #include <stdint.h>
 
+#define MAX_HTTP_REQUEST_LEN    1500
+#define MAX_HTTP_RESPONSE_LEN MAX_HTTP_REQUEST_LEN
+
 typedef char* (*p_handler_t)(char* buf);
 
 typedef struct {

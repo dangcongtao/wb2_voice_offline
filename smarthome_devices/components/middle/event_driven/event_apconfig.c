@@ -14,11 +14,11 @@ void wifi_not_cfg_to_ap_cfg_handler(void *arg)
     // scan wifi
     m_wifi_get_instance().wifi_scan_cb();
 
-    // start http server
-    m_http_server_start();
-
     // start ap
     m_wifi_get_instance().wifi_ap_start_cb();
+
+    // start http server
+    m_http_server_start();
 }
 m_state_transmit_t not_cfg_to_ap_cfg = {
     .context = M_WIFI_NOT_CFG,
@@ -46,10 +46,20 @@ m_state_transmit_t dev_actived_to_ap_cfg = {
 // {M_WIFI_APCONFIG, SIG_AP_CFG_DONE, M_WIFI_GET_MQTT},
 void ap_config_done_handler(void *arg)
 {
-    // get mqtt info
+    // stop http server
+    m_http_stop();
+
+    // stop wifi sta
+    m_wifi_get_instance().wifi_ap_stop_cb();
+
+    // wifi sta start
+    char *ssid = m_wifi_get_instance()._wifi_info._ssid;
+    char *pass = m_wifi_get_instance()._wifi_info._passwd;
+    m_wifi_get_instance().wifi_sta_start_cb(ssid, pass);
 }
 m_state_transmit_t ap_config_done = {
     .context = M_WIFI_APCONFIG,
     .signal = SIG_AP_CFG_DONE,
     .next_state = M_WIFI_GET_MQTT,
-    .signal_handler_cb = ap_config_done_handler};
+    .signal_handler_cb = ap_config_done_handler
+};

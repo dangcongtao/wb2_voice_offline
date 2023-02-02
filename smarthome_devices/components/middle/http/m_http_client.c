@@ -22,8 +22,6 @@
 #define HTTP_REQUEST_LEN    256
 #define HTTP_RESP_LEN       512
 #define MQTT_INFO_LEN       256
-#define DEF_AES_KEY     "yAlaCKUYI3qr0kTd"
-#define DEF_AES_IV      "QFjnL4GVODlNB0eZ"
 
 extern char s_device_id[64];
 extern char *gs_dev_type[];

@@ -31,11 +31,11 @@ void main_loop(void)
     {
         m_event_loop();
 
-        old += 1;
-        if (old > 20) {
-            old = 0;
-            os_trace("Free memory: %d\r\n", xPortGetFreeHeapSize());
-        }
+        // old += 1;
+        // if (old > 20) {
+        //     old = 0;
+        //     os_trace("Free memory: %d\r\n", xPortGetFreeHeapSize());
+        // }
 
         vTaskDelay(pdMS_TO_TICKS(100)); /* should be 500ms to make it's priority low */
     }

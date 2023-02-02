@@ -4,6 +4,9 @@
 #include "app_config.h"
 #include <stdint.h>
 
+#define DEF_AES_KEY     "yAlaCKUYI3qr0kTd"
+#define DEF_AES_IV      "QFjnL4GVODlNB0eZ"
+
 #define CJSON_KEY_ACTION        "action"
 #define CJSON_KEY_ACT_ID        "act_id"
 #define CJSON_KEY_USER_ID       "u"

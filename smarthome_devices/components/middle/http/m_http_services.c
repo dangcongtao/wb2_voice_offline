@@ -11,69 +11,64 @@
 #include "m_wf_scan.h"
 
 #define MAX_NUM_SERVICES    4
-#define MAX_RESP_LEN        1024
 
-char* m_apconfig_step1(char* req);
-char* m_apconfig_step2(char* req);
+char* m_apconfig_step1(char* request_buf);
+char* m_apconfig_step2(char* request_buf);
 
 extern uint32_t counter;
 extern wifi_mgmr_ap_item_t ap_ary_p[WIFI_SCAN_MAX_AP];
 extern void ble_send_data(char *data, uint32_t length);
 
-http_service_t apconfig = {
-    .uri       = "/apconfig",
+http_service_t get_info = {
+    .uri       = "/get_info",
     .method    = "GET",
     .handler   = m_apconfig_step1,
 };
 
-http_service_t wificonfig = {
-    .uri       = "/wificonfig",
+http_service_t set_info = {
+    .uri       = "/set_info",
     .method    = "POST",
     .handler   = m_apconfig_step2,
 };
 
-char* m_apconfig_step1(char *req)
+char* m_apconfig_step1(char* buf)
 {
     int n = 0;
 
     os_trace("\tAPCONFIG STEP 1\r\n");
 
     /* show wifi around me */
-    char* resp = malloc(sizeof(char) * MAX_RESP_LEN);
-    memset(resp, 0, sizeof(resp));
+    memset(buf, 0, MAX_HTTP_RESPONSE_LEN);
 
-    n = sprintf(resp, "{\"APs\": [");
+    n = sprintf(buf, "{\"wifis\": [");
     for (uint8_t i = 0; i < counter; i++)
     {
-        n += sprintf(&resp[n], "{\"id\": %d, \"rssi\": %d, \"ssid\": \"%s\"},",
+        n += sprintf(&buf[n], "{\"id\": %d, \"rssi\": %d, \"ssid\": \"%s\"},",
                      i, ap_ary_p[i].rssi, ap_ary_p[i].ssid);
     }
-    n += sprintf(&resp[n - 1], "], \"device_id\": \"%s\", \"extra\": %d, \"type\": \"%s\"}",
-                 m_db_get_instance()->_get_dev_id(), EXTRAS, gs_dev_type[device_type]);
+    n += sprintf(&buf[n - 1], "], \"root_id\": \"%s\", \"root_type\": \"%s\", \"result\": 1}",
+                 m_db_get_instance()->_get_dev_id(), gs_dev_type[device_type]);
 
-    return resp;
+    os_trace("APCONFIG STEP 1 DONE\r\n");
+
+    return buf;
 }
 
-char* m_apconfig_step2(char* req)
+char* m_apconfig_step2(char* buf)
 {
     os_trace("APCONFIG STEP 2\r\n");
 
-    char* temp = strstr(req, "\r\n\r\n");
-    if (temp == NULL) {
-        os_trace("not found http header ending\r\n");
-        return NULL;
-    }
-    temp += strlen("\r\n\r\n");
-
     /* parser data to get info of wifi & mqtt server */
-    apconfig_parse_wifi_info(temp);
+    if (apconfig_parse_wifi_info(buf) == false)
+    {
+        os_trace("ap_config parse data fail\r\n");
+    }
 
     /* Send response */
-    char* resp = malloc(sizeof(char) * MAX_RESP_LEN);
-    memset(resp, 0, sizeof(resp));
-    sprintf(resp, "{\"result\": 1}");
+    memset(buf, 0, MAX_HTTP_RESPONSE_LEN);
+    sprintf(buf, "{\"result\": 1}");
 
-    return resp;
+    return buf;
 }
 
 void m_ble_config_step1(void)
@@ -138,7 +133,7 @@ void m_ble_config_step2(void)
 
 char* m_http_services(char* buf, uint16_t len)
 {
-    http_service_t services[MAX_NUM_SERVICES] = {wificonfig, apconfig};
+    http_service_t services[MAX_NUM_SERVICES] = {set_info, get_info};
     char* temp = NULL;
 
     for (int i = 0; i < MAX_NUM_SERVICES; i++)

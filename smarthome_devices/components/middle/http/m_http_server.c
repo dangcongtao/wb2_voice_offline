@@ -11,6 +11,7 @@
 #include "lwip/sys.h"
 #include "lwip/netdb.h"
 #include "lwip/api.h"
+#include "lwip/sockets.h"
 
 #include <FreeRTOS.h>
 #include "portmacro.h"
@@ -31,8 +32,22 @@
 
 #include <wifi_mgmr_ext.h>
 
+#include <FreeRTOS.h>
+#include <task.h>
+#include <stdio.h>
+#include <string.h>
+#include <blog.h>
+#include <aos/yloop.h>
+#include <aos/kernel.h>
+#include <lwip/sockets.h>
+#include <lwip/tcpip.h>
+#include <wifi_mgmr_ext.h>
+#include <cli.h>
+#include <hal_wifi.h>
+#include <lwip/init.h>
+#include "tcp_server.h"
+
 #define SERVER_PORT 80
-#define MAX_LEN_HTTP_REQUEST 1024
 
 static uint8_t stop_http_server = 0;
 
@@ -53,143 +68,92 @@ const static char http_index_hml[] = "<!DOCTYPE html>"
                                      "</body>\n"
                                      "</html>\n";
 
-static void web_http_server(struct netconn *conn)
+/**
+ * @brief tcp_accpet_handle_cb
+ *
+ * @param arg
+ */
+static void tcp_accept_handle_cb(void *arg)
 {
-    err_t err;
-    struct netbuf *inputbuf;
-    char *buf;
-    char *resond;
-    u16_t buflen;
+    tcp_client_msg_t *tcp_client_msg = (tcp_client_msg_t *)arg;
+    struct sockaddr_in *socket_addr = (struct sockaddr_in *)tcp_client_msg->ip_addr;
+    int ret = 0;
+    char data[MAX_HTTP_REQUEST_LEN] = {0};
+    char *respond;
 
-    struct netbuf *inputbuf2;
-    char *buf2;
-    u16_t buflen2;
-
-    char request[MAX_LEN_HTTP_REQUEST];
-    uint32_t request_len = 0;
-
-    err = netconn_recv(conn, &inputbuf);
-    if (err == ERR_OK)
-    {
-        if (netbuf_data(inputbuf, (void **)&buf, &buflen) != ERR_OK)
-            return;
-
-        memset(request, 0, sizeof(request));
-        memcpy(request, buf, buflen);
-        request_len = buflen;
-
-        /* HTTP POST was divided into 2 requests, need read here to get body content */
-        if (strstr(buf, "POST"))
+    // while (1) 
+    // {
+        memset(data, 0, sizeof(data));
+        ret = tcp_server_receive(tcp_client_msg->socket_id, data);
+        if (ret > 0)
         {
-            err = netconn_recv(conn, &inputbuf2);
-            if (err == ERR_OK)
-            {
-                err = netbuf_data(inputbuf2, (void **)&buf2, &buflen2);
-                if (err != ERR_OK)
-                {
-                    os_trace("read http post body content fail\r\n");
-                    netbuf_delete(inputbuf2);
-                    goto close_connection;
-                }
+            printf("IP: %s\r\n", inet_ntoa(socket_addr->sin_addr.s_addr));
 
-                if (buflen2 + request_len < MAX_LEN_HTTP_REQUEST)
-                {
-                    memcpy(&request[request_len], buf2, buflen2);
-                    request_len += buflen2;
-                }
-                else
-                {
-                    os_trace("err: request len too long\r\n");
-                    netbuf_delete(inputbuf2);
-                    goto close_connection;
-                }
-            }
-            else
-            {
-                os_trace("netconn_recv inputbuf2 fail\r\n");
-                netbuf_delete(inputbuf2);
-                goto close_connection;
-            }
+            printf("data:[");
+            for (uint32_t i = 0; i < strlen(data); i++)
+                printf("%c", data[i]);
+            printf("]\r\n\r\n");
 
-            netbuf_delete(inputbuf2);
-            // os_trace("request [%ld]:\r\n[%s]\r\n", request_len, request);
-        }
-        else
-        {
-            // os_trace("request [%ld]:\r\n[%s]\r\n", request_len, request);
-        }
+            /* Parse the incoming request */
+            char method[8];
+            char url[128];
+            sscanf(data, "%s %s", method, url);
+            printf("url: %s\r\n", url);
+            printf("method: %s\r\n", method);
 
-        /* Judge if this is an HTTP GET command */
-        if (buflen > 0)
-        {
-            resond = m_http_services(request, request_len);
-            if (resond != NULL)
+            respond = m_http_services(data, strlen(data));
+            if (respond != NULL)
             {
-                // os_trace("%s\r\n", resond);
-                netconn_write(conn, http_html_hdr, sizeof(http_html_hdr) - 1, NETCONN_NOCOPY);
-                netconn_write(conn, resond, strlen(resond), NETCONN_COPY);
-                free(resond);
-                resond = NULL;
+                printf("respond:[");
+                for (uint32_t i = 0; i < strlen(respond); i++)
+                    printf("%c", respond[i]);
+                printf("]\r\n\r\n");
+
+                tcp_server_send(tcp_client_msg->socket_id, http_html_hdr);
+                tcp_server_send(tcp_client_msg->socket_id, respond);
+                
+                os_trace("send respond done\r\n");
             }
             else
             {
                 os_trace("not found any services\r\n");
-                netconn_write(conn, http_html_hdr, sizeof(http_html_hdr) - 1, NETCONN_NOCOPY);
-                netconn_write(conn, http_index_hml, sizeof(http_index_hml) - 1, NETCONN_NOCOPY);
+                tcp_server_send(tcp_client_msg->socket_id, http_html_hdr);
+                tcp_server_send(tcp_client_msg->socket_id, http_index_hml);
             }
-        }
-    }
 
-close_connection:
-    netconn_close(conn);
-    netbuf_delete(inputbuf);
-}
-
-void http_server_task(void *pvParameters)
-{
-    struct netconn *conn, *newconn;
-    err_t err;
-    
-    conn = netconn_new(NETCONN_TCP);
-    if (conn == NULL)
-    {
-        os_trace("Fail to allocate netconn_new\r\n");
-        return;
-    }
-
-    if (netconn_bind(conn, NULL, SERVER_PORT) != ERR_OK)
-    {
-        os_trace("bind server port fail\r\n");
-    }
-
-    netconn_listen(conn);
-    os_trace("http_server_start\r\n");
-
-    while (1)
-    {
-        if (stop_http_server) {
-            os_trace("Http server stop\r\n");
-            netconn_close(conn);
-            netconn_delete(conn);
-            break;
-        }
-
-        err = netconn_accept(conn, &newconn);
-
-        if (err == ERR_OK)
-        {
-            os_trace("get new connection\r\n");
-            web_http_server(newconn);
-            netconn_delete(newconn);
-        }
-        else
-        {
-            netconn_close(conn);
-            netconn_delete(conn);
-            break;
+            // break;
         }
 
         vTaskDelay(pdMS_TO_TICKS(100));
+    // }
+
+    tcp_server_close(tcp_client_msg->socket_id);
+    os_trace("tcp_accept_handle_cb delete task\r\n");
+    // vTaskDelete(NULL);
+}
+
+void tcp_server_task(void *pvParameters)
+{
+    int socket_fd;
+    socket_fd = tcp_server_init(NULL, SERVER_PORT);
+    if (socket_fd < 0) {
+        os_trace("tcp server create socker fail\r\n");
+        vTaskDelete(NULL);
+        return;
+    }
+    os_trace("http_server_task\r\n");
+
+    while (1) {
+        if (tcp_server_listen(socket_fd) == 0) {
+            tcp_server_accept(socket_fd, tcp_accept_handle_cb);
+        }
+
+        if (stop_http_server) {
+            stop_http_server = 0;
+            break;
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(50));
     }
 
     vTaskDelete(NULL);
@@ -198,7 +162,7 @@ void http_server_task(void *pvParameters)
 void m_http_server_start(void)
 {
     os_trace("m_http_server_start\r\n");
-    xTaskCreate(http_server_task, (char *)"http server", 1024 * 4, NULL, 15, NULL);
+    xTaskCreate(tcp_server_task, (char *)"http server", 1024*3, NULL, 15, NULL);
 }
 
 void m_http_stop(void)

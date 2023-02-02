@@ -3,6 +3,9 @@
 #include "system_typedef.h"
 #include "m_database.h"
 #include "m_mqtt.h"
+#include "system_typedef.h"
+#include "aes_cbc128.h"
+#include "base64.h"
 
 #include <FreeRTOS.h>
 #include <task.h>
@@ -20,96 +23,136 @@
 #include <wifi_mgmr_ext.h>
 
 static uint8_t ap_cfg_get_data = 0;
+extern void signal_post(m_signal_t sig);
 
-bool apconfig_parse_wifi_info(char *json)
+bool apconfig_parse_wifi_info(char *buf)
 {
     os_trace("apconfig_parse_wifi_info\r\n");
-    
-    cJSON *js_Root, *jsGetObject;
-    char temp[256];
-    uint32_t mqtt_port = 0;
-    m_mqtt_t mqtt = m_mqtt_get_instance();
 
-    js_Root = cJSON_Parse(json);
-    if (!js_Root)
+    char *temp = NULL;
+    char data[128];
+    char *data_begin = NULL;
+    char *data_end = NULL;
+
+    uint16_t base64_len;
+    uint8_t base64_data[256];
+    char real_msg[256];
+    size_t real_msg_len = 0;
+
+    /* pub */
+    temp = strstr(buf, "name=\"pub\"");
+    if (temp == NULL)
+        goto not_found_pub;
+    /* begin */
+    data_begin = strstr(temp, "\r\n\r\n");
+    if (data_begin == NULL)
+        goto not_found_pub;
+    data_begin += strlen("\r\n\r\n");
+    /* end */
+    data_end = strstr(data_begin, "\r\n");
+    if (data_end == NULL)
+        goto not_found_pub;
+    os_trace("end: %s\r\n", data_end);
+    /* copy */
+    memset(data, 0, sizeof(data));
+    memcpy(data, data_begin, data_end - data_begin);
+    /* base64 */
+    memset(base64_data, 0, sizeof(base64_data));
+    base64_len = b64_decode((uint8_t *)data, strlen(data), base64_data);
+    /* AES */
+    memset(real_msg, 0, sizeof(real_msg));
+    aes_cbc128_init((uint8_t*)DEF_AES_KEY, (uint8_t*)DEF_AES_IV);
+    if (aes_cbc128_decrypt((uint8_t *)base64_data, base64_len, (uint8_t *)real_msg, &real_msg_len) != AES_SUCCESS)
+    {
+        os_trace("Pub decode fail\r\n");
         return false;
+    }
+    /* save */
+    os_trace("set_mqtt_topic_pub[%d]: %s\r\n", real_msg_len, real_msg);
+    m_mqtt_get_instance().set_mqtt_topic_pub(real_msg, real_msg_len);
 
-    /* get wifi ssid */
-    jsGetObject = cJSON_GetObjectItem(js_Root, "ssid");
-    if (!jsGetObject)
-        goto json_parse_fail;
-    m_wifi_get_instance().wifi_set_ssid_cb(jsGetObject->valuestring, strlen(jsGetObject->valuestring));
-    os_trace("set wifi ssid\r\n");
-
-    /* get wifi password */
-    jsGetObject = cJSON_GetObjectItem(js_Root, "pass");
-    if (!jsGetObject)
-        goto json_parse_fail;
-    m_wifi_get_instance().wifi_set_passwd_cb(jsGetObject->valuestring, strlen(jsGetObject->valuestring));
-    os_trace("set wifi password\r\n");
-
-    /* get server url */
-    jsGetObject = cJSON_GetObjectItem(js_Root, CJSON_KEY_SERVER);
-    if (!jsGetObject)
-        goto json_parse_fail;
-    memset(temp, 0, sizeof(temp));
-    snprintf(temp, sizeof(temp), "mqtt://%s", jsGetObject->valuestring);
-    mqtt.set_mqtt_server(temp, strlen(temp));
-    os_trace("set_mqtt_server\r\n");
-
-    /* get server port */
-    jsGetObject = cJSON_GetObjectItem(js_Root, CJSON_KEY_S_PORT);
-    if (!jsGetObject)
+    /* sub */
+    temp = strstr(buf, "name=\"sub\"");
+    if (temp == NULL)
+        goto not_found_pub;
+    /* begin */
+    data_begin = strstr(temp, "\r\n\r\n");
+    if (data_begin == NULL)
+        goto not_found_pub;
+    data_begin += strlen("\r\n\r\n");
+    /* end */
+    data_end = strstr(data_begin, "\r\n");
+    if (data_end == NULL)
+        goto not_found_pub;
+    /* copy */
+    memset(data, 0, sizeof(data));
+    memcpy(data, data_begin, data_end - data_begin);
+    /* base64 */
+    memset(base64_data, 0, sizeof(base64_data));
+    base64_len = b64_decode((uint8_t *)data, strlen(data), base64_data);
+    /* AES */
+    memset(real_msg, 0, sizeof(real_msg));
+    aes_cbc128_init((uint8_t*)DEF_AES_KEY, (uint8_t*)DEF_AES_IV);
+    if (aes_cbc128_decrypt((uint8_t *)base64_data, base64_len, (uint8_t *)real_msg, &real_msg_len) != AES_SUCCESS)
+    {
+        os_trace("Pub decode fail\r\n");
         return false;
-    mqtt_port = jsGetObject->valueint;
-    mqtt.set_mqtt_port(mqtt_port);
-    os_trace("set_mqtt_port\r\n");
+    }
+    /* save */
+    os_trace("set_mqtt_topic_sub[%d]: %s\r\n", real_msg_len, real_msg);
+    m_mqtt_get_instance().set_mqtt_topic_sub(real_msg, real_msg_len);
 
-    /* get user name */
-    jsGetObject = cJSON_GetObjectItem(js_Root, CJSON_KEY_S_USER);
-    if (!jsGetObject)
-        goto json_parse_fail;
-    memset(temp, 0, sizeof(temp));
-    snprintf(temp, sizeof(temp), "%s", jsGetObject->valuestring);
-    mqtt.set_mqtt_user(temp, strlen(temp));
-    os_trace("set_mqtt_user\r\n");
+    /* ssid */
+    temp = strstr(buf, "name=\"ssid\"");
+    if (temp == NULL)
+        goto not_found_pub;
+    /* begin */
+    data_begin = strstr(temp, "\r\n\r\n");
+    if (data_begin == NULL)
+        goto not_found_pub;
+    data_begin += strlen("\r\n\r\n");
+    /* end */
+    data_end = strstr(data_begin, "\r\n");
+    if (data_end == NULL)
+        goto not_found_pub;
+    /* copy */
+    memset(data, 0, sizeof(data));
+    memcpy(data, data_begin, data_end - data_begin);
+    m_wifi_get_instance().wifi_set_ssid_cb(data, strlen(data));
+    os_trace("set wifi ssid %s\r\n", data);
 
-    /* get password */
-    jsGetObject = cJSON_GetObjectItem(js_Root, CJSON_KEY_S_PASS);
-    if (!jsGetObject)
-        goto json_parse_fail;
-    memset(temp, 0, sizeof(temp));
-    snprintf(temp, sizeof(temp), "%s", jsGetObject->valuestring);
-    mqtt.set_mqtt_passwd(temp, strlen(temp));
-    os_trace("set_mqtt_passwd\r\n");
+    /* pass */
+    temp = strstr(buf, "name=\"pass\"");
+    if (temp == NULL)
+        goto not_found_pub;
+    /* begin */
+    data_begin = strstr(temp, "\r\n\r\n");
+    if (data_begin == NULL)
+        goto not_found_pub;
+    data_begin += strlen("\r\n\r\n");
+    /* end */
+    data_end = strstr(data_begin, "\r\n");
+    if (data_end == NULL)
+        goto not_found_pub;
+    /* copy */
+    memset(data, 0, sizeof(data));
+    memcpy(data, data_begin, data_end - data_begin);
+    m_wifi_get_instance().wifi_set_passwd_cb(data, strlen(data));
+    os_trace("set wifi password %s\r\n", data);
 
-    /* get topic publish */
-    jsGetObject = cJSON_GetObjectItem(js_Root, CJSON_KEY_TOPIC_PUB);
-    if (!jsGetObject)
-        goto json_parse_fail;
-    memset(temp, 0, sizeof(temp));
-    snprintf(temp, sizeof(temp), "%s", jsGetObject->valuestring);
-    mqtt.set_mqtt_topic_pub(temp, strlen(temp));
-    os_trace("set_mqtt_topic_pub\r\n");
-
-    /* get topic subscribe */
-    jsGetObject = cJSON_GetObjectItem(js_Root, CJSON_KEY_TOPIC_SUB);
-    if (!jsGetObject)
-        goto json_parse_fail;
-    memset(temp, 0, sizeof(temp));
-    snprintf(temp, sizeof(temp), "%s", jsGetObject->valuestring);
-    mqtt.set_mqtt_topic_sub(temp, strlen(temp));
-
+    // ========= SYNC ===========
     m_db_get_instance()->_set_dev_pair_state(true);
     m_db_get_instance()->_request_sync_db();
     vTaskDelay(pdMS_TO_TICKS(2000));
 
     ap_cfg_get_data = 1;
+    signal_post(SIG_AP_CFG_DONE);
 
-json_parse_fail:
-    cJSON_Delete(js_Root);
-    
     return true;
+
+not_found_pub:
+    os_trace("NULL\r\n");
+    return false;
 }
 
 void m_ap_cfg_clear_state(void)
