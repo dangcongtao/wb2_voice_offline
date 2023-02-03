@@ -8,6 +8,33 @@
 
 #define MAX_STATE_MACHINE 15
 
+static m_signal_t signal;
+static uint8_t num_state_in_used = 0;
+m_state_t current_state;
+m_state_transmit_t state_array[MAX_STATE_MACHINE] = {0};
+
+extern m_state_transmit_t not_cfg_to_ap_cfg;
+extern m_state_transmit_t not_cfg_to_smart_cfg;
+
+extern m_state_transmit_t dev_actived_to_ap_cfg;
+extern m_state_transmit_t dev_actived_to_smart_cfg;
+
+extern m_state_transmit_t ap_config_done;
+extern m_state_transmit_t smartconfig_done;
+
+extern m_state_transmit_t mqtt_connecting_to_smartcfg;
+extern m_state_transmit_t mqtt_connecting_to_ap_config;
+
+extern m_state_transmit_t wifi_connecting_to_ap_config;
+extern m_state_transmit_t wifi_connecting_to_smart_config;
+
+extern m_state_transmit_t smartconfig_to_apconfig;
+extern m_state_transmit_t apconfig_to_smartconfig;
+
+extern m_state_transmit_t dev_get_mqtt;
+extern m_state_transmit_t dev_conn_mqtt;
+extern m_state_transmit_t dev_actived;
+
 const char* state_machine[] = {
     "M_WIFI_START",
     "M_WIFI_DISCONNECT",
@@ -27,25 +54,6 @@ const char* state_machine[] = {
     "M_WIFI_NOT_CFG",
     NULL
 };
-
-static m_signal_t signal;
-static uint8_t num_state_in_used = 0;
-m_state_t current_state;
-m_state_transmit_t state_array[MAX_STATE_MACHINE] = {0};
-
-extern m_state_transmit_t not_cfg_to_smart_cfg;
-extern m_state_transmit_t dev_actived_to_smart_cfg;
-extern m_state_transmit_t mqtt_connecting_to_smartcfg;
-extern m_state_transmit_t smartconfig_done;
-
-extern m_state_transmit_t not_cfg_to_ap_cfg;
-extern m_state_transmit_t dev_actived_to_ap_cfg;
-extern m_state_transmit_t mqtt_connecting_to_ap_config;
-extern m_state_transmit_t ap_config_done;
-
-extern m_state_transmit_t dev_get_mqtt;
-extern m_state_transmit_t dev_conn_mqtt;
-extern m_state_transmit_t dev_actived;
 
 void signal_handler_register(m_state_transmit_t new_state)
 {
@@ -75,6 +83,12 @@ void m_event_init(void)
     
     signal_handler_register(ap_config_done);
     signal_handler_register(smartconfig_done);
+
+    signal_handler_register(wifi_connecting_to_ap_config);
+    signal_handler_register(wifi_connecting_to_smart_config);
+
+    signal_handler_register(smartconfig_to_apconfig);
+    signal_handler_register(apconfig_to_smartconfig);
 
     signal_handler_register(dev_actived_to_smart_cfg);
     signal_handler_register(dev_actived_to_ap_cfg);

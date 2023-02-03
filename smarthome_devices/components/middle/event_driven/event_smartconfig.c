@@ -61,6 +61,28 @@ void smartconfig_done_handler(void *arg)
 m_state_transmit_t smartconfig_done = {
     .context = M_WIFI_SMARTCONFIG,
     .signal = SIG_SMART_CFG_DONE,
-    .next_state = M_WIFI_GET_MQTT,
+    .next_state = M_WIFI_CONNECTING,
     .signal_handler_cb = smartconfig_done_handler
+};
+
+/* AP-config -> Smart Config */
+extern char s_device_id[64];
+void apconfig_to_smartconfig_handler(void *arg)
+{
+    os_trace("apconfig_to_smartconfig_handler\r\n");
+
+    /* ble rename */
+    ble_set_name(s_device_id, 1);
+
+    // stop http server
+    m_http_stop();
+
+    // stop wifi ap
+    m_wifi_get_instance().wifi_ap_stop_cb();
+}
+m_state_transmit_t apconfig_to_smartconfig = {
+    .context = M_WIFI_APCONFIG,
+    .signal = SIG_SMART_CFG,
+    .next_state = M_WIFI_SMARTCONFIG,
+    .signal_handler_cb = apconfig_to_smartconfig_handler
 };

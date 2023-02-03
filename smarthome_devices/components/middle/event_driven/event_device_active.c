@@ -118,3 +118,16 @@ m_state_transmit_t dev_actived_to_ap_cfg = {
     .signal = SIG_AP_CFG,
     .next_state = M_WIFI_APCONFIG,
     .signal_handler_cb = dev_actived_to_ap_cfg_handler};
+
+m_state_transmit_t wifi_connecting_to_smart_config = {
+    .context = M_WIFI_CONNECTING,
+    .signal = SIG_SMART_CFG,
+    .next_state = M_WIFI_SMARTCONFIG,
+    .signal_handler_cb = dev_actived_to_smart_cfg_handler
+};
+m_state_transmit_t wifi_connecting_to_ap_config = {
+    .context = M_WIFI_CONNECTING,
+    .signal = SIG_AP_CFG,
+    .next_state = M_WIFI_APCONFIG,
+    .signal_handler_cb = dev_actived_to_ap_cfg_handler
+};

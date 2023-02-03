@@ -49,6 +49,8 @@
 
 #define SERVER_PORT 80
 
+extern m_state_t current_state;
+
 static uint8_t stop_http_server = 0;
 
 const static char http_html_hdr[] =
@@ -153,8 +155,10 @@ void tcp_server_task(void *pvParameters)
             break;
         }
 
-        if (tcp_server_listen(socket_fd) == 0) {
-            tcp_server_accept(socket_fd, tcp_accept_handle_cb);
+        if (current_state == M_WIFI_APCONFIG) {
+            if (tcp_server_listen(socket_fd) == 0) {
+                tcp_server_accept(socket_fd, tcp_accept_handle_cb);
+            }
         }
         
         vTaskDelay(pdMS_TO_TICKS(50));
