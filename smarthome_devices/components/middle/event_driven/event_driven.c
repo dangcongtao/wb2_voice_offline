@@ -70,13 +70,16 @@ void m_event_init(void)
 
     signal_handler_register(not_cfg_to_smart_cfg);
     signal_handler_register(dev_actived_to_smart_cfg);
+    signal_handler_register(wait_mqtt_connect_to_smartcfg);
     signal_handler_register(smartconfig_done);
+
     signal_handler_register(not_cfg_to_ap_cfg);
+    signal_handler_register(dev_actived_to_ap_cfg);
     signal_handler_register(ap_config_done);
+
     signal_handler_register(dev_get_mqtt);
     signal_handler_register(dev_conn_mqtt);
     signal_handler_register(dev_actived);
-    signal_handler_register(wait_mqtt_connect_to_smartcfg);
     
     /* check pair state */
     if (m_db_get_instance()->_get_dev_pair_state())

@@ -80,9 +80,9 @@ static void tcp_accept_handle_cb(void *arg)
     int ret = 0;
     char data[MAX_HTTP_REQUEST_LEN] = {0};
     char *respond;
-    int timeout_retry_ms = 500;
-    do 
-    {
+    // int timeout_retry_ms = 500;
+    // do 
+    // {
         memset(data, 0, sizeof(data));
         ret = tcp_server_receive(tcp_client_msg->socket_id, data);
         if (ret > 0)
@@ -121,17 +121,17 @@ static void tcp_accept_handle_cb(void *arg)
                 tcp_server_send(tcp_client_msg->socket_id, http_index_hml);
             }
 
-            break;
+            // break;
         }
-        else if (ret < 0 ) {
-            timeout_retry_ms -= 100;
-        }
-        else {
-            break;
-        }
+        // else if (ret < 0 ) {
+        //     timeout_retry_ms -= 100;
+        // }
+        // else {
+        //     break;
+        // }
 
-        vTaskDelay(pdMS_TO_TICKS(100));
-    } while (timeout_retry_ms);
+    //     vTaskDelay(pdMS_TO_TICKS(100));
+    // } while (timeout_retry_ms);
 
     tcp_server_close(tcp_client_msg->socket_id);
     os_trace("tcp_accept_handle_cb delete task\r\n");
@@ -150,15 +150,17 @@ void tcp_server_task(void *pvParameters)
     os_trace("http_server_task\r\n");
 
     while (1) {
-        if (tcp_server_listen(socket_fd) == 0) {
-            tcp_server_accept(socket_fd, tcp_accept_handle_cb);
-        }
-
         if (stop_http_server) {
+            os_trace("stop http server\r\n");
+            tcp_server_deinit();
             stop_http_server = 0;
             break;
         }
 
+        if (tcp_server_listen(socket_fd) == 0) {
+            tcp_server_accept(socket_fd, tcp_accept_handle_cb);
+        }
+        
         vTaskDelay(pdMS_TO_TICKS(50));
     }
 

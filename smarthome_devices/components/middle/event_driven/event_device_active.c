@@ -69,7 +69,7 @@ m_state_transmit_t dev_actived = {
     .signal_handler_cb = device_active_handler
 };
 
-/* device was actived */
+/* device actived -> smart config */
 void dev_actived_to_smart_cfg_handler(void *arg)
 {
     os_trace("dev_actived_to_smart_cfg_handler\r\n");
@@ -93,4 +93,31 @@ m_state_transmit_t dev_actived_to_smart_cfg = {
     .signal = SIG_SMART_CFG,
     .next_state = M_WIFI_SMARTCONFIG,
     .signal_handler_cb = dev_actived_to_smart_cfg_handler
+};
+
+/* device actived -> AP config */
+void dev_actived_to_ap_cfg_handler(void *arg)
+{
+    os_trace("dev_actived_to_smart_cfg_handler\r\n");
+
+    // stop mqtt
+    m_mqtt_get_instance()._mqtt_stop();
+
+    // stop sta
+    m_wifi_get_instance().wifi_sta_stop_cb();
+
+    // scan wifi
+    m_wifi_get_instance().wifi_scan_cb();
+
+    // start ap
+    m_wifi_get_instance().wifi_ap_start_cb();
+
+    // start http server
+    m_http_server_start();
+}
+m_state_transmit_t dev_actived_to_ap_cfg = {
+    .context = M_WIFI_DEV_ACTIVE,
+    .signal = SIG_AP_CFG,
+    .next_state = M_WIFI_APCONFIG,
+    .signal_handler_cb = dev_actived_to_ap_cfg_handler
 };

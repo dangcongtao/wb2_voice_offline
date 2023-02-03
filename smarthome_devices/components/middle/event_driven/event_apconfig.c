@@ -26,30 +26,13 @@ m_state_transmit_t not_cfg_to_ap_cfg = {
     .next_state = M_WIFI_APCONFIG,
     .signal_handler_cb = wifi_not_cfg_to_ap_cfg_handler};
 
-// {M_WIFI_DEV_ACTIVE, SIG_AP_CFG, M_WIFI_APCONFIG},
-void wifi_actived_to_ap_cfg_handler(void *arg)
-{
-    // stop sta
-    // stop mqtt
-    // stop ble
-
-    // start http server
-    // scan wifi
-    // start ap
-}
-m_state_transmit_t dev_actived_to_ap_cfg = {
-    .context = M_WIFI_DEV_ACTIVE,
-    .signal = SIG_AP_CFG,
-    .next_state = M_WIFI_APCONFIG,
-    .signal_handler_cb = wifi_actived_to_ap_cfg_handler};
-
 // {M_WIFI_APCONFIG, SIG_AP_CFG_DONE, M_WIFI_GET_MQTT},
 void ap_config_done_handler(void *arg)
 {
     // stop http server
     m_http_stop();
 
-    // stop wifi sta
+    // stop wifi ap
     m_wifi_get_instance().wifi_ap_stop_cb();
 
     // wifi sta start

@@ -45,6 +45,13 @@ int tcp_server_init(char *s_ip, int s_port)
     if (socketfd < 0)
         return -1;
 
+    // set socket option
+    int reuse = 1;
+    if (setsockopt(socketfd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) == -1) {
+        perror("setsockopt");
+        return -1;
+    }
+
     // bind IP addr
     int ret = bind(socketfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
     if (ret < 0)
@@ -168,5 +175,15 @@ int tcp_server_close(int socket_id)
  */
 int tcp_server_deinit(void)
 {
+    printf("tcp_server_deinit\r\n");
+    
+    for (int i = 0; i < MAX_CLIENT_NUM; i++)
+    {
+        if (sock_fd[i] != 0) {
+            close(sock_fd[i]);
+            sock_fd[i] = 0;
+        }
+    }
+
     return close(socketfd);
 }

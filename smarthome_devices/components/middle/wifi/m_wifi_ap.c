@@ -194,5 +194,6 @@ void m_wifi_ap_start(void)
 
 void m_wifi_ap_stop(void)
 {
+    os_trace("m_wifi_ap_stop\r\n");
     wifi_mgmr_ap_stop(NULL);
 }
