@@ -104,7 +104,8 @@ bool save_mqtt_info(char *json)
     jsGetObject = cJSON_GetObjectItem(js_Root, CJSON_KEY_S_PORT);
     if (!jsGetObject)
         goto json_parse_fail;
-    mqtt_port = jsGetObject->valueint;
+    char *p_port = jsGetObject->valuestring;
+    mqtt_port = atoi(p_port);
     mqtt.set_mqtt_port(mqtt_port);
     os_trace("set_mqtt_port\r\n");
 
