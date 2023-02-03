@@ -35,11 +35,12 @@ m_state_transmit_t state_array[MAX_STATE_MACHINE] = {0};
 
 extern m_state_transmit_t not_cfg_to_smart_cfg;
 extern m_state_transmit_t dev_actived_to_smart_cfg;
-extern m_state_transmit_t wait_mqtt_connect_to_smartcfg;
+extern m_state_transmit_t mqtt_connecting_to_smartcfg;
 extern m_state_transmit_t smartconfig_done;
 
 extern m_state_transmit_t not_cfg_to_ap_cfg;
 extern m_state_transmit_t dev_actived_to_ap_cfg;
+extern m_state_transmit_t mqtt_connecting_to_ap_config;
 extern m_state_transmit_t ap_config_done;
 
 extern m_state_transmit_t dev_get_mqtt;
@@ -70,11 +71,12 @@ void m_event_init(void)
 
     signal_handler_register(not_cfg_to_smart_cfg);
     signal_handler_register(dev_actived_to_smart_cfg);
-    signal_handler_register(wait_mqtt_connect_to_smartcfg);
+    signal_handler_register(mqtt_connecting_to_smartcfg);
     signal_handler_register(smartconfig_done);
 
     signal_handler_register(not_cfg_to_ap_cfg);
     signal_handler_register(dev_actived_to_ap_cfg);
+    signal_handler_register(mqtt_connecting_to_ap_config);
     signal_handler_register(ap_config_done);
 
     signal_handler_register(dev_get_mqtt);

@@ -34,7 +34,7 @@ m_state_transmit_t not_cfg_to_smart_cfg = {
     .signal_handler_cb = wifi_not_cfg_to_smart_cfg_handler
 };
 
-m_state_transmit_t wait_mqtt_connect_to_smartcfg = {
+m_state_transmit_t mqtt_connecting_to_smartcfg = {
     .context = M_WIFI_MQTT_CONNECTING,
     .signal = SIG_SMART_CFG,
     .next_state = M_WIFI_SMARTCONFIG,

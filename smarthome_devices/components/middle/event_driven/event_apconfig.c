@@ -11,6 +11,9 @@ extern m_state_t current_state;
 // {M_WIFI_NOT_CFG, SIG_AP_CFG, M_WIFI_APCONFIG},
 void wifi_not_cfg_to_ap_cfg_handler(void *arg)
 {
+    // stop wifi sta
+    m_wifi_get_instance().wifi_sta_stop_cb();
+
     // scan wifi
     m_wifi_get_instance().wifi_scan_cb();
 
@@ -25,6 +28,13 @@ m_state_transmit_t not_cfg_to_ap_cfg = {
     .signal = SIG_AP_CFG,
     .next_state = M_WIFI_APCONFIG,
     .signal_handler_cb = wifi_not_cfg_to_ap_cfg_handler};
+
+m_state_transmit_t mqtt_connecting_to_ap_config = {
+    .context = M_WIFI_MQTT_CONNECTING,
+    .signal = SIG_AP_CFG,
+    .next_state = M_WIFI_APCONFIG,
+    .signal_handler_cb = wifi_not_cfg_to_ap_cfg_handler
+};
 
 // {M_WIFI_APCONFIG, SIG_AP_CFG_DONE, M_WIFI_GET_MQTT},
 void ap_config_done_handler(void *arg)
