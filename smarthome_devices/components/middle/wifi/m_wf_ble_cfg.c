@@ -132,7 +132,7 @@ bool save_mqtt_info(char *json)
 
     cJSON_Delete(js_Root);
 
-    signal_post(SIG_MQTT_GOT_INFO);
+    // signal_post(SIG_MQTT_GOT_INFO);
 
     return true;
 

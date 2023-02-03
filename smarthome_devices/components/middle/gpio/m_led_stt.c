@@ -63,7 +63,7 @@ static void set_led_stt_smart_config(void)
 static void set_led_stt_ap_config(void)
 {
    if (s_led_stt_obj._led_stt_type != LED_STYLE_APCONFIG) {
-        os_trace("set_led_stt_ap_config\n");
+        os_trace("set_led_stt_ap_config\r\n");
         /* Stop timer */
         m_stop_timer();
 
@@ -85,7 +85,7 @@ static void set_led_stt_ap_config(void)
 static void set_led_stt_update_ota(void)
 {
    if (s_led_stt_obj._led_stt_type != LED_STYLE_UPDATE) {
-        os_trace("set_led_stt_update_ota\n");
+        os_trace("set_led_stt_update_ota\r\n");
         /* Stop timer */
         m_stop_timer();
 
@@ -108,7 +108,7 @@ static void set_led_stt_not_config(void)
 {
     if ((device_type == WSWITCH || device_type == WSDATIC)) {
         if (s_led_stt_obj._led_stt_type != LED_STYLE_ON) {
-            os_trace("set_led_stt_not_config\n");
+            os_trace("set_led_stt_not_config\r\n");
             /* Stop timer */
             m_stop_timer();
             s_led_stt_obj._set_led_stt_on_cb();
@@ -137,7 +137,7 @@ static void set_led_stt_device_active(void)
 {
     if ((device_type == WSWITCH || device_type == WSDATIC) || device_type == WSDATIC) {
         if (s_led_stt_obj._led_stt_type != LED_STYLE_OFF) {
-            os_trace("set_led_stt_device_active\n");
+            os_trace("set_led_stt_device_active\r\n");
             /* Stop timer */
             m_stop_timer();
             s_led_stt_obj._set_led_stt_off_cb();
@@ -145,7 +145,7 @@ static void set_led_stt_device_active(void)
         }
     } else {
         if (s_led_stt_obj._led_stt_type != LED_STYLE_ON) {
-            os_trace("set_led_stt_not_config\n");
+            os_trace("set_led_stt_not_config\r\n");
             /* Stop timer */
             m_stop_timer();
             s_led_stt_obj._set_led_stt_on_cb();

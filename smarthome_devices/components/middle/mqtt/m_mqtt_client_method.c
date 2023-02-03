@@ -186,6 +186,7 @@ void m_mqtt_start(void)
     client = axk_mqtt_client_init(&mqtt_cfg);
     if (axk_mqtt_client_start(client) != AXK_OK) {
         os_trace("mqtt start failed\r\n");
+        return;
     }
 
     s_mqtt_obj._mqtt_state = MQTT_INTIALIZED;
@@ -193,11 +194,13 @@ void m_mqtt_start(void)
 
 void m_mqtt_stop(void)
 {
-    os_trace("mqtt stop\r\n");
+    os_trace("MQTT STOP\r\n");
 
     if (client != NULL && s_mqtt_obj._mqtt_state != MQTT_UNINTIALIZED) {
         axk_mqtt_client_destroy(client);
         client = NULL;
         s_mqtt_obj._mqtt_state = MQTT_UNINTIALIZED;
     }
+
+    vTaskDelay(pdMS_TO_TICKS(500));
 }

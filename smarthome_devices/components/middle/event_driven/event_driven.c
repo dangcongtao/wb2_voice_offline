@@ -6,7 +6,7 @@
 #include "m_database.h"
 #include "m_http_server.h"
 
-#define MAX_STATE_MACHINE 10
+#define MAX_STATE_MACHINE 15
 
 const char* state_machine[] = {
     "M_WIFI_START",
@@ -60,6 +60,7 @@ void signal_handler_register(m_state_transmit_t new_state)
 
 void signal_post(m_signal_t sig)
 {
+    printf("====>>> Set New Signal: %d, from context: %d\r\n", sig, current_state);
     signal = sig;
 }
 
@@ -69,15 +70,17 @@ void m_event_init(void)
     current_state = M_WIFI_NOT_CFG;
     memset(state_array, 0, sizeof(state_array));
 
+    signal_handler_register(not_cfg_to_ap_cfg);
     signal_handler_register(not_cfg_to_smart_cfg);
-    signal_handler_register(dev_actived_to_smart_cfg);
-    signal_handler_register(mqtt_connecting_to_smartcfg);
+    
+    signal_handler_register(ap_config_done);
     signal_handler_register(smartconfig_done);
 
-    signal_handler_register(not_cfg_to_ap_cfg);
+    signal_handler_register(dev_actived_to_smart_cfg);
     signal_handler_register(dev_actived_to_ap_cfg);
+
+    signal_handler_register(mqtt_connecting_to_smartcfg);
     signal_handler_register(mqtt_connecting_to_ap_config);
-    signal_handler_register(ap_config_done);
 
     signal_handler_register(dev_get_mqtt);
     signal_handler_register(dev_conn_mqtt);
@@ -93,25 +96,30 @@ void m_event_init(void)
     }
 }
 
+static m_signal_t old_signal;
 void m_event_loop(void)
 {
-    for (uint8_t i = 0; i < SIZEOF_ARRAY(state_array); i++)
+    for (uint8_t i = 0; i < MAX_STATE_MACHINE; i++)
     {
         if ((signal == state_array[i].signal) && (current_state == state_array[i].context))
         {
+            printf("================>>>>CHANGE FROM %d TO %d\r\n", current_state, state_array[i].next_state);
+
             if (state_array[i].signal_handler_cb) {
                 signal = SIG_NONE;
                 state_array[i].signal_handler_cb(&signal);
             }
             current_state = state_array[i].next_state;
 
-            os_trace("From %s Change to %s\r\n", 
-                    state_machine[state_array[i].context], state_machine[current_state]);
             break;
         }
         else if (i == (SIZEOF_ARRAY(state_array) - 1))
         {
             /* get signal but invalid context to handle */
+            if (old_signal != signal) {
+                printf("====>>> Signal: %d, Context: %d\r\n", signal, current_state);
+                old_signal = signal;
+            }
         }
     }
 }

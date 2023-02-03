@@ -118,6 +118,7 @@ typedef struct
 
 typedef enum {
     M_WIFI_START = 0,
+    M_WIFI_NOT_CFG,
     M_WIFI_DISCONNECT,
     M_WIFI_CONNECTED,
     M_WIFI_CONNECTING,
@@ -132,7 +133,6 @@ typedef enum {
     M_WIFI_CONN_MQTT,
     M_WIFI_MQTT_CONNECTING,
     M_WIFI_DEV_ACTIVE,
-    M_WIFI_NOT_CFG,
 } m_state_t;
 
 typedef enum {
