@@ -14,8 +14,9 @@
 #include "m_wifi.h"
 #include "m_database.h"
 
-static m_button_t s_button_obj;
+extern m_state_t current_state;;
 extern uint32_t max_number_channel;
+static m_button_t s_button_obj;
 uint32_t ignore_event_release[MAX_NUM_BUTTON] = {0};
 
 #define EVENT_BTN_HOLD          1
@@ -29,9 +30,9 @@ void on_button_event_cb(int button_pin, int event, void *data)
 {
     os_trace("Button %d, event %s\r\n", button_pin, event_name[event]);
 
-    // if (m_db_get_instance()->_m_device._switch_info.channel_lock_state[button_pin] == 1)
-    //     if (m_wifi_get_instance().wifi_get_state_cb() == WIFI_DEV_ACTIVE)
-    //         return;
+    if (m_db_get_instance()->_m_device._switch_info->channel_lock_state[button_pin] == 1)
+        if (current_state == M_WIFI_DEV_ACTIVE)
+            return;
 
     switch (event)
     {
@@ -129,8 +130,8 @@ static void button_scan_task(void *param)
     os_trace("button_scan_task\n");
     while (true)
     {
-        // m_switch_press_release_loop();
-        // m_switch_cyclic_timer_loop();
+        m_switch_press_release_loop();
+        m_switch_cyclic_timer_loop();
         app_btn_scan(NULL);
 
         vTaskDelay(pdMS_TO_TICKS(50));
