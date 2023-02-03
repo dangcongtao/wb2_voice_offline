@@ -16,17 +16,16 @@ void get_mqtt_info_handler(void *arg)
     // http client send GET request
     os_trace("get_mqtt_info_handler\r\n");
 
-    // uint32_t port = m_mqtt_get_instance().mqtt_info.port;
-    // char* server = m_mqtt_get_instance().mqtt_info.server;
-    // char* user = m_mqtt_get_instance().mqtt_info.username;
-    // char* passwd = m_mqtt_get_instance().mqtt_info.passwd;
+    uint32_t port = m_mqtt_get_info_reference()->port;
+    char* server = m_mqtt_get_info_reference()->server;
+    char* user = m_mqtt_get_info_reference()->username;
+    char* passwd = m_mqtt_get_info_reference()->passwd;
 
-    os_trace("check\r\n");
-    if (port != 0 && strlen(server) > 0 /* && strlen(user) > 0 && strlen(passwd) > 0 */)
+    if (port != 0 && strlen(server) > 0 && strlen(user) > 0 && strlen(passwd) > 0)
     {
         os_trace("Device had been actived ago\r\n");
-        // signal_post(SIG_MQTT_GOT_INFO);
-        // *(m_signal_t*)arg = SIG_MQTT_GOT_INFO;
+        signal_post(SIG_MQTT_GOT_INFO);
+        *(m_signal_t*)arg = SIG_MQTT_GOT_INFO;
         return;
     }
 

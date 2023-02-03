@@ -12,6 +12,7 @@ const char* state_machine[] = {
     "M_WIFI_START",
     "M_WIFI_DISCONNECT",
     "M_WIFI_CONNECTED",
+    "M_WIFI_CONNECTING",
     "M_WIFI_SMARTCONFIG",
     "M_WIFI_WAIT_SMARTCONFIG_DONE",
     "M_WIFI_APCONFIG",
