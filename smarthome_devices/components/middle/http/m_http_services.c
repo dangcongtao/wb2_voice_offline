@@ -58,15 +58,18 @@ char* m_apconfig_step2(char* buf)
 {
     os_trace("APCONFIG STEP 2\r\n");
 
+    uint8_t result = 1;
+
     /* parser data to get info of wifi & mqtt server */
     if (apconfig_parse_wifi_info(buf) == false)
     {
         os_trace("ap_config parse data fail\r\n");
+        result = 0;
     }
 
     /* Send response */
     memset(buf, 0, MAX_HTTP_RESPONSE_LEN);
-    sprintf(buf, "{\"result\": 1}");
+    sprintf(buf, "{\"result\": %d}", result);
 
     return buf;
 }
