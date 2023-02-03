@@ -8,18 +8,22 @@
  * @copyright Copyright (c) 2022
  *
  */
+#include "tcp_server.h"
+#include "system_typedef.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
 #include <FreeRTOS.h>
 #include <task.h>
-#include <lwip/sockets.h>
 #include <blog.h>
+
+#include <lwip/sockets.h>
 #include "lwip/tcp.h"
 #include "lwip/inet.h"
 #include "lwip/netdb.h"
-#include "tcp_server.h"
 
 #define MAX_CLIENT_NUM 20
 static struct sockaddr_in serv_addr;
@@ -47,7 +51,8 @@ int tcp_server_init(char *s_ip, int s_port)
 
     // set socket option
     int reuse = 1;
-    if (setsockopt(socketfd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) == -1) {
+    if (setsockopt(socketfd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) == -1)
+    {
         perror("setsockopt");
         return -1;
     }
@@ -75,6 +80,25 @@ int tcp_server_listen(int socketfd)
     }
     printf("tcp server listening.....\r\n");
 
+    /* poll/select to check connect comming */
+    fd_set set;
+    FD_ZERO(&set);           /* clear the set */
+    FD_SET(socketfd, &set); /* add our file descriptor to the set */
+    struct timeval timeout;
+    timeout.tv_sec = 1;
+    timeout.tv_usec = 0;
+    int rv = select(socketfd + 1, &set, NULL, NULL, &timeout);
+    if (rv == -1)
+    {
+        printf("select error\r\n"); /* an error occurred */
+        return 1;
+    }
+    else if (rv == 0)
+    {
+        printf("timeout occurred (20 second) \r\n"); /* a timeout occurred */
+        return 1;
+    }
+
     return 0;
 }
 
@@ -82,11 +106,11 @@ int tcp_server_listen(int socketfd)
  * @brief tcp_server_accept
  *
  * @param socketfd
- * @param tcp_accpet_cb
+ * @param tcp_accept_cb
  * @return int
  */
 static int sock_fd[MAX_CLIENT_NUM];
-int tcp_server_accept(int socketfd, tcp_accpet_t tcp_accpet_cb)
+int tcp_server_accept(int socketfd, tcp_accpet_t tcp_accept_cb)
 {
     struct sockaddr_in s_addr;
     int conn_sock = 0;
@@ -110,11 +134,11 @@ int tcp_server_accept(int socketfd, tcp_accpet_t tcp_accpet_cb)
                 tcp_client.socket_id = i;
                 tcp_client.socket_fd = conn_sock;
                 tcp_client.ip_addr = (void *)&s_addr;
-        
+
                 printf("client:%s, socket: %d, id:%d\r\n", inet_ntoa(s_addr.sin_addr.s_addr), conn_sock, i);
-                
-                // xTaskCreate(tcp_accpet_cb, "tcp_accpet_cb", 1024, &tcp_client, 17, NULL);
-                tcp_accpet_cb(&tcp_client);
+
+                // xTaskCreate(tcp_accept_cb, "tcp_accept_cb", 1024, &tcp_client, 17, NULL);
+                tcp_accept_cb(&tcp_client);
 
                 return 0;
             }
@@ -133,7 +157,31 @@ int tcp_server_accept(int socketfd, tcp_accpet_t tcp_accpet_cb)
  */
 int tcp_server_send(int socket_id, char *data)
 {
-    return write(sock_fd[socket_id], data, strlen(data));
+    int32_t len_write = 0;
+
+    fd_set set;
+    FD_ZERO(&set);           /* clear the set */
+    FD_SET(sock_fd[socket_id], &set); /* add our file descriptor to the set */
+    struct timeval timeout;
+    timeout.tv_sec = 1;
+    timeout.tv_usec = 0;
+
+    printf("Wait data to send\r\n");
+    int rv = select(sock_fd[socket_id] + 1, NULL, &set, NULL, &timeout);
+    if (rv == -1)
+    {
+        printf("select error\r\n"); /* an error occurred */
+        return 0;
+    }
+    else if (rv == 0)
+    {
+        printf("select write timeout\r\n"); /* a timeout occurred */
+        return 0;
+    } else {
+        len_write = write(sock_fd[socket_id], data, strlen(data));
+    }
+
+    return len_write;
 }
 
 /**
@@ -149,6 +197,29 @@ int tcp_server_receive(int socket_id, char *recv_data)
         return -1;
 
     return read(sock_fd[socket_id], recv_data, 1024);
+
+    // int32_t len_read = 0;
+    // fd_set set;
+    // FD_ZERO(&set);           /* clear the set */
+    // FD_SET(socketfd, &set); /* add our file descriptor to the set */
+    // struct timeval timeout;
+    // timeout.tv_sec = 1;
+    // timeout.tv_usec = 0;
+    // printf("Wait data to read\r\n");
+    // int rv = select(socketfd + 1, &set, NULL, NULL, &timeout);
+    // if (rv == -1)
+    // {
+    //     printf("select read error\r\n"); /* an error occurred */
+    //     return 0;
+    // }
+    // else if (rv == 0)
+    // {
+    //     printf("select read timeout\r\n"); /* a timeout occurred */
+    //     return 0;
+    // } else {
+    //     len_read = read(sock_fd[socket_id], recv_data, 1024);
+    // }
+    // return len_read;
 }
 
 /**
@@ -176,10 +247,11 @@ int tcp_server_close(int socket_id)
 int tcp_server_deinit(void)
 {
     printf("tcp_server_deinit\r\n");
-    
+
     for (int i = 0; i < MAX_CLIENT_NUM; i++)
     {
-        if (sock_fd[i] != 0) {
+        if (sock_fd[i] != 0)
+        {
             close(sock_fd[i]);
             sock_fd[i] = 0;
         }

@@ -118,7 +118,7 @@ static void wifi_ap_ip_set(char* ip_addr, char* netmask, char* gw)
         netif_set_netmask(ap_netif, &ap_mask);
         netif_set_gw(ap_netif, &ap_gw);
         netif_set_up(ap_netif);
-        os_trace("[softAP]: SSID:%s@, IP addr:%s\r\n", 
+        os_trace("[softAP]: SSID:%s*, IP addr:%s\r\n", 
                 m_db_get_instance()->_get_dev_id(),
                 ip4addr_ntoa(netif_ip4_addr(ap_netif)));
     }
