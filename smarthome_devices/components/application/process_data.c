@@ -544,12 +544,12 @@ static void app_request_ota(cJSON *jsRoot)
     uint32_t type = 0, uid = 0;
     char *url;
 
-    os_trace("Get request OTA\n");
+    os_trace("Get request OTA\r\n");
 
     jsType = cJSON_GetObjectItem(jsRoot, gs_dev_type[device_type]);
     if (jsType == NULL)
     {
-        os_trace("Get JSON type mqtt message fail\n");
+        os_trace("Get JSON type mqtt message fail\r\n");
         goto RESPONSE;
     }
     type = jsType->valueint;
@@ -557,7 +557,7 @@ static void app_request_ota(cJSON *jsRoot)
     jsU = cJSON_GetObjectItem(jsRoot, CJSON_KEY_USER_ID);
     if (jsU == NULL)
     {
-        os_trace("Get JSON type mqtt message fail\n");
+        os_trace("Get JSON type mqtt message fail\r\n");
         goto RESPONSE;
     }
     uid = jsU->valueint;
@@ -565,7 +565,7 @@ static void app_request_ota(cJSON *jsRoot)
     jsUrl = cJSON_GetObjectItem(jsRoot, CJSON_KEY_URL);
     if (jsUrl == NULL)
     {
-        os_trace("Get JSON type mqtt message fail\n");
+        os_trace("Get JSON type mqtt message fail\r\n");
         goto RESPONSE;
     }
     url = jsUrl->valuestring;
@@ -578,6 +578,8 @@ static void app_request_ota(cJSON *jsRoot)
     m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
 
     /* implement here */
+    extern void ble_deinit(void);
+    ble_deinit();
     m_ota_start(url);
 
     return;

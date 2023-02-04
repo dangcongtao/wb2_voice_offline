@@ -11,7 +11,7 @@ void m_log(const char *fmt, ...);
 
 /* config for type of device, that will be used to parse json message */
 #define EXTRAS              1514
-#define FIRMWARE_VERSION    "221007"
-#define HARDWARE_VERSION    "210807"
+#define FIRMWARE_VERSION    "220205"
+#define HARDWARE_VERSION    "210205"
 
 #endif /*_USER_CONFIG_H_*/

@@ -28,7 +28,7 @@ INCLUDE_COMPONENTS += bl602 bl602_std
 INCLUDE_COMPONENTS += cli vfs yloop utils blog blog_testc newlibc 
 #=============== DUNGNT98 ===============
 # HTTP
-INCLUDE_COMPONENTS += httpc mbedtls_lts lwip lwip_dhcpd
+INCLUDE_COMPONENTS += httpc mbedtls_lts lwip lwip_dhcpd axk_ota http-parser
 # WIFI
 INCLUDE_COMPONENTS += wifi wifi_manager wpa_supplicant wifi_hosal hosal bl602_os_adapter blcrypto_suite
 INCLUDE_COMPONENTS +=  aws-iot       

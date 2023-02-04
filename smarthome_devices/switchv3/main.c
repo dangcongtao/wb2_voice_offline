@@ -37,7 +37,7 @@ void main_loop(void)
         //     os_trace("Free memory: %d\r\n", xPortGetFreeHeapSize());
         // }
 
-        vTaskDelay(pdMS_TO_TICKS(100)); /* should be 500ms to make it's priority low */
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
 
