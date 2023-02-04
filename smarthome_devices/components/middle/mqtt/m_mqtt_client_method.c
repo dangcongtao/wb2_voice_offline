@@ -58,11 +58,12 @@ static axk_err_t mqtt_event_handler_cb(axk_mqtt_event_handle_t event)
 
     case MQTT_EVENT_DISCONNECTED:
         os_trace("MQTT_EVENT_DISCONNECTED\r\n");
+        m_led_stt_get_instance()._set_led_stt_mqtt_disconnect_cb();
         break;
 
     case MQTT_EVENT_SUBSCRIBED:
         os_trace("MQTT_EVENT_SUBSCRIBED, msg_id=%d\r\n", event->msg_id);
-        m_led_stt_get_instance()._set_led_stt_device_active_cb();
+        m_led_stt_get_instance()._set_led_stt_mqtt_subscribed_cb();
         request_send_command_online = true;
         s_mqtt_obj._mqtt_state = MQTT_SUBSCRIBE;
         break;

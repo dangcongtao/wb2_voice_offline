@@ -50,6 +50,9 @@ void smartconfig_done_handler(void *arg)
     // stop ble
     // ble_deinit();
 
+    // set new led states
+    m_led_stt_get_instance()._set_led_stt_wifi_not_connect_cb();
+
     // stop wifi sta
     m_wifi_get_instance().wifi_sta_stop_cb();
 

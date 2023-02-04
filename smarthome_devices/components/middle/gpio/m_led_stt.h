@@ -13,7 +13,8 @@ typedef enum {
    LED_STYLE_APCONFIG = 3,
    LED_STYLE_ON = 4,
    LED_STYLE_OFF = 5,
-   LED_STYLE_UPDATE = 6
+   LED_STYLE_UPDATE = 6,
+   LED_STYLE_MQTT_DISCONN,
 } led_stt_type_t;
 
 typedef void (*p_set_led_stt_t)(void);
@@ -21,11 +22,7 @@ typedef void (*p_reset_led_stt_t)(void);
 typedef void (*p_toggle_led_stt_t)(void);
 typedef void (*p_init_led_stt_t)(void);
 
-typedef void (*p_led_stt_not_config_t)(void);
-typedef void (*p_led_stt_ap_config_t)(void);
-typedef void (*p_led_stt_smart_config_t)(void);
-typedef void (*p_led_stt_update_ota_t)(void);
-typedef void (*p_led_stt_device_active_t)(void);
+typedef void (*p_led_stt_handler_t)(void);
 
 typedef struct {
 /* properties */
@@ -40,11 +37,12 @@ typedef struct {
    p_toggle_led_stt_t         _toggle_led_stt_cb;
 
 /* public */
-   p_led_stt_not_config_t     _set_led_stt_not_config_cb;
-   p_led_stt_ap_config_t      _set_led_stt_ap_config_cb;
-   p_led_stt_smart_config_t   _set_led_stt_smart_config_cb;
-   p_led_stt_update_ota_t     _set_led_stt_update_ota_cb;
-   p_led_stt_device_active_t  _set_led_stt_device_active_cb;
+   p_led_stt_handler_t        _set_led_stt_wifi_not_connect_cb;
+   p_led_stt_handler_t        _set_led_stt_ap_config_cb;
+   p_led_stt_handler_t        _set_led_stt_smart_config_cb;
+   p_led_stt_handler_t        _set_led_stt_update_ota_cb;
+   p_led_stt_handler_t        _set_led_stt_mqtt_disconnect_cb;
+   p_led_stt_handler_t        _set_led_stt_mqtt_subscribed_cb;
 
 } m_led_stt_t;
 

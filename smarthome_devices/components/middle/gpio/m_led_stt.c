@@ -133,6 +133,38 @@ static void set_led_stt_not_config(void)
     }
 }
 
+static void set_led_stt_disconnect_mqtt(void)
+{
+    if ((device_type == WSWITCH || device_type == WSDATIC) || device_type == WSDATIC) {
+        if (s_led_stt_obj._led_stt_type != LED_STYLE_OFF) {
+            os_trace("set_led_stt_device_active\r\n");
+            /* Stop timer */
+            m_stop_timer();
+
+            /* turn led off */
+            s_led_stt_obj._set_led_stt_off_cb();
+
+            /* set time */
+            timeline_status[0] = 2000;
+            timeline_status[1] = 2000;
+            s_led_stt_obj._led_handle_count = 0;
+            s_led_stt_obj._max_number_handle = TWO_PULSE_COUNT;
+            s_led_stt_obj._led_stt_type = LED_STYLE_MQTT_DISCONN;
+
+            /* start timer */
+            m_start_timer(timeline_status[0]);
+        }
+    } else {
+        if (s_led_stt_obj._led_stt_type != LED_STYLE_ON) {
+            os_trace("set_led_stt_not_config\r\n");
+            /* Stop timer */
+            m_stop_timer();
+            s_led_stt_obj._set_led_stt_on_cb();
+            s_led_stt_obj._led_stt_type  = LED_STYLE_ON;
+        }
+    }
+}
+
 static void set_led_stt_device_active(void)
 {
     if ((device_type == WSWITCH || device_type == WSDATIC) || device_type == WSDATIC) {
@@ -167,10 +199,11 @@ void m_led_stt_init(void)
     s_led_stt_obj._toggle_led_stt_cb = hw_toggle_led_stt;
 
     s_led_stt_obj._led_handle_count = 0;
-    s_led_stt_obj._set_led_stt_not_config_cb = set_led_stt_not_config;
+    s_led_stt_obj._set_led_stt_wifi_not_connect_cb = set_led_stt_not_config;
     s_led_stt_obj._set_led_stt_ap_config_cb = set_led_stt_ap_config;
     s_led_stt_obj._set_led_stt_smart_config_cb = set_led_stt_smart_config;
-    s_led_stt_obj._set_led_stt_device_active_cb = set_led_stt_device_active;
+    s_led_stt_obj._set_led_stt_mqtt_disconnect_cb = set_led_stt_disconnect_mqtt;
+    s_led_stt_obj._set_led_stt_mqtt_subscribed_cb = set_led_stt_device_active;
     s_led_stt_obj._set_led_stt_update_ota_cb = set_led_stt_update_ota;
 
     /* GPIO Leds init */

@@ -42,6 +42,9 @@ void ap_config_done_handler(void *arg)
     // stop wifi ap
     m_wifi_get_instance().wifi_ap_stop_cb();
 
+    // set new led states
+    m_led_stt_get_instance()._set_led_stt_wifi_not_connect_cb();
+
     // wifi sta start
     char *ssid = m_wifi_get_instance()._wifi_info._ssid;
     char *pass = m_wifi_get_instance()._wifi_info._passwd;
