@@ -73,6 +73,9 @@ void dev_actived_to_smart_cfg_handler(void *arg)
 {
     os_trace("dev_actived_to_smart_cfg_handler\r\n");
 
+    // set led
+    m_led_stt_get_instance()._set_led_stt_smart_config_cb();
+
     // stop mqtt
     m_mqtt_get_instance()._mqtt_stop();
 
@@ -97,6 +100,9 @@ m_state_transmit_t dev_actived_to_smart_cfg = {
 void dev_actived_to_ap_cfg_handler(void *arg)
 {
     os_trace("dev_actived_to_ap_cfg_handler\r\n");
+
+    // set led
+    m_led_stt_get_instance()._set_led_stt_ap_config_cb();
 
     // stop mqtt
     m_mqtt_get_instance()._mqtt_stop();
