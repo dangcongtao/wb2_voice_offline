@@ -86,7 +86,7 @@ void m_ble_config_step1(void)
     ble_send_data(resp, strlen(resp));
 
     uint8_t i = 0;
-    for (i = 0; i < counter - 2; i += 3)
+    for (i = 0; i < (counter - (counter % 3)); i += 3)
     {
         memset(resp, 0, sizeof(resp));
         sprintf(resp, "{\"cmd\": 2, \"wfs\": ["

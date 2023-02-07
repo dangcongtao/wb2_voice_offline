@@ -158,7 +158,7 @@ static void ble_task(void *pvParameters)
     {
         if (xQueueReceive(ble_tx_queue, &message, 1) == pdPASS)
         {
-            os_trace("[%d]:\r\n", message.length);
+            printf("[%s]:\r\n", message.data);
 
             /* Encode AES */
             len_aes = DATA_MAX_LEN;
