@@ -10,6 +10,9 @@ cd ~/Ai-Thinker-WB2
 git submodule init
 git submodule update
 
+# Firstly, to support OTA feature for 2M flash chip version, have to change content of partition table file by run following commands:
+rm ~/Ai-Thinker-WB2/tools/flash_tool/chips/bl602/partition/partition_cfg_2M.toml
+cp ~/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/Flash_Partition_table/03-partition_cfg_2M-OTA.toml ~/Ai-Thinker-WB2/tools/flash_tool/chips/bl602/partition/partition_cfg_2M.toml
 
 # command build and flash firmware
 docker run -it --name "hunonic-wb2" -h dungnt98 --rm -v /home/dungnt98/:/home/dungnt98/ --device=/dev/ttyUSB0 ntdungembedded98/hunonic-esp8266
