@@ -201,7 +201,6 @@ static void m_load_databse(void)
             s_m_database._m_device._switch_info->time_release[1],
             s_m_database._m_device._switch_info->time_release[2],
             s_m_database._m_device._switch_info->time_release[3]);
-
     if (s_m_database._m_device._device_is_paired)
     {
         os_trace("device was paired\r\n");
@@ -210,6 +209,8 @@ static void m_load_databse(void)
     {
         os_trace("device was not paired\r\n");
     }
+    os_trace("FIRMWARE_VERSION: %s\r\n", FIRMWARE_VERSION);
+
     os_trace("============================================\r\n");
 }
 
