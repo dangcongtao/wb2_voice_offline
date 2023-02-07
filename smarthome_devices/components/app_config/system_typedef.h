@@ -44,6 +44,7 @@ typedef enum {
     WSWITCH = 0,
     LHSWITCH,
 	WSDATIC,
+    DATICBSV2,
 } device_type_t;
 
 extern uint32_t device_type;
