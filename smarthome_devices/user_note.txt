@@ -32,8 +32,8 @@ Note used for wifi module Ai-Wb2 firmware development:
 [2] Run in tools/flash_tool/BLDevCube.exe and choose image.bin file you want to OTA.
 [3] Click the Create&Download button.
 [4] The ota firmware will be created in \chips\bl602\ota directory,
-	select fw_ota.bin.xz (dual-partition upgrade).
+	select FW_OTA.bin.xz (fixed name in anytime create ota file with any .bin file name).
 [5] Add header information (MD5) to ota firmware.
 	+ open Ai-Thinker OTA Config Tools.exe(in D:\work\Ai-WB2\Ai-Thinker-WB2\applications\system\ota\tools directory) 
-	and select fw_ota.bin.xz.
-	+ save to new name xxx_md5.bin.xz. This file can be used for OTA task.
+	and select \chips\bl602\FW_OTA.bin.xz.
+	+ save to new name xxx_md5.bin.xz or xxx_md5.bin, this file can be used for OTA task.
