@@ -30,8 +30,8 @@
 #include <wifi_mgmr_ext.h>
 #include "m_http_server.h"
 
-#define WIFI_RECONN_INTERVAL_SEC 15
-#define WIFI_RECONN_REPEAT_TIMES 10
+#define WIFI_RECONN_INTERVAL_SEC 2
+#define WIFI_RECONN_REPEAT_TIMES 0
 
 #define IP_SET_ADDR(a, b, c, d) (((uint32_t)((a)&0xff)) |       \
                                  ((uint32_t)((b)&0xff) << 8) |  \
