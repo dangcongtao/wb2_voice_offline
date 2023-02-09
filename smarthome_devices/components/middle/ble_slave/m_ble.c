@@ -260,5 +260,6 @@ void ble_deinit(void)
 
 void ble_set_name(char* name, uint8_t restart_adv)
 {
+    os_trace("ble_set_name: %s\r\n", name);
     my_ble_set_name(name, restart_adv);
 }
