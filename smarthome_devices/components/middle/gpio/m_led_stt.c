@@ -9,8 +9,8 @@
 #include <queue.h>
 #include <timers.h>
 
-#define TWO_PULSE_COUNT     2
-#define FOUR_PULSE_COUNT    4
+#define TWO_PULSE_COUNT 2
+#define FOUR_PULSE_COUNT 4
 
 static m_led_stt_t s_led_stt_obj;
 static TimerHandle_t xTimers;
@@ -29,22 +29,25 @@ static void vTimerCallback(TimerHandle_t xTimer)
 
 static void m_start_timer(uint32_t time_ms)
 {
-    if (xTimers != NULL) {
-        xTimerChangePeriod(xTimers, pdMS_TO_TICKS(time_ms), 10); 
-        xTimerStart(xTimers, 10); 
+    if (xTimers != NULL)
+    {
+        xTimerChangePeriod(xTimers, pdMS_TO_TICKS(time_ms), 10);
+        xTimerStart(xTimers, 10);
     }
 }
 
 static void m_stop_timer(void)
 {
-    if (xTimers != NULL) {
-        xTimerStop(xTimers, 10); 
+    if (xTimers != NULL)
+    {
+        xTimerStop(xTimers, 10);
     }
 }
 
 static void set_led_stt_smart_config(void)
 {
-    if (s_led_stt_obj._led_stt_type != LED_STYLE_SMARTCONFIG) {
+    if (s_led_stt_obj._led_stt_type != LED_STYLE_SMARTCONFIG)
+    {
         os_trace("set_led_stt_smart_config\r\n");
         /* Stop timer */
         m_stop_timer();
@@ -62,7 +65,8 @@ static void set_led_stt_smart_config(void)
 
 static void set_led_stt_ap_config(void)
 {
-   if (s_led_stt_obj._led_stt_type != LED_STYLE_APCONFIG) {
+    if (s_led_stt_obj._led_stt_type != LED_STYLE_APCONFIG)
+    {
         os_trace("set_led_stt_ap_config\r\n");
         /* Stop timer */
         m_stop_timer();
@@ -79,12 +83,13 @@ static void set_led_stt_ap_config(void)
 
         /* start timer */
         m_start_timer(timeline_status[0]);
-   }
+    }
 }
 
 static void set_led_stt_update_ota(void)
 {
-   if (s_led_stt_obj._led_stt_type != LED_STYLE_UPDATE) {
+    if (s_led_stt_obj._led_stt_type != LED_STYLE_UPDATE)
+    {
         os_trace("set_led_stt_update_ota\r\n");
         /* Stop timer */
         m_stop_timer();
@@ -100,21 +105,24 @@ static void set_led_stt_update_ota(void)
 
         /* start timer */
         m_start_timer(timeline_status[0]);
-   }
+    }
 }
-
 
 static void set_led_stt_not_config(void)
 {
-    if ((device_type == WSWITCH || device_type == WSDATIC)) {
-        if (s_led_stt_obj._led_stt_type != LED_STYLE_ON) {
+    if ((device_type == WSWITCH || device_type == WSDATIC))
+    {
+        if (s_led_stt_obj._led_stt_type != LED_STYLE_ON)
+        {
             os_trace("set_led_stt_not_config\r\n");
             /* Stop timer */
             m_stop_timer();
             s_led_stt_obj._set_led_stt_on_cb();
-            s_led_stt_obj._led_stt_type  = LED_STYLE_ON;
+            s_led_stt_obj._led_stt_type = LED_STYLE_ON;
         }
-    } else {
+    }
+    else
+    {
         /* Stop timer */
         m_stop_timer();
 
@@ -135,8 +143,10 @@ static void set_led_stt_not_config(void)
 
 static void set_led_stt_disconnect_mqtt(void)
 {
-    if ((device_type == WSWITCH || device_type == WSDATIC) || device_type == WSDATIC) {
-        if (s_led_stt_obj._led_stt_type != LED_STYLE_OFF) {
+    if ((device_type == WSWITCH || device_type == WSDATIC) || device_type == DATICBSV2)
+    {
+        if (s_led_stt_obj._led_stt_type != LED_STYLE_OFF)
+        {
             os_trace("set_led_stt_device_active\r\n");
             /* Stop timer */
             m_stop_timer();
@@ -154,38 +164,42 @@ static void set_led_stt_disconnect_mqtt(void)
             /* start timer */
             m_start_timer(timeline_status[0]);
         }
-    } else {
-        if (s_led_stt_obj._led_stt_type != LED_STYLE_ON) {
+    }
+    else
+    {
+        if (s_led_stt_obj._led_stt_type != LED_STYLE_ON)
+        {
             os_trace("set_led_stt_not_config\r\n");
             /* Stop timer */
             m_stop_timer();
             s_led_stt_obj._set_led_stt_on_cb();
-            s_led_stt_obj._led_stt_type  = LED_STYLE_ON;
+            s_led_stt_obj._led_stt_type = LED_STYLE_ON;
         }
     }
 }
 
 static void set_led_stt_device_active(void)
 {
-    if ((device_type == WSWITCH || device_type == WSDATIC) || device_type == WSDATIC) {
-        if (s_led_stt_obj._led_stt_type != LED_STYLE_OFF) {
-            os_trace("set_led_stt_device_active\r\n");
-            /* Stop timer */
+    os_trace("set_led_stt_device_active\r\n");
+    if ((device_type == WSWITCH || device_type == WSDATIC))
+    {
+        if (s_led_stt_obj._led_stt_type != LED_STYLE_OFF)
+        {
             m_stop_timer();
             s_led_stt_obj._set_led_stt_off_cb();
-            s_led_stt_obj._led_stt_type  = LED_STYLE_OFF;
+            s_led_stt_obj._led_stt_type = LED_STYLE_OFF;
         }
-    } else {
-        if (s_led_stt_obj._led_stt_type != LED_STYLE_ON) {
-            os_trace("set_led_stt_not_config\r\n");
-            /* Stop timer */
+    }
+    else
+    {
+        if (s_led_stt_obj._led_stt_type != LED_STYLE_ON)
+        {
             m_stop_timer();
             s_led_stt_obj._set_led_stt_on_cb();
-            s_led_stt_obj._led_stt_type  = LED_STYLE_ON;
+            s_led_stt_obj._led_stt_type = LED_STYLE_ON;
         }
     }
 }
-
 
 /* public */
 void m_led_stt_init(void)
@@ -210,12 +224,12 @@ void m_led_stt_init(void)
     s_led_stt_obj._init_led_stt_cb();
 
     /* init timer handler led */
-    xTimers = xTimerCreate( "timer_handler_led_stt",
-                            pdMS_TO_TICKS(1),
-                            pdTRUE,
-                            (void *)0,
-                            vTimerCallback);
-    
+    xTimers = xTimerCreate("timer_handler_led_stt",
+                           pdMS_TO_TICKS(1),
+                           pdTRUE,
+                           (void *)0,
+                           vTimerCallback);
+
     /* start timer */
     m_start_timer(timeline_status[0]);
 

@@ -172,10 +172,10 @@ void m_mqtt_start(void)
     mqtt_cfg.event_handle = mqtt_event_handler_cb;
 
     os_trace("mqtt start\r\n");
-    os_trace("\tserver: %s\r\n", s_mqtt_obj.mqtt_info.server);
-    os_trace("\tport: %d\r\n", s_mqtt_obj.mqtt_info.port);
-    os_trace("\tusername: %s\r\n", s_mqtt_obj.mqtt_info.username);
-    os_trace("\tpasswd: %s\r\n", s_mqtt_obj.mqtt_info.passwd);
+    os_trace("\tserver: %s\r\n", mqtt_cfg.uri);
+    os_trace("\tport: %d\r\n", mqtt_cfg.port);
+    os_trace("\tusername: %s\r\n", mqtt_cfg.username);
+    os_trace("\tpasswd: %s\r\n", mqtt_cfg.password);
     os_trace("\ttopic_pub: %s\r\n", s_mqtt_obj.mqtt_info.topic_pub);
     os_trace("\ttopic_sub: %s\r\n", s_mqtt_obj.mqtt_info.topic_sub);
 
