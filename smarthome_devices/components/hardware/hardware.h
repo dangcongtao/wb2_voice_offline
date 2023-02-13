@@ -21,8 +21,8 @@
 #define BUTTON4 1
 
 #define MAX_NUM_SWITCH          4
-#define SWITCH_IDLE_LEVEL       1
-#define SWITCH_ACTIVE_LEVEL     0
+#define SWITCH_IDLE_LEVEL       0
+#define SWITCH_ACTIVE_LEVEL     1
 #define SWITCH1 22
 #define SWITCH2 0
 #define SWITCH3 20

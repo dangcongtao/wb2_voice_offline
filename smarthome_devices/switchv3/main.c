@@ -13,6 +13,7 @@
 #include <lwip/netif.h>
 #include <lwip/inet.h>
 
+#include "hardware.h"
 #include "m_button.h"
 #include "m_switch.h"
 #include "m_led_stt.h"
@@ -52,6 +53,8 @@ void main_loop(void)
 
 void main(void)
 {
+    hw_switch_cfg(0);
+
     easyflash_init();
     tcpip_init(NULL, NULL);
     blog_set_level_log_component(BLOG_LEVEL_NEVER, "axk_mqtt");

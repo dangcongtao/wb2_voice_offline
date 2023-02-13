@@ -147,7 +147,7 @@ static void set_led_stt_disconnect_mqtt(void)
     {
         if (s_led_stt_obj._led_stt_type != LED_STYLE_OFF)
         {
-            os_trace("set_led_stt_device_active\r\n");
+            os_trace("set_led_stt_disconnect_mqtt\r\n");
             /* Stop timer */
             m_stop_timer();
 
