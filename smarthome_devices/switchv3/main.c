@@ -26,11 +26,11 @@
 
 void main_loop(void)
 {
-    uint32_t old = 0;
+    uint32_t delay_ms = 100;
 
     while (true)
     {
-        m_event_loop();
+        m_event_loop(delay_ms);
 
         // old += 1;
         // if (old > 20) {
@@ -38,7 +38,7 @@ void main_loop(void)
         //     os_trace("Free memory: %d\r\n", xPortGetFreeHeapSize());
         // }
 
-        vTaskDelay(pdMS_TO_TICKS(100));
+        vTaskDelay(pdMS_TO_TICKS(delay_ms));
     }
 }
 

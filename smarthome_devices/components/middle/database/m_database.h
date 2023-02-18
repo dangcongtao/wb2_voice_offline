@@ -67,6 +67,7 @@ typedef struct {
     p_get_time_release_t _get_time_release_cb;
 
     p_db_reset_factory_t _reset_db_cb;
+    p_db_reset_factory_t _reset_db_without_sync_cb;
     p_backup_database_t  _backup_db_cb;
 } m_database_t;
 

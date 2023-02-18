@@ -30,9 +30,9 @@ void on_button_event_cb(int button_pin, int event, void *data)
 {
     os_trace("Button %d, event %s\r\n", button_pin, event_name[event]);
 
-    if (m_db_get_instance()->_m_device._switch_info->channel_lock_state[button_pin] == 1)
-        if (current_state == M_WIFI_DEV_ACTIVE)
-            return;
+    // if (m_db_get_instance()->_m_device._switch_info->channel_lock_state[button_pin] == 1)
+    //     if (current_state == M_WIFI_DEV_ACTIVE)
+    //         return;
 
     switch (event)
     {
@@ -45,7 +45,7 @@ void on_button_event_cb(int button_pin, int event, void *data)
     {
         if (ignore_event_release[button_pin] == EVENT_BTN_HOLD)
         {
-            m_db_get_instance()->_reset_db_cb();
+            m_db_get_instance()->_reset_db_without_sync_cb();
             m_wifi_get_instance().start_smart_config_cb();
             ignore_event_release[button_pin] = 0;
             return;
@@ -53,7 +53,7 @@ void on_button_event_cb(int button_pin, int event, void *data)
 
         else if (ignore_event_release[button_pin] == EVENT_BTN_HOLD_SO_LONG)
         {
-            m_db_get_instance()->_reset_db_cb();
+            m_db_get_instance()->_reset_db_without_sync_cb();
             m_wifi_get_instance().start_ap_config_cb();
             ignore_event_release[button_pin] = 0;
             return;
