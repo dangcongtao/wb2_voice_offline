@@ -146,6 +146,7 @@ typedef enum {
     SIG_WIFI_CONNECTED,
     SIG_MQTT_GOT_INFO,
     SIG_MQTT_CONNECTED,
+    SIG_MQTT_DISCONNECTED,
 } m_signal_t;
 
 typedef struct {
