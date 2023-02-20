@@ -90,6 +90,13 @@ void app_send_data(char *data, uint32_t length)
     ble_send_data(data, length);
 }
 
+void app_send_offline_message(uint8_t src)
+{
+    memset(respond, 0, sizeof(respond));
+    sprintf(respond,"{\"%s\":1000,\"offline\":\"device offline\", \"src\": %d}", gs_dev_type[device_type], src);
+    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
+}
+
 static void app_startup_message(void)
 {
     m_device_t app_databse = m_db_get_instance()->_m_device;
@@ -659,6 +666,7 @@ static void app_remove_device(cJSON *jsRoot)
     uid = jsU->valueint;
 
     /* implement here */
+    app_send_offline_message(2);
     /* factory reset database */
     m_db_get_instance()->_reset_db_cb();
     m_wifi_get_instance().start_smart_config_cb();

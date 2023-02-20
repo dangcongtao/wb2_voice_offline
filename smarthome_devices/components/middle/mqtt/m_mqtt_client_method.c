@@ -157,7 +157,7 @@ void m_mqtt_start(void)
 {
 	char last_will_msg[128];
 	memset(last_will_msg, 0, sizeof(last_will_msg));
-	sprintf(last_will_msg,"{\"%s\":1000,\"offline\":\"device offline\"}", gs_dev_type[device_type]);
+	sprintf(last_will_msg,"{\"%s\":1000,\"offline\":\"device offline\", \"src\": 0}", gs_dev_type[device_type]);
 
     axk_mqtt_client_config_t mqtt_cfg;
     memset(&mqtt_cfg, 0, sizeof(mqtt_cfg));

@@ -26,6 +26,9 @@ static const char *event_name[] = {"pressed", "release",
                                    "hold", "hold so long",
                                    "double click", "tripple click",
                                    "idle", "idle break", "invalid"};
+
+extern void app_send_offline_message(uint8_t src);
+
 void on_button_event_cb(int button_pin, int event, void *data)
 {
     os_trace("Button %d, event %s\r\n", button_pin, event_name[event]);
@@ -45,6 +48,9 @@ void on_button_event_cb(int button_pin, int event, void *data)
     {
         if (ignore_event_release[button_pin] == EVENT_BTN_HOLD)
         {
+            app_send_offline_message(1);
+            vTaskDelay(pdMS_TO_TICKS(100));
+
             m_db_get_instance()->_reset_db_without_sync_cb();
             m_wifi_get_instance().start_smart_config_cb();
             ignore_event_release[button_pin] = 0;
@@ -53,6 +59,9 @@ void on_button_event_cb(int button_pin, int event, void *data)
 
         else if (ignore_event_release[button_pin] == EVENT_BTN_HOLD_SO_LONG)
         {
+            app_send_offline_message(1);
+            vTaskDelay(pdMS_TO_TICKS(100));
+            
             m_db_get_instance()->_reset_db_without_sync_cb();
             m_wifi_get_instance().start_ap_config_cb();
             ignore_event_release[button_pin] = 0;
