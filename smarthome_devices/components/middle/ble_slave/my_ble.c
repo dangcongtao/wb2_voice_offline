@@ -62,7 +62,7 @@ static void connected(struct bt_conn *conn, u8_t err)
     bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 	if (err) 
     {
-		printf("Failed to connect to %s (%u)", addr, err);
+		printf("Failed to connect to %s (%u)\r\n", addr, err);
 		return;
 	}
 	printf("Connected: %s \r\n", addr);
@@ -77,7 +77,7 @@ static void disconnected(struct bt_conn *conn, u8_t reason)
 	char addr[BT_ADDR_LE_STR_LEN];
     pconn=conn;
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));  
-	printf("Disconnected: %s (reason %u)", addr, reason);
+	printf("Disconnected: %s (reason %u)\r\n", addr, reason);
     if(static_ble_connet_status_cb != NULL)
     {
         static_ble_connet_status_cb(MY_BLE_DEVICE_DISCONNECT, addr);
@@ -87,11 +87,11 @@ static void disconnected(struct bt_conn *conn, u8_t reason)
 
 static void le_param_updated(struct bt_conn *conn, u16_t interval,u16_t latency, u16_t timeout)
 {
-   printf("LE conn param updated: int 0x%04x lat %d to %d", interval, latency, timeout);
+   printf("LE conn param updated: int 0x%04x lat %d to %d\r\n", interval, latency, timeout);
 }
 
 /*广播包数据*/
-static struct bt_data adv_data[2] = 
+static struct bt_data adv_data[3] = 
 {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
     BT_DATA(BT_DATA_MANUFACTURER_DATA, "123456", 6),
@@ -106,6 +106,10 @@ void my_ble_start_advertise(void)
     param.interval_max = BT_GAP_ADV_FAST_INT_MAX_2;
     param.options = (BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_USE_NAME | BT_LE_ADV_OPT_ONE_TIME);
     /*Get mode, 0:General discoverable,  1:non discoverable, 2:limit discoverable*/
+    memset(&adv_data[2], 0, sizeof(struct bt_data));
+    adv_data[2].type = BT_DATA_NAME_COMPLETE;
+    adv_data[2].data = (u8_t*)ble_name;
+    adv_data[2].data_len = strlen(ble_name);
     err = bt_le_adv_start(&param, adv_data, ARRAY_SIZE(adv_data),NULL,0);//rsp_data, ARRAY_SIZE(rsp_data));
     if(err)
     {
