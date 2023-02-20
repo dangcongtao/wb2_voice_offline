@@ -156,4 +156,7 @@ typedef struct {
     void (*signal_handler_cb)(void * arg);
 } m_state_transmit_t;
 
+#define APP_BTN_HOLD_EVENT_5S                    (5000)
+#define APP_BTN_HOLD_EVENT_15S                   (15000)
+
 #endif /* CJSON_KEYWORD_H__ */

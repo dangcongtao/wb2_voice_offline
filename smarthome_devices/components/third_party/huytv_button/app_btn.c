@@ -19,6 +19,8 @@ static app_btn_evt_handler_t m_callback_table[APP_BTN_EVT_MAX] = {0};
 static void * m_custom_data[APP_BTN_EVT_MAX] = {0};
 static app_btn_config_t m_btn_config;
 
+uint32_t app_btn_on_hold_time_fire_event_ms = APP_BTN_ON_HOLD_TIME_FIRE_EVENT_MS;
+
 void app_btn_initialize(app_btn_config_t * conf)
 {
     uint8_t i = 0;
@@ -44,7 +46,7 @@ void app_btn_initialize(app_btn_config_t * conf)
             m_btn_config.btn_initialize(m_hw_params[i].pin);    // Init GPIO pin as input for btn read
         }
 
-        m_hw_params[i].last_state = m_hw_params[i].idle_level;
+        m_hw_params[i].last_state = conf->btn_read(i);
         m_btn_data[i] = m_hw_params[i].idle_level;
     }
 }
@@ -84,11 +86,11 @@ void app_btn_scan(void* params)
     {
         if (m_btn_data[i] != m_hw_params[i].idle_level) /* button still being pressed */
         {
-            if (m_btn_config.get_tick_cb() - m_btn_hold_count[i] >= APP_BTN_HOLD_SO_LONG_TIME_MS)
+            if (m_btn_config.get_tick_cb() - m_btn_hold_count[i] >= app_btn_on_hold_time_fire_event_ms)
             {
                 if (((m_btn_hold_evt >> i) & 0x1)) /* if this button was hold before */
                 {
-                    if (m_btn_config.get_tick_cb() - m_btn_on_hold_count[i] >= APP_BTN_ON_HOLD_TIME_FIRE_EVENT_MS) /* hold enough time for trigger event hold button */
+                    if (m_btn_config.get_tick_cb() - m_btn_on_hold_count[i] >= APP_BTN_HOLD_SO_LONG_TIME_MS) /* hold enough time for trigger event hold button */
                     {
                         m_btn_on_hold_count[i] = m_btn_config.get_tick_cb();
                         m_btn_on_hold_evt |= (1 << i); /* set event hold */

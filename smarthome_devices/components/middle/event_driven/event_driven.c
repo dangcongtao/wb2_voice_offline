@@ -6,7 +6,7 @@
 #include "m_database.h"
 #include "m_http_server.h"
 
-#define MAX_STATE_MACHINE 16
+#define MAX_STATE_MACHINE 20
 
 static m_signal_t signal;
 static uint8_t num_state_in_used = 0;
@@ -35,6 +35,7 @@ extern m_state_transmit_t dev_get_mqtt;
 extern m_state_transmit_t dev_conn_mqtt;
 extern m_state_transmit_t dev_actived;
 extern m_state_transmit_t dev_actived_disconnect_mqtt;
+extern m_state_transmit_t dev_actived_disconnect_wifi;
 
 const char* state_machine[] = {
     "M_WIFI_START",
@@ -101,6 +102,7 @@ void m_event_init(void)
     signal_handler_register(dev_conn_mqtt);
     signal_handler_register(dev_actived);
     signal_handler_register(dev_actived_disconnect_mqtt);
+    signal_handler_register(dev_actived_disconnect_wifi);
     
     /* check pair state */
     if (m_db_get_instance()->_get_dev_pair_state())

@@ -11,6 +11,7 @@
 #include "m_http_server.h"
 
 extern char s_device_id[64];
+extern uint32_t app_btn_on_hold_time_fire_event_ms;
 
 void wifi_not_cfg_to_smart_cfg_handler(void *arg)
 {
@@ -26,6 +27,8 @@ void wifi_not_cfg_to_smart_cfg_handler(void *arg)
 
     // scan wifi
     m_wifi_get_instance().wifi_scan_cb();
+
+    app_btn_on_hold_time_fire_event_ms = APP_BTN_HOLD_EVENT_5S;
 }
 m_state_transmit_t not_cfg_to_smart_cfg = {
     .context = M_WIFI_NOT_CFG,
