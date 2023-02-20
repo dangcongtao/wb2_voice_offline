@@ -50,8 +50,8 @@ void smartconfig_done_handler(void *arg)
     
     vTaskDelay(pdMS_TO_TICKS(500));
 
-    // stop ble
-    // ble_deinit();
+    /* ble rename */
+    ble_set_name("Dungnt98", 1);
 
     // set new led states
     m_led_stt_get_instance()._set_led_stt_wifi_not_connect_cb();
