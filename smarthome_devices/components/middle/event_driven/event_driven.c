@@ -114,7 +114,7 @@ void m_event_init(void)
 
 static m_signal_t old_signal;
 static uint32_t time_wifi_wait_config = 0;
-static const uint32_t TIMEOUT_WIFI_CONFIG_MS = 1000*60*1;
+static const uint32_t TIMEOUT_WIFI_CONFIG_MS = 1000*60*15;
 void m_event_loop(uint32_t time_schedual_ms)
 {
     for (uint8_t i = 0; i < MAX_STATE_MACHINE; i++)
