@@ -30,9 +30,9 @@ void on_button_event_cb(int button_pin, int event, void *data)
 {
     os_trace("Button %d, event %s\r\n", button_pin, event_name[event]);
 
-    // if (m_db_get_instance()->_m_device._switch_info->channel_lock_state[button_pin] == 1)
-    //     if (current_state == M_WIFI_DEV_ACTIVE)
-    //         return;
+    if (m_db_get_instance()->_m_device._switch_info->channel_lock_state[button_pin] == 1)
+        if (current_state == M_WIFI_DEV_ACTIVE)
+            return;
 
     switch (event)
     {
