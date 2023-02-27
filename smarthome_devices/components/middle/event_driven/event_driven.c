@@ -115,7 +115,7 @@ void m_event_init(void)
 }
 
 static m_signal_t old_signal;
-static uint32_t time_wifi_wait_config = 0;
+static uint32_t start_time_wait_cfg = 0;
 static const uint32_t TIMEOUT_WIFI_CONFIG_MS = 1000*60*15;
 void m_event_loop(uint32_t time_schedual_ms)
 {
@@ -133,7 +133,7 @@ void m_event_loop(uint32_t time_schedual_ms)
 
             /* start count time wait connect */
             if (current_state == M_WIFI_SMARTCONFIG || current_state == M_WIFI_APCONFIG) {
-                time_wifi_wait_config = 0;
+                start_time_wait_cfg = xTaskGetTickCount();
             }
 
             break;
@@ -150,26 +150,20 @@ void m_event_loop(uint32_t time_schedual_ms)
     
     if (current_state == M_WIFI_SMARTCONFIG)
     {
-        /* count time wait wifi config */
-        time_wifi_wait_config += time_schedual_ms;
-
         /* check timeout */
-        if (time_wifi_wait_config >= TIMEOUT_WIFI_CONFIG_MS) {
+        if ((xTaskGetTickCount() - start_time_wait_cfg) >= pdMS_TO_TICKS(TIMEOUT_WIFI_CONFIG_MS)) {
             /* reset old configuration and connect to old wifi, mqtt */
-            time_wifi_wait_config = 0;
+            start_time_wait_cfg = 0;
             m_db_get_instance()->_backup_db_cb();
             signal_post(SIG_SMART_CFG_DONE);
         }
     }
     else if (current_state == M_WIFI_APCONFIG)
     {
-        /* count time wait wifi config */
-        time_wifi_wait_config += time_schedual_ms;
-
         /* check timeout */
-        if (time_wifi_wait_config >= TIMEOUT_WIFI_CONFIG_MS) {
+        if ((xTaskGetTickCount() - start_time_wait_cfg) >= pdMS_TO_TICKS(TIMEOUT_WIFI_CONFIG_MS)) {
             /* reset old configuration and connect to old wifi, mqtt */
-            time_wifi_wait_config = 0;
+            start_time_wait_cfg = 0;
             m_db_get_instance()->_backup_db_cb();
             signal_post(SIG_AP_CFG_DONE);
         }
