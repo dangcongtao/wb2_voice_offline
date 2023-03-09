@@ -18,6 +18,11 @@ static wifi_interface_t g_wifi_sta_interface = NULL;
 
 extern void signal_post(m_signal_t sig);
 
+int is_wifi_connected(void)
+{
+    return g_wifi_sta_is_connected;
+}
+
 void m_wifi_sta_event_cb(input_event_t *event, void *private_data)
 {
     static char *ssid;

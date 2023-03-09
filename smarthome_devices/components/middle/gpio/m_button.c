@@ -28,13 +28,14 @@ static const char *event_name[] = {"pressed", "release",
                                    "idle", "idle break", "invalid"};
 
 extern void app_send_offline_message(uint8_t src);
+extern int is_wifi_connected(void);
 
 void on_button_event_cb(int button_pin, int event, void *data)
 {
     os_trace("Button %d, event %s\r\n", button_pin, event_name[event]);
 
     if (m_db_get_instance()->_m_device._switch_info->channel_lock_state[button_pin] == 1)
-        if (current_state == M_WIFI_DEV_ACTIVE)
+        if (is_wifi_connected())
             return;
 
     switch (event)
