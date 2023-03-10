@@ -39,6 +39,7 @@ Note used for wifi module Ai-Wb2 firmware development:
 	select FW_OTA.bin.xz (fixed name in anytime create ota file with any .bin file name).
 [5] Add header information (MD5) to ota firmware.
 	+ open Ai-Thinker OTA Config Tools.exe(in D:\work\Ai-WB2\Ai-Thinker-WB2\applications\system\ota\tools directory) 
-	and select Ai-Thinker-WB2\tools\flash_tool\chips\bl602\ota\FW_OTA.bin.xz. Chip_type is TG.
-	+ save to new name xxx_md5.bin.xz, this file can be used for OTA task.
+	+ select Ai-Thinker-WB2\tools\flash_tool\chips\bl602\ota\FW_OTA.bin.xz. 
+	+ select Chip_type is TG.
+	+ save to new name xxx_md5.bin, this file can be used for OTA task.
 
