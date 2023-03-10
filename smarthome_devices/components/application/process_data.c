@@ -94,7 +94,8 @@ void app_send_offline_message(uint8_t src)
 {
     memset(respond, 0, sizeof(respond));
     sprintf(respond,"{\"%s\":1000,\"offline\":\"device offline\", \"src\": %d}", gs_dev_type[device_type], src);
-    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
+    m_mqtt_get_instance()._mqtt_publish_directly(respond, strlen(respond));
+    vTaskDelay(pdMS_TO_TICKS(200));
 }
 
 static void app_startup_message(void)

@@ -32,6 +32,7 @@ typedef void (*p_set_data_t)(char* data, uint32_t len);
 typedef void (*p_set_num_t)(uint32_t);
 
 typedef void (*p_mqtt_publish_t)(char* data, uint32_t data_len);
+typedef void (*p_mqtt_publish_directly_t)(char* data, uint32_t data_len);
 typedef void (*p_mqtt_subscribe_t)(char *topic, uint32_t topic_len);
 typedef void (*p_mqtt_unsubscribe_t)(char *topic, uint32_t topic_len);
 typedef void (*p_mqtt_connect_t)(char *topic, uint32_t topic_len);
@@ -62,6 +63,7 @@ typedef struct  {
 
 /* public methods */
     p_mqtt_publish_t    _mqtt_publish;
+    p_mqtt_publish_directly_t _mqtt_publish_directly;
     p_mqtt_start_t      _mqtt_start;
     p_mqtt_stop_t       _mqtt_stop;
     p_mqtt_task_t       _mqtt_loop;

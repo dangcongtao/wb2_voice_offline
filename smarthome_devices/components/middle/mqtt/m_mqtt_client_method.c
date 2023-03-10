@@ -24,10 +24,6 @@ extern m_mqtt_t s_mqtt_obj;
 extern QueueHandle_t mqtt_tx_queue;
 extern bool request_send_command_online;
 
-m_mqtt_msg_t mqtt_msg_pub;
-char msg_encrypted[MAXIMUM_SIZE_MESSAGE];
-uint32_t len_msg_encrypted = MAXIMUM_SIZE_MESSAGE;
-
 axk_mqtt_client_handle_t client = NULL;
 
 extern void signal_post(m_signal_t sig);
@@ -118,6 +114,39 @@ void m_mqtt_publish(char *data, uint32_t length)
     }
 }
 
+void m_mqtt_publish_directly(char *data, uint32_t length)
+{
+    char *topic = s_mqtt_obj.mqtt_info.topic_pub;
+
+    m_mqtt_msg_t message;
+    memset(&message, 0, sizeof(message));
+    memcpy(message.topic_pub, topic, strlen(topic));
+    memcpy(message.msg_pub, data, length);
+    message.length = length;
+
+    /* encode data */
+    char msg_encrypted[MAXIMUM_SIZE_MESSAGE];
+    uint32_t len_msg_encrypted = MAXIMUM_SIZE_MESSAGE;
+    memset(msg_encrypted, 0, sizeof(msg_encrypted));
+    aes_cbc128_init((uint8_t *)key, (uint8_t *)iv);
+    uint32_t aes_encrypt_result = aes_cbc128_encrypt((uint8_t *)message.msg_pub,
+                                                    message.length,
+                                                    (uint8_t *)msg_encrypted,
+                                                    (size_t *)&len_msg_encrypted);
+    if (aes_encrypt_result != AES_SUCCESS)
+    {
+        os_trace("Encode fail,error-code: %ld\r\n", aes_encrypt_result);
+        return;
+    }
+
+    /* call platform mqtt-publish api */
+    if (client != NULL) {
+        if (axk_mqtt_client_publish(client, message.topic_pub, msg_encrypted, len_msg_encrypted, 0, 0) < 0) {
+            os_trace("\tmqtt_client: publish message fail\r\n");
+        }
+    }
+}
+
 void m_mqtt_task_loop(void)
 {
     /* send message after online */
@@ -126,6 +155,10 @@ void m_mqtt_task_loop(void)
         s_mqtt_obj._mqtt_pub_startup_msg();
         request_send_command_online = 0;
     }
+
+    m_mqtt_msg_t mqtt_msg_pub;
+    char msg_encrypted[MAXIMUM_SIZE_MESSAGE];
+    uint32_t len_msg_encrypted = MAXIMUM_SIZE_MESSAGE;
 
     /* send message during activity */
     memset(&mqtt_msg_pub, 0, sizeof(mqtt_msg_pub));

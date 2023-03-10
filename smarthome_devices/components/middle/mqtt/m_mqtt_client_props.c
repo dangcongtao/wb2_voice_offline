@@ -23,6 +23,7 @@ bool request_send_command_online;
 extern void m_mqtt_stop(void);
 extern void m_mqtt_start(void);
 extern void m_mqtt_publish(char *data, uint32_t length);
+extern void m_mqtt_publish_directly(char *data, uint32_t length);
 extern void m_mqtt_task_loop(void);
 
 void set_mqtt_server(char* data, uint32_t len)
@@ -112,6 +113,7 @@ void m_mqtt_init(void)
     s_mqtt_obj._mqtt_get_state_cb = m_mqtt_get_state;
 
     s_mqtt_obj._mqtt_publish = m_mqtt_publish;
+    s_mqtt_obj._mqtt_publish_directly = m_mqtt_publish_directly;
     s_mqtt_obj._mqtt_start = m_mqtt_start;
     s_mqtt_obj._mqtt_stop = m_mqtt_stop;
     s_mqtt_obj._mqtt_loop = m_mqtt_task_loop;
