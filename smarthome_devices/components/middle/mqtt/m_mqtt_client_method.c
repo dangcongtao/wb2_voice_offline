@@ -196,6 +196,8 @@ void m_mqtt_task_loop(void)
 
 void m_mqtt_start(void)
 {
+    os_trace("%s: free mem %d\r\n", __func__, xPortGetFreeHeapSize());
+
     char last_will_msg[128];
     memset(last_will_msg, 0, sizeof(last_will_msg));
     sprintf(last_will_msg, "{\"%s\":1000,\"offline\":\"device offline\", \"src\": 0}", gs_dev_type[device_type]);
@@ -235,26 +237,23 @@ void m_mqtt_start(void)
     do
     {
         ret = axk_mqtt_client_start(client);
-
         if (ret != AXK_OK)
         {
-            retry++;
-            if (retry > 20)
+            if (retry++ > 20)
             {
                 bl_sys_reset_por();
             }
-            
             printf("mqtt start failed %d\r\n", ret);
         }
-
         vTaskDelay(pdMS_TO_TICKS(100));
     } while (ret != AXK_OK);
 
     s_mqtt_obj._mqtt_state = MQTT_INTIALIZED;
+
+    os_trace("END %s: free mem %d\r\n", __func__, xPortGetFreeHeapSize());
 }
 
 
-extern void kill_mqtt_core(axk_mqtt_client_handle_t client);
 void m_mqtt_stop(void)
 {
     os_trace("%s: free mem %d\r\n", __func__, xPortGetFreeHeapSize());
@@ -264,7 +263,6 @@ void m_mqtt_stop(void)
         axk_mqtt_client_disconnect(client);
         axk_mqtt_client_destroy(client);
         vTaskDelay(pdMS_TO_TICKS(2000));
-        kill_mqtt_core(client);
         client = NULL;
         s_mqtt_obj._mqtt_state = MQTT_UNINTIALIZED;
     }
