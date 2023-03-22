@@ -253,16 +253,22 @@ void m_mqtt_start(void)
     s_mqtt_obj._mqtt_state = MQTT_INTIALIZED;
 }
 
+
+extern void kill_mqtt_core(axk_mqtt_client_handle_t client);
 void m_mqtt_stop(void)
 {
-    os_trace("MQTT STOP\r\n");
+    os_trace("%s: free mem %d\r\n", __func__, xPortGetFreeHeapSize());
 
     if (client != NULL && s_mqtt_obj._mqtt_state != MQTT_UNINTIALIZED)
     {
+        axk_mqtt_client_disconnect(client);
         axk_mqtt_client_destroy(client);
+        vTaskDelay(pdMS_TO_TICKS(2000));
+        kill_mqtt_core(client);
         client = NULL;
         s_mqtt_obj._mqtt_state = MQTT_UNINTIALIZED;
     }
 
-    vTaskDelay(pdMS_TO_TICKS(500));
+    os_trace("END %s: free mem %d\r\n", __func__, xPortGetFreeHeapSize());
 }
+
