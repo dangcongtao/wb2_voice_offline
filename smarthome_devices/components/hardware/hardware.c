@@ -22,7 +22,7 @@ void m_log(const char *fmt, ...)
     va_start(args, fmt);
     vsnprintf(p, size, fmt, args);
 
-    printf("%*s", MAX_WIDTH, msg);
+    printf("%s", msg);
 
     va_end(args);
 }

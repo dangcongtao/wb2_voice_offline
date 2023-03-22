@@ -39,7 +39,7 @@ static void m_cb_scan_item_parse(wifi_mgmr_ap_item_t *env, uint32_t *param1, wif
 {
     /*recall the env*/
     uint32_t counter = (*param1);
-    printf("\r\n=== m_cb_scan_item_parse: counter: %u ===\r\n", counter);
+    // printf("\r\n=== m_cb_scan_item_parse: counter: %u ===\r\n", counter);
 
     /*scan overflow check*/
     if (counter >= WIFI_SCAN_MAX_AP)
@@ -55,7 +55,7 @@ static void m_cb_scan_item_parse(wifi_mgmr_ap_item_t *env, uint32_t *param1, wif
     uint32_t i;
     for (i = 0; i < counter; i++)
     {
-        printf("old_ssid/new_ssid: [%s:%s]\r\n", temp[i].ssid, item->ssid);
+        // printf("old_ssid/new_ssid: [%s:%s]\r\n", temp[i].ssid, item->ssid);
         if (!strcmp(temp[i].ssid, item->ssid))
         {
             break;
@@ -64,10 +64,10 @@ static void m_cb_scan_item_parse(wifi_mgmr_ap_item_t *env, uint32_t *param1, wif
 
     if (i < counter) {
         /* wifi ssid had been existed */
-        printf("Wifi SSID had been Existed: %s\r\n", item->ssid);
+        // printf("Wifi SSID had been Existed: %s\r\n", item->ssid);
     }
     else {
-        printf("Scan get new wifi: %s\r\n", item->ssid);
+        // printf("Scan get new wifi: %s\r\n", item->ssid);
 
         counter++;
 
@@ -112,8 +112,8 @@ void scan_ap_around(void)
 
     bl_os_sem_delete(scan_semaphore);
 
-    for (uint8_t i = 0; i < counter; i++)
-    {
-        printf("rssi %3d, SSID %s\r\n", ap_ary_p[i].rssi, ap_ary_p[i].ssid);
-    }
+    // for (uint8_t i = 0; i < counter; i++)
+    // {
+    //     printf("rssi %3d, SSID %s\r\n", ap_ary_p[i].rssi, ap_ary_p[i].ssid);
+    // }
 }
