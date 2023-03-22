@@ -19,10 +19,30 @@ static uint16_t timeline_status[] = {200, 200, 200, 200, 200, 200, 200, 200};
 static void m_start_timer(uint32_t time_ms);
 static void m_stop_timer(void);
 
+static uint8_t is_power_up = 1;
+
 static void vTimerCallback(TimerHandle_t xTimer)
 {
-    s_led_stt_obj._toggle_led_stt_cb();
-    s_led_stt_obj._led_handle_count = (s_led_stt_obj._led_handle_count + 1) % s_led_stt_obj._max_number_handle;
+    if (is_power_up && device_type == DATICBSV2)
+    {
+        is_power_up = 0;
+
+        /* turn led off */
+        s_led_stt_obj._set_led_stt_off_cb();
+
+        /* set time */
+        timeline_status[0] = 5000;
+        timeline_status[1] = 200;
+        s_led_stt_obj._led_handle_count = 0;
+        s_led_stt_obj._max_number_handle = TWO_PULSE_COUNT;
+        s_led_stt_obj._led_stt_type = LED_STYLE_UPDATE;
+    }
+    else
+    {
+        s_led_stt_obj._toggle_led_stt_cb();
+        s_led_stt_obj._led_handle_count = (s_led_stt_obj._led_handle_count + 1) % s_led_stt_obj._max_number_handle;
+    }
+
     m_stop_timer();
     m_start_timer(timeline_status[s_led_stt_obj._led_handle_count]);
 }
@@ -126,15 +146,30 @@ static void set_led_stt_not_config(void)
         /* Stop timer */
         m_stop_timer();
 
-        /* turn led off */
-        s_led_stt_obj._set_led_stt_off_cb();
+        if (is_power_up && device_type == DATICBSV2)
+        {
+            /* turn led on */
+            s_led_stt_obj._set_led_stt_on_cb();
 
-        /* set time */
-        timeline_status[0] = 5000;
-        timeline_status[1] = 200;
-        s_led_stt_obj._led_handle_count = 0;
-        s_led_stt_obj._max_number_handle = TWO_PULSE_COUNT;
-        s_led_stt_obj._led_stt_type = LED_STYLE_UPDATE;
+            /* set time */
+            timeline_status[0] = 3000;
+            timeline_status[1] = 200;
+            s_led_stt_obj._led_handle_count = 0;
+            s_led_stt_obj._max_number_handle = TWO_PULSE_COUNT;
+            s_led_stt_obj._led_stt_type = LED_STYLE_UPDATE;
+        }
+        else
+        {
+            /* turn led off */
+            s_led_stt_obj._set_led_stt_off_cb();
+
+            /* set time */
+            timeline_status[0] = 5000;
+            timeline_status[1] = 200;
+            s_led_stt_obj._led_handle_count = 0;
+            s_led_stt_obj._max_number_handle = TWO_PULSE_COUNT;
+            s_led_stt_obj._led_stt_type = LED_STYLE_UPDATE;
+        }
 
         /* start timer */
         m_start_timer(timeline_status[0]);
