@@ -22,7 +22,10 @@ void m_log(const char *fmt, ...)
     va_start(args, fmt);
     vsnprintf(p, size, fmt, args);
 
-    printf("%s", msg);
+    if (msg[strlen(msg) - 2] == '\r' || msg[strlen(msg)- 2] == '\n')
+        msg[strlen(msg) - 2]  = '\0';
+
+    blog_info("%s", msg);
 
     va_end(args);
 }

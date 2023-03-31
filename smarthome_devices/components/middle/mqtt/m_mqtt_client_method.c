@@ -231,23 +231,7 @@ void m_mqtt_start(void)
     }
 
     client = axk_mqtt_client_init(&mqtt_cfg);
-
-    axk_err_t ret = AXK_OK;
-    uint8_t retry = 0;
-    do
-    {
-        ret = axk_mqtt_client_start(client);
-        if (ret != AXK_OK)
-        {
-            if (retry++ > 20)
-            {
-                bl_sys_reset_por();
-            }
-            printf("mqtt start failed %d\r\n", ret);
-        }
-        vTaskDelay(pdMS_TO_TICKS(100));
-    } while (ret != AXK_OK);
-
+    axk_mqtt_client_start(client);
     s_mqtt_obj._mqtt_state = MQTT_INTIALIZED;
 
     os_trace("END %s: free mem %d\r\n", __func__, xPortGetFreeHeapSize());

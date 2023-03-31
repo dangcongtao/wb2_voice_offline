@@ -19,6 +19,8 @@ CONFIG_LINK_ROM=1
 CONFIG_FREERTOS_TICKLESS_MODE:=0
 CONFIG_WIFI:=1
 
+
+LOG_ENABLED_COMPONENTS := hardware
 # ========== BLE ===================
 
 #set CONFIG_ENABLE_ACP to 1 to enable ACP, set to 0 or comment this line to disable

@@ -57,7 +57,7 @@ void main(void)
 
     easyflash_init();
     tcpip_init(NULL, NULL);
-    blog_set_level_log_component(BLOG_LEVEL_ERROR, "axk_mqtt");
+    blog_set_level_log_component(BLOG_LEVEL_INFO, "hardware");
 
     /* have to init wifi and mqtt first. because database was built from them */
     m_wifi_init();
