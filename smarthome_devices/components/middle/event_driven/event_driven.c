@@ -169,3 +169,25 @@ void m_event_loop(uint32_t time_schedual_ms)
         }
     }
 }
+
+void sync_led_stt_when_reset_ts04(void)
+{
+    switch (current_state)
+    {
+    case M_WIFI_DEV_ACTIVE:
+        m_led_stt_get_instance()._set_led_stt_mqtt_subscribed_cb();
+        break;
+
+    case M_WIFI_DISCONNECT:
+    case M_WIFI_CONNECTING:
+        m_led_stt_get_instance()._set_led_stt_wifi_not_connect_cb();
+        break;
+    
+    case M_WIFI_MQTT_CONNECTING:
+        m_led_stt_get_instance()._set_led_stt_mqtt_disconnect_cb();
+        break;
+
+    default:
+        break;
+    }
+}

@@ -13,17 +13,19 @@
 #include "m_led_stt.h"
 #include "m_wifi.h"
 #include "m_database.h"
+#include "event_driven.h"
 
 extern m_state_t current_state;;
 extern uint32_t max_number_channel;
 static m_button_t s_button_obj;
 uint32_t ignore_event_release[MAX_NUM_BUTTON] = {0};
 
-#define EVENT_BTN_HOLD          1
-#define EVENT_BTN_HOLD_SO_LONG  2
+#define EVENT_BTN_HOLD              1
+#define EVENT_BTN_HOLD_SO_LONG      2
+#define EVENT_BTN_HOLD_HONG_PHIM    3
 
 static const char *event_name[] = {"pressed", "release",
-                                   "hold", "hold so long",
+                                   "hold", "hold so long", "hold hong phim",
                                    "double click", "tripple click",
                                    "idle", "idle break", "invalid"};
 
@@ -47,7 +49,13 @@ void on_button_event_cb(int button_pin, int event, void *data)
 
     case APP_BTN_EVT_RELEASED:
     {
-        if (ignore_event_release[button_pin] == EVENT_BTN_HOLD)
+        if (ignore_event_release[button_pin] == EVENT_BTN_HOLD_HONG_PHIM)
+        {
+            sync_led_stt_when_reset_ts04();
+            ignore_event_release[button_pin] = 0;
+            return;
+        }
+        else if (ignore_event_release[button_pin] == EVENT_BTN_HOLD)
         {
             app_send_offline_message(1);
             vTaskDelay(pdMS_TO_TICKS(100));
@@ -76,7 +84,6 @@ void on_button_event_cb(int button_pin, int event, void *data)
 
     case APP_BTN_EVT_HOLD:
     {
-        /* factory reset database */
         m_led_stt_get_instance()._set_led_stt_smart_config_cb();
         ignore_event_release[button_pin] = EVENT_BTN_HOLD;
     }
@@ -84,14 +91,22 @@ void on_button_event_cb(int button_pin, int event, void *data)
 
     case APP_BTN_EVT_HOLD_SO_LONG:
     {
-        if (ignore_event_release[button_pin] == EVENT_BTN_HOLD_SO_LONG)
-            return;
-
-        /* factory reset database */
         m_led_stt_get_instance()._set_led_stt_ap_config_cb();
         ignore_event_release[button_pin] = EVENT_BTN_HOLD_SO_LONG;
     }
     break;
+
+    case APP_BTN_EVT_HOLD_HONG_PHIM:
+    {
+        if (ignore_event_release[button_pin] == EVENT_BTN_HOLD_HONG_PHIM)
+            return;
+        hw_ts04_write(TS04_IDLE_LEVEL);
+
+        vTaskDelay(pdMS_TO_TICKS(100));
+
+        hw_ts04_write(TS04_ACTIVE_LEVEL);
+        ignore_event_release[button_pin] = EVENT_BTN_HOLD_HONG_PHIM;
+    }
 
     case APP_BTN_EVT_DOUBLE_CLICK:
     {
@@ -132,6 +147,7 @@ static void m_button_config(void)
     app_btn_register_callback(APP_BTN_EVT_RELEASED, on_button_event_cb, NULL);
     app_btn_register_callback(APP_BTN_EVT_HOLD, on_button_event_cb, NULL);
     app_btn_register_callback(APP_BTN_EVT_HOLD_SO_LONG, on_button_event_cb, NULL);
+    app_btn_register_callback(APP_BTN_EVT_HOLD_HONG_PHIM, on_button_event_cb, NULL);
 }
 
 /* private */

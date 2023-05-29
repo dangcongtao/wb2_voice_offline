@@ -8,7 +8,9 @@ static uint32_t m_btn_press_evt = 0;
 static uint32_t m_btn_release_evt = 0;
 static uint32_t m_btn_hold_evt = 0;
 static uint32_t m_btn_hold_evt_exec = 0;
+static uint32_t m_btn_hold_hong_phim_evt_exec = 0;
 static uint32_t m_btn_on_hold_evt = 0;
+static uint32_t m_btn_on_hold_so_long_evt = 0;
 static uint32_t m_btn_hold_count[APP_BTN_MAX_BTN_SUPPORT] = {0};
 static uint32_t m_btn_on_hold_count[APP_BTN_MAX_BTN_SUPPORT] = {0};
 static uint32_t m_btn_last_press_time[APP_BTN_MAX_BTN_SUPPORT] = {0};
@@ -88,12 +90,20 @@ void app_btn_scan(void* params)
         {
             if (m_btn_config.get_tick_cb() - m_btn_hold_count[i] >= app_btn_on_hold_time_fire_event_ms)
             {
-                if (((m_btn_hold_evt >> i) & 0x1)) /* if this button was hold before */
+                if (((m_btn_on_hold_evt >> i) & 0x1)) /* if this button was hold before */
+                {
+                    if (m_btn_config.get_tick_cb() - m_btn_on_hold_count[i] >= APP_BTN_HOLD_HONG_PHIM_TIME_MS) /* hold enough time for trigger event hold button */
+                    {
+                        m_btn_on_hold_count[i] = m_btn_config.get_tick_cb();
+                        m_btn_on_hold_so_long_evt |= (1 << i); /* set event hold */
+                    }
+                } else if (((m_btn_hold_evt >> i) & 0x1)) /* if this button was hold before */
                 {
                     if (m_btn_config.get_tick_cb() - m_btn_on_hold_count[i] >= APP_BTN_HOLD_SO_LONG_TIME_MS) /* hold enough time for trigger event hold button */
                     {
                         m_btn_on_hold_count[i] = m_btn_config.get_tick_cb();
                         m_btn_on_hold_evt |= (1 << i); /* set event hold */
+                        m_btn_hold_hong_phim_evt_exec &= ~(1 << i);
                     }
                 }
                 else
@@ -157,6 +167,7 @@ void app_btn_scan(void* params)
             }
             m_btn_release_evt &= ~(1 << i);
             m_btn_hold_evt &= ~(1 << i); // clear
+            m_btn_on_hold_evt &= ~(1 << i);
         }
 
         if (!((m_btn_hold_evt_exec >> i) & 0x1) &&  ((m_btn_hold_evt >> i) & 0x1))
@@ -169,14 +180,24 @@ void app_btn_scan(void* params)
             }
         }
 
-        if ((m_btn_on_hold_evt >> i) & 0x1)
+        if (!((m_btn_hold_hong_phim_evt_exec >> i) & 0x1) && ((m_btn_on_hold_evt >> i) & 0x1))
         {
+            m_btn_hold_hong_phim_evt_exec |= (1 << i);
             uint32_t hold_time = m_btn_config.get_tick_cb() - m_btn_hold_count[i];
             if (m_callback_table[APP_BTN_EVT_HOLD_SO_LONG]) 
             {
                 m_callback_table[APP_BTN_EVT_HOLD_SO_LONG](m_hw_params[i].pin, APP_BTN_EVT_HOLD_SO_LONG, (void*)hold_time); /* call to callback hold so long button */
             }
-            m_btn_on_hold_evt &= ~(1 << i);
+        }
+
+        if ((m_btn_on_hold_so_long_evt >> i) & 0x1)
+        {
+            uint32_t hold_time = m_btn_config.get_tick_cb() - m_btn_hold_count[i];
+            if (m_callback_table[APP_BTN_EVT_HOLD_HONG_PHIM]) 
+            {
+                m_callback_table[APP_BTN_EVT_HOLD_HONG_PHIM](m_hw_params[i].pin, APP_BTN_EVT_HOLD_HONG_PHIM, (void*)hold_time); /* call to callback hold so long button */
+            }
+            m_btn_on_hold_so_long_evt &= ~(1 << i);
         }
     }
 }

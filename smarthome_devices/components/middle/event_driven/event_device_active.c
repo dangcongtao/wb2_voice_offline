@@ -87,6 +87,7 @@ m_state_transmit_t dev_actived_disconnect_mqtt = {
 void device_disconnect_wifi_handler(void *arg)
 {
     os_trace("device_disconnect_mqtt_handler\r\n");
+    m_led_stt_get_instance()._set_led_stt_wifi_not_connect_cb();
     app_btn_on_hold_time_fire_event_ms = APP_BTN_HOLD_EVENT_5S;
 }
 m_state_transmit_t dev_actived_disconnect_wifi = {

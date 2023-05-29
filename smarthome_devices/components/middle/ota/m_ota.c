@@ -48,6 +48,21 @@ void _ota_task(void* pvParameters)
     vTaskDelete(NULL);
 }
 
+static void app_reboot(void)
+{
+    bl_sys_reset_por();
+}
+
+static void app_ota_set_reboot(_Bool ota_result)
+{
+    printf("app_ota_set_reboot %u", ota_result);
+    if (ota_result == true) {
+        is_ota = 2;
+    }
+    vTaskDelay(1000);
+    app_reboot();
+}
+
 int axk_hal_user_ota_update(char* url)
 {
     int port;
@@ -96,6 +111,7 @@ int axk_hal_user_ota_update(char* url)
     printf("[OTA] port:%d host:%s path:%s\r\n", port, ota_host, ota_resource);
 
     ota_param = ai_ota_parame_init(ota_host, port, ota_resource);
+    ota_param.rebooot_cb = app_ota_set_reboot;
 
     int ret = xTaskCreate(_ota_task, "ota", 4096, NULL, 10, NULL);
     if (ret != pdPASS) {
