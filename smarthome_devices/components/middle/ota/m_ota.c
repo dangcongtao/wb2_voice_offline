@@ -26,6 +26,8 @@
 #include "ai_ota.h"
 #include "ota_config.h"
 #include "ota_hal.h"
+#include "bl_sys.h"
+#include <stdbool.h>
 
 // #define url "https://chencong--test.oss-cn-beijing.aliyuncs.com/test.bin"
 
@@ -35,6 +37,7 @@ static ota_parame ota_param;
 static int ota_type;
 static char ota_host[256];
 static char ota_resource[256];
+uint8_t is_ota = 0;
 
 void _ota_task(void* pvParameters)
 {
