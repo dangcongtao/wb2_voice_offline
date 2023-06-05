@@ -33,7 +33,7 @@ uint32_t hw_btn_read(uint32_t index)
 
 void hw_btn_change_btn_pin(void)
 {
-    if (device_type == WSWITCH || device_type == WSDATIC) {
+    if (device_type == WSWITCH || device_type == WSDATIC || device_type == LHSWITCH) {
         switch (max_number_channel)
         {
         case 2:

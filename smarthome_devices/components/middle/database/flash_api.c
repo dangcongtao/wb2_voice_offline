@@ -119,7 +119,7 @@ void flash_read_database(m_device_t *object_data)
 
 void flash_read_device_id(void *id_buff, uint32_t size)
 {
-    sprintf(id_buff, "HUN168532682664wswitch2vN3");
+    sprintf(id_buff, "HUN168593906440lhswitch2vN1");
     return;
     ef_get_bytes(DEVICE_ID, id_buff, size);
 }
