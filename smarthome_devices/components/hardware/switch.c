@@ -21,6 +21,15 @@ void hw_write_switch_pin(uint8_t index, uint8_t val)
 
     switch_state[index] = val;
     bl_gpio_output_set(switch_arr[index], switch_state[index]); /* set relay */
+    if (device_type == WSWITCH || device_type == WSDATIC)
+    {
+        if (max_number_channel == 1 && index == 0)
+            bl_gpio_output_set(switch_arr[1], val); /* bug in hardware pcb so need do it for fake
+                                    led indicator */
+        else if (max_number_channel == 2 && index == 1)
+            bl_gpio_output_set(switch_arr[2], val); /* bug in hardware pcb so need do it for fake
+                                    led indicator */
+    }
 }
 
 uint8_t hw_read_switch_pin(uint8_t index)

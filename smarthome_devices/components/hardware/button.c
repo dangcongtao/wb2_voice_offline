@@ -30,3 +30,17 @@ uint32_t hw_btn_read(uint32_t index)
 
     return (uint32_t)gpio_get_level(button_arr[index]);
 }
+
+void hw_btn_change_btn_pin(void)
+{
+    if (device_type == WSWITCH || device_type == WSDATIC) {
+        switch (max_number_channel)
+        {
+        case 2:
+            button_arr[1] = BUTTON3;
+            break;
+        default:
+            break;
+        }
+    }
+}

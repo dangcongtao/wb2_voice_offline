@@ -234,6 +234,21 @@ void m_switch_init(void)
     for (i = 0; i < max_number_channel; i++)
         s_switch_obj._switch_cfg_cb(i);
 
+    if (device_type == WSWITCH || device_type == WSDATIC) {
+        switch (max_number_channel)
+        {
+        case 1:
+            s_switch_obj._switch_cfg_cb(1);
+            break;
+        
+        case 2:
+            s_switch_obj._switch_cfg_cb(2);
+            break;
+        default:
+            break;
+        }
+    }
+
     control_switch_default_state();
 }
 

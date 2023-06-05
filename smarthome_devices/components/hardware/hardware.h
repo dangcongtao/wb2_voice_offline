@@ -15,18 +15,18 @@
 
 #define MAX_NUM_BUTTON  4
 #define BTN_IDLE_LEVEL  1
-#define BUTTON1 1
-#define BUTTON2 5
-#define BUTTON3 21
-#define BUTTON4 20
+#define BUTTON1    1
+#define BUTTON2    5
+#define BUTTON3   21
+#define BUTTON4   20
 
 #define MAX_NUM_SWITCH          4
 #define SWITCH_IDLE_LEVEL       0
 #define SWITCH_ACTIVE_LEVEL     1
-#define SWITCH1 14
-#define SWITCH2 17
-#define SWITCH3 3
-#define SWITCH4 4
+#define SWITCH1   14
+#define SWITCH2   17 
+#define SWITCH3    3
+#define SWITCH4    4
 
 #define TS04    22
 #define TS04_IDLE_LEVEL     0
@@ -42,6 +42,7 @@ uint32_t sys_get_tick_ms(void);
 void hw_button_config(uint32_t index);
 uint32_t hw_btn_read(uint32_t index);
 void hw_ts04_write(uint8_t value);
+void hw_btn_change_btn_pin(void);
 
 /* led */
 void hw_led_stt_cfg(void);

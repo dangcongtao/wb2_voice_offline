@@ -56,7 +56,7 @@ void main(void)
     #if DEBUG_ENABLE == 0
     bl_sys_logall_disable();
     #endif
-    hw_switch_cfg(0);
+    // hw_switch_cfg(0);
 
     easyflash_init();
     tcpip_init(NULL, NULL);

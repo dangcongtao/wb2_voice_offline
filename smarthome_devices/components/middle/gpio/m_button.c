@@ -167,6 +167,7 @@ static void button_scan_task(void *param)
 /* public */
 void m_button_init(void)
 {
+    hw_btn_change_btn_pin();
     m_button_config();
     
     os_trace("m_button_init: %ld\r\n", max_number_channel);
