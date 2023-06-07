@@ -15,8 +15,10 @@ void hw_button_config(uint32_t index)
     if (index >= max_number_channel)
         return;
 
+    if (device_type == WSWITCH) {
     gpio_set_output(TS04);
     hw_ts04_write(TS04_ACTIVE_LEVEL);
+    }
 
     gpio_set_input(button_arr[index]);
 }
