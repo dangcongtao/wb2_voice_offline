@@ -927,5 +927,5 @@ void process_data_init(void)
     pdata_queue_init();
     m_mqtt_command_startup_register_handler(app_startup_message);
 
-    xTaskCreate(app_handler_msg_task, "ble slave", 1024, NULL, 15, NULL);
+    xTaskCreate(app_handler_msg_task, "ble slave", 1024 * 3, NULL, 15, NULL);
 }

@@ -191,3 +191,8 @@ void sync_led_stt_when_reset_ts04(void)
         break;
     }
 }
+
+uint8_t dev_is_doing_config(void)
+{
+    return current_state == M_WIFI_APCONFIG || current_state == M_WIFI_SMARTCONFIG;
+}

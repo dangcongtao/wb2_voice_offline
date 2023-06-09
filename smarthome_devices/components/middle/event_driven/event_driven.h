@@ -8,5 +8,6 @@ void m_event_loop(uint32_t time_schedual_ms);
 void signal_post(m_signal_t sig);
 void signal_handler_register(m_state_transmit_t new_state);
 void sync_led_stt_when_reset_ts04(void);
+uint8_t dev_is_doing_config(void);
 
 #endif /* _M_SMART_CONFIG_H_ */
