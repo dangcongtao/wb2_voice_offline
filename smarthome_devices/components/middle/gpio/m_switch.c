@@ -230,6 +230,8 @@ void m_switch_init(void)
     s_switch_obj._toggle_switch_cb = m_toggle_switch;
     s_switch_obj._control_switch_cb = m_control_switch;
 
+    hw_switch_change_pin_type();
+
     uint32_t i = 0;
     for (i = 0; i < max_number_channel; i++)
         s_switch_obj._switch_cfg_cb(i);

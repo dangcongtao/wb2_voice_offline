@@ -44,5 +44,7 @@ void hw_btn_change_btn_pin(void)
         default:
             break;
         }
+    } else if (device_type == SSWITCH) {
+        button_arr[0] = BUTTON_SSW;
     }
 }

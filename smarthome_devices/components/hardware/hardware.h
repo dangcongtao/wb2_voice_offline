@@ -10,6 +10,8 @@
 #define gpio_set_level      bl_gpio_output_set
 
 #define LED_STT 12
+#define LED_STT_SSW     1
+
 #define LED_STT_ON      0
 #define LED_STT_OFF     1
 
@@ -19,6 +21,8 @@
 #define BUTTON2    5
 #define BUTTON3   21
 #define BUTTON4   20
+
+#define BUTTON_SSW  4
 
 #define MAX_NUM_SWITCH          4
 #define SWITCH_IDLE_LEVEL       0
@@ -54,6 +58,7 @@ void hw_toggle_led_stt(void);
 void hw_switch_cfg(uint8_t index);
 void hw_write_switch_pin(uint8_t index, uint8_t val);
 uint8_t hw_read_switch_pin(uint8_t index);
+void hw_switch_change_pin_type(void);
 
 /* hardware init. should call this api first */
 void gpio_set_output(int pin);

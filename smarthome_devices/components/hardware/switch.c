@@ -41,3 +41,10 @@ uint8_t hw_read_switch_pin(uint8_t index)
 
     return switch_state[index];
 }
+
+void hw_switch_change_pin_type(void)
+{
+    if (device_type == SSWITCH) {
+       switch_arr[0] = SWITCH2;
+    }
+}
