@@ -125,11 +125,11 @@ void m_event_loop(uint32_t time_schedual_ms)
         {
             printf("================>>>>CHANGE FROM %d TO %d\r\n", current_state, state_array[i].next_state);
 
+            current_state = state_array[i].next_state;
             if (state_array[i].signal_handler_cb) {
                 signal = SIG_NONE;
                 state_array[i].signal_handler_cb(&signal);
             }
-            current_state = state_array[i].next_state;
 
             /* start count time wait connect */
             if (current_state == M_WIFI_SMARTCONFIG || current_state == M_WIFI_APCONFIG) {
