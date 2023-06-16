@@ -352,6 +352,8 @@ loop_end:
         return false; /* parse_error */
     }
 
+    // item->value_uint = strtoul((const char*)number_c_string, (char**)&after_end);
+
     item->valuedouble = number;
 
     /* use saturation in case of overflow */

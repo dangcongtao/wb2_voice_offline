@@ -137,7 +137,7 @@ static void wifi_ap_start(void)
     char* passwd = "";
 
     memset(ssid, 0, sizeof(ssid));
-    sprintf(ssid, "%s*", m_db_get_instance()->_get_dev_id());
+    sprintf(ssid, "%s$", m_db_get_instance()->_get_dev_id());
 
     /* start soft0-ap */
     ap_interface = wifi_mgmr_ap_enable();

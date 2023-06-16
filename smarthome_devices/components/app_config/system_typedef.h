@@ -34,6 +34,9 @@
 #define CJSON_KEY_TOPIC_PUB     "pub"
 #define CJSON_KEY_TOPIC_SUB     "sub"
 
+#define CJSON_KEY_AP_USER_ID        "uid"
+#define CJSON_KEY_TIMESTAMP      "timestamp"
+
 
 #define DEFAULT_AES_KEY "0000000000000000"
 #define DEFAULT_AES_IV  "0000000000000000"

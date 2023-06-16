@@ -29,18 +29,15 @@ bool apconfig_parse_wifi_info(char *buf)
 {
     os_trace("apconfig_parse_wifi_info\r\n");
 
+    cJSON *jsRoot = NULL, *jsUid = NULL, *jsTimeStamp = NULL, *jsSsid = NULL, *jsWifiPwd = NULL;
+    char *timestamp, *uid = NULL, *ssid = NULL, *pass = NULL;
     char *temp = NULL;
     char data[128];
     char *data_begin = NULL;
     char *data_end = NULL;
 
-    uint16_t base64_len;
-    uint8_t base64_data[256];
-    char real_msg[256];
-    size_t real_msg_len = 0;
-
     /* pub */
-    temp = strstr(buf, "name=\"pub\"");
+    temp = strstr(buf, "name=\"data\"");
     if (temp == NULL)
         goto not_found_pub;
     /* begin */
@@ -56,89 +53,70 @@ bool apconfig_parse_wifi_info(char *buf)
     /* copy */
     memset(data, 0, sizeof(data));
     memcpy(data, data_begin, data_end - data_begin);
-    /* base64 */
-    memset(base64_data, 0, sizeof(base64_data));
-    base64_len = b64_decode((uint8_t *)data, strlen(data), base64_data);
-    /* AES */
-    memset(real_msg, 0, sizeof(real_msg));
-    aes_cbc128_init((uint8_t*)DEF_AES_KEY, (uint8_t*)DEF_AES_IV);
-    if (aes_cbc128_decrypt((uint8_t *)base64_data, base64_len, (uint8_t *)real_msg, &real_msg_len) != AES_SUCCESS)
-    {
-        os_trace("Pub decode fail\r\n");
-        return false;
-    }
-    /* save */
-    os_trace("set_mqtt_topic_pub[%d]: %s\r\n", real_msg_len, real_msg);
-    m_mqtt_get_instance().set_mqtt_topic_pub(real_msg, real_msg_len);
 
-    /* sub */
-    temp = strstr(buf, "name=\"sub\"");
-    if (temp == NULL)
+
+    jsRoot = cJSON_Parse(data);
+    if (!jsRoot) {
+        os_trace("Parse Json AP info post Fail\r\n");
         goto not_found_pub;
-    /* begin */
-    data_begin = strstr(temp, "\r\n\r\n");
-    if (data_begin == NULL)
-        goto not_found_pub;
-    data_begin += strlen("\r\n\r\n");
-    /* end */
-    data_end = strstr(data_begin, "\r\n");
-    if (data_end == NULL)
-        goto not_found_pub;
-    /* copy */
-    memset(data, 0, sizeof(data));
-    memcpy(data, data_begin, data_end - data_begin);
-    /* base64 */
-    memset(base64_data, 0, sizeof(base64_data));
-    base64_len = b64_decode((uint8_t *)data, strlen(data), base64_data);
-    /* AES */
-    memset(real_msg, 0, sizeof(real_msg));
-    aes_cbc128_init((uint8_t*)DEF_AES_KEY, (uint8_t*)DEF_AES_IV);
-    if (aes_cbc128_decrypt((uint8_t *)base64_data, base64_len, (uint8_t *)real_msg, &real_msg_len) != AES_SUCCESS)
-    {
-        os_trace("Pub decode fail\r\n");
-        return false;
     }
+
+    jsUid = cJSON_GetObjectItem(jsRoot, CJSON_KEY_AP_USER_ID);
+
+    if (jsUid == NULL)
+    {
+        os_trace("Get JSON uid AP fail\n");
+        goto not_found_pub;
+    }
+    uid = jsUid->valuestring;
+
+    jsTimeStamp = cJSON_GetObjectItem(jsRoot, CJSON_KEY_TIMESTAMP);
+
+    if (jsTimeStamp == NULL)
+    {
+        os_trace("Get JSON timestamp AP fail\n");
+        goto not_found_pub;
+    }
+    timestamp = cJSON_PrintUnformatted(jsTimeStamp);
+
+    jsSsid = cJSON_GetObjectItem(jsRoot, CJSON_KEY_SSID);
+    if (jsSsid == NULL)
+    {
+        os_trace("Get JSON ssid fail\n");
+        goto not_found_pub;
+    }
+    ssid = jsSsid->valuestring;
+
+    jsWifiPwd = cJSON_GetObjectItem(jsRoot, CJSON_KEY_PASS);
+    if (jsWifiPwd == NULL)
+    {
+        os_trace("Get JSON password fail\n");
+        goto not_found_pub;
+    }
+    pass = jsWifiPwd->valuestring;
+
+    char topic_pub[256], topic_sub[256];
+    memset(topic_pub, 0, sizeof(topic_pub));
+    memset(topic_sub, 0, sizeof(topic_sub));
+
+    sprintf(topic_pub, "u/%s/%s/%s/ok", uid, m_db_get_instance()->_get_dev_id(), (uint32_t) timestamp);
+    sprintf(topic_sub, "u/%s/%s/%s", uid, m_db_get_instance()->_get_dev_id(), (uint32_t) timestamp);
+
     /* save */
-    os_trace("set_mqtt_topic_sub[%d]: %s\r\n", real_msg_len, real_msg);
-    m_mqtt_get_instance().set_mqtt_topic_sub(real_msg, real_msg_len);
+    os_trace("set_mqtt_topic_pub[%d]: %s\r\n", strlen(topic_pub), topic_pub);
+    m_mqtt_get_instance().set_mqtt_topic_pub(topic_pub, strlen(topic_pub));
+
+    /* save */
+    os_trace("set_mqtt_topic_sub[%d]: %s\r\n", strlen(topic_sub), topic_sub);
+    m_mqtt_get_instance().set_mqtt_topic_sub(topic_sub, strlen(topic_sub));
 
     /* ssid */
-    temp = strstr(buf, "name=\"ssid\"");
-    if (temp == NULL)
-        goto not_found_pub;
-    /* begin */
-    data_begin = strstr(temp, "\r\n\r\n");
-    if (data_begin == NULL)
-        goto not_found_pub;
-    data_begin += strlen("\r\n\r\n");
-    /* end */
-    data_end = strstr(data_begin, "\r\n");
-    if (data_end == NULL)
-        goto not_found_pub;
-    /* copy */
-    memset(data, 0, sizeof(data));
-    memcpy(data, data_begin, data_end - data_begin);
-    m_wifi_get_instance().wifi_set_ssid_cb(data, strlen(data));
-    os_trace("set wifi ssid %s\r\n", data);
+    m_wifi_get_instance().wifi_set_ssid_cb(ssid, strlen(ssid));
+    os_trace("set wifi ssid %s\r\n", ssid);
 
     /* pass */
-    temp = strstr(buf, "name=\"pass\"");
-    if (temp == NULL)
-        goto not_found_pub;
-    /* begin */
-    data_begin = strstr(temp, "\r\n\r\n");
-    if (data_begin == NULL)
-        goto not_found_pub;
-    data_begin += strlen("\r\n\r\n");
-    /* end */
-    data_end = strstr(data_begin, "\r\n");
-    if (data_end == NULL)
-        goto not_found_pub;
-    /* copy */
-    memset(data, 0, sizeof(data));
-    memcpy(data, data_begin, data_end - data_begin);
-    m_wifi_get_instance().wifi_set_passwd_cb(data, strlen(data));
-    os_trace("set wifi password %s\r\n", data);
+    m_wifi_get_instance().wifi_set_passwd_cb(pass, strlen(pass));
+    os_trace("set wifi password %s\r\n", pass);
 
     // ========= SYNC ===========
     m_db_get_instance()->_set_dev_pair_state(true);
