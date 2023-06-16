@@ -214,6 +214,11 @@ void m_mqtt_start(void)
     mqtt_cfg.lwt_topic = s_mqtt_obj.mqtt_info.topic_pub;
     mqtt_cfg.lwt_qos = 0;
     mqtt_cfg.event_handle = mqtt_event_handler_cb;
+    
+    char client_id[128];
+    memset(client_id, 0, sizeof(client_id));
+    sprintf(client_id, "%s_%s_%s", BRAND, gs_dev_type[device_type], m_db_get_instance()->_get_dev_id());
+    mqtt_cfg.client_id = client_id;
 
     os_trace("mqtt start\r\n");
     os_trace("\tserver: %s\r\n", mqtt_cfg.uri);
