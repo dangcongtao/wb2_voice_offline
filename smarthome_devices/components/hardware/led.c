@@ -14,21 +14,13 @@ void hw_led_stt_cfg(void)
 
 void hw_led_stt_on(void)
 {
-    // if (device_type == SSWITCH) {
-    //    led_stt_val = LED_STT_OFF;
-    // } else {
-        led_stt_val = LED_STT_ON;
-    // }
+    led_stt_val = LED_STT_ON;
     gpio_set_level(led_stt_pin, led_stt_val);
 }
 
 void hw_led_stt_off(void)
 {
-    // if (device_type == SSWITCH) {
-    //    led_stt_val = LED_STT_ON;
-    // } else {
-        led_stt_val = LED_STT_OFF;
-    // }
+    led_stt_val = LED_STT_OFF;
     gpio_set_level(led_stt_pin, led_stt_val);
 }
 

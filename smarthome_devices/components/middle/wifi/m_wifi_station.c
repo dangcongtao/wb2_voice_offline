@@ -174,7 +174,7 @@ void m_wifi_sta_start(char *ssid, char *pass)
 void m_wifi_sta_stop(void)
 {
     os_trace("m_wifi_sta_stop\r\n");
-
+    wifi_mgmr_sta_autoconnect_disable();
     wifi_mgmr_sta_disconnect();
     while(g_wifi_sta_is_connected)
         vTaskDelay(100);
