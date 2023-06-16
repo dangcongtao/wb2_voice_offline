@@ -270,7 +270,7 @@ static void m_database_sync_task(void *param)
 
                 // memcpy(&s_m_wifi_info_backup, s_m_database._m_device._wifi_info, sizeof(m_wifi_info_t));
                 // memcpy(&s_m_mqtt_info_backup, s_m_database._m_device._mqtt_info, sizeof(m_mqtt_info_t));
-                // memcpy(&s_m_switch_info_backup, s_m_database._m_device._switch_info, sizeof(m_switch_info_t));
+                memcpy(&s_m_switch_info_backup, s_m_database._m_device._switch_info, sizeof(m_switch_info_t));
                 // s_m_pair_state_backup = s_m_database._m_device._device_is_paired;
             }
 
@@ -284,6 +284,9 @@ static void m_database_sync_task(void *param)
             s_m_database._m_device._switch_info->default_state[1] = SWITCH_TWO_DEFAULT_OFF;
             s_m_database._m_device._switch_info->default_state[2] = SWITCH_THREE_DEFAULT_OFF;
             s_m_database._m_device._switch_info->default_state[3] = SWITCH_FOUR_DEFAULT_OFF;
+            memset(s_m_database._m_device._switch_info->current_state, 0, sizeof(s_m_database._m_device._switch_info->current_state));
+            memcpy(s_m_database._m_device._switch_info->current_state, s_m_switch_info_backup.current_state, sizeof(s_m_database._m_device._switch_info->current_state));
+            memset(&s_m_switch_info_backup, 0, sizeof(s_m_switch_info_backup));
 
             s_request_reset_db = 0;
             s_request_sync_db = 1;
