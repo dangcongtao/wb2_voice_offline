@@ -16,6 +16,10 @@ void add_padding_PKCS7(uint8_t *p_buff, size_t size_buff, size_t len)
 void remove_padding_PKCS7(uint8_t *p_buff, size_t *p_size)
 {
 	uint8_t pad = p_buff[(*p_size)-1];
+	if (pad > *p_size) {
+		printf("remove_padding_PKCS7 error\r\n");
+		return;
+	}
 	uint8_t *p_index = &p_buff[(*p_size) - pad];
 
 	memset(p_index, 0, pad);

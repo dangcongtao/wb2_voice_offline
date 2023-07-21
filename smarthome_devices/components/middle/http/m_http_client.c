@@ -14,6 +14,7 @@
 #include "system_typedef.h"
 #include "aes_cbc128.h"
 #include "base64.h"
+#include "bl_sys.h"
 
 #define WEB_SERVER "api.hunonicpro.com"
 #define WEB_PORT "80"
@@ -135,8 +136,10 @@ void get_mqtt_info(void)
 
     cJSON *js_Root;
     js_Root = cJSON_Parse(output);
-    if (!js_Root)
+    if (!js_Root) {
+        bl_sys_reset_por();
         return false;
+    }
 
     cJSON *jsGetObject = cJSON_GetObjectItem(js_Root, "data");
     if (!jsGetObject)
