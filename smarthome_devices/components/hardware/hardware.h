@@ -30,7 +30,7 @@
 #define SWITCH1   14
 #define SWITCH2   17 
 #define SWITCH3    3
-#define SWITCH4    4
+#define SWITCH4    0
 
 #define TS04    22
 #define TS04_IDLE_LEVEL     0
