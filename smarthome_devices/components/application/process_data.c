@@ -901,13 +901,13 @@ void app_handler_msg_task(void * arg)
             uint32_t cmd = jsType->valueint;
 
             uint32_t arr_size = sizeof(array_handler) / sizeof(array_handler[0]);
-            os_trace("arr_size: %u\r\n", arr_size);
+            os_trace("arr_size: %lu\r\n", arr_size);
 
             for (uint32_t i = 0; i < arr_size; i++)
             {
                 if (array_handler[i]._cmd_number == cmd)
                 {
-                    os_trace("_cmd_number: %d\r\n", cmd);
+                    os_trace("_cmd_number: %ld\r\n", cmd);
                     array_handler[i]._handler(jsRoot);
                     break;
                 }
