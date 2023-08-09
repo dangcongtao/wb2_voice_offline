@@ -141,12 +141,23 @@ static void set_led_stt_not_config(void)
             s_led_stt_obj._led_stt_type = LED_STYLE_ON;
         }
     }
+    else if (device_type == LHSWITCH)
+    {
+        if (s_led_stt_obj._led_stt_type != LED_STYLE_OFF)
+        {
+            os_trace("set_led_stt_not_config\r\n");
+            /* Stop timer */
+            m_stop_timer();
+            s_led_stt_obj._set_led_stt_off_cb();
+            s_led_stt_obj._led_stt_type = LED_STYLE_OFF;
+        }
+    }
     else
     {
         /* Stop timer */
         m_stop_timer();
 
-        if (is_power_up && (device_type == DATICBSV2 || device_type == LHSWITCH))
+        if (is_power_up && device_type == DATICBSV2)
         {
             /* turn led on */
             s_led_stt_obj._set_led_stt_on_cb();
@@ -216,7 +227,7 @@ static void set_led_stt_disconnect_mqtt(void)
 static void set_led_stt_device_active(void)
 {
     os_trace("set_led_stt_device_active\r\n");
-    if (device_type == WSWITCH || device_type == WSDATIC || device_type == LHSWITCH || device_type == SSWITCH)
+    if (device_type == WSWITCH || device_type == WSDATIC || device_type == SSWITCH)
     {
         if (s_led_stt_obj._led_stt_type != LED_STYLE_OFF)
         {
