@@ -35,7 +35,7 @@ static void vTimerCallback(TimerHandle_t xTimer)
         timeline_status[1] = 200;
         s_led_stt_obj._led_handle_count = 0;
         s_led_stt_obj._max_number_handle = TWO_PULSE_COUNT;
-        s_led_stt_obj._led_stt_type = LED_STYLE_UPDATE;
+        s_led_stt_obj._led_stt_type = LED_STYLE_NOT_CONFIGURED;
     }
     else
     {
@@ -141,55 +141,47 @@ static void set_led_stt_not_config(void)
             s_led_stt_obj._led_stt_type = LED_STYLE_ON;
         }
     }
-    else if (device_type == LHSWITCH)
+    else
     {
         if (s_led_stt_obj._led_stt_type != LED_STYLE_OFF)
         {
-            os_trace("set_led_stt_not_config\r\n");
             /* Stop timer */
             m_stop_timer();
-            s_led_stt_obj._set_led_stt_off_cb();
-            s_led_stt_obj._led_stt_type = LED_STYLE_OFF;
+
+            if (is_power_up && (device_type == DATICBSV2 || device_type == LHSWITCH))
+            {
+                /* turn led on */
+                s_led_stt_obj._set_led_stt_on_cb();
+
+                /* set time */
+                timeline_status[0] = 3000;
+                timeline_status[1] = 200;
+                s_led_stt_obj._led_handle_count = 0;
+                s_led_stt_obj._max_number_handle = TWO_PULSE_COUNT;
+                s_led_stt_obj._led_stt_type = LED_STYLE_NOT_CONFIGURED;
+            }
+            else
+            {
+                /* turn led off */
+                s_led_stt_obj._set_led_stt_off_cb();
+
+                /* set time */
+                timeline_status[0] = 5000;
+                timeline_status[1] = 200;
+                s_led_stt_obj._led_handle_count = 0;
+                s_led_stt_obj._max_number_handle = TWO_PULSE_COUNT;
+                s_led_stt_obj._led_stt_type = LED_STYLE_NOT_CONFIGURED;
+            }
+
+            /* start timer */
+            m_start_timer(timeline_status[0]);
         }
-    }
-    else
-    {
-        /* Stop timer */
-        m_stop_timer();
-
-        if (is_power_up && device_type == DATICBSV2)
-        {
-            /* turn led on */
-            s_led_stt_obj._set_led_stt_on_cb();
-
-            /* set time */
-            timeline_status[0] = 3000;
-            timeline_status[1] = 200;
-            s_led_stt_obj._led_handle_count = 0;
-            s_led_stt_obj._max_number_handle = TWO_PULSE_COUNT;
-            s_led_stt_obj._led_stt_type = LED_STYLE_UPDATE;
-        }
-        else
-        {
-            /* turn led off */
-            s_led_stt_obj._set_led_stt_off_cb();
-
-            /* set time */
-            timeline_status[0] = 5000;
-            timeline_status[1] = 200;
-            s_led_stt_obj._led_handle_count = 0;
-            s_led_stt_obj._max_number_handle = TWO_PULSE_COUNT;
-            s_led_stt_obj._led_stt_type = LED_STYLE_UPDATE;
-        }
-
-        /* start timer */
-        m_start_timer(timeline_status[0]);
     }
 }
 
 static void set_led_stt_disconnect_mqtt(void)
 {
-    if ((device_type == WSWITCH || device_type == WSDATIC) || device_type == DATICBSV2 || device_type == LHSWITCH || device_type == SSWITCH)
+    if (device_type == WSWITCH || device_type == WSDATIC || device_type == DATICBSV2 || device_type == LHSWITCH || device_type == SSWITCH)
     {
         if (s_led_stt_obj._led_stt_type != LED_STYLE_MQTT_DISCONN)
         {
