@@ -75,16 +75,6 @@ bool apconfig_parse_wifi_info(char *buf)
     }
     uid = jsUid->valuestring;
 
-    jsTimeStamp = cJSON_GetObjectItem(jsRoot, CJSON_KEY_TIMESTAMP);
-
-    if (jsTimeStamp == NULL)
-    {
-        os_trace("Get JSON timestamp AP fail\n");
-        cJSON_Delete(jsRoot);
-        goto not_found_pub;
-    }
-    timestamp = cJSON_PrintUnformatted(jsTimeStamp);
-
     jsSsid = cJSON_GetObjectItem(jsRoot, CJSON_KEY_SSID);
     if (jsSsid == NULL)
     {
@@ -102,6 +92,16 @@ bool apconfig_parse_wifi_info(char *buf)
         goto not_found_pub;
     }
     pass = jsWifiPwd->valuestring;
+
+    jsTimeStamp = cJSON_GetObjectItem(jsRoot, CJSON_KEY_TIMESTAMP);
+
+    if (jsTimeStamp == NULL)
+    {
+        os_trace("Get JSON timestamp AP fail\n");
+        cJSON_Delete(jsRoot);
+        goto not_found_pub;
+    }
+    timestamp = cJSON_PrintUnformatted(jsTimeStamp);
 
     char topic_pub[256], topic_sub[256];
     memset(topic_pub, 0, sizeof(topic_pub));
@@ -133,6 +133,7 @@ bool apconfig_parse_wifi_info(char *buf)
 
     ap_cfg_get_data = 1;
     signal_post(SIG_AP_CFG_DONE);
+    free(timestamp);
     cJSON_Delete(jsRoot);
 
     return true;
