@@ -38,6 +38,9 @@ void hw_btn_change_btn_pin(void)
     if (device_type == WSWITCH || device_type == WSDATIC || device_type == LHSWITCH) {
         switch (max_number_channel)
         {
+        case 1:
+            button_arr[0] = BUTTON2;
+            break;
         case 2:
             button_arr[1] = BUTTON3;
             break;
