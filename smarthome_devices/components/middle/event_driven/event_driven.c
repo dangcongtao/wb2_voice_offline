@@ -174,18 +174,35 @@ void sync_led_stt_when_reset_ts04(void)
 {
     switch (current_state)
     {
-    case M_WIFI_DEV_ACTIVE:
-        m_led_stt_get_instance()._set_led_stt_mqtt_subscribed_cb();
-        break;
-
-    case M_WIFI_DISCONNECT:
-    case M_WIFI_CONNECTING:
+    case M_WIFI_NOT_CFG: {
         m_led_stt_get_instance()._set_led_stt_wifi_not_connect_cb();
-        break;
+    } break;
+
+    case M_WIFI_DEV_ACTIVE: {
+        m_led_stt_get_instance()._set_led_stt_mqtt_subscribed_cb();
+    } break;
+
+    case M_WIFI_WAIT_SMARTCONFIG_DONE:
+    case M_WIFI_SMARTCONFIG: {
+        m_led_stt_get_instance()._set_led_stt_smart_config_cb();
+    } break;
+
+    case M_WIFI_WAIT_APCONFIG_DONE:
+    case M_WIFI_APCONFIG: {
+        m_led_stt_get_instance()._set_led_stt_ap_config_cb();
+    } break;
+
+    case M_WIFI_GET_MQTT:
+    case M_WIFI_CONN_MQTT:
+    case M_WIFI_CONNECTED:
+    case M_WIFI_DISCONNECT:
+    case M_WIFI_CONNECTING: {
+        m_led_stt_get_instance()._set_led_stt_wifi_not_connect_cb();
+    } break;
     
-    case M_WIFI_MQTT_CONNECTING:
+    case M_WIFI_MQTT_CONNECTING: {
         m_led_stt_get_instance()._set_led_stt_mqtt_disconnect_cb();
-        break;
+    } break;
 
     default:
         break;
