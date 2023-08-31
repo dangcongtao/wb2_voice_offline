@@ -22,7 +22,7 @@ void hw_switch_cfg(uint8_t index)
     switch_state[index] = SWITCH_IDLE_LEVEL;
     gpio_set_level(switch_arr[index], switch_state[index]);
 #if PROJECT_SHOCK
-    if (device_type == SWSHOCK || device_type == SWSHOCK_HUN) {
+    if (is_shock_device(device_type)) {
         antishock_init();
     }
 #endif
@@ -48,7 +48,7 @@ void hw_write_switch_pin(uint8_t index, uint8_t val)
     }
 
 #if PROJECT_SHOCK
-    if (device_type == SWSHOCK || device_type == SWSHOCK_HUN) {
+    if (is_shock_device(device_type)) {
         if (val) {
             vTaskDelay(pdMS_TO_TICKS(100));
             bl_irq_enable(GPIO_INT0_IRQn);
@@ -77,7 +77,7 @@ void hw_switch_change_pin_type(void)
 {
     if (device_type == SSWITCH) {
        switch_arr[0] = SWITCH2;
-    } else if (device_type == SWSHOCK || device_type == SWSHOCK_HUN)
+    } else if (is_shock_device(device_type))
     {
         switch_arr[0] = SWITCH3;
     }

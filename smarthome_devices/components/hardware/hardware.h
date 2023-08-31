@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <bl_gpio.h>
 #include "app_config.h"
+#include "system_typedef.h"
 
 #define gpio_get_level      bl_gpio_input_get_value
 #define gpio_set_level      bl_gpio_output_set
@@ -71,6 +72,11 @@ uint8_t is_leakage_current(void);
 void hw_read_leak_loop(void);
 void antishock_init(void);
 #endif
+
+inline uint8_t is_shock_device(uint8_t dev_type)
+{
+    return (dev_type == SWSHOCK || dev_type == SWSHOCK_HUN);
+}
 
 /* switch */
 void hw_switch_cfg(uint8_t index);

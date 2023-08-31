@@ -1,4 +1,5 @@
 #include "m_button.h"
+#include "system_typedef.h"
 #include "app_btn.h"
 #include "hardware.h"
 
@@ -147,7 +148,7 @@ static void m_button_config(void)
     app_btn_register_callback(APP_BTN_EVT_RELEASED, on_button_event_cb, NULL);
     app_btn_register_callback(APP_BTN_EVT_HOLD, on_button_event_cb, NULL);
     app_btn_register_callback(APP_BTN_EVT_HOLD_SO_LONG, on_button_event_cb, NULL);
-    if (device_type == WSWITCH || device_type == SWSHOCK  || device_type == SWSHOCK_HUN) {
+    if (device_type == WSWITCH || is_shock_device(device_type)) {
         app_btn_register_callback(APP_BTN_EVT_HOLD_HONG_PHIM, on_button_event_cb, NULL);
     }
 }
@@ -159,7 +160,7 @@ static void button_scan_task(void *param)
     while (true)
     {
 #if PROJECT_SHOCK
-    if (device_type == SWSHOCK || device_type == SWSHOCK_HUN) {
+    if (is_shock_device(device_type)) {
         hw_read_leak_loop();
     }
         if (!is_leakage_current())
