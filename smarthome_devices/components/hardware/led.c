@@ -11,7 +11,7 @@ void hw_led_stt_cfg(void)
     }
     gpio_set_output(led_stt_pin);
     #if PROJECT_SHOCK
-    if (device_type == SWSHOCK) {
+    if (device_type == SWSHOCK || device_type == SWSHOCK_HUN) {
         gpio_set_output(LED_SWSHOCK_SW_LEAK_WHITE);
         gpio_set_output(LED_SWSHOCK_SW_LEAK_YELLOW);
         hw_led_sw_not_warning();

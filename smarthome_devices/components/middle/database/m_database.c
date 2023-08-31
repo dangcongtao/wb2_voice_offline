@@ -70,6 +70,10 @@ void m_db_read_device_id(void)
     {
         device_type = SSWITCH;
     }
+    else if (strstr(s_device_id, gs_dev_type[SWSHOCK_HUN]) != NULL)
+    {
+        device_type = SWSHOCK_HUN;
+    }
     else if (strstr(s_device_id, gs_dev_type[SWSHOCK]) != NULL)
     {
         device_type = SWSHOCK;

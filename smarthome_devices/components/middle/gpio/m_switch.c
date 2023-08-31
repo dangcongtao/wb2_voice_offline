@@ -79,7 +79,7 @@ static uint8_t m_control_switch(uint32_t action, uint32_t act_id, uint32_t uid, 
         db_instance->_request_sync_db();
     }
 #if PROJECT_SHOCK
-    if (m_mqtt_get_instance()._mqtt_state >= MQTT_INTIALIZED && device_type == SWSHOCK) {
+    if (m_mqtt_get_instance()._mqtt_state >= MQTT_INTIALIZED && (device_type == SWSHOCK || device_type == SWSHOCK_HUN)) {
         if (is_leakage_current()) {
             memset(respond_msg, 0, sizeof(respond_msg));
             sprintf(respond_msg, "{\"%s\":%d, \"%s\":%d}", gs_dev_type[device_type], 70, CJSON_KEY_LEAKAGE, 0);

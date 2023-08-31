@@ -52,7 +52,8 @@ typedef enum {
 	WSDATIC,
     DATICBSV2,
     SSWITCH,
-    SWSHOCK
+    SWSHOCK,
+    SWSHOCK_HUN
 } device_type_t;
 
 extern uint32_t device_type;
