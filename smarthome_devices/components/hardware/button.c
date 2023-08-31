@@ -5,7 +5,11 @@ uint32_t button_arr[] = {BUTTON1, BUTTON2, BUTTON3, BUTTON4};
 
 void hw_ts04_write(uint8_t value)
 {
-    gpio_set_level(TS04, value);
+    if (device_type == WSWITCH) {
+        gpio_set_level(TS04, value);
+    } else if (device_type == SWSHOCK) {
+        gpio_set_level(TS04_SWSHOCK, value);
+    }
 }
 
 void hw_button_config(uint32_t index)
@@ -16,8 +20,11 @@ void hw_button_config(uint32_t index)
         return;
 
     if (device_type == WSWITCH) {
-    gpio_set_output(TS04);
-    hw_ts04_write(TS04_ACTIVE_LEVEL);
+        gpio_set_output(TS04);
+        hw_ts04_write(TS04_ACTIVE_LEVEL);
+    } else if (device_type == SWSHOCK) {
+        gpio_set_output(TS04_SWSHOCK);
+        hw_ts04_write(TS04_ACTIVE_LEVEL);
     }
 
     gpio_set_input(button_arr[index]);
@@ -35,7 +42,7 @@ uint32_t hw_btn_read(uint32_t index)
 
 void hw_btn_change_btn_pin(void)
 {
-    if (device_type == WSWITCH || device_type == WSDATIC || device_type == LHSWITCH) {
+    if (device_type == WSWITCH || device_type == WSDATIC || device_type == LHSWITCH || device_type == SWSHOCK) {
         switch (max_number_channel)
         {
         case 1:

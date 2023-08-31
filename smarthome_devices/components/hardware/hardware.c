@@ -6,7 +6,7 @@
 uint32_t device_type = 0;
 uint32_t max_number_channel = 0;
 /* refer to system_typedef.h/device_type_t */
-char *gs_dev_type[] = {"wswitch3v", "lhswitch3v", "wsdatic", "daticbsv2", "sswitch2v"};
+char *gs_dev_type[] = {"wswitch3v", "lhswitch3v", "wsdatic", "daticbsv2", "sswitch2v", "swshock"};
 
 #define MAX_WIDTH   100
 #define MAX_LEN     512

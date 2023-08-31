@@ -14,4 +14,6 @@ void m_log(const char *fmt, ...);
 #define FIRMWARE_VERSION    "230816"
 #define HARDWARE_VERSION    "230303"
 
+#define PROJECT_SHOCK   1
+
 #endif /*_USER_CONFIG_H_*/

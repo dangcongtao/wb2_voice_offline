@@ -130,7 +130,7 @@ static void set_led_stt_update_ota(void)
 
 static void set_led_stt_not_config(void)
 {
-    if (device_type == WSWITCH || device_type == WSDATIC  || device_type == SSWITCH)
+    if (device_type == WSWITCH || device_type == WSDATIC  || device_type == SSWITCH || SWSHOCK)
     {
         if (s_led_stt_obj._led_stt_type != LED_STYLE_ON)
         {
@@ -181,7 +181,7 @@ static void set_led_stt_not_config(void)
 
 static void set_led_stt_disconnect_mqtt(void)
 {
-    if (device_type == WSWITCH || device_type == WSDATIC || device_type == DATICBSV2 || device_type == LHSWITCH || device_type == SSWITCH)
+    if (device_type == WSWITCH || device_type == WSDATIC || device_type == DATICBSV2 || device_type == LHSWITCH || device_type == SSWITCH || SWSHOCK)
     {
         if (s_led_stt_obj._led_stt_type != LED_STYLE_MQTT_DISCONN)
         {
@@ -219,7 +219,7 @@ static void set_led_stt_disconnect_mqtt(void)
 static void set_led_stt_device_active(void)
 {
     os_trace("set_led_stt_device_active\r\n");
-    if (device_type == WSWITCH || device_type == WSDATIC || device_type == SSWITCH)
+    if (device_type == WSWITCH || device_type == WSDATIC || device_type == SSWITCH || SWSHOCK)
     {
         if (s_led_stt_obj._led_stt_type != LED_STYLE_OFF)
         {

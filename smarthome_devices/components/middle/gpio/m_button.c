@@ -147,7 +147,7 @@ static void m_button_config(void)
     app_btn_register_callback(APP_BTN_EVT_RELEASED, on_button_event_cb, NULL);
     app_btn_register_callback(APP_BTN_EVT_HOLD, on_button_event_cb, NULL);
     app_btn_register_callback(APP_BTN_EVT_HOLD_SO_LONG, on_button_event_cb, NULL);
-    if (device_type == WSWITCH) {
+    if (device_type == WSWITCH || SWSHOCK) {
         app_btn_register_callback(APP_BTN_EVT_HOLD_HONG_PHIM, on_button_event_cb, NULL);
     }
 }
@@ -158,8 +158,18 @@ static void button_scan_task(void *param)
     os_trace("button_scan_task\n");
     while (true)
     {
+#if PROJECT_SHOCK
+    if (device_type == SWSHOCK) {
+        hw_read_leak_loop();
+    }
+        if (!is_leakage_current())
+{
+#endif
         m_switch_press_release_loop();
         m_switch_cyclic_timer_loop();
+#if PROJECT_SHOCK
+}
+#endif
         app_btn_scan(NULL);
 
         vTaskDelay(pdMS_TO_TICKS(50));

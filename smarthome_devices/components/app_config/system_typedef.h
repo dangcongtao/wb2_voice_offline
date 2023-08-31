@@ -38,6 +38,7 @@
 
 #define CJSON_KEY_AP_USER_ID        "uid"
 #define CJSON_KEY_TIMESTAMP      "timestamp"
+#define CJSON_KEY_LEAKAGE       "leakage"
 
 
 #define DEFAULT_AES_KEY "0000000000000000"
@@ -50,7 +51,8 @@ typedef enum {
     LHSWITCH,
 	WSDATIC,
     DATICBSV2,
-    SSWITCH
+    SSWITCH,
+    SWSHOCK
 } device_type_t;
 
 extern uint32_t device_type;
@@ -78,6 +80,7 @@ typedef enum
 {
     SRC_ACTION_USER = 0,
     SRC_ACTION_ALARM = 2,
+    SRC_ACTION_LEADK_CURR = 7
 } src_action_t;
 
 typedef enum

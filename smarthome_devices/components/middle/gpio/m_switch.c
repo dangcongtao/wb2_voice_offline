@@ -9,6 +9,7 @@
 #include "m_database.h"
 
 static m_switch_t s_switch_obj;
+static char respond_msg[256];
 
 m_switch_state_t m_control_get_status_switch(uint8_t index)
 {
@@ -77,13 +78,20 @@ static uint8_t m_control_switch(uint32_t action, uint32_t act_id, uint32_t uid, 
     {
         db_instance->_request_sync_db();
     }
-
+#if PROJECT_SHOCK
+    if (m_mqtt_get_instance()._mqtt_state >= MQTT_INTIALIZED && device_type == SWSHOCK) {
+        if (is_leakage_current()) {
+            memset(respond_msg, 0, sizeof(respond_msg));
+            sprintf(respond_msg, "{\"%s\":%d, \"%s\":%d}", gs_dev_type[device_type], 70, CJSON_KEY_LEAKAGE, 0);
+            mqtt_obj._mqtt_publish(respond_msg, strlen(respond_msg));
+        }
+    }
+#endif
     /* respond server here */
     if (uid == 0)
     {
         if (mqtt_obj._mqtt_state >= MQTT_INTIALIZED)
         {
-            char respond_msg[256];
             memset(respond_msg, 0, sizeof(respond_msg));
             sprintf(respond_msg, "{\"%s\":%d, \"action\":%ld,"
                                  "\"u\":%ld, \"act_id\": %d}",

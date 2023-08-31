@@ -70,6 +70,10 @@ void m_db_read_device_id(void)
     {
         device_type = SSWITCH;
     }
+    else if (strstr(s_device_id, gs_dev_type[SWSHOCK]) != NULL)
+    {
+        device_type = SWSHOCK;
+    }
 
     os_trace("device_type: %s\r\n", gs_dev_type[device_type]);
 }

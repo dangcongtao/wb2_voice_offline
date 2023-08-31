@@ -11,6 +11,7 @@
 #include "system_typedef.h"
 #include "m_ble.h"
 #include "m_wf_ble_cfg.h"
+#include "hardware.h"
 
 #include "aes_cbc128.h"
 
@@ -39,6 +40,11 @@ static void app_start_cyclic_timer(cJSON *jsRoot);
 static void app_stop_cyclic_timer(cJSON *jsRoot);
 static void app_backup_db(cJSON *jsRoot);
 
+#if PROJECT_SHOCK
+static void app_get_leakage(cJSON *jsRoot);
+static void app_fake_leakage(cJSON *jsRoot);
+#endif
+
 static void ble_config_step1(cJSON *jsRoot);
 static void ble_config_step2(cJSON *jsRoot);
 
@@ -46,6 +52,11 @@ wswitch_handler_t array_handler[] = {
     {app_control_pin, 0},        
     {app_start_cyclic_timer, 64},
     {app_stop_cyclic_timer, 65}, 
+
+#if PROJECT_SHOCK
+    {app_get_leakage, 71}, 
+    {app_fake_leakage, 72},
+#endif
     {app_get_info, 105},
     {app_set_power_on, 121},     
     {app_remove_device, 123},
@@ -833,6 +844,71 @@ RESPONSE:
             gs_dev_type[device_type], type, uid, backup, result);
     m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
 }
+
+#if PROJECT_SHOCK
+static void app_get_leakage(cJSON *jsRoot)
+{
+    cJSON *jsType;
+    uint32_t type = 0;
+
+    os_trace("app_get_leakage get\n");
+
+    jsType = cJSON_GetObjectItem(jsRoot, gs_dev_type[device_type]);
+    if (jsType == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    type = jsType->valueint;
+
+
+    /* implement here */
+
+RESPONSE:
+    /* respond server here */
+    memset(respond, 0, sizeof(respond));
+    sprintf(respond, "{\"%s\":%ld, \"%s\":%d}",
+            gs_dev_type[device_type], type, CJSON_KEY_LEAKAGE, is_leakage_current());
+    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
+}
+
+static void app_fake_leakage(cJSON *jsRoot)
+{
+    cJSON *jsType, *jsU;
+    uint32_t type = 0, uid = 0;
+    uint8_t result = 0;
+
+    os_trace("app_get_leakage get\n");
+
+    jsType = cJSON_GetObjectItem(jsRoot, gs_dev_type[device_type]);
+    if (jsType == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    type = jsType->valueint;
+
+    jsU = cJSON_GetObjectItem(jsRoot, CJSON_KEY_USER_ID);
+    if (jsU == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    uid = jsU->valueint;
+
+
+    /* implement here */
+    fake_current_leak();
+    result = 1;
+
+RESPONSE:
+    /* respond server here */
+    memset(respond, 0, sizeof(respond));
+    sprintf(respond, "{\"%s\":%ld, \"u\":%ld, \"result\":%d}",
+            gs_dev_type[device_type], type, uid, result);
+    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
+}
+#endif
 
 /* 
     @jsRoot: will be NULL, not required 

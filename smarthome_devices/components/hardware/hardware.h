@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <bl_gpio.h>
+#include "app_config.h"
 
 #define gpio_get_level      bl_gpio_input_get_value
 #define gpio_set_level      bl_gpio_output_set
@@ -33,8 +34,16 @@
 #define SWITCH4    0
 
 #define TS04    22
+#define TS04_SWSHOCK    20
 #define TS04_IDLE_LEVEL     0
 #define TS04_ACTIVE_LEVEL   1
+
+#if PROJECT_SHOCK
+    #define LED_SWSHOCK_SW_LEAK_WHITE   7
+    #define LED_SWSHOCK_SW_LEAK_YELLOW  16
+
+    #define LEAKAGE_CURRENT             1
+#endif
 
 extern uint32_t max_number_channel;
 extern uint32_t device_type;
@@ -53,6 +62,15 @@ void hw_led_stt_cfg(void);
 void hw_led_stt_on(void);
 void hw_led_stt_off(void);
 void hw_toggle_led_stt(void);
+#if PROJECT_SHOCK
+void hw_led_sw_not_warning(void);
+void hw_led_sw_warning(void);
+
+void fake_current_leak(void);
+uint8_t is_leakage_current(void);
+void hw_read_leak_loop(void);
+void antishock_init(void);
+#endif
 
 /* switch */
 void hw_switch_cfg(uint8_t index);
