@@ -236,7 +236,9 @@ void m_mqtt_start(void)
     }
 
     client = axk_mqtt_client_init(&mqtt_cfg);
-    axk_mqtt_client_start(client);
+    if (axk_mqtt_client_start(client) != AXK_OK){
+        bl_sys_reset_por();
+    }
     s_mqtt_obj._mqtt_state = MQTT_INTIALIZED;
 
     os_trace("END %s: free mem %d\r\n", __func__, xPortGetFreeHeapSize());

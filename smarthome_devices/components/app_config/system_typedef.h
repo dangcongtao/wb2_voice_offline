@@ -47,24 +47,18 @@
 #define SIZEOF_ARRAY(array) (sizeof(array) / sizeof(array[0]))
 
 typedef enum {
-    WSWITCH = 0,
-    LHSWITCH,
-	WSDATIC,
+    WSWITCH = 0,    // công tắc âm tường cảm hứng
+    LHSWITCH,       // công tắc lahu
+	WSDATIC,        
     DATICBSV2,
-    SSWITCH,
-    SWSHOCK,
-    SWSHOCK_HUN
+    SSWITCH,        // ổ cắm SK01
+    SWSHOCK,        // công tắc chống giật Datic
+    SWSHOCK_HUN     // công tắc chống giật Hunonic
 } device_type_t;
 
 extern uint32_t device_type;
 extern uint32_t max_number_channel;
 extern char* gs_dev_type[];
-
-typedef enum {
-    SYSTEM_STARTUP = 0,
-    SYSTEM_ACTIVE_NORMAL,
-    SYSTEM_HANDLER_OTA
-} state_machine_t;
 
 typedef enum {
     CH1_ON = 1,
