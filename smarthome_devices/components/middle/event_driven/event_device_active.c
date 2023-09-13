@@ -29,7 +29,10 @@ void get_mqtt_info_handler(void *arg)
     }
     else
     {
-        get_mqtt_info();
+        if (!get_mqtt_info()) {
+            set_timeout_reset();
+            return;
+        }
     }
 
     signal_post(SIG_MQTT_GOT_INFO);

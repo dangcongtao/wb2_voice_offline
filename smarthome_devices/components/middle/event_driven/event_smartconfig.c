@@ -16,6 +16,7 @@ extern uint32_t app_btn_on_hold_time_fire_event_ms;
 void wifi_not_cfg_to_smart_cfg_handler(void *arg)
 {
     os_trace("wifi_not_cfg_to_smart_cfg_handler\r\n");
+    clear_timeout_reset();
 
     // enable ble
     // ble_deinit();
@@ -39,6 +40,13 @@ m_state_transmit_t not_cfg_to_smart_cfg = {
 
 m_state_transmit_t mqtt_connecting_to_smartcfg = {
     .context = M_WIFI_MQTT_CONNECTING,
+    .signal = SIG_SMART_CFG,
+    .next_state = M_WIFI_SMARTCONFIG,
+    .signal_handler_cb = wifi_not_cfg_to_smart_cfg_handler
+};
+
+m_state_transmit_t get_mqtt_info_to_smartcfg = {
+    .context = M_WIFI_CONN_MQTT,
     .signal = SIG_SMART_CFG,
     .next_state = M_WIFI_SMARTCONFIG,
     .signal_handler_cb = wifi_not_cfg_to_smart_cfg_handler

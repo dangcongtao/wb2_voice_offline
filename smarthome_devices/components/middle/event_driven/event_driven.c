@@ -5,6 +5,7 @@
 #include "m_led_stt.h"
 #include "m_database.h"
 #include "m_http_server.h"
+#include "bl_sys.h"
 
 #define MAX_STATE_MACHINE 20
 
@@ -12,6 +13,8 @@ static m_signal_t signal;
 static uint8_t num_state_in_used = 0;
 m_state_t current_state;
 m_state_transmit_t state_array[MAX_STATE_MACHINE] = {0};
+
+extern uint32_t time_count_reset;
 
 extern m_state_transmit_t not_cfg_to_ap_cfg;
 extern m_state_transmit_t not_cfg_to_smart_cfg;
@@ -24,6 +27,8 @@ extern m_state_transmit_t smartconfig_done;
 
 extern m_state_transmit_t mqtt_connecting_to_smartcfg;
 extern m_state_transmit_t mqtt_connecting_to_ap_config;
+extern m_state_transmit_t get_mqtt_info_to_smartcfg;
+extern m_state_transmit_t get_mqtt_info_to_ap_config;
 
 extern m_state_transmit_t wifi_connecting_to_ap_config;
 extern m_state_transmit_t wifi_connecting_to_smart_config;
@@ -56,6 +61,21 @@ const char* state_machine[] = {
     "M_WIFI_NOT_CFG",
     NULL
 };
+
+uint32_t time_count_reset = 0;
+static const uint32_t TIMEOUT_RESET_MS = 1000*30;
+
+void set_timeout_reset(void)
+{
+    time_count_reset = xTaskGetTickCount() | 1;
+}
+
+void clear_timeout_reset(void)
+{
+    time_count_reset = 0;
+}
+
+
 
 void signal_handler_register(m_state_transmit_t new_state)
 {
@@ -97,6 +117,8 @@ void m_event_init(void)
 
     signal_handler_register(mqtt_connecting_to_smartcfg);
     signal_handler_register(mqtt_connecting_to_ap_config);
+    signal_handler_register(get_mqtt_info_to_smartcfg);
+    signal_handler_register(get_mqtt_info_to_ap_config);
 
     signal_handler_register(dev_get_mqtt);
     signal_handler_register(dev_conn_mqtt);
@@ -167,6 +189,11 @@ void m_event_loop(uint32_t time_schedual_ms)
             m_db_get_instance()->_backup_db_cb();
             signal_post(SIG_AP_CFG_DONE);
         }
+    }
+
+    if (time_count_reset && (xTaskGetTickCount() - time_count_reset) >= pdMS_TO_TICKS(TIMEOUT_RESET_MS)) {
+        clear_timeout_reset();
+        bl_sys_reset_por();
     }
 }
 

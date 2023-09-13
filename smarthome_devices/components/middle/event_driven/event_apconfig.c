@@ -11,6 +11,7 @@ extern uint32_t app_btn_on_hold_time_fire_event_ms;
 // {M_WIFI_NOT_CFG, SIG_AP_CFG, M_WIFI_APCONFIG},
 void wifi_not_cfg_to_ap_cfg_handler(void *arg)
 {
+    clear_timeout_reset();
     // stop wifi sta
     m_wifi_get_instance().wifi_sta_stop_cb();
 
@@ -33,6 +34,13 @@ m_state_transmit_t not_cfg_to_ap_cfg = {
 
 m_state_transmit_t mqtt_connecting_to_ap_config = {
     .context = M_WIFI_MQTT_CONNECTING,
+    .signal = SIG_AP_CFG,
+    .next_state = M_WIFI_APCONFIG,
+    .signal_handler_cb = wifi_not_cfg_to_ap_cfg_handler
+};
+
+m_state_transmit_t get_mqtt_info_to_ap_config = {
+    .context = M_WIFI_CONN_MQTT,
     .signal = SIG_AP_CFG,
     .next_state = M_WIFI_APCONFIG,
     .signal_handler_cb = wifi_not_cfg_to_ap_cfg_handler

@@ -15,6 +15,7 @@
 #include "aes_cbc128.h"
 #include "base64.h"
 #include "bl_sys.h"
+#include "event_driven.h"
 
 #define WEB_SERVER "api.hunonicpro.com"
 #define WEB_PORT "80"
@@ -122,8 +123,9 @@ void http_get(char *url, char* output)
 }
 
 // http://api.hunonicpro.com/infomqtt/?device_id={root_id}&type={root_type}
-void get_mqtt_info(void)
+uint8_t get_mqtt_info(void)
 {
+    uint8_t result = 0;
     char url[HTTP_REQUEST_LEN];
     memset(url, 0, sizeof(url));
     sprintf(url, "http://api.hunonicpro.com/infomqtt/?device_id=%s&type=%s", 
@@ -137,8 +139,7 @@ void get_mqtt_info(void)
     cJSON *js_Root;
     js_Root = cJSON_Parse(output);
     if (!js_Root) {
-        bl_sys_reset_por();
-        return false;
+        return 0;
     }
 
     cJSON *jsGetObject = cJSON_GetObjectItem(js_Root, "data");
@@ -166,7 +167,9 @@ void get_mqtt_info(void)
 
     /* {"server":"mqtt2.hunonicpro.com","port":"1883","user":"bestbug","pass":"bigbugdmm"} */
     save_mqtt_info(real_msg);
+    result = 1;
 
 json_parse_fail:
     cJSON_Delete(js_Root);
+    return result;
 }
