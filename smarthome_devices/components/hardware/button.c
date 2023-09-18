@@ -16,7 +16,7 @@ void hw_button_config(uint32_t index)
 {
     // os_trace("hw_button_config: %ld\r\n", index);
 
-    if (index >= max_number_channel)
+    if ((device_type != SWMINI && index >= max_number_channel) || (device_type == SWMINI && index >= max_number_channel + 1))
         return;
 
     if (device_type == WSWITCH) {
@@ -34,7 +34,7 @@ uint32_t hw_btn_read(uint32_t index)
 {
     // os_trace("(%ld)hw_btn_read: %ld: %ld\r\n", sys_get_tick_ms(), index, (uint32_t)gpio_get_level(button_arr[index]));
 
-    if (index >= max_number_channel)
+    if ((device_type != SWMINI && index >= max_number_channel) || (device_type == SWMINI && index >= max_number_channel + 1))
         return BTN_IDLE_LEVEL; /* error */
 
     return (uint32_t)gpio_get_level(button_arr[index]);
@@ -42,7 +42,7 @@ uint32_t hw_btn_read(uint32_t index)
 
 void hw_btn_change_btn_pin(void)
 {
-    if (device_type == WSWITCH || device_type == WSDATIC || device_type == LHSWITCH || is_shock_device(device_type)) {
+    if (device_type == WSWITCH || device_type == LHSWITCH || is_shock_device(device_type)) {
         switch (max_number_channel)
         {
         case 1:
@@ -56,5 +56,9 @@ void hw_btn_change_btn_pin(void)
         }
     } else if (device_type == SSWITCH) {
         button_arr[0] = BUTTON_SSW;
+    } else if (device_type == SWMINI)
+    {
+        button_arr[2] = BTN_CFG_MINI;
     }
+    
 }

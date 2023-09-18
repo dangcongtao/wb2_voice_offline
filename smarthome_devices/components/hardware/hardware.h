@@ -13,6 +13,7 @@
 
 #define LED_STT 12
 #define LED_STT_SSW     1
+#define LED_STT_MINI    7
 
 #define LED_STT_ON      0
 #define LED_STT_OFF     1
@@ -24,6 +25,7 @@
 #define BUTTON3   21
 #define BUTTON4   20
 
+#define BTN_CFG_MINI    22
 #define BUTTON_SSW  4
 
 #define MAX_NUM_SWITCH          4
@@ -33,6 +35,9 @@
 #define SWITCH2   17 
 #define SWITCH3    3
 #define SWITCH4    0
+
+#define SWITCH1_MINI    3
+#define SWITCH2_MINI    14
 
 #define TS04    22
 #define TS04_SWSHOCK    20

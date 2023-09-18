@@ -244,7 +244,7 @@ void m_switch_init(void)
     for (i = 0; i < max_number_channel; i++)
         s_switch_obj._switch_cfg_cb(i);
 
-    if (device_type == WSWITCH || device_type == WSDATIC || device_type == LHSWITCH) {
+    if (device_type == WSWITCH || device_type == LHSWITCH) {
         switch (max_number_channel)
         {
         case 1:

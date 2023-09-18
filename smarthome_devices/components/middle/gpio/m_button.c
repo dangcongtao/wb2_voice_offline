@@ -45,6 +45,9 @@ void on_button_event_cb(int button_pin, int event, void *data)
     {
     case APP_BTN_EVT_PRESSED:
     {
+        if (device_type == SWMINI && button_pin < 2) {
+            m_switch_get_instance()._toggle_switch_cb(button_pin, 1, true, true);
+        }
     }
     break;
 
@@ -79,21 +82,27 @@ void on_button_event_cb(int button_pin, int event, void *data)
         }
 
         /* just support buttons, not support sensor */
-        m_switch_get_instance()._toggle_switch_cb(button_pin, 1, true, true);
+        if (device_type != SWMINI || (device_type == SWMINI && button_pin < 2)) {
+            m_switch_get_instance()._toggle_switch_cb(button_pin, 1, true, true);
+        }
     }
     break;
 
     case APP_BTN_EVT_HOLD:
     {
-        m_led_stt_get_instance()._set_led_stt_smart_config_cb();
-        ignore_event_release[button_pin] = EVENT_BTN_HOLD;
+        if (device_type != SWMINI || (device_type == SWMINI && button_pin == 2)) {
+            m_led_stt_get_instance()._set_led_stt_smart_config_cb();
+            ignore_event_release[button_pin] = EVENT_BTN_HOLD;
+        }
     }
     break;
 
     case APP_BTN_EVT_HOLD_SO_LONG:
     {
-        m_led_stt_get_instance()._set_led_stt_ap_config_cb();
-        ignore_event_release[button_pin] = EVENT_BTN_HOLD_SO_LONG;
+        if (device_type != SWMINI || (device_type == SWMINI && button_pin == 2)) {
+            m_led_stt_get_instance()._set_led_stt_ap_config_cb();
+            ignore_event_release[button_pin] = EVENT_BTN_HOLD_SO_LONG;
+        }
     }
     break;
 
@@ -142,6 +151,13 @@ static void m_button_config(void)
     conf.get_tick_cb = sys_get_tick_ms;
     conf.btn_initialize = hw_button_config;
     conf.btn_read = hw_btn_read;
+
+    if (device_type == SWMINI) {
+        conf.btn_count = max_number_channel + 1;
+        m_hw_button_initialize_value[2].idle_level = BTN_IDLE_LEVEL;
+        m_hw_button_initialize_value[2].last_state = BTN_IDLE_LEVEL;
+        m_hw_button_initialize_value[2].pin = 2;
+    }
 
     app_btn_initialize(&conf);
     app_btn_register_callback(APP_BTN_EVT_PRESSED, on_button_event_cb, NULL);

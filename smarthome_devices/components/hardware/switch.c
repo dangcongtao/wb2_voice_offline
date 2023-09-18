@@ -22,7 +22,8 @@ void hw_switch_cfg(uint8_t index)
     switch_state[index] = SWITCH_IDLE_LEVEL;
     gpio_set_level(switch_arr[index], switch_state[index]);
 #if PROJECT_SHOCK
-    if (is_shock_device(device_type)) {
+    if (is_shock_device(device_type))
+    {
         antishock_init();
     }
 #endif
@@ -34,10 +35,9 @@ void hw_write_switch_pin(uint8_t index, uint8_t val)
         return;
     // os_trace("hw_write_switch_pin: %d: %d-%d\n", index, switch_arr[index], val);
 
-
     switch_state[index] = val;
     bl_gpio_output_set(switch_arr[index], switch_state[index]); /* set relay */
-    if (device_type == WSWITCH || device_type == WSDATIC || device_type == LHSWITCH)
+    if (device_type == WSWITCH || device_type == LHSWITCH)
     {
         if (max_number_channel == 1 && index == 0)
             bl_gpio_output_set(switch_arr[1], val); /* bug in hardware pcb so need do it for fake
@@ -48,13 +48,17 @@ void hw_write_switch_pin(uint8_t index, uint8_t val)
     }
 
 #if PROJECT_SHOCK
-    if (is_shock_device(device_type)) {
-        if (val) {
+    if (is_shock_device(device_type))
+    {
+        if (val)
+        {
             vTaskDelay(pdMS_TO_TICKS(100));
             bl_irq_enable(GPIO_INT0_IRQn);
             hw_led_sw_not_warning();
             is_need_interrupt_relay = 1;
-        } else {
+        }
+        else
+        {
             is_need_interrupt_relay = 0;
             hw_led_sw_not_warning();
             bl_irq_disable(GPIO_INT0_IRQn);
@@ -75,11 +79,18 @@ uint8_t hw_read_switch_pin(uint8_t index)
 
 void hw_switch_change_pin_type(void)
 {
-    if (device_type == SSWITCH) {
-       switch_arr[0] = SWITCH2;
-    } else if (is_shock_device(device_type))
+    if (device_type == SSWITCH)
+    {
+        switch_arr[0] = SWITCH2;
+    }
+    else if (is_shock_device(device_type))
     {
         switch_arr[0] = SWITCH3;
+    }
+    else if (device_type == SWMINI)
+    {
+        switch_arr[0] = SWITCH1_MINI;
+        switch_arr[1] = SWITCH2_MINI;
     }
 }
 
@@ -121,15 +132,20 @@ void hw_read_leak_loop(void)
     static char respond_msg[256];
     static uint32_t time_blink_cnt = 0;
 
-    if (has_block_leak) {
-        if (is_need_interrupt_relay == 2) {
+    if (has_block_leak)
+    {
+        if (is_need_interrupt_relay == 2)
+        {
             os_trace("blink_warning\n");
             time_blink_cnt++;
-            if (time_blink_cnt >= 6) {
+            if (time_blink_cnt >= 6)
+            {
                 time_blink_cnt = 0;
                 hw_led_sw_warning();
             }
-        } else {
+        }
+        else
+        {
             has_block_leak = 0;
         }
     }
@@ -141,8 +157,9 @@ void hw_read_leak_loop(void)
         has_leak_current = 0;
         bl_irq_disable(GPIO_INT0_IRQn);
         hw_led_sw_warning();
-        
-        if (m_mqtt_get_instance()._mqtt_state >= MQTT_INTIALIZED) {
+
+        if (m_mqtt_get_instance()._mqtt_state >= MQTT_INTIALIZED)
+        {
             memset(respond_msg, 0, sizeof(respond_msg));
             sprintf(respond_msg, "{\"%s\":%d, \"%s\":%d}", gs_dev_type[device_type], 70, CJSON_KEY_LEAKAGE, 1);
             m_mqtt_get_instance()._mqtt_publish(respond_msg, strlen(respond_msg));
@@ -151,7 +168,9 @@ void hw_read_leak_loop(void)
             sprintf(respond_msg, "{\"%s\":%d, \"action\":%d, \"u\":%d, \"act_id\": %d}", gs_dev_type[device_type], 0, CH1_OFF, 0, SRC_ACTION_LEADK_CURR);
             m_mqtt_get_instance()._mqtt_publish(respond_msg, strlen(respond_msg));
             m_db_get_instance()->_set_current_state_cb(0, LOW);
-        } else {
+        }
+        else
+        {
             os_trace("Device is not connect mqtt\n");
         }
     }

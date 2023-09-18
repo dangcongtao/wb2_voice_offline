@@ -49,8 +49,7 @@
 typedef enum {
     WSWITCH = 0,    // công tắc âm tường cảm hứng
     LHSWITCH,       // công tắc lahu
-	WSDATIC,        
-    DATICBSV2,
+	SWMINI,         // công tắc mini
     SSWITCH,        // ổ cắm SK01
     SWSHOCK,        // công tắc chống giật Datic
     SWSHOCK_HUN     // công tắc chống giật Hunonic

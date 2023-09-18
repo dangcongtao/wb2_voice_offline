@@ -8,6 +8,8 @@ void hw_led_stt_cfg(void)
 {
     if (device_type == SSWITCH) {
        led_stt_pin = LED_STT_SSW;
+    } else if (device_type == SWMINI) {
+        led_stt_pin = LED_STT_MINI;
     }
     gpio_set_output(led_stt_pin);
     #if PROJECT_SHOCK
@@ -21,13 +23,21 @@ void hw_led_stt_cfg(void)
 
 void hw_led_stt_on(void)
 {
-    led_stt_val = LED_STT_ON;
+    if (device_type == SWMINI) {
+        led_stt_val = LED_STT_OFF;
+    } else {
+        led_stt_val = LED_STT_ON;
+    }
     gpio_set_level(led_stt_pin, led_stt_val);
 }
 
 void hw_led_stt_off(void)
 {
-    led_stt_val = LED_STT_OFF;
+    if (device_type == SWMINI) {
+        led_stt_val = LED_STT_ON;
+    } else {
+        led_stt_val = LED_STT_OFF;
+    }
     gpio_set_level(led_stt_pin, led_stt_val);
 }
 
