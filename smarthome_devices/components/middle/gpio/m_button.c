@@ -19,7 +19,7 @@
 extern m_state_t current_state;;
 extern uint32_t max_number_channel;
 static m_button_t s_button_obj;
-uint32_t ignore_event_release[MAX_NUM_BUTTON] = {0};
+uint32_t ignore_event_release[MAX_NUM_BUTTON] = {0, 0, 0, 0};
 
 #define EVENT_BTN_HOLD              1
 #define EVENT_BTN_HOLD_SO_LONG      2
@@ -188,6 +188,8 @@ static void button_scan_task(void *param)
 }
 #endif
         app_btn_scan(NULL);
+
+        blink_switch_config_loop();
 
         vTaskDelay(pdMS_TO_TICKS(50));
     }

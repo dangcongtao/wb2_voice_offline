@@ -7,6 +7,7 @@
 #include "m_mqtt.h"
 #include "system_typedef.h"
 #include "m_database.h"
+#include "event_driven.h"
 
 static m_switch_t s_switch_obj;
 static char respond_msg[256];
@@ -107,6 +108,78 @@ static uint8_t m_control_switch(uint32_t action, uint32_t act_id, uint32_t uid, 
     return 1;
 }
 
+static uint8_t num_click_go_cfg[2] = {0, 0};
+static uint8_t step_go_cfg[2] = {0, 0};
+static uint32_t tick_go_cfg[2] = {0, 0};
+#define DEFAULT_TICK    60
+#define TICK_INVALID    0
+
+static void reset_data_blink_config(uint8_t index)
+{
+    if (device_type != SWMINI) {
+        return;
+    }
+    num_click_go_cfg[index] = 0;
+    step_go_cfg[index] = 0;
+    tick_go_cfg[index] = TICK_INVALID;
+}
+
+void blink_switch_config_loop(void)
+{
+    if (device_type != SWMINI) {
+        return;
+    }
+
+    for (uint8_t i = 0; i < 2; i++) {
+        if (tick_go_cfg[i] == TICK_INVALID) {
+            continue;
+        }
+        tick_go_cfg[i]--;
+        if (tick_go_cfg[i]) {
+            continue;
+        }
+
+        // os_trace("%d num_click_go_cfg: %u, step_go_cfg: %u\r\n", i, num_click_go_cfg[i], step_go_cfg[i]);
+
+        if (step_go_cfg[i] == 1 || step_go_cfg[i] == 2) {
+            if (num_click_go_cfg[i] == 0) {
+                tick_go_cfg[i] = DEFAULT_TICK;
+
+                // os_trace("go step %u\r\n", step_go_cfg[i]);
+                m_control_switch(step_go_cfg[i] + i * 2, 0, 0, 0, 0);
+                step_go_cfg[i]++;
+                return;
+            } else {
+                reset_data_blink_config(i);
+            }
+        } else if (step_go_cfg[i] == 3) {
+            if (num_click_go_cfg[i] == 2) {
+                reset_data_blink_config(i);
+                signal_post(SIG_AP_CFG);
+                return;
+            }
+            reset_data_blink_config(i);
+        } else if (step_go_cfg[i] == 0) {
+            if (num_click_go_cfg[i] == 6) {
+                // os_trace("go config\r\n");
+                tick_go_cfg[i] = TICK_INVALID + 1;
+                num_click_go_cfg[i] = 0;
+                step_go_cfg[i]++;
+                return;
+            } else {
+                reset_data_blink_config(i);
+            }
+        }
+    }
+}
+
+void increate_step(uint8_t index)
+{
+    tick_go_cfg[index] = DEFAULT_TICK;
+    num_click_go_cfg[index]++;
+}
+
+
 /* use for Button or Press-Release action */
 static uint8_t m_toggle_switch(uint32_t index, uint32_t act_id, bool respond, bool set_even_release)
 {
@@ -119,10 +192,20 @@ static uint8_t m_toggle_switch(uint32_t index, uint32_t act_id, bool respond, bo
     {
         if (pin_value)
         {
+            if (num_click_go_cfg[0] % 2 != 0) {
+                increate_step(0);
+            } else {
+                reset_data_blink_config(0);
+            }
             return m_control_switch(CH1_OFF, act_id, 0, respond, set_even_release);
         }
         else
         {
+            if (num_click_go_cfg[0] % 2 == 0) {
+                increate_step(0);
+            } else {
+                reset_data_blink_config(0);
+            }
             return m_control_switch(CH1_ON, act_id, 0, respond, set_even_release);
         }
     }
@@ -132,10 +215,20 @@ static uint8_t m_toggle_switch(uint32_t index, uint32_t act_id, bool respond, bo
     {
         if (pin_value)
         {
+            if (num_click_go_cfg[1] % 2 != 0) {
+                increate_step(1);
+            } else {
+                reset_data_blink_config(1);
+            }
             return m_control_switch(CH2_OFF, act_id, 0, respond, set_even_release);
         }
         else
         {
+            if (num_click_go_cfg[1] % 2 == 0) {
+                increate_step(1);
+            } else {
+                reset_data_blink_config(1);
+            }
             return m_control_switch(CH2_ON, act_id, 0, respond, set_even_release);
         }
     }
@@ -260,6 +353,10 @@ void m_switch_init(void)
     }
 
     control_switch_default_state();
+    memset(num_click_go_cfg, 0, sizeof(num_click_go_cfg));
+    memset(step_go_cfg, 0, sizeof(step_go_cfg));
+    tick_go_cfg[0] = TICK_INVALID;
+    tick_go_cfg[1] = TICK_INVALID;
 }
 
 m_switch_t m_switch_get_instance(void)

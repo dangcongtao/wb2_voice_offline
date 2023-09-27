@@ -101,6 +101,7 @@ void stop_cylcic_timer(uint32_t channel_index);
 void set_user_trigger_press_event(uint8_t channel_index, bool set_event, uint32_t action);
 void m_switch_cyclic_timer_loop(void);
 void m_switch_press_release_loop(void);
+void blink_switch_config_loop(void);
 
 #endif /* CONTROL_H__ */
 

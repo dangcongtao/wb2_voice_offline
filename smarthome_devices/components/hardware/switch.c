@@ -7,7 +7,7 @@
 #include "bl_irq.h"
 
 static uint32_t switch_arr[] = {SWITCH1, SWITCH2, SWITCH3, SWITCH4};
-static uint8_t switch_state[4] = {SWITCH_IDLE_LEVEL};
+static uint8_t switch_state[4] = {SWITCH_IDLE_LEVEL, SWITCH_IDLE_LEVEL, SWITCH_IDLE_LEVEL, SWITCH_IDLE_LEVEL};
 
 #if PROJECT_SHOCK
 uint8_t is_need_interrupt_relay = 1;
@@ -33,7 +33,7 @@ void hw_write_switch_pin(uint8_t index, uint8_t val)
 {
     if (index >= max_number_channel)
         return;
-    // os_trace("hw_write_switch_pin: %d: %d-%d\n", index, switch_arr[index], val);
+    os_trace("hw_write_switch_pin: %d: %lu-%d\r\n", index, switch_arr[index], val);
 
     switch_state[index] = val;
     bl_gpio_output_set(switch_arr[index], switch_state[index]); /* set relay */
