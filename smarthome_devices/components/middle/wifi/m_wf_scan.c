@@ -35,17 +35,19 @@ static void m_cb_scan_complete(void *data, void *param)
     }
 }
 
+
 static void m_cb_scan_item_parse(wifi_mgmr_ap_item_t *env, uint32_t *param1, wifi_mgmr_ap_item_t *item)
 {
     /*recall the env*/
     uint32_t counter = (*param1);
-    // printf("\r\n=== m_cb_scan_item_parse: counter: %u ===\r\n", counter);
+    uint8_t is_over_queue = 0;
+    os_trace("=== m_cb_scan_item_parse: counter: %u ===, [%s]:%d\r\n", counter, item->ssid, item->rssi);
 
     /*scan overflow check*/
     if (counter >= WIFI_SCAN_MAX_AP)
     {
         /*XXX maybe we should warning here*/
-        return;
+        is_over_queue = 1;
     }
 
     wifi_mgmr_ap_item_t *ap_ary_ptr = (wifi_mgmr_ap_item_t *)env + counter; // get and move the ptr to the next item
@@ -58,27 +60,75 @@ static void m_cb_scan_item_parse(wifi_mgmr_ap_item_t *env, uint32_t *param1, wif
         // printf("old_ssid/new_ssid: [%s:%s]\r\n", temp[i].ssid, item->ssid);
         if (!strcmp(temp[i].ssid, item->ssid))
         {
+            if (item->rssi > temp[i].rssi)
+            {
+                printf("old_ssid/new_ssid: [%s:%s][%d:%d]\r\n", temp[i].ssid, item->ssid, temp[i].rssi, item->rssi);
+                uint32_t j;
+                for (j = i; j < counter - 1; j++)
+                {
+                    temp[j] = temp[j + 1];
+                    temp[j].channel = temp[j + 1].channel;
+                    temp[j].rssi = temp[j + 1].rssi;
+                    memcpy(temp[j].bssid, temp[j + 1].bssid, sizeof(temp[j].bssid));
+                    memcpy(temp[j].ssid, temp[j + 1].ssid, sizeof(temp[j].ssid));
+                    temp[j].ssid_tail[0] = '\0';
+                    temp[j].ssid_len = strlen((char *)temp[j].ssid);
+                    temp[j].auth = temp[j + 1].auth;
+                }
+                counter--;
+                i = counter;
+            }
             break;
         }
     }
 
-    if (i < counter) {
+    if (i < counter)
+    {
         /* wifi ssid had been existed */
         // printf("Wifi SSID had been Existed: %s\r\n", item->ssid);
     }
-    else {
-        // printf("Scan get new wifi: %s\r\n", item->ssid);
+    else
+    {
+        uint8_t p = 0;
 
-        counter++;
+        for (i = 0; i < counter; i++)
+        {
+            if (item->rssi > temp[i].rssi)
+            {
+                p = i;
+                break;
+            }
+            else
+            {
+                p = i + 1;
+            }
+        }
 
-        /*copy out scan data*/
-        ap_ary_ptr->channel = item->channel;
-        ap_ary_ptr->rssi = item->rssi;
-        memcpy(ap_ary_ptr->bssid, item->bssid, sizeof(ap_ary_ptr->bssid));
-        memcpy(ap_ary_ptr->ssid, item->ssid, sizeof(ap_ary_ptr->ssid)); // XXX boundary attack, copy too much data from wifi manager internal?
-        ap_ary_ptr->ssid_tail[0] = '\0';
-        ap_ary_ptr->ssid_len = strlen((char *)ap_ary_ptr->ssid);
-        ap_ary_ptr->auth = item->auth;
+        uint32_t j;
+        for (j = counter; j > p; j--)
+        {
+            temp[j] = temp[j - 1];
+            temp[j].channel = temp[j - 1].channel;
+            temp[j].rssi = temp[j - 1].rssi;
+            memcpy(temp[j].bssid, temp[j - 1].bssid, sizeof(temp[j].bssid));
+            memcpy(temp[j].ssid, temp[j - 1].ssid, sizeof(temp[j].ssid));
+            temp[j].ssid_tail[0] = '\0';
+            temp[j].ssid_len = strlen((char *)temp[j].ssid);
+            temp[j].auth = temp[j - 1].auth;
+        }
+
+        temp[p].channel = item->channel;
+        temp[p].rssi = item->rssi;
+        memcpy(temp[p].bssid, item->bssid, sizeof(temp[p].bssid));
+        memcpy(temp[p].ssid, item->ssid, sizeof(temp[p].ssid)); // XXX boundary attack, copy too much data from wifi manager internal?
+        temp[p].ssid_tail[0] = '\0';
+        temp[p].ssid_len = strlen((char *)temp[p].ssid);
+        temp[p].auth = item->auth;
+
+        if (!is_over_queue)
+        {
+            counter++;
+        }
     }
 
     /*store back counter*/
