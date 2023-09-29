@@ -12,6 +12,7 @@ extern uint32_t app_btn_on_hold_time_fire_event_ms;
 void wifi_not_cfg_to_ap_cfg_handler(void *arg)
 {
     clear_timeout_reset();
+    m_led_stt_get_instance()._set_led_stt_ap_config_cb();
     // stop wifi sta
     m_wifi_get_instance().wifi_sta_stop_cb();
 
@@ -73,6 +74,8 @@ m_state_transmit_t ap_config_done = {
 void smartconfig_to_apconfig_handler(void *arg)
 {
     os_trace("smartconfig_to_apconfig_handler\r\n");
+
+    m_led_stt_get_instance()._set_led_stt_ap_config_cb();
 
     /* ble rename */
     ble_set_name("Dungnt98", 1);
