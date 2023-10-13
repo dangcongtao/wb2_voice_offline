@@ -26,6 +26,8 @@ void start_cylcic_timer(switch_action_t action, uint32_t time_act1, uint32_t tim
     m_switch_get_instance()._control_switch_cb(action, 2, 0, true, false);
     previous_cyclic_timer_active[channel_index] = xTaskGetTickCount();
 
+    step_toggle[channel_index] = 0;
+
     cyclic_timer_arr[channel_index].enable = 1;
 }
 
@@ -70,8 +72,8 @@ void m_switch_cyclic_timer_loop(void)
             {
                 if (time_diff > pdMS_TO_TICKS(cyclic_timer_arr[i].time_on * 1000))
                 {
-                    m_switch_get_instance()._toggle_switch_cb(i, 2, true, false);
-                    step_toggle[i] = (step_toggle[i] + 1) % 2; /* 1 -> 0 , 0 -> 1 */
+                    m_switch_get_instance()._control_switch_cb(CH1_OFF + 2 * i, 2, 0, true, false);
+                    step_toggle[i] = !step_toggle[i]; /* 1 -> 0 , 0 -> 1 */
                     previous_cyclic_timer_active[i] = xTaskGetTickCount();
                 }
             }
@@ -81,8 +83,8 @@ void m_switch_cyclic_timer_loop(void)
             {
                 if (time_diff > pdMS_TO_TICKS(cyclic_timer_arr[i].time_off * 1000))
                 {
-                    m_switch_get_instance()._toggle_switch_cb(i, 2, true, false);
-                    step_toggle[i] = (step_toggle[i] + 1) % 2; /* 1 -> 0 , 0 -> 1 */
+                    m_switch_get_instance()._control_switch_cb(CH1_ON + 2 * i, 2, 0, true, false);
+                    step_toggle[i] = !step_toggle[i]; /* 1 -> 0 , 0 -> 1 */
                     previous_cyclic_timer_active[i] = xTaskGetTickCount();
                 }
             }
