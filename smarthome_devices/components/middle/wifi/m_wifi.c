@@ -83,6 +83,7 @@ static void m_wifi_change_wifi(char *ssid, char *passwd)
 {
     m_wifi_get_instance().wifi_set_ssid_cb(ssid, strlen(ssid));
     m_wifi_get_instance().wifi_set_passwd_cb(passwd, strlen(passwd));
+    m_wifi_get_instance().wifi_sta_start_cb(m_db_get_instance()->_m_device._wifi_info->_ssid, m_db_get_instance()->_m_device._wifi_info->_passwd);
 }
 
 static void m_wifi_save_ip(char *ip, size_t len)

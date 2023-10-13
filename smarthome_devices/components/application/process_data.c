@@ -247,6 +247,8 @@ static void app_get_info(cJSON *jsRoot)
     /* respond server here */
     memset(respond, 0, sizeof(respond));
 
+    m_wifi_get_instance().wifi_sync_rssi_cb();
+
     buffer_seek +=
         sprintf(respond,
                 "{\"%s\":%ld, \"u\":0, \"id\":\"%s\", \"ver\":%s, "
@@ -544,6 +546,7 @@ static void app_set_wifi(cJSON *jsRoot)
 
     /* implement */
     m_wifi_get_instance().wifi_change_wifi_cb(ssid, pass);
+    m_db_get_instance()->_request_sync_db();
 
 RESPONSE:
     /* respond server here */

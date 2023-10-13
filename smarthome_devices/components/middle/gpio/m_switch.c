@@ -72,7 +72,7 @@ static uint8_t m_control_switch(uint32_t action, uint32_t act_id, uint32_t uid, 
 
     s_switch_obj._write_switch_cb(channel_index, state);
     set_user_trigger_press_event(channel_index, set_even_release, action);
-    db_instance->_set_current_state_cb(channel_index, state);
+    db_instance->_set_current_state_cb(channel_index, action);
     /* save current state if needed */
     uint8_t def_state = s_switch_obj._switch_info.default_state[channel_index] % 3;
     if (def_state == SWITCH_ONE_KEEP_OLD_STATE)
