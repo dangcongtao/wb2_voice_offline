@@ -127,5 +127,6 @@ int axk_hal_user_ota_update(char* url)
 
 void m_ota_start(char* url)
 {
+    is_ota = 1;
     axk_hal_user_ota_update(url);
 }

@@ -18,6 +18,7 @@
 
 extern m_state_t current_state;;
 extern uint32_t max_number_channel;
+extern uint8_t is_ota;
 static m_button_t s_button_obj;
 uint32_t ignore_event_release[MAX_NUM_BUTTON] = {0, 0, 0, 0};
 
@@ -172,6 +173,7 @@ static void m_button_config(void)
 /* private */
 static void button_scan_task(void *param)
 {
+    static uint32_t tick_ota_led = 0;
     os_trace("button_scan_task\n");
     while (true)
     {
@@ -190,6 +192,24 @@ static void button_scan_task(void *param)
         app_btn_scan(NULL);
 
         blink_switch_config_loop();
+
+        if (!dev_is_doing_config()) {
+            if (is_ota == STATE_OTA_PROCESS) {
+                if (tick_ota_led % 500 == 0) {
+                    tick_ota_led = 0;
+                    m_led_stt_get_instance()._toggle_led_stt_cb();
+                }
+                tick_ota_led += 50;
+            } 
+            else if (is_ota == STATE_OTA_SUCCESS)
+            {
+                if (tick_ota_led >= 100) {
+                    tick_ota_led = 0;
+                    m_led_stt_get_instance()._toggle_led_stt_cb();
+                }
+                tick_ota_led += 50;
+            }
+        }
 
         vTaskDelay(pdMS_TO_TICKS(50));
     }

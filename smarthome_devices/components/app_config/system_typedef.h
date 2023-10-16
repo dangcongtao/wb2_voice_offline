@@ -46,6 +46,11 @@
 
 #define SIZEOF_ARRAY(array) (sizeof(array) / sizeof(array[0]))
 
+// state OTA
+#define STATE_OTA_STOP      0
+#define STATE_OTA_PROCESS   1
+#define STATE_OTA_SUCCESS   2
+
 typedef enum {
     WSWITCH = 0,    // công tắc âm tường cảm hứng
     LHSWITCH,       // công tắc lahu
