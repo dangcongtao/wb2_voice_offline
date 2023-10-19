@@ -16,10 +16,13 @@
 #include "m_database.h"
 #include "event_driven.h"
 
+#define TIME_OUT_RESET_TS04_WITHOUT_PRESS   2400
+
 extern m_state_t current_state;;
 extern uint32_t max_number_channel;
 extern uint8_t is_ota;
 static m_button_t s_button_obj;
+static uint32_t time_cnt_down_reset_TS04 = TIME_OUT_RESET_TS04_WITHOUT_PRESS;
 uint32_t ignore_event_release[MAX_NUM_BUTTON] = {0, 0, 0, 0};
 
 #define EVENT_BTN_HOLD              1
@@ -54,6 +57,7 @@ void on_button_event_cb(int button_pin, int event, void *data)
 
     case APP_BTN_EVT_RELEASED:
     {
+        time_cnt_down_reset_TS04 = TIME_OUT_RESET_TS04_WITHOUT_PRESS;
         if (ignore_event_release[button_pin] == EVENT_BTN_HOLD_HONG_PHIM)
         {
             sync_led_stt_when_reset_ts04();
@@ -86,6 +90,7 @@ void on_button_event_cb(int button_pin, int event, void *data)
         if (device_type != SWMINI || (device_type == SWMINI && button_pin < 2)) {
             m_switch_get_instance()._toggle_switch_cb(button_pin, 1, true, true);
         }
+        ignore_event_release[button_pin] = 0;
     }
     break;
 
@@ -190,6 +195,28 @@ static void button_scan_task(void *param)
 }
 #endif
         app_btn_scan(NULL);
+
+        if (device_type == WSWITCH || is_shock_device(device_type)) {
+            if (time_cnt_down_reset_TS04 == 0) {
+                uint8_t s_check = 0;
+                for (uint8_t i = 0; i < max_number_channel; i++)
+                {
+                    s_check += ignore_event_release[i];
+                }
+                if (s_check == 0) {
+                    os_trace("reset ts04 every 2 minutes\r\n");
+                    hw_ts04_write(TS04_IDLE_LEVEL);
+
+                    vTaskDelay(pdMS_TO_TICKS(100));
+
+                    hw_ts04_write(TS04_ACTIVE_LEVEL);
+                }
+                time_cnt_down_reset_TS04 = TIME_OUT_RESET_TS04_WITHOUT_PRESS;
+                os_trace("reset time count down ts04 reset\r\n");
+            } else{
+                time_cnt_down_reset_TS04--;
+            }
+        }
 
         blink_switch_config_loop();
 
