@@ -41,6 +41,7 @@ extern m_state_transmit_t dev_conn_mqtt;
 extern m_state_transmit_t dev_actived;
 extern m_state_transmit_t dev_actived_disconnect_mqtt;
 extern m_state_transmit_t dev_actived_disconnect_wifi;
+extern m_state_transmit_t dev_mqtt_connecting_to_disconnect_wifi;
 
 const char* state_machine[] = {
     "M_WIFI_START",
@@ -125,6 +126,7 @@ void m_event_init(void)
     signal_handler_register(dev_actived);
     signal_handler_register(dev_actived_disconnect_mqtt);
     signal_handler_register(dev_actived_disconnect_wifi);
+    signal_handler_register(dev_mqtt_connecting_to_disconnect_wifi);
     
     /* check pair state */
     if (m_db_get_instance()->_get_dev_pair_state())
@@ -138,7 +140,9 @@ void m_event_init(void)
 
 static m_signal_t old_signal;
 static uint32_t start_time_wait_cfg = 0;
+static uint32_t start_time_wait_wifi = 0;
 static const uint32_t TIMEOUT_WIFI_CONFIG_MS = 1000*60*15;
+#define TIMEOUT_WIFI_CONNECT_MS (1000 * 60 * 2)
 void m_event_loop(uint32_t time_schedual_ms)
 {
     for (uint8_t i = 0; i < MAX_STATE_MACHINE; i++)
@@ -156,6 +160,10 @@ void m_event_loop(uint32_t time_schedual_ms)
             /* start count time wait connect */
             if (current_state == M_WIFI_SMARTCONFIG || current_state == M_WIFI_APCONFIG) {
                 start_time_wait_cfg = xTaskGetTickCount();
+            }
+            else if (current_state == M_WIFI_DISCONNECT || current_state == M_WIFI_CONNECTING)
+            {
+                start_time_wait_wifi = xTaskGetTickCount();
             }
 
             break;
@@ -188,6 +196,20 @@ void m_event_loop(uint32_t time_schedual_ms)
             start_time_wait_cfg = 0;
             m_db_get_instance()->_backup_db_cb();
             signal_post(SIG_AP_CFG_DONE);
+        }
+    }
+    else if (current_state == M_WIFI_DISCONNECT || current_state == M_WIFI_CONNECTING)
+    {
+        /* check timeout */
+        if ((xTaskGetTickCount() - start_time_wait_wifi) >= pdMS_TO_TICKS(TIMEOUT_WIFI_CONNECT_MS))
+        {
+            start_time_wait_wifi = 0;
+            /* stop sta mode */
+            m_wifi_get_instance().wifi_sta_stop_cb();
+            flash_set_rs_reason(1);
+            vTaskDelay(pdMS_TO_TICKS(10000));
+            /* system reset */
+            bl_sys_reset_por();
         }
     }
 

@@ -81,4 +81,7 @@ m_database_t* m_db_get_instance(void);
 void m_db_read_device_id(void); /* just only be called in main function to get type device and init hardware. Not call in other place */
 uint8_t m_db_get_number_channel(void); 
 
+void flash_set_rs_reason(uint8_t is_set);
+uint8_t flash_read_rs_reason(void);
+
 #endif

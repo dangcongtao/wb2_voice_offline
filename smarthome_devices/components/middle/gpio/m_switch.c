@@ -269,6 +269,23 @@ static void control_switch_default_state(void)
     uint8_t channel;
     m_database_t *db_instance = m_db_get_instance();
 
+    uint8_t reason_reset = flash_read_rs_reason();
+    os_trace("reason_reset: %u\r\n", reason_reset);
+    if (reason_reset)
+    {
+        for (channel = 0; channel < m_db_get_number_channel(); channel++)
+        {
+            state = s_switch_obj._switch_info.current_state[channel] % 2;
+            os_trace("current_state - %d : %s\r\n", channel, state ? "ON" : "OFF");
+            if (s_switch_obj._write_switch_cb != NULL)
+            {
+                s_switch_obj._write_switch_cb(channel, state);
+            }
+        }
+        flash_set_rs_reason(0);
+        return;
+    }
+
     for (channel = 0; channel < max_number_channel; channel++)
     {
         mode = s_switch_obj._switch_info.default_state[channel];

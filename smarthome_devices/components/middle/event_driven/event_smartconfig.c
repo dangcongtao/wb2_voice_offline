@@ -19,6 +19,8 @@ void wifi_not_cfg_to_smart_cfg_handler(void *arg)
     clear_timeout_reset();
     m_led_stt_get_instance()._set_led_stt_smart_config_cb();
 
+    m_mqtt_get_instance()._mqtt_stop();
+
     // enable ble
     // ble_deinit();
     ble_set_name(s_device_id, 1);

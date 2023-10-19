@@ -11,6 +11,7 @@
 #include "easyflash_common.h"
 
 #define DEVICE_ID "device_id"
+#define REASON_RS   "reset_reason"
 
 #define WIFI_INFO "wifi_info"
 #define MQTT_INFO "mqtt_info"
@@ -126,4 +127,21 @@ void flash_write_device_id(void *device_id, uint32_t size)
 {
     /* write wifo info */
     ef_set_bytes(DEVICE_ID, device_id, size);
+}
+
+void flash_set_rs_reason(uint8_t is_set)
+{
+    ef_set_bytes(REASON_RS, &is_set, sizeof(is_set));
+    m_db_get_instance()->_request_sync_db();
+}
+
+uint8_t flash_read_rs_reason(void)
+{
+    if (m_db_get_instance()->_get_dev_pair_state() == 0) {
+        return 0;
+    }
+
+    uint8_t reason = 0;
+    ef_get_bytes(REASON_RS, &reason, sizeof(reason));
+    return reason;
 }

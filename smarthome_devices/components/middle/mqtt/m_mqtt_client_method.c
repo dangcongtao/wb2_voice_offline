@@ -27,6 +27,10 @@ extern bool request_send_command_online;
 
 axk_mqtt_client_handle_t client = NULL;
 
+static uint32_t time_disconnect_mqtt = 0;
+static uint8_t is_disconnected = 0;
+static const uint32_t TIMEOUT_DISCONNECTED_MS = 1000 * 60 * 5; // 5 minutes
+
 extern void signal_post(m_signal_t sig);
 extern void push_data_to_pqueue(m_data_t *message);
 
@@ -50,6 +54,7 @@ static axk_err_t mqtt_event_handler_cb(axk_mqtt_event_handle_t event)
     {
 
     case MQTT_EVENT_CONNECTED:
+        is_disconnected = 0;
         os_trace("MQTT_EVENT_CONNECTED\r\n");
         axk_mqtt_client_subscribe(client, s_mqtt_obj.mqtt_info.topic_sub, 0);
         signal_post(SIG_MQTT_CONNECTED);
@@ -59,9 +64,16 @@ static axk_err_t mqtt_event_handler_cb(axk_mqtt_event_handle_t event)
         os_trace("MQTT_EVENT_DISCONNECTED\r\n");
         m_led_stt_get_instance()._set_led_stt_mqtt_disconnect_cb();
         signal_post(SIG_MQTT_DISCONNECTED);
+        if (is_disconnected == 0)
+        {
+            is_disconnected = 1;
+            time_disconnect_mqtt = xTaskGetTickCount();
+        }
         break;
 
     case MQTT_EVENT_SUBSCRIBED:
+        is_disconnected = 0;
+        time_disconnect_mqtt = 0;
         os_trace("MQTT_EVENT_SUBSCRIBED, msg_id=%d\r\n", event->msg_id);
         m_led_stt_get_instance()._set_led_stt_mqtt_subscribed_cb();
         request_send_command_online = true;
@@ -155,6 +167,16 @@ void m_mqtt_publish_directly(char *data, uint32_t length)
 
 void m_mqtt_task_loop(void)
 {
+    if (is_disconnected && time_disconnect_mqtt > 0)
+    {
+        if ((xTaskGetTickCount() - time_disconnect_mqtt) >= pdMS_TO_TICKS(TIMEOUT_DISCONNECTED_MS))
+        {
+            flash_set_rs_reason(1);
+            vTaskDelay(pdMS_TO_TICKS(3000));
+            bl_sys_reset_por();
+        }
+    }
+
     /* send message after online */
     if (request_send_command_online && s_mqtt_obj._mqtt_pub_startup_msg != NULL)
     {

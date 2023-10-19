@@ -53,9 +53,9 @@ void m_wifi_sta_event_cb(input_event_t *event, void *private_data)
         g_wifi_sta_is_connected = 0;
         os_trace("wifi sta disconnected\r\n");
         // g_wifi_obj.wifi_set_state_cb(M_WIFI_DISCONNECT);
-        if (!dev_is_doing_config()) {
-            m_led_stt_get_instance()._set_led_stt_wifi_not_connect_cb();
-        }
+        // if (!dev_is_doing_config()) {
+        //     m_led_stt_get_instance()._set_led_stt_wifi_not_connect_cb();
+        // }
         signal_post(SIG_WIFI_DISCONNECT);
         break;
 
