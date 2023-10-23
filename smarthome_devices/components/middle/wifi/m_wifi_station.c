@@ -179,7 +179,8 @@ void m_wifi_sta_stop(void)
     while(g_wifi_sta_is_connected)
         vTaskDelay(100);
 
+    vTaskDelay(1000);
     wifi_mgmr_sta_disable(NULL);
-    vTaskDelay(100);
+    vTaskDelay(1000);
     os_trace("wifi_mgmr_sta_disable\r\n");
 }
