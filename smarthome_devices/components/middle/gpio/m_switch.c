@@ -80,8 +80,10 @@ static uint8_t m_control_switch(uint32_t action, uint32_t act_id, uint32_t uid, 
         db_instance->_request_sync_db();
     }
 #if PROJECT_SHOCK
-    if (m_mqtt_get_instance()._mqtt_state >= MQTT_INTIALIZED && is_shock_device(device_type)) {
-        if (is_leakage_current()) {
+    if (m_mqtt_get_instance()._mqtt_state >= MQTT_INTIALIZED && is_shock_device(device_type))
+    {
+        if (is_leakage_current())
+        {
             memset(respond_msg, 0, sizeof(respond_msg));
             sprintf(respond_msg, "{\"%s\":%d, \"%s\":%d}", gs_dev_type[device_type], 70, CJSON_KEY_LEAKAGE, 0);
             mqtt_obj._mqtt_publish(respond_msg, strlen(respond_msg));
@@ -96,7 +98,7 @@ static uint8_t m_control_switch(uint32_t action, uint32_t act_id, uint32_t uid, 
             memset(respond_msg, 0, sizeof(respond_msg));
             sprintf(respond_msg, "{\"%s\":%d, \"action\":%ld,"
                                  "\"u\":%ld, \"act_id\": %d}",
-                                 gs_dev_type[device_type], 0, action, uid, act_id);
+                    gs_dev_type[device_type], 0, action, uid, act_id);
             mqtt_obj._mqtt_publish(respond_msg, strlen(respond_msg));
         }
         else
@@ -108,77 +110,176 @@ static uint8_t m_control_switch(uint32_t action, uint32_t act_id, uint32_t uid, 
     return 1;
 }
 
-static uint8_t num_click_go_cfg[2] = {0, 0};
-static uint8_t step_go_cfg[2] = {0, 0};
-static uint32_t tick_go_cfg[2] = {0, 0};
-#define DEFAULT_TICK    60
-#define TICK_INVALID    0
+static uint8_t num_click_go_cfg_0 = 0;
+static uint8_t num_click_go_cfg_1 = 0;
+static uint8_t step_go_cfg_0 = 0;
+static uint8_t step_go_cfg_1 = 0;
+static uint32_t tick_go_cfg_0 = 0;
+static uint32_t tick_go_cfg_1 = 0;
+#define DEFAULT_TICK 60U
+#define TICK_INVALID 0
 
-static void reset_data_blink_config(uint8_t index)
+static uint8_t m_get_num_click_go_cfg(int id)
 {
-    if (device_type != SWMINI) {
+    if (id == 0)
+    {
+        return num_click_go_cfg_0;
+    }
+    else
+    {
+        return num_click_go_cfg_1;
+    }
+}
+
+static void m_set_num_click_go_cfg(int id, uint8_t val)
+{
+    if (id == 0)
+    {
+        num_click_go_cfg_0 = val;
+    }
+    else
+    {
+        num_click_go_cfg_1 = val;
+    }
+}
+
+static uint8_t m_get_step_go_cfg(int id)
+{
+    if (id == 0)
+    {
+        return step_go_cfg_0;
+    }
+    else
+    {
+        return step_go_cfg_1;
+    }
+}
+
+static void m_set_step_go_cfg(int id, uint8_t val)
+{
+    if (id == 0)
+    {
+        step_go_cfg_0 = val;
+    }
+    else
+    {
+        step_go_cfg_1 = val;
+    }
+}
+
+static uint32_t m_get_tick_go_cfg(int id)
+{
+    if (id == 0)
+    {
+        return tick_go_cfg_0;
+    }
+    else
+    {
+        return tick_go_cfg_1;
+    }
+}
+
+static void m_set_tick_go_cfg(int id, uint32_t val)
+{
+    if (id == 0)
+    {
+        tick_go_cfg_0 = val;
+    }
+    else
+    {
+        tick_go_cfg_1 = val;
+    }
+}
+
+static void reset_data_blink_config(int index)
+{
+    if (device_type != SWMINI || index > 1)
+    {
         return;
     }
-    num_click_go_cfg[index] = 0;
-    step_go_cfg[index] = 0;
-    tick_go_cfg[index] = TICK_INVALID;
+    m_set_num_click_go_cfg(index, 0);
+    m_set_step_go_cfg(index, 0);
+    m_set_tick_go_cfg(index, TICK_INVALID);
 }
 
 void blink_switch_config_loop(void)
 {
-    if (device_type != SWMINI) {
+    if (device_type != SWMINI)
+    {
         return;
     }
 
-    for (uint8_t i = 0; i < 2; i++) {
-        if (tick_go_cfg[i] == TICK_INVALID) {
+    for (int i = 0; i < 2; i++)
+    {
+        if (i > 1)
+        {
+            return;
+        }
+        if (m_get_tick_go_cfg(i) == TICK_INVALID)
+        {
             continue;
         }
-        tick_go_cfg[i]--;
-        if (tick_go_cfg[i]) {
+        m_set_tick_go_cfg(i, m_get_tick_go_cfg(i) - 1);
+        if (m_get_tick_go_cfg(i) > 0)
+        {
             continue;
         }
 
-        // os_trace("%d num_click_go_cfg: %u, step_go_cfg: %u\r\n", i, num_click_go_cfg[i], step_go_cfg[i]);
+        os_trace("%d num_click_go_cfg: %u, step_go_cfg: %u, tick_go_cfg: %lu\r\n", i, m_get_num_click_go_cfg(i), m_get_step_go_cfg(i), m_get_num_click_go_cfg(i));
 
-        if (step_go_cfg[i] == 1 || step_go_cfg[i] == 2) {
-            if (num_click_go_cfg[i] == 0) {
-                tick_go_cfg[i] = DEFAULT_TICK;
+        if (1 == m_get_step_go_cfg(i) || 2 == m_get_step_go_cfg(i))
+        {
+            if (0 == m_get_num_click_go_cfg(i))
+            {
+                m_set_tick_go_cfg(i, DEFAULT_TICK);
 
-                // os_trace("go step %u\r\n", step_go_cfg[i]);
-                m_control_switch(step_go_cfg[i] + i * 2, 0, 0, 0, 0);
-                step_go_cfg[i]++;
+                os_trace("go step %u\r\n", m_get_step_go_cfg(i));
+                m_control_switch(m_get_step_go_cfg(i) + i * 2, 0, 0, 0, 0);
+                m_set_step_go_cfg(i, m_get_step_go_cfg(i) + 1);
                 return;
-            } else {
+            }
+            else
+            {
                 reset_data_blink_config(i);
             }
-        } else if (step_go_cfg[i] == 3) {
-            if (num_click_go_cfg[i] == 2) {
+        }
+        else if (3 == m_get_step_go_cfg(i))
+        {
+            if (2 == m_get_num_click_go_cfg(i))
+            {
                 reset_data_blink_config(i);
-                signal_post(SIG_AP_CFG);
+                signal_post(SIG_SMART_CFG);
                 return;
             }
             reset_data_blink_config(i);
-        } else if (step_go_cfg[i] == 0) {
-            if (num_click_go_cfg[i] == 6) {
-                // os_trace("go config\r\n");
-                tick_go_cfg[i] = TICK_INVALID + 1;
-                num_click_go_cfg[i] = 0;
-                step_go_cfg[i]++;
+        }
+        else if (0 == m_get_step_go_cfg(i))
+        {
+            if (6 == m_get_num_click_go_cfg(i))
+            {
+                os_trace("go config\r\n");
+                m_set_tick_go_cfg(i, TICK_INVALID + 1);
+                m_set_num_click_go_cfg(i, 0);
+                m_set_step_go_cfg(i, m_get_step_go_cfg(i) + 1);
                 return;
-            } else {
+            }
+            else
+            {
                 reset_data_blink_config(i);
             }
         }
     }
 }
 
-void increate_step(uint8_t index)
+void increate_step(int index)
 {
-    tick_go_cfg[index] = DEFAULT_TICK;
-    num_click_go_cfg[index]++;
+    if (index > 1)
+    {
+        return;
+    }
+    m_set_tick_go_cfg(index, DEFAULT_TICK);
+    m_set_num_click_go_cfg(index, m_get_num_click_go_cfg(index) + 1);
 }
-
 
 /* use for Button or Press-Release action */
 static uint8_t m_toggle_switch(uint32_t index, uint32_t act_id, bool respond, bool set_even_release)
@@ -192,18 +293,24 @@ static uint8_t m_toggle_switch(uint32_t index, uint32_t act_id, bool respond, bo
     {
         if (pin_value)
         {
-            if (num_click_go_cfg[0] % 2 != 0) {
+            if (m_get_num_click_go_cfg(0) % 2 != 0)
+            {
                 increate_step(0);
-            } else {
+            }
+            else
+            {
                 reset_data_blink_config(0);
             }
             return m_control_switch(CH1_OFF, act_id, 0, respond, set_even_release);
         }
         else
         {
-            if (num_click_go_cfg[0] % 2 == 0) {
+            if (m_get_num_click_go_cfg(0) % 2 == 0)
+            {
                 increate_step(0);
-            } else {
+            }
+            else
+            {
                 reset_data_blink_config(0);
             }
             return m_control_switch(CH1_ON, act_id, 0, respond, set_even_release);
@@ -215,18 +322,24 @@ static uint8_t m_toggle_switch(uint32_t index, uint32_t act_id, bool respond, bo
     {
         if (pin_value)
         {
-            if (num_click_go_cfg[1] % 2 != 0) {
+            if (m_get_num_click_go_cfg(1) % 2 != 0)
+            {
                 increate_step(1);
-            } else {
+            }
+            else
+            {
                 reset_data_blink_config(1);
             }
             return m_control_switch(CH2_OFF, act_id, 0, respond, set_even_release);
         }
         else
         {
-            if (num_click_go_cfg[1] % 2 == 0) {
+            if (m_get_num_click_go_cfg(1) % 2 == 0)
+            {
                 increate_step(1);
-            } else {
+            }
+            else
+            {
                 reset_data_blink_config(1);
             }
             return m_control_switch(CH2_ON, act_id, 0, respond, set_even_release);
@@ -354,13 +467,14 @@ void m_switch_init(void)
     for (i = 0; i < max_number_channel; i++)
         s_switch_obj._switch_cfg_cb(i);
 
-    if (device_type == WSWITCH || device_type == LHSWITCH) {
+    if (device_type == WSWITCH || device_type == LHSWITCH)
+    {
         switch (max_number_channel)
         {
         case 1:
             s_switch_obj._switch_cfg_cb(1);
             break;
-        
+
         case 2:
             s_switch_obj._switch_cfg_cb(2);
             break;
@@ -370,10 +484,8 @@ void m_switch_init(void)
     }
 
     control_switch_default_state();
-    memset(num_click_go_cfg, 0, sizeof(num_click_go_cfg));
-    memset(step_go_cfg, 0, sizeof(step_go_cfg));
-    tick_go_cfg[0] = TICK_INVALID;
-    tick_go_cfg[1] = TICK_INVALID;
+    tick_go_cfg_0 = TICK_INVALID;
+    tick_go_cfg_1 = TICK_INVALID;
 }
 
 m_switch_t m_switch_get_instance(void)
@@ -381,7 +493,7 @@ m_switch_t m_switch_get_instance(void)
     return s_switch_obj;
 }
 
-m_switch_info_t* m_switch_get_info_reference(void)
+m_switch_info_t *m_switch_get_info_reference(void)
 {
     return &s_switch_obj._switch_info;
 }
