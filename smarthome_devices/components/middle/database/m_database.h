@@ -9,6 +9,7 @@
 #include "m_wifi.h"
 #include "m_mqtt.h"
 #include "m_switch.h"
+#include "m_beacon.h"
 
 /* for bootloader */
 typedef enum {
@@ -46,6 +47,7 @@ typedef struct {
     m_wifi_info_t*      _wifi_info;
     m_mqtt_info_t*      _mqtt_info;
     m_switch_info_t*    _switch_info;
+    m_ble_info_t*       _ble_info;
     uint32_t checksum_crc;
 } m_device_t;
 
@@ -59,6 +61,7 @@ typedef struct {
     p_set_dev_id_t      _set_dev_id;
     p_get_dev_id_t      _get_dev_id;
     p_db_app_sync_t     _request_sync_db;
+    p_db_app_sync_t     _request_sync_db_ble;
 
     p_set_default_state_t _set_current_state_cb;
     p_set_default_state_t _set_default_state_cb;

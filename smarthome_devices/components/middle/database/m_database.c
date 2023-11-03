@@ -2,6 +2,7 @@
 #include "m_wifi.h"
 #include "m_mqtt.h"
 #include "m_switch.h"
+#include "m_beacon.h"
 #include "flash_api.h"
 
 #include <string.h>
@@ -18,6 +19,7 @@ char key[16], iv[16];
 
 char s_device_id[64];
 static bool s_request_sync_db = false;
+static bool s_request_sync_db_ble = false;
 static bool s_request_reset_db = false;
 static bool s_request_reset_db_without_sync = false;
 static bool s_request_backup_db = false;
@@ -103,6 +105,11 @@ static char *m_get_dev_id(void)
 static void m_db_request_sync_database(void)
 {
     s_request_sync_db = true;
+}
+
+static void m_db_ble_request_sync_database(void)
+{
+    s_request_sync_db_ble = true;
 }
 
 static void m_db_reset_factory_database(void)
@@ -200,6 +207,7 @@ static void m_load_databse(void)
 {
     m_db_read_device_id();
     flash_read_database(&s_m_database._m_device);
+    flash_ble_read_database(&s_m_database._m_device);
 
     // memset(s_m_database._m_device._wifi_info, 0, sizeof(m_wifi_info_t));
     // memset(s_m_database._m_device._mqtt_info, 0, sizeof(m_mqtt_info_t));
@@ -380,6 +388,11 @@ static void m_database_sync_task(void *param)
             s_request_sync_db = false;
         }
 
+        if (s_request_sync_db_ble) {
+            flash_ble_write_database(s_m_database._m_device);
+            s_request_sync_db_ble = false;
+        }
+
         vTaskDelay(pdMS_TO_TICKS(100)); /* should be 500ms to make it's priority low */
     }
 }
@@ -391,11 +404,14 @@ void m_database_init(void)
     s_m_database._m_device._mqtt_info = m_mqtt_get_info_reference();
     s_m_database._m_device._wifi_info = m_wifi_get_info_reference();
     s_m_database._m_device._switch_info = m_switch_get_info_reference();
+    s_m_database._m_device._ble_info = m_ble_get_info_reference();
+
 
     s_m_database._set_dev_pair_state = m_db_dev_set_pair;
     s_m_database._get_dev_pair_state = m_db_dev_get_pair;
     s_m_database._get_dev_id = m_get_dev_id;
     s_m_database._request_sync_db = m_db_request_sync_database;
+    s_m_database._request_sync_db_ble = m_db_ble_request_sync_database;
     s_m_database._reset_db_cb = m_db_reset_factory_database;
     s_m_database._reset_db_without_sync_cb = m_db_reset_factory_database_without_sync;
     s_m_database._backup_db_cb = m_db_backup_database;

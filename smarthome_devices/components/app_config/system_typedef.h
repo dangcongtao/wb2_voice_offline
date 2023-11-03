@@ -105,6 +105,7 @@ typedef enum
     TRANSMIT_INVALID = 0,
     BLE_MSG,
     MQTT_MSG,
+    BEACON_MSG
 } method_trasmit_t;
 
 #define DATA_MAX_LEN    512

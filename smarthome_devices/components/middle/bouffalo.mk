@@ -60,6 +60,7 @@ COMPONENT_SRCS := database/m_database.c \
 				  wifi/m_wifi.c \
 				  ble_slave/m_ble.c \
 				  ble_slave/my_ble.c \
+				  ble_slave/m_beacon.c \
 				  event_driven/event_apconfig.c \
 				  event_driven/event_smartconfig.c \
 				  event_driven/event_device_active.c \

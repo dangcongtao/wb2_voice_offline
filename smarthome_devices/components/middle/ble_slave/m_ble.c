@@ -57,6 +57,7 @@
 #include "my_ble.h"
 #include "system_typedef.h"
 #include "aes_cbc128.h"
+#include "m_beacon.h"
 
 #define BLE_MAX_QUEUE_ITEM 10
 
@@ -154,6 +155,9 @@ static void ble_task(void *pvParameters)
     memset(&message, 0, sizeof(message));
     memset(msg_aes, 0, sizeof(msg_aes));
 
+    ble_master_scan();
+    // ble_go_request_pair();
+
     while (1)
     {
         if (xQueueReceive(ble_tx_queue, &message, 1) == pdPASS)
@@ -178,6 +182,8 @@ static void ble_task(void *pvParameters)
 
             memset(&message, 0, sizeof(message));
         }
+
+        ble_config_loop();
 
         vTaskDelay(pdMS_TO_TICKS(100));
     }

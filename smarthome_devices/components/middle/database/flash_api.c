@@ -16,6 +16,7 @@
 #define WIFI_INFO "wifi_info"
 #define MQTT_INFO "mqtt_info"
 #define SWITCH_INFO "switch_info"
+#define BLE_INFO "ble_info"
 #define PAIR_STATE "pair_state"
 
 void flash_init(void)
@@ -64,6 +65,42 @@ void flash_write_database(m_device_t object_data)
 
     /* write state pair */
     ef_set_u32(PAIR_STATE, object_data._device_is_paired);
+}
+
+void flash_ble_write_database(m_device_t object_data)
+{
+    uint32_t size = 0;
+
+    /* write ble info */
+    if (object_data._ble_info == NULL)
+    {
+        os_trace("object_data._ble_info NULL\r\n");
+    }
+    else
+    {
+        size = sizeof(m_ble_info_t);
+        ef_set_bytes(BLE_INFO, (uint8_t *)object_data._ble_info, size);
+    }
+}
+
+void flash_ble_read_database(m_device_t *object_data)
+{
+    uint32_t size = 0;
+    os_trace("%s\r\n", __func__);
+
+    if (object_data == NULL)
+        return;
+
+    if (object_data->_ble_info == NULL)
+    {
+        os_trace("object_data->_ble_info NULL\r\n");
+    }
+    else
+    {
+        /* read ble info */
+        size = sizeof(m_ble_info_t);
+        ef_get_bytes(BLE_INFO, (uint8_t *)object_data->_ble_info, size);
+    }
 }
 
 void flash_read_database(m_device_t *object_data)

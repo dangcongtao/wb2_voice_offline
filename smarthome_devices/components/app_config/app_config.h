@@ -5,13 +5,13 @@
 #include <stdlib.h>
 #include <blog.h>
 
-#define DEBUG_ENABLE    0
+#define DEBUG_ENABLE    1
 void m_log(const char *fmt, ...);
 #define os_trace if (DEBUG_ENABLE == 1) printf
 
 /* config for type of device, that will be used to parse json message */
 #define EXTRAS              1514
-#define FIRMWARE_VERSION    "231019"
+#define FIRMWARE_VERSION    "231101"
 #define HARDWARE_VERSION    "230303"
 
 // -> 1 nếu là thiết bị chống giật

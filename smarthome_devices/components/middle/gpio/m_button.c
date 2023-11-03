@@ -16,6 +16,8 @@
 #include "m_database.h"
 #include "event_driven.h"
 
+#include "m_beacon.h"
+
 #define TIME_OUT_RESET_TS04_WITHOUT_PRESS   2400
 
 extern m_state_t current_state;;
@@ -90,6 +92,13 @@ void on_button_event_cb(int button_pin, int event, void *data)
         if (device_type != SWMINI || (device_type == SWMINI && button_pin < 2)) {
             m_switch_get_instance()._toggle_switch_cb(button_pin, 1, true, true);
         }
+
+        if (button_pin == 3) {
+            ble_go_request_pair();
+        } else if (button_pin == 2) {
+            master_accept_request_link();
+        }
+
         ignore_event_release[button_pin] = 0;
     }
     break;
