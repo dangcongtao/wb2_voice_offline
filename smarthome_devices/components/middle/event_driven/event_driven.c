@@ -14,8 +14,6 @@ static uint8_t num_state_in_used = 0;
 m_state_t current_state;
 m_state_transmit_t state_array[MAX_STATE_MACHINE] = {0};
 
-extern uint32_t time_count_reset;
-
 extern m_state_transmit_t not_cfg_to_ap_cfg;
 extern m_state_transmit_t not_cfg_to_smart_cfg;
 
@@ -63,7 +61,7 @@ const char* state_machine[] = {
     NULL
 };
 
-uint32_t time_count_reset = 0;
+static uint32_t time_count_reset = 0;
 static const uint32_t TIMEOUT_RESET_MS = 1000*30;
 
 void set_timeout_reset(void)
@@ -213,8 +211,10 @@ void m_event_loop(uint32_t time_schedual_ms)
         }
     }
 
-    if (time_count_reset && (xTaskGetTickCount() - time_count_reset) >= pdMS_TO_TICKS(TIMEOUT_RESET_MS)) {
+    if (time_count_reset != 0 && (xTaskGetTickCount() - time_count_reset) >= pdMS_TO_TICKS(TIMEOUT_RESET_MS)) {
+        os_trace("reset by time_count_reset\r\n");
         clear_timeout_reset();
+        vTaskDelay(pdMS_TO_TICKS(2000));
         bl_sys_reset_por();
     }
 }
