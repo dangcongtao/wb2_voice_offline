@@ -124,7 +124,6 @@ typedef struct
     uint32_t last_time_running_config;
     uint32_t last_time_change_state_light;
     uint8_t ignore_change_state_ligth;
-    uint32_t arr_last_time_ping[MAX_CTLK_SUPPORT];
     uint8_t arr_tid_child[MAX_CTLK_SUPPORT];
     uint8_t is_run_config;
     uint8_t type_device_config;
@@ -132,8 +131,6 @@ typedef struct
     uint8_t tid;
     uint32_t last_time_notify_state;
     uint32_t last_time_request_sync_led_stt;
-    uint32_t tick_to_adv;
-    uint32_t last_adv_dur;
 
     uint32_t light_count_down_ss;
     uint32_t time_delay_light_off;
@@ -155,10 +152,10 @@ typedef struct
     {
         struct
         {
-            uint32_t type : 3;
+            uint32_t type : 2;
             uint32_t firmware_version : 19;
             uint32_t battery: 7;
-            uint32_t empty: 3;
+            uint32_t relays: 4;
         } info;
 
         uint32_t holder;
