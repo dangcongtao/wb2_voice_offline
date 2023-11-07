@@ -18,6 +18,8 @@ void get_mqtt_info_handler(void *arg)
     // http client send GET request
     os_trace("get_mqtt_info_handler\r\n");
 
+    m_led_stt_get_instance()._set_led_stt_mqtt_disconnect_cb();
+
     uint32_t port = m_mqtt_get_info_reference()->port;
     char *server = m_mqtt_get_info_reference()->server;
     char *user = m_mqtt_get_info_reference()->username;
@@ -31,6 +33,7 @@ void get_mqtt_info_handler(void *arg)
     {
         if (!get_mqtt_info()) {
             set_timeout_reset();
+            vTaskDelay(pdMS_TO_TICKS(1000));
             return;
         }
     }
@@ -105,7 +108,7 @@ m_state_transmit_t dev_mqtt_connecting_to_disconnect_wifi = {
     .context = M_WIFI_MQTT_CONNECTING,
     .signal = SIG_WIFI_DISCONNECT,
     .next_state = M_WIFI_CONNECTING,
-    .signal_handler_cb = device_disconnect_mqtt_handler
+    .signal_handler_cb = device_disconnect_wifi_handler
 };
 
 /* device actived -> smart config */
@@ -127,6 +130,10 @@ void dev_actived_to_smart_cfg_handler(void *arg)
     // ble_deinit();
     ble_set_name(s_device_id, 1);
     // ble_init();
+
+    // set led
+    m_led_stt_get_instance()._set_led_stt_smart_config_cb();
+    
 
     // scan wifi
     m_wifi_get_instance().wifi_scan_cb();

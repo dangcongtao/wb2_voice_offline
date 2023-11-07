@@ -11,7 +11,7 @@ export PROJECT_PATH PROJECT_BOARD
 
 -include ./proj_config.mk
 
-BL60X_SDK_PATH = /home/huy/BL602/Ai-Thinker-WB2
+BL60X_SDK_PATH = /home/huy/Ai-Thinker-WB2
 # ifeq ($(origin BL60X_SDK_PATH), undefined)
 # BL60X_SDK_PATH_GUESS ?= $(shell pwd)
 # BL60X_SDK_PATH ?= $(BL60X_SDK_PATH_GUESS)/../../..
@@ -41,6 +41,7 @@ INCLUDE_COMPONENTS    += axk_common axk_log tcp_transport axk_tls axk_mqtt http-
 # BLE
 INCLUDE_COMPONENTS += freertos_riscv_ram bl602 ble602_hal bl602_std newlibc wifi wifi_manager wpa_supplicant bl602_os_adapter wifi_hosal hosal mbedtls_lts lwip lwip_dhcpd vfs yloop utils cli netutils blog blog_testc blcrypto_suite
 INCLUDE_COMPONENTS += easyflash4 coredump
+INCLUDE_COMPONENTS += rfparam_adapter_tmp
 INCLUDE_COMPONENTS += bl_os_adapter cjson 
 INCLUDE_COMPONENTS += blecontroller_602_std  blestack blecontroller
 

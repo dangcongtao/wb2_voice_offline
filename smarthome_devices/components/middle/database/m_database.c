@@ -427,7 +427,7 @@ void m_database_init(void)
 
     xTaskCreate(m_database_sync_task,   /* Function that implements the task. */
                 "m_database_sync_task", /* Text name for the task. */
-                1024 * 5 + 500,         /* Stack size in words, not bytes. */
+                1024,         /* Stack size in words, not bytes. */
                 NULL,                   /* Parameter passed into the task. */
                 1,                      /* Priority at which the task is created. */
                 NULL);

@@ -62,7 +62,7 @@ static axk_err_t mqtt_event_handler_cb(axk_mqtt_event_handle_t event)
 
     case MQTT_EVENT_DISCONNECTED:
         os_trace("MQTT_EVENT_DISCONNECTED\r\n");
-        m_led_stt_get_instance()._set_led_stt_mqtt_disconnect_cb();
+        // m_led_stt_get_instance()._set_led_stt_mqtt_disconnect_cb();
         signal_post(SIG_MQTT_DISCONNECTED);
         if (is_disconnected == 0)
         {
