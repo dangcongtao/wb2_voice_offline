@@ -11,10 +11,10 @@
 
 static m_signal_t signal;
 static uint8_t num_state_in_used = 0;
+uint32_t time_count_reset = 0;
+static const uint32_t TIMEOUT_RESET_MS = 1000*30;
 m_state_t current_state;
 m_state_transmit_t state_array[MAX_STATE_MACHINE] = {0};
-
-extern uint32_t time_count_reset;
 
 extern m_state_transmit_t not_cfg_to_ap_cfg;
 extern m_state_transmit_t not_cfg_to_smart_cfg;
@@ -62,9 +62,6 @@ const char* state_machine[] = {
     "M_WIFI_NOT_CFG",
     NULL
 };
-
-uint32_t time_count_reset = 0;
-static const uint32_t TIMEOUT_RESET_MS = 1000*30;
 
 void set_timeout_reset(void)
 {
@@ -215,6 +212,7 @@ void m_event_loop(uint32_t time_schedual_ms)
 
     if (time_count_reset && (xTaskGetTickCount() - time_count_reset) >= pdMS_TO_TICKS(TIMEOUT_RESET_MS)) {
         clear_timeout_reset();
+        vTaskDelay(pdMS_TO_TICKS(4000));
         bl_sys_reset_por();
     }
 }
