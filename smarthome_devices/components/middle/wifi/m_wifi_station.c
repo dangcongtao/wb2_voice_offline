@@ -148,6 +148,18 @@ static int wifi_sta_connect(char *ssid, char *pass)
 {
     g_wifi_mode = WIFI_STATION;
 
+    uint32_t flags = 0;
+    flags |= WIFI_CONNECT_PMF_CAPABLE;
+    struct ap_connect_adv ext_param;
+    ext_param.psk = NULL;
+    ext_param.ap_info.type = AP_INFO_TYPE_PRESIST;
+    ext_param.ap_info.time_to_live = 5;
+    ext_param.ap_info.bssid = NULL;
+    ext_param.ap_info.band = 0;
+    ext_param.ap_info.freq = 0;
+    ext_param.ap_info.use_dhcp = 1;
+    ext_param.flags = flags;
+
     g_wifi_sta_interface = wifi_mgmr_sta_enable();
     if (g_wifi_sta_is_connected == 1)
     {
@@ -155,13 +167,13 @@ static int wifi_sta_connect(char *ssid, char *pass)
         wifi_mgmr_sta_disconnect();
         wifi_mgmr_sta_autoconnect_set(WIFI_RECONN_INTERVAL_SEC, WIFI_RECONN_REPEAT_TIMES);
         wifi_mgmr_sta_autoconnect_enable();
-        return wifi_mgmr_sta_connect(g_wifi_sta_interface, ssid, pass, NULL, NULL, 0, 0);
+        return wifi_mgmr_sta_connect_ext(g_wifi_sta_interface, ssid, pass, &ext_param);
     }
     else
     {
         wifi_mgmr_sta_autoconnect_set(WIFI_RECONN_INTERVAL_SEC, WIFI_RECONN_REPEAT_TIMES);
         wifi_mgmr_sta_autoconnect_enable();
-        return wifi_mgmr_sta_connect(g_wifi_sta_interface, ssid, pass, NULL, NULL, 0, 0);
+        return wifi_mgmr_sta_connect_ext(g_wifi_sta_interface, ssid, pass, &ext_param);
     }
 }
 
