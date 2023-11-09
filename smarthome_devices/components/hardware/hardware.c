@@ -40,4 +40,4 @@ void gpio_set_input(int pin)
     bl_gpio_enable_input(pin, 1, 0);
 }
 
-uint32_t sys_get_tick_ms(void) { return aos_now_ms(); }
+uint32_t sys_get_tick_ms(void) { return (uint32_t)aos_now_ms(); }
