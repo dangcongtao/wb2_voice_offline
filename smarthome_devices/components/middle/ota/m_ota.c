@@ -28,6 +28,7 @@
 #include "ota_hal.h"
 #include "bl_sys.h"
 #include <stdbool.h>
+#include "m_database.h"
 
 // #define url "https://chencong--test.oss-cn-beijing.aliyuncs.com/test.bin"
 
@@ -128,5 +129,7 @@ int axk_hal_user_ota_update(char* url)
 void m_ota_start(char* url)
 {
     is_ota = 1;
+    flash_set_rs_reason(2);
+    vTaskDelay(pdMS_TO_TICKS(2000));
     axk_hal_user_ota_update(url);
 }
