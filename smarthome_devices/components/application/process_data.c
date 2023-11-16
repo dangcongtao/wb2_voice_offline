@@ -113,16 +113,17 @@ static void app_startup_message(void)
 {
     m_device_t app_databse = m_db_get_instance()->_m_device;
     uint32_t buffer_seek = 0, i;
+    extern uint8_t last_reason_reset;
 
     /* respond server here */
     memset(respond, 0, sizeof(respond));
 
     buffer_seek +=
         sprintf(respond,
-                "{\"%s\": 100, \"u\":0, \"id\":\"%s\", \"ver\":%s, \"extras\":%d,"
-                "\"ssid\":\"%s\", \"pass\":\"%s\",\"streng\":%d, "
-                "\"ip\":\"%s\", \"po\":[",
-                gs_dev_type[device_type],
+                "{\"%s\": 100,\"reason\":%u,\"u\":0,\"id\":\"%s\",\"ver\":%s,\"extras\":%d,"
+                "\"ssid\":\"%s\",\"pass\":\"%s\",\"streng\":%d, "
+                "\"ip\":\"%s\",\"po\":[",
+                gs_dev_type[device_type], last_reason_reset,
                 m_db_get_instance()->_get_dev_id(), FIRMWARE_VERSION, EXTRAS,
                 app_databse._wifi_info->_ssid, app_databse._wifi_info->_passwd,
                 app_databse._wifi_info->_rssi, app_databse._wifi_info->_ip);
