@@ -21,6 +21,7 @@
 #include <timers.h>
 
 #include "m_http_services.h"
+#include "bl_sys.h"
 
 static char respond[512];
 extern char key[16], iv[16];
@@ -123,7 +124,7 @@ static void app_startup_message(void)
                 "{\"%s\": 100,\"reason\":%u,\"u\":0,\"id\":\"%s\",\"ver\":%s,\"extras\":%d,"
                 "\"ssid\":\"%s\",\"pass\":\"%s\",\"streng\":%d, "
                 "\"ip\":\"%s\",\"po\":[",
-                gs_dev_type[device_type], last_reason_reset,
+                gs_dev_type[device_type], last_reason_reset * 10 + (uint8_t)bl_sys_rstinfo_get_hun(), // hang chuc: flash_reason reset, hang don vi: BL_RST_REASON_E
                 m_db_get_instance()->_get_dev_id(), FIRMWARE_VERSION, EXTRAS,
                 app_databse._wifi_info->_ssid, app_databse._wifi_info->_passwd,
                 app_databse._wifi_info->_rssi, app_databse._wifi_info->_ip);
