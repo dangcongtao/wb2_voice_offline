@@ -33,6 +33,7 @@ COMPONENT_ADD_INCLUDEDIRS += 	database \
 								ble_slave \
 								http \
 								event_driven \
+								ir \
 
 ## not be exported to project level
 COMPONENT_PRIV_INCLUDEDIRS :=
@@ -64,6 +65,9 @@ COMPONENT_SRCS := database/m_database.c \
 				  event_driven/event_smartconfig.c \
 				  event_driven/event_device_active.c \
 				  event_driven/event_driven.c \
+				  ir/IRrecv.c \
+				  ir/IRutils.c \
+				  ir/ir_LG.c \
 				  
 COMPONENT_OBJS := $(patsubst %.c,%.o, $(COMPONENT_SRCS))
 

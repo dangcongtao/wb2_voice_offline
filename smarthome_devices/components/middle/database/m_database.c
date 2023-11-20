@@ -14,6 +14,8 @@
 #include <task.h>
 #include <event_groups.h>
 
+#include "IRrecv.h"
+
 char key[16], iv[16];
 
 char s_device_id[64];
@@ -258,8 +260,12 @@ static void m_load_databse(void)
 extern void clear_cyclic_timer(void);
 static void m_database_sync_task(void *param)
 {
+    IRrecv_init(12, 1234, 15, false);
+
+    enableIRIn(1);
     while (1)
     {
+        ir_loop();
         if (s_request_reset_db)
         {
             os_trace("have reset factory request\r\n");

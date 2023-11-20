@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "random": "c",
+        "functional": "c",
+        "ir_lg.h": "c"
+    }
+}

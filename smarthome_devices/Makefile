@@ -67,6 +67,7 @@ COMPONENT_ADD_INCLUDEDIRS += middle/wifi
 COMPONENT_ADD_INCLUDEDIRS += middle/ota
 COMPONENT_ADD_INCLUDEDIRS += middle/ble_slave
 COMPONENT_ADD_INCLUDEDIRS += middle/database
+COMPONENT_ADD_INCLUDEDIRS += middle/ir
 COMPONENT_ADD_INCLUDEDIRS += third_party/huytv_button
 COMPONENT_ADD_INCLUDEDIRS += third_party/aes
 COMPONENT_ADD_INCLUDEDIRS += third_party/cJson
