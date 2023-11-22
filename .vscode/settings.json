@@ -2,6 +2,7 @@
     "files.associations": {
         "random": "c",
         "functional": "c",
-        "ir_lg.h": "c"
+        "ir_lg.h": "c",
+        "type_traits": "c"
     }
 }

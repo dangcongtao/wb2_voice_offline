@@ -68,6 +68,7 @@ COMPONENT_SRCS := database/m_database.c \
 				  ir/IRrecv.c \
 				  ir/IRutils.c \
 				  ir/ir_LG.c \
+				  ir/IRsend.c \
 				  
 COMPONENT_OBJS := $(patsubst %.c,%.o, $(COMPONENT_SRCS))
 

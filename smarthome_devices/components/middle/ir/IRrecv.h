@@ -236,6 +236,10 @@ bool decodeLG(decode_results *results, uint16_t,
             const bool strict);
 #endif
 
+void lg_getString(void);
+void LG_setRaw(const uint32_t new_code, const decode_type_t protocol);
+bool isValidLgAc(void);
+
 void enableIRIn(const bool pullup);
 void ir_loop(void);
 void IRrecv_init(const uint32_t recvpin, const uint16_t bufsize,

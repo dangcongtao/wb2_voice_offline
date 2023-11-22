@@ -260,7 +260,7 @@ static void m_load_databse(void)
 extern void clear_cyclic_timer(void);
 static void m_database_sync_task(void *param)
 {
-    IRrecv_init(12, 1234, 15, false);
+    IRrecv_init(12, 1024, 50, true);
 
     enableIRIn(1);
     while (1)

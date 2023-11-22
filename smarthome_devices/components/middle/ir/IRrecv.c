@@ -5,19 +5,31 @@
 #include "hosal_gpio.h"
 #include "IRutils.h"
 #include "bl602_glb.h"
+#include <bl_os_hal.h>
 
 irparams_t params;
 irparams_t *params_save;
-hosal_gpio_irq_trigger_t trigger_type;
+hosal_gpio_irq_trigger_t trigger_type = HOSAL_IRQ_TRIG_POS_PULSE;
 
 uint8_t _tolerance;
 
 hosal_gpio_dev_t touch_gpio;
 
+struct timer_adpt *timer3;
+
+static void timer3_cb(void *data)
+{
+    if (params.rawlen) params.rcvstate = kStopState;
+    os_trace("timer3_cb:start timer1 again and change timer cycle\r\n");
+    // uint32_t delay_ms=1000;           //cycle =1000ms
+    // bl_os_timer_start_periodic(timer1,(delay_ms / 1000),((delay_ms % 1000) * 1e6));
+}
+
 /// Interrupt handler for changes on the GPIO pin handling incoming IR messages.
 static void gpio_intr(void)
 {
     uint32_t now = bl_timer_now_us();
+    // bl_os_timer_stop(timer3, BL_OS_NO_WAITING);
     static uint32_t start = 0;
 
 #if defined(ESP8266)
@@ -41,6 +53,7 @@ static void gpio_intr(void)
     }
 
     if (params.rcvstate == kStopState)
+        // os_trace("stop_state\r\n");
         return;
 
     if (params.rcvstate == kIdleState)
@@ -55,7 +68,7 @@ static void gpio_intr(void)
         else
             params.rawbuf[rawlen] = (now - start) / kRawTick;
     }
-    os_trace("[%d]%d\r\n", params.rawlen, params.rawbuf[rawlen]);
+    // os_trace("[%d]%d\r\n", params.rawlen, params.rawbuf[rawlen]);
     params.rawlen++;
 
     start = now;
@@ -66,6 +79,9 @@ static void gpio_intr(void)
         trigger_type = HOSAL_IRQ_TRIG_NEG_PULSE;
     }
     bl_set_gpio_intmod(params.recvpin, GLB_GPIO_INT_CONTROL_ASYNC, trigger_type);
+
+    uint32_t delay_ms=(uint32_t)params.timeout;
+    bl_os_timer_start_once(timer3,(delay_ms / 1000),((delay_ms % 1000) * 1e6));
 
     // #if defined(ESP8266)
     //   os_timer_arm(&timer, params.timeout, ONCE);
@@ -109,7 +125,7 @@ bool match(uint32_t measured, uint32_t desired, uint8_t tolerance,
   os_trace(" <= ");
   os_trace("%u",measured);
   os_trace(" <= ");
-  os_trace("%u", ticksHigh(desired, tolerance, delta));
+  os_trace("%u\r\n", ticksHigh(desired, tolerance, delta));
 #ifdef UNIT_TEST
   // Sanity checks that we don't have values that cause integer over/underflow.
   // Only performed during testing so there is no performance hit in normal
@@ -231,7 +247,7 @@ bool matchAtLeast(uint32_t measured, uint32_t desired,
   os_trace("%u", ticksLow(desired, tolerance, delta));
   os_trace(", ");
   os_trace("%u", ticksLow(MS_TO_USEC(params.timeout), tolerance, delta));
-  os_trace(")]");
+  os_trace(")]\r\n");
 #ifdef UNIT_TEST
   // Sanity checks that we don't have values that cause integer over/underflow.
   // Only performed during testing so there is no performance hit in normal
@@ -440,9 +456,14 @@ bool decode(decode_results *results, irparams_t *save,
          offset += 2)
     {
 #if DECODE_LG
-        os_trace("Attempting LG decode\r\n");
+        os_trace("Attempting LG (28-bit) decode\r\n");
         if (decodeLG(results, offset, kLgBits, false)) {
-            os_trace("decode LG success\r\n");
+            os_trace("decode LG 28-bit success\r\n");
+            return true;
+        }
+        os_trace("Attempting LG (32-bit) decode\r\n");
+        if (decodeLG(results, offset, kLg32Bits, true)){
+            os_trace("decode LG 32-bit success\r\n");
             return true;
         }
 #endif
@@ -467,6 +488,8 @@ void enableIRIn(const bool pullup)
 {
     // ESP32's seem to require explicitly setting the GPIO to INPUT etc.
     // This wasn't required on the ESP8266s, but it shouldn't hurt to make sure.
+
+    timer3=bl_os_timer_create(timer3_cb,NULL);
 
     bl_gpio_enable_input(params.recvpin, 1, 0);
 
@@ -511,8 +534,8 @@ void enableIRIn(const bool pullup)
 #endif // ESP8266
        // Attach Interrupt
        //   attachInterrupt(params.recvpin, gpio_intr, CHANGE);
-       trigger_type = HOSAL_IRQ_TRIG_NEG_PULSE;
-    hosal_gpio_irq_set(&touch_gpio, HOSAL_IRQ_TRIG_NEG_PULSE, gpio_intr, NULL);
+    //    trigger_type = HOSAL_IRQ_TRIG_NEG_PULSE;
+    hosal_gpio_irq_set(&touch_gpio, trigger_type, gpio_intr, NULL);
 #endif // UNIT_TEST
 }
 
@@ -564,8 +587,6 @@ char *lastIrReceived[256];
 
 void ir_loop(void)
 {
-
-    if (params.rawlen) params.rcvstate = kStopState;
 #if IR_RX
 #if REPORT_UNKNOWNS
     if (decode(&capture))
@@ -578,6 +599,14 @@ void ir_loop(void)
         {
 #endif // REPORT_UNKNOWNS
             lastIrReceivedTime = bl_timer_now_us();
+
+            os_trace("decode_type: %d, bits: %u, value: 0x%llx, command: %lx, address: 0x%llx\r\n", capture.decode_type, capture.bits, (uint64_t)capture.value, capture.command, (uint64_t)capture.address);
+
+            LG_setRaw(capture.value, capture.decode_type);
+            if (isValidLgAc()){
+                lg_getString();
+            }
+
             memset(lastIrReceived, 0, sizeof(lastIrReceived));
             int seek = 0;
             char result_str[128];
