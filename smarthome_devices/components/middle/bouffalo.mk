@@ -67,8 +67,9 @@ COMPONENT_SRCS := database/m_database.c \
 				  event_driven/event_driven.c \
 				  ir/IRrecv.c \
 				  ir/IRutils.c \
-				  ir/ir_LG.c \
 				  ir/IRsend.c \
+				  ir/ir_LG.c \
+				  ir/ir_NEC.c \
 				  
 COMPONENT_OBJS := $(patsubst %.c,%.o, $(COMPONENT_SRCS))
 

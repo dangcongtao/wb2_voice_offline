@@ -260,12 +260,8 @@ static void m_load_databse(void)
 extern void clear_cyclic_timer(void);
 static void m_database_sync_task(void *param)
 {
-    IRrecv_init(12, 1024, 50, true);
-
-    enableIRIn(1);
     while (1)
     {
-        ir_loop();
         if (s_request_reset_db)
         {
             os_trace("have reset factory request\r\n");

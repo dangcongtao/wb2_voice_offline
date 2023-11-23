@@ -24,6 +24,8 @@
 #include "m_ble.h"
 #include "event_driven.h"
 
+#include "IRrecv.h"
+
 void main_loop(void)
 {
     uint32_t delay_ms = 100;
@@ -75,6 +77,7 @@ void main(void)
 
     process_data_init();
     ble_init();
+    m_ir_init();
     m_event_init();
     
     /* start stack */

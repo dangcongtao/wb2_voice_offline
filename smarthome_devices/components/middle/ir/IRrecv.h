@@ -10,7 +10,8 @@
 #define max(a, b) (((a) < (b)) ? (b) : (a))
 #define MS_TO_USEC(x) ((x) * 1000U)  // Convert milli-Seconds to micro-Seconds.
 
-#define DECODE_LG   1
+#define DECODE_LG   0
+#define DECODE_NEC  0
 
 typedef enum {
   UNKNOWN = -1,
@@ -147,12 +148,15 @@ typedef enum {
 
 #define IR_RX 1
 #define DECODE_AC 1
+#define DEBUG_LOG_RX  0
 
 #define kHeader  2        // Usual nr. of header entries.
 #define kFooter  2        // Usual nr. of footer (stop bits) entries.
 #define kStartOffset  1   // Usual rawbuf entry to start from.
 
 #define kMarkExcess  50
+#define kRawBuf  100  // Default length of raw capture buffer
+#define kRepeat UINT64_MAX
 
 #define kHitachiAc2StateLength  53
 #define kStateSizeMax   53
@@ -211,6 +215,8 @@ typedef struct {
 #define TIMEOUT_MS kTimeoutMs   // For legacy documentation.
 #define kMaxTimeoutMs   (kRawTick * (UINT16_MAX / MS_TO_USEC(1)))
 
+#define kNECBits 32
+
 bool matchMark(uint32_t measured, uint32_t desired, uint8_t tolerance,
                        int16_t excess);
 uint16_t matchGeneric(volatile uint16_t *data_ptr,
@@ -236,6 +242,19 @@ bool decodeLG(decode_results *results, uint16_t,
             const bool strict);
 #endif
 
+#if DECODE_NEC
+bool decodeNEC(decode_results *results, uint16_t offset,
+                       const uint16_t nbits, const bool strict);
+#endif
+
+bool matchSpace(uint32_t measured, uint32_t desired, uint8_t tolerance,
+                        int16_t excess);
+
+bool matchAtLeast(uint32_t measured, uint32_t desired,
+                          uint8_t tolerance, uint16_t delta);
+
+
+
 void lg_getString(void);
 void LG_setRaw(const uint32_t new_code, const decode_type_t protocol);
 bool isValidLgAc(void);
@@ -244,5 +263,7 @@ void enableIRIn(const bool pullup);
 void ir_loop(void);
 void IRrecv_init(const uint32_t recvpin, const uint16_t bufsize,
                  const uint8_t timeout, const bool save_buffer);
+
+void m_ir_init(void);
 
 #endif
