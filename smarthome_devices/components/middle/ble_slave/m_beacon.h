@@ -147,15 +147,17 @@ typedef struct
 
 typedef struct
 {
+    uint8_t type;
     uint8_t mac[6];
+    uint8_t relays;
     union
     {
         struct
         {
-            uint32_t type : 2;
             uint32_t firmware_version : 19;
+            uint32_t : 2;
             uint32_t battery: 7;
-            uint32_t relays: 4;
+            uint32_t : 4;
         } info;
 
         uint32_t holder;
@@ -173,6 +175,7 @@ int ble_master_scan(void);
 void ble_config_loop(void);
 void ble_go_request_pair(void);
 void master_accept_request_link(void);
+void m_ble_get_mac_addr(uint8_t *my_mac);
 m_ble_info_t* m_ble_get_info_reference(void);
 
 #endif

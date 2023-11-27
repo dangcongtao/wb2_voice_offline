@@ -352,7 +352,7 @@ static uint8_t ble_db_add_child(uint8_t* mac, uint8_t type)
     }
     memcpy(obj_ble.list_child[obj_ble.num_devices_link].mac, mac, 6);
     obj_ble.list_child[obj_ble.num_devices_link].data.holder = 0;
-    obj_ble.list_child[obj_ble.num_devices_link].data.info.type = type;
+    obj_ble.list_child[obj_ble.num_devices_link].type = type;
     if (type == DEVICE_TYPE_CBCT) {
         obj_ble.time_delay_light_off[obj_ble.num_devices_link] = DEFAULT_DELAY_LIGHT_OFF_CBCT;
     }
@@ -429,6 +429,14 @@ void ble_config_loop(void)
     default:
         break;
     }
+}
+
+void m_ble_get_mac_addr(uint8_t *my_mac)
+{
+    bt_addr_le_t adv_addr;
+    bt_get_local_public_address(&adv_addr);
+    memset(my_mac, 0, 6);
+    memcpy(my_mac, adv_addr.a.val, 6);
 }
 
 m_ble_info_t* m_ble_get_info_reference(void)

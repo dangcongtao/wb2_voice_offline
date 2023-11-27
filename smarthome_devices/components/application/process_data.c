@@ -1,5 +1,4 @@
 #include "process_data.h"
-
 #include <string.h>
 
 #include "cJSON.h"
@@ -13,6 +12,9 @@
 #include "m_wf_ble_cfg.h"
 #include "hardware.h"
 
+
+
+
 #include "aes_cbc128.h"
 
 #include <FreeRTOS.h>
@@ -21,6 +23,7 @@
 #include <timers.h>
 
 #include "m_http_services.h"
+
 
 static char respond[512];
 extern char key[16], iv[16];
@@ -117,15 +120,19 @@ static void app_startup_message(void)
     /* respond server here */
     memset(respond, 0, sizeof(respond));
 
+    uint8_t mac[6];
+    m_ble_get_mac_addr(mac);
+
     buffer_seek +=
         sprintf(respond,
-                "{\"%s\": 100, \"u\":0, \"id\":\"%s\", \"ver\":%s, \"extras\":%d,"
-                "\"ssid\":\"%s\", \"pass\":\"%s\",\"streng\":%d, "
-                "\"ip\":\"%s\", \"po\":[",
+                "{\"%s\":100,\"u\":0,\"id\":\"%s\",\"ver\":%s,\"extras\":%d,"
+                "\"ssid\":\"%s\",\"pass\":\"%s\",\"streng\":%d,"
+                "\"ip\":\"%s\",\"mac_bt\":\"%02x:%02x:%02x:%02x:%02x:%02x\",\"po\":[",
                 gs_dev_type[device_type],
                 m_db_get_instance()->_get_dev_id(), FIRMWARE_VERSION, EXTRAS,
                 app_databse._wifi_info->_ssid, app_databse._wifi_info->_passwd,
-                app_databse._wifi_info->_rssi, app_databse._wifi_info->_ip);
+                app_databse._wifi_info->_rssi, app_databse._wifi_info->_ip,
+                mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
     /* default state value */
     for (i = 0; i < m_db_get_number_channel(); i++)
@@ -249,15 +256,19 @@ static void app_get_info(cJSON *jsRoot)
 
     m_wifi_get_instance().wifi_sync_rssi_cb();
 
+    uint8_t mac[6];
+    m_ble_get_mac_addr(mac);
+
     buffer_seek +=
         sprintf(respond,
-                "{\"%s\":%ld, \"u\":0, \"id\":\"%s\", \"ver\":%s, "
-                "\"extras\":%d,\"ssid\":\"%s\",\"pass\":\"%s\",\"streng\":%d, "
-                "\"ip\":\"%s\", \"po\":[",
+                "{\"%s\":%ld,\"u\":0,\"id\":\"%s\",\"ver\":%s,"
+                "\"extras\":%d,\"ssid\":\"%s\",\"pass\":\"%s\",\"streng\":%d,"
+                "\"ip\":\"%s\",\"mac_bt\":\"%02x:%02x:%02x:%02x:%02x:%02x\",\"po\":[",
                 gs_dev_type[device_type], type,
                 m_db_get_instance()->_get_dev_id(), FIRMWARE_VERSION, EXTRAS,
                 app_databse._wifi_info->_ssid, app_databse._wifi_info->_passwd,
-                app_databse._wifi_info->_rssi, app_databse._wifi_info->_ip);
+                app_databse._wifi_info->_rssi, app_databse._wifi_info->_ip, 
+                mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
     /* default state value */
     for (i = 0; i < m_db_get_number_channel(); i++)
