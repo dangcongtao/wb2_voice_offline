@@ -117,6 +117,8 @@ static void app_startup_message(void)
     extern uint8_t last_reason_reset;
     static uint32_t num_send = 0;
 
+    m_wifi_get_instance().wifi_sync_rssi_cb();
+
     /* respond server here */
     memset(respond, 0, sizeof(respond));
 
