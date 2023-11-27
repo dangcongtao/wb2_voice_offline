@@ -26,6 +26,8 @@
 
 #include "IRrecv.h"
 
+#include <bl_wdt.h>
+
 void main_loop(void)
 {
     uint32_t delay_ms = 100;
@@ -39,6 +41,8 @@ void main_loop(void)
         //     old = 0;
         //     os_trace("Free memory: %d\r\n", xPortGetFreeHeapSize());
         // }
+
+        bl_wdt_feed();
 
         vTaskDelay(pdMS_TO_TICKS(delay_ms));
     }

@@ -250,7 +250,7 @@ uint8_t calcChecksum(const uint32_t state) {
   return sumNibbles(state >> kLgAcChecksumSize, 4, 0, true);
 }
 
-bool validChecksum(const uint32_t state) {
+static bool validChecksum(const uint32_t state) {
   LGProtocol LGp;
   LGp.data.raw = state;
   return calcChecksum(state) == LGp.data.Sum;

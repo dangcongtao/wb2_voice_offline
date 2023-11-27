@@ -5,13 +5,31 @@
 #include <stdbool.h>
 
 #include "ir_LG.h"
+#include "ir_Samsung.h"
 
 #define min(a, b) (((a) < (b)) ? (a) : (b))
 #define max(a, b) (((a) < (b)) ? (b) : (a))
 #define MS_TO_USEC(x) ((x) * 1000U)  // Convert milli-Seconds to micro-Seconds.
 
+#define kNoRepeat  0
+#define kSamsungBits  32
+#define kSamsung36Bits  36
+#define kSamsungAcStateLength  14
+#define kSamsungAcBits  (kSamsungAcStateLength * 8)
+#define kSamsungAcStateLength  14
+#define kSamsungAcBits (kSamsungAcStateLength * 8)
+#define kSamsungAcExtendedStateLength 21
+#define kSamsungAcExtendedBits  (kSamsungAcExtendedStateLength * 8)
+#define kSamsungAcDefaultRepeat  kNoRepeat
+
+#define kFunikiAcStateLength  6
+#define kFunikiAcBits   (6 * 8)
+
 #define DECODE_LG   0
 #define DECODE_NEC  0
+#define DECODE_SAMSUNG 0
+#define DECODE_SAMSUNG_AC 0
+#define DECODE_FUNIKI 1
 
 typedef enum {
   UNKNOWN = -1,
@@ -142,8 +160,9 @@ typedef enum {
   WOWWEE,
   CARRIER_AC84,  // 125
   YORK,
+  FUNIKI,
   // Add new entries before this one, and update it to point to the last entry.
-  kLastDecodeType = YORK,
+  kLastDecodeType = FUNIKI,
 } decode_type_t;
 
 #define IR_RX 1
@@ -159,7 +178,7 @@ typedef enum {
 #define kRepeat UINT64_MAX
 
 #define kHitachiAc2StateLength  53
-#define kStateSizeMax   53
+#define kStateSizeMax   kHitachiAc2StateLength
 
 /// Information for the interrupt handler
 typedef struct {
@@ -217,6 +236,8 @@ typedef struct {
 
 #define kNECBits 32
 
+uint8_t _tolerance;
+
 bool matchMark(uint32_t measured, uint32_t desired, uint8_t tolerance,
                        int16_t excess);
 uint16_t matchGeneric(volatile uint16_t *data_ptr,
@@ -245,6 +266,16 @@ bool decodeLG(decode_results *results, uint16_t,
 #if DECODE_NEC
 bool decodeNEC(decode_results *results, uint16_t offset,
                        const uint16_t nbits, const bool strict);
+#endif
+
+#if DECODE_SAMSUNG_AC
+bool decodeSamsungAC(decode_results *results, uint16_t offset,
+                             const uint16_t nbits, const bool strict);
+#endif
+
+#if DECODE_FUNIKI
+bool decodeFunikiAC(decode_results *results, uint16_t offset,
+                             const uint16_t nbits, const bool strict);
 #endif
 
 bool matchSpace(uint32_t measured, uint32_t desired, uint8_t tolerance,

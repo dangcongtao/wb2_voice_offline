@@ -72,4 +72,6 @@ COMPONENT_ADD_INCLUDEDIRS += third_party/huytv_button
 COMPONENT_ADD_INCLUDEDIRS += third_party/aes
 COMPONENT_ADD_INCLUDEDIRS += third_party/cJson
 
+LOG_ENABLED_COMPONENTS:=blog_testc hosal loopset looprt bloop
+
 include $(BL60X_SDK_PATH)/make_scripts_riscv/project.mk

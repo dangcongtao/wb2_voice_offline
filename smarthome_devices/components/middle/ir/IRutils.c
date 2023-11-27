@@ -66,6 +66,20 @@ bool hasACState(const decode_type_t protocol)
   }
 }
 
+uint16_t countBits(const uint8_t * const start, const uint16_t length,
+                   const bool ones, const uint16_t init) {
+  uint16_t count = init;
+  for (uint16_t offset = 0; offset < length; offset++)
+    for (uint8_t currentbyte = *(start + offset);
+         currentbyte;
+         currentbyte >>= 1)
+      if (currentbyte & 1) count++;
+  if (ones || length == 0)
+    return count;
+  else
+    return (length * 8) - count;
+}
+
 uint64_t reverseBits(uint64_t input, uint16_t nbits) {
   if (nbits <= 1) return input;  // Reversing <= 1 bits makes no change at all.
   // Cap the nr. of bits to rotate to the max nr. of bits in the input.
@@ -89,21 +103,21 @@ uint8_t sumNibbles(const uint64_t data, const uint8_t count,
   return nibbleonly ? sum & 0xF : sum;
 }
 
-void resultToHexidecimal(const decode_results * const result, char *output) 
-{
-  strcpy(output, "0x");
-  if (hasACState(result->decode_type)) {
-#if DECODE_AC
-    for (uint16_t i = 0; result->bits > i * 8; i++) {
-      if (result->state[i] < 0x10) strcat(output, "0");
-      char temp[17];
-      sprintf(temp, "%llx", result->state[i]);
-      strcat(output, temp);
-    }
-#endif  
-  } else {
-    char temp[17];
-    sprintf(temp, "%llx", result->value);
-    strcat(output, temp);
-  }
-}
+// void resultToHexidecimal(const decode_results * const result, char *output) 
+// {
+//   strcpy(output, "0x");
+//   if (hasACState(result->decode_type)) {
+// #if DECODE_AC
+//     for (uint16_t i = 0; result->bits > i * 8; i++) {
+//       if (result->state[i] < 0x10) strcat(output, "0");
+//       char temp[17];
+//       sprintf(temp, "%llx", result->state[i]);
+//       strcat(output, temp);
+//     }
+// #endif  
+//   } else {
+//     char temp[17];
+//     sprintf(temp, "%llx", result->value);
+//     strcat(output, temp);
+//   }
+// }

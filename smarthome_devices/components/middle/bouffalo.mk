@@ -70,6 +70,8 @@ COMPONENT_SRCS := database/m_database.c \
 				  ir/IRsend.c \
 				  ir/ir_LG.c \
 				  ir/ir_NEC.c \
+				  ir/ir_Samsung.c \
+				  ir/ir_Funiki.c \
 				  
 COMPONENT_OBJS := $(patsubst %.c,%.o, $(COMPONENT_SRCS))
 

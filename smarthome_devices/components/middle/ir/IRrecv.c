@@ -6,6 +6,7 @@
 #include "IRutils.h"
 #include "bl602_glb.h"
 #include <bl_os_hal.h>
+#include <bl_wdt.h>
 
 irparams_t params;
 irparams_t *params_save;
@@ -202,11 +203,17 @@ match_result_t matchData(
                 matchSpace(*(data_ptr + 1), onespace, tolerance, excess))
             {
                 result.data = (result.data << 1) | 1;
+                #if DEBUG_LOG_RX
+                os_trace("\r\n%u======>1\r\n", result.used);
+                #endif
             }
             else if (matchMark(*data_ptr, zeromark, tolerance, excess) &&
                      matchSpace(*(data_ptr + 1), zerospace, tolerance, excess))
             {
                 result.data <<= 1; // The bit is a '0'.
+                #if DEBUG_LOG_RX
+                os_trace("\r\n%u======>0\r\n", result.used);
+                #endif
             }
             else
             {
@@ -453,6 +460,7 @@ bool decode(decode_results *results, irparams_t *save,
     if (params.rcvstate != kStopState)
         return false;
 #endif
+    os_trace("%s\r\n", __func__);
 
     // Clear the entry we are currently pointing to when we got the timeout.
     // i.e. Stopped collecting IR data.
@@ -502,6 +510,7 @@ bool decode(decode_results *results, irparams_t *save,
     results->repeat = false;
 
     os_trace("BUFF_LEN[%d]: ", results->rawlen);
+// if (0){
     char str_res[300];
     int seek = 0;
     memset(str_res, 0, sizeof(str_res));
@@ -511,16 +520,18 @@ bool decode(decode_results *results, irparams_t *save,
         if (seek >= 128)
         {
             seek = 0;
-            // os_trace(str_res);
+            os_trace(str_res);
             memset(str_res, 0, sizeof(str_res));
         }
     }
     sprintf(&str_res[seek], "\r\n");
+    os_trace(str_res);
+// }
 
-    // os_trace(str_res);
+    
 
     // os_trace("bit: ");
-    if (results->rawlen == 344)
+    if (results->rawlen == 200)
     {
         uint64_t data_te = 0;
         uint64_t lenn = 0;
@@ -533,7 +544,7 @@ bool decode(decode_results *results, irparams_t *save,
 
         for (uint32_t h = 4; h < results->rawlen; h += 2)
         {
-            if (results->rawbuf[h] > 3000)
+            if (results->rawbuf[h] > 2000)
             {
                 os_trace("-%llu-0x%llx", lenn, data_te);
                 os_trace("|");
@@ -751,6 +762,23 @@ bool decode(decode_results *results, irparams_t *save,
             return true;
         }
 #endif
+
+#if DECODE_SAMSUNG_AC
+    // os_trace("Attempting Samsung AC (extended) decode\r\n");
+    // Check the extended size first, as it should fail fast due to longer
+    // length.
+    // if (decodeSamsungAC(results, offset, kSamsungAcExtendedBits, true)) return true;
+    // Now check for the more common length.
+    os_trace("Attempting Samsung AC decode\r\n");
+    if (decodeSamsungAC(results, offset, kSamsungAcBits, false)) return true;
+#endif
+
+
+#if DECODE_FUNIKI
+    os_trace("Funiki AC\r\n");
+    if (decodeFunikiAC(results, offset, kFunikiAcBits, true)) return true;
+#endif
+
     }
 
 #if DECODE_HASH
@@ -874,71 +902,77 @@ void m_ir_task(void)
     while (1)
     {
 
-#if IR_RX
-#if REPORT_UNKNOWNS
-        if (decode(&capture))
-        {
-#else  // REPORT_UNKNOWNS
+// #if IR_RX
+// #if REPORT_UNKNOWNS
+//         if (decode(&capture))
+//         {
+// #else  // REPORT_UNKNOWNS
         if (decode(&capture, NULL, 0, 0)
             // &&
             //     capture.decode_type != UNKNOWN
         )
         {
-#endif // REPORT_UNKNOWNS
-            lastIrReceivedTime = bl_timer_now_us();
+// #endif // REPORT_UNKNOWNS
+            // lastIrReceivedTime = bl_timer_now_us();
 
             os_trace("decode_type: %d, bits: %u, value: 0x%llx, command: %lx, address: 0x%llx\r\n", capture.decode_type, capture.bits, (uint64_t)capture.value, capture.command, (uint64_t)capture.address);
 
-            LG_setRaw(capture.value, capture.decode_type);
-            if (isValidLgAc())
-            {
-                lg_getString();
-            }
+            resume();
+            // if (capture.decode_type == LG2) {
+            //     LG_setRaw(capture.value, capture.decode_type);
+            //     if (isValidLgAc())
+            //     {
+            //         lg_getString();
+            //     }
+            // }
+            // TODO
 
+            /*
             memset(lastIrReceived, 0, sizeof(lastIrReceived));
             int seek = 0;
             char result_str[128];
             memset(result_str, 0, sizeof(result_str));
             resultToHexidecimal(&capture, result_str);
             seek += sprintf(lastIrReceived, "%d,", capture.decode_type, result_str);
-#if REPORT_RAW_UNKNOWNS
-            if (capture.decode_type == UNKNOWN)
-            {
-                lastIrReceived += ';';
-                for (uint16_t i = 1; i < capture.rawlen; i++)
-                {
-                    uint32_t usecs;
-                    for (usecs = capture.rawbuf[i] * kRawTick; usecs > UINT16_MAX;
-                         usecs -= UINT16_MAX)
-                    {
-                        lastIrReceived += uint64ToString(UINT16_MAX);
-                        lastIrReceived += F(",0,");
-                    }
-                    lastIrReceived += uint64ToString(usecs, 10);
-                    if (i < capture.rawlen - 1)
-                        lastIrReceived += ',';
-                }
-            }
-#endif // REPORT_RAW_UNKNOWNS
+// #if REPORT_RAW_UNKNOWNS
+//             if (capture.decode_type == UNKNOWN)
+//             {
+//                 lastIrReceived += ';';
+//                 for (uint16_t i = 1; i < capture.rawlen; i++)
+//                 {
+//                     uint32_t usecs;
+//                     for (usecs = capture.rawbuf[i] * kRawTick; usecs > UINT16_MAX;
+//                          usecs -= UINT16_MAX)
+//                     {
+//                         lastIrReceived += uint64ToString(UINT16_MAX);
+//                         lastIrReceived += F(",0,");
+//                     }
+//                     lastIrReceived += uint64ToString(usecs, 10);
+//                     if (i < capture.rawlen - 1)
+//                         lastIrReceived += ',';
+//                 }
+//             }
+// #endif // REPORT_RAW_UNKNOWNS
        // If it isn't an AC code, add the bits.
             if (!hasACState(capture.decode_type))
             {
                 seek += sprintf(&lastIrReceived[seek], ",%d", capture.bits);
             }
             os_trace("\r\nDECODE: %s\r\n", lastIrReceived);
-#if MQTT_ENABLE
-            mqtt_client.publish(MqttRecv.c_str(), lastIrReceived.c_str());
-            mqttSentCounter++;
-            debug("Incoming IR message sent to MQTT:");
-            debug(lastIrReceived.c_str());
-#endif // MQTT_ENABLE
+            */
+// #if MQTT_ENABLE
+//             mqtt_client.publish(MqttRecv.c_str(), lastIrReceived.c_str());
+//             mqttSentCounter++;
+//             debug("Incoming IR message sent to MQTT:");
+//             debug(lastIrReceived.c_str());
+// #endif // MQTT_ENABLE
             irRecvCounter++;
-#if USE_DECODED_AC_SETTINGS
-            if (decodeCommonAc(&capture))
-                lastClimateSource = F("IR");
-#endif // USE_DECODED_AC_SETTINGS
+// #if USE_DECODED_AC_SETTINGS
+//             if (decodeCommonAc(&capture))
+//                 lastClimateSource = F("IR");
+// #endif // USE_DECODED_AC_SETTINGS
         }
-#endif // IR_RX
+// #endif // IR_RX
        // delay(100);
         // }
         vTaskDelay(pdMS_TO_TICKS(100));
@@ -947,7 +981,8 @@ void m_ir_task(void)
 
 void m_ir_init(void)
 {
-    IRrecv_init(12, 1024, 50, true);
+    bl_wdt_init(60000);
+    IRrecv_init(12, 1024, 50, false);
 
     enableIRIn(1);
 
