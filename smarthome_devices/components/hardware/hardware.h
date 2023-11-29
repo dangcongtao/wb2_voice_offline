@@ -83,6 +83,11 @@ inline uint8_t is_shock_device(uint8_t dev_type)
     return (dev_type == SWSHOCK || dev_type == SWSHOCK_HUN);
 }
 
+inline uint8_t is_support_link_stair(uint8_t dev_type)
+{
+    return (dev_type == WSWITCH || dev_type == LHSWITCH);
+}
+
 /* switch */
 void hw_switch_cfg(uint8_t index);
 void hw_write_switch_pin(uint8_t index, uint8_t val);

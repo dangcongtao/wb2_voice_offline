@@ -38,7 +38,8 @@ typedef enum
     SEND_SEGMENT_OTA,
     REQUEST_SEGMENT_MISS,
     SEND_SS_STATE_CBCT = 0x14,
-    CMD_SS_INFO
+    CMD_SS_INFO,
+    SWITCH_LINKING
 } ble_cmd_t;
 
 typedef enum
@@ -47,6 +48,7 @@ typedef enum
     WAIT_CONFIG,       // when master receive request link from slave
     SEND_REQUEST_LINK, // send requeste link to master
     WAIT_VERIFY_ACCEPT_LINK,
+    WAIT_SWITCH_RESPONSE_LINK,
     RESPOND_TO_REQUEST_LINK, // when master receive accept link from slave
     MASTER_LINK_SUCCESS,
     SLAVE_LINK_SUCCESS,
@@ -104,6 +106,7 @@ typedef struct
         struct
         {
             uint8_t state;
+            uint8_t my_act;
         } syn_state;
 
         struct
@@ -129,18 +132,27 @@ typedef struct
     uint8_t type_device_config;
     uint8_t mac[6];
     uint8_t tid;
+    uint8_t my_act;
+    uint8_t opp_act;
     uint32_t last_time_notify_state;
     uint32_t last_time_request_sync_led_stt;
 
     uint32_t light_count_down_ss;
     uint32_t time_delay_light_off;
+
+    uint8_t my_state;
+    uint8_t last_state;
+
+    uint8_t state_await;
     struct
     {
-        uint8_t is_init_ble_finished : 1;
-        uint8_t send_notify_change_state : 1;
-        uint8_t is_next_update_ctlk : 2;
-        uint8_t need_sync_led_stt : 1;
-        uint8_t active_motion_detect : 1;
+        uint32_t is_init_ble_finished : 1;
+        uint32_t send_notify_change_state : 1;
+        uint32_t is_next_update_ctlk : 2;
+        uint32_t need_sync_led_stt : 1;
+        uint32_t active_motion_detect : 1;
+        uint32_t flag_state_change : 4;
+        uint32_t : 22;
     } flags;
 
 } m_ble_t;
@@ -149,15 +161,15 @@ typedef struct
 {
     uint8_t type;
     uint8_t mac[6];
-    uint8_t relays;
+    uint8_t my_act;
+    uint8_t opp_act;
     union
     {
         struct
         {
             uint32_t firmware_version : 19;
-            uint32_t : 2;
             uint32_t battery: 7;
-            uint32_t : 4;
+            uint32_t : 6;
         } info;
 
         uint32_t holder;
@@ -175,7 +187,9 @@ int ble_master_scan(void);
 void ble_config_loop(void);
 void ble_go_request_pair(void);
 void master_accept_request_link(void);
+uint8_t ble_db_remove_child(uint8_t id);
 void m_ble_get_mac_addr(uint8_t *my_mac);
+void m_ble_set_state_change(uint8_t channel, uint8_t level);
 m_ble_info_t* m_ble_get_info_reference(void);
 
 #endif

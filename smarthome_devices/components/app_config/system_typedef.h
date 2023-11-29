@@ -28,6 +28,8 @@
 #define CJSON_KEY_T_C           "t_c"
 #define CJSON_KEY_BACKUP        "backup"
 #define CJSON_KEY_MODE          "mode"
+#define CJSON_KEY_ACT1          "act1"
+#define CJSON_KEY_ACT2          "act2"
 /* JSON KEY USE FOR CONFIGURATION PROCESSING */
 #define CJSON_KEY_SERVER        "server"
 #define CJSON_KEY_S_PORT        "port"
@@ -79,7 +81,8 @@ typedef enum
 {
     SRC_ACTION_USER = 0,
     SRC_ACTION_ALARM = 2,
-    SRC_ACTION_LEADK_CURR = 7
+    SRC_ACTION_LEADK_CURR = 7,
+    SRC_ACTION_LINK_BLE = 8
 } src_action_t;
 
 typedef enum

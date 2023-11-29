@@ -42,6 +42,9 @@ static void app_remove_device(cJSON *jsRoot);
 static void app_start_cyclic_timer(cJSON *jsRoot);
 static void app_stop_cyclic_timer(cJSON *jsRoot);
 static void app_backup_db(cJSON *jsRoot);
+static void app_link_device(cJSON *jsRoot);
+static void app_get_list_link_device(cJSON *jsRoot);
+static void app_remove_link_device(cJSON *jsRoot);
 
 #if PROJECT_SHOCK
 static void app_get_leakage(cJSON *jsRoot);
@@ -70,6 +73,9 @@ wswitch_handler_t array_handler[] = {
     {app_set_static_ip, 132},    
     {app_set_lock, 133},
     {app_backup_db, 151},
+    {app_link_device, 400},
+    {app_get_list_link_device, 401},
+    {app_remove_link_device, 402},
 
     {ble_config_step1, 1}, 
     {ble_config_step2, 3}, 
@@ -222,7 +228,7 @@ static void app_control_pin(cJSON *jsRoot)
 
     /* Implement control switch */
     result = m_switch_get_instance()._control_switch_cb(action, act_id, uid,
-                                                        true, true);
+                                                        true, true, true);
 
 RESPONSE:
     /* respond server here */
@@ -856,6 +862,194 @@ RESPONSE:
     memset(respond, 0, sizeof(respond));
     sprintf(respond, "{\"%s\":%ld, \"u\":%ld, \"backupt\": %ld, \"result\":%d}",
             gs_dev_type[device_type], type, uid, backup, result);
+    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
+}
+
+static void app_link_device(cJSON *jsRoot)
+{
+    uint8_t result = 0;
+    cJSON *jsType, *jsU, *jsMac, *jsAct1, *jsAct2;
+    uint32_t type = 0, uid = 0, act1 = 0, act2 = 0;
+    char mac_str[32];
+
+    os_trace("app_link_device\n");
+
+    jsType = cJSON_GetObjectItem(jsRoot, gs_dev_type[device_type]);
+    if (jsType == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    type = jsType->valueint;
+
+    jsU = cJSON_GetObjectItem(jsRoot, CJSON_KEY_USER_ID);
+    if (jsU == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    uid = jsU->valueint;
+
+    jsMac = cJSON_GetObjectItem(jsRoot, CJSON_KEY_MAC_ADDRESS);
+    if (jsMac == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    memset(mac_str, 0, sizeof(mac_str));
+    memcpy(mac_str, jsMac->valuestring, strlen(jsMac->valuestring));
+    // mac_str = jsMac->valuestring;
+
+    if (strlen(mac_str) != 17) {
+        os_trace("mac addr invalid\n");
+        goto RESPONSE;
+    }
+
+    int mac[6];
+    sscanf(mac_str, "%02x:%02x:%02x:%02x:%02x:%02x", &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
+    uint8_t my_mac[6];
+    for (uint8_t j = 0; j < 6; j++) {
+        my_mac[j] = (uint8_t)mac[j];
+    }
+
+    jsAct1 = cJSON_GetObjectItem(jsRoot, CJSON_KEY_ACT1);
+    if (jsAct1 == NULL)
+    {
+        os_trace("Get JSON jsAct1 mqtt message fail\n");
+        goto RESPONSE;
+    }
+    act1 = jsAct1->valueint;
+
+    jsAct2 = cJSON_GetObjectItem(jsRoot, CJSON_KEY_ACT2);
+    if (jsAct2 == NULL)
+    {
+        os_trace("Get JSON jsAct2 mqtt message fail\n");
+        goto RESPONSE;
+    }
+    act2 = jsAct2->valueint;
+
+    extern void m_ble_switch_request_linking(uint8_t *mac, uint8_t act1, uint8_t act2);
+
+    m_ble_switch_request_linking(my_mac, act1, act2);
+
+    /* implement here */
+    result = 1;
+
+RESPONSE:
+    /* respond server here */
+    memset(respond, 0, sizeof(respond));
+    sprintf(respond, "{\"%s\":%ld,\"u\":%ld,\"mac\":\"%s\",\"act1\":%lu,\"act2\":%lu,\"result\":%d}",
+            gs_dev_type[device_type], type, uid, mac_str, act1, act2, result);
+    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
+}
+
+static void app_get_list_link_device(cJSON *jsRoot)
+{
+    uint8_t result = 0;
+    cJSON *jsType, *jsU;
+    uint32_t type = 0, uid = 0;
+
+    os_trace("app_get_list_link_device\n");
+
+    jsType = cJSON_GetObjectItem(jsRoot, gs_dev_type[device_type]);
+    if (jsType == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        return;
+    }
+    type = jsType->valueint;
+
+    jsU = cJSON_GetObjectItem(jsRoot, CJSON_KEY_USER_ID);
+    if (jsU == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        return;
+    }
+    uid = jsU->valueint;
+
+    memset(respond, 0, sizeof(respond));
+    int seek = 0;
+    int num_send = 0;
+
+    seek += sprintf(&respond[seek], "{\"%s\":%ld,\"u\":%ld,\"list\":[", gs_dev_type[device_type], type, uid);
+
+    m_ble_info_t *ble_info = m_db_get_instance()->_m_device._ble_info;
+    for (uint8_t i = 0; i < ble_info->num_devices_link; i++) {
+        num_send++;
+        seek += sprintf(&respond[seek], "{\"id\":%u,\"mac\":\"%02x:%02x:%02x:%02x:%02x:%02x\",\"act1\":%u,\"act2\":%u},", i, ble_info->list_child[i].mac[0], ble_info->list_child[i].mac[1], ble_info->list_child[i].mac[2], ble_info->list_child[i].mac[3], ble_info->list_child[i].mac[4], ble_info->list_child[i].mac[5], ble_info->list_child[i].my_act, ble_info->list_child[i].opp_act);
+        if (num_send >= 5) {
+            seek--;
+            seek += sprintf(&respond[seek], "]}");
+            os_trace("DATASEND[%d]: '%s'\r\n", strlen(respond), respond);
+            m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
+
+            seek = 0;
+            num_send = 0;
+            seek += sprintf(&respond[seek], "{\"%s\":%ld,\"u\":%ld,\"list\":[", gs_dev_type[device_type], type, uid);
+        }
+    }
+
+    if (ble_info->num_devices_link > 0) {
+        if (num_send > 0) {
+            seek--;
+            seek += sprintf(&respond[seek], "]}");
+            m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
+        }
+    } else {
+        seek += sprintf(&respond[seek], "]}");
+        m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
+    }
+
+    
+
+    /* implement here */
+    result = 1;
+
+    
+
+    
+}
+
+static void app_remove_link_device(cJSON *jsRoot)
+{
+    uint8_t result = 0;
+    cJSON *jsType, *jsU, *jsId;
+    uint32_t type = 0, uid = 0, id = 0;
+
+    os_trace("app_remove_link_device\n");
+
+    jsType = cJSON_GetObjectItem(jsRoot, gs_dev_type[device_type]);
+    if (jsType == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    type = jsType->valueint;
+
+    jsU = cJSON_GetObjectItem(jsRoot, CJSON_KEY_USER_ID);
+    if (jsU == NULL)
+    {
+        os_trace("Get JSON jsU mqtt message fail\n");
+        goto RESPONSE;
+    }
+    uid = jsU->valueint;
+
+    jsId = cJSON_GetObjectItem(jsRoot, CJSON_KEY_ID_DEVICE);
+    if (jsId == NULL)
+    {
+        os_trace("Get JSON jsId mqtt message fail\n");
+        goto RESPONSE;
+    }
+    id = jsId->valueint;
+
+    /* implement here */
+    result = ble_db_remove_child(id);
+
+RESPONSE:
+    /* respond server here */
+    memset(respond, 0, sizeof(respond));
+    sprintf(respond, "{\"%s\":%ld,\"u\":%ld,\"id\":%lu,\"result\":%d}",
+            gs_dev_type[device_type], type, uid, id, result);
     m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
 }
 

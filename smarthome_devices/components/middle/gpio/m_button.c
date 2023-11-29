@@ -93,11 +93,11 @@ void on_button_event_cb(int button_pin, int event, void *data)
             m_switch_get_instance()._toggle_switch_cb(button_pin, 1, true, true);
         }
 
-        if (button_pin == 3) {
-            ble_go_request_pair();
-        } else if (button_pin == 2) {
-            master_accept_request_link();
-        }
+        // if (button_pin == 3) {
+        //     ble_go_request_pair();
+        // } else if (button_pin == 2) {
+        //     master_accept_request_link();
+        // }
 
         ignore_event_release[button_pin] = 0;
     }

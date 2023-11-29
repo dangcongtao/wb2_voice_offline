@@ -207,6 +207,9 @@ static void m_load_databse(void)
 {
     m_db_read_device_id();
     flash_read_database(&s_m_database._m_device);
+
+    // memset(s_m_database._m_device._ble_info, 0, sizeof(m_ble_info_t));
+    // flash_ble_write_database(s_m_database._m_device);
     flash_ble_read_database(&s_m_database._m_device);
 
     // memset(s_m_database._m_device._wifi_info, 0, sizeof(m_wifi_info_t));

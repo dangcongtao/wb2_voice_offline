@@ -3,6 +3,7 @@
 #include "hardware.h"
 #include "hci_core.h"
 #include "m_database.h"
+#include "m_switch.h"
 
 // static ble_scan_info_t master_scan_tbl[MASTER_SCAN_MAX];
 // static int master_current_scan;
@@ -33,6 +34,9 @@ static struct bt_data adv_data[1] =
 void master_proc_rcv_request_link(uint8_t *data, uint8_t len);
 void slave_proc_response_request_link(uint8_t *data, uint8_t len);
 void master_proc_rcv_verify_link(uint8_t *data, uint8_t len);
+void slave_proc_rcv_switch_linking_request(uint8_t *data, uint8_t len);
+void m_ble_request_state(uint8_t *data, uint8_t len);
+void m_ble_send_state(uint8_t need_rst);
 
 static int is_existed_in_db(uint8_t* mac)
 {
@@ -86,12 +90,27 @@ static bool scan_data_cb(struct bt_data *data, void *user_data)
                 master_proc_rcv_verify_link(data->data, data->data_len);
                 break;
 
+            case REQUEST_CHANGE_STATE:
+            {
+                if (is_tid_valid(is_existed_in_db((uint8_t*)(&data->data[3])), data->data[9])) {
+                    os_trace("state changed\r\n");
+                    m_ble_request_state(data->data, data->data_len);
+                } else {
+                    return true;
+                }
+            } break;
+
             case SEND_SS_STATE_CBCT:{
                 if (is_tid_valid(is_existed_in_db((uint8_t*)(&data->data[3])), data->data[9])) {
                     os_trace("bat den\r\n");
                 } else {
                     return true;
                 }
+            } break;
+
+            case SWITCH_LINKING:
+            {
+                slave_proc_rcv_switch_linking_request(data->data, data->data_len);
             } break;
             
             default:
@@ -105,7 +124,7 @@ static bool scan_data_cb(struct bt_data *data, void *user_data)
             //     os_trace("%02X ", data->data[i]);
             // }
             // os_trace("\r\n");
-            return false;
+            return true;
         }
     }
         return true;
@@ -130,8 +149,8 @@ int ble_master_scan(void)
     struct bt_le_scan_param scan_param;
     scan_param.type = BT_LE_SCAN_TYPE_PASSIVE;
     scan_param.filter_dup = BT_LE_SCAN_FILTER_DUPLICATE;
-    scan_param.interval = 160; // 100 ms
-    scan_param.window = 48;
+    scan_param.interval = 0xA0; // 100 ms
+    scan_param.window = BT_GAP_SCAN_FAST_WINDOW;
 
     // master_current_scan = 0;
     memset(scan_le_addr, 0, sizeof(scan_le_addr));
@@ -191,6 +210,11 @@ void my_ble_reset_data(void)
 {
     memset(data_adv, 0, sizeof(data_adv));
     data_adv_len = 0;
+    // for (uint8_t i = 0; i < max_number_channel; i++) {
+    //     m_ble_set_state_change(i, m_db_get_instance()->_m_device._switch_info->current_state[i] % 2);
+    // }
+    // s_ble_obj.last_state;
+    // m_ble_send_state(0);
     my_ble_update_data();
 }
 
@@ -233,7 +257,7 @@ void master_accept_request_link(void)
 
     my_ble_update_data();
 
-    vTaskDelay(pdMS_TO_TICKS(1000));
+    vTaskDelay(pdMS_TO_TICKS(2000));
 
     my_ble_reset_data();
 }
@@ -252,19 +276,45 @@ void slave_response_request_link(void)
     memcpy(&data_adv[10], s_ble_obj.mac, 6);
     data_adv_len = 16;
 
-    //
-    // memcpy(s_ble_obj.mac, m_param->mac_addr, 6);
-        os_trace("VERIFY_LINK: Verify success\r\n");
-        // slave_response_request_link();
-        // ble_adv_data_t m_adv_data1;
-        // m_adv_data1.cmd = VERIFY_LINK;
-        // memcpy(m_adv_data1.data.mac, s_ble_obj.mac, sizeof(m_adv_data1.data.mac));
-        // m_adv_data1.len = 17;
-    //
+    os_trace("VERIFY_LINK: Verify success\r\n");
 
     my_ble_update_data();
 
-    vTaskDelay(pdMS_TO_TICKS(1000));
+    vTaskDelay(pdMS_TO_TICKS(2000));
+
+    my_ble_reset_data();
+}
+void m_ble_switch_request_linking(uint8_t *mac, uint8_t act1, uint8_t act2)
+{
+    s_ble_obj.is_run_config = 1;
+    s_ble_obj.type_device_config = DEVICE_NEW;
+    s_ble_obj.step = WAIT_SWITCH_RESPONSE_LINK;
+
+    s_ble_obj.my_act = act1;
+    s_ble_obj.opp_act = act2;
+    memset(s_ble_obj.mac, 0, 6);
+    memcpy(s_ble_obj.mac, mac, 6);
+
+    memset(data_adv, 0, sizeof(data_adv));
+
+    data_adv[0] = HUN_BLE_SERVICE_UUID & 0xFF;
+    data_adv[1] = HUN_BLE_SERVICE_UUID >> 8;
+    data_adv[2] = SWITCH_LINKING;
+    bt_addr_le_t adv_addr;
+    bt_get_local_public_address(&adv_addr);
+    memcpy(&data_adv[3], adv_addr.a.val, 6);
+    data_adv[9] = ++s_ble_obj.tid;
+    memcpy(&data_adv[10], s_ble_obj.mac, 6);
+    data_adv[16] = s_ble_obj.my_act;
+    data_adv[17] = s_ble_obj.opp_act;
+
+    data_adv_len = 18;
+
+    os_trace("VERIFY_LINKING: Pending\r\n");
+
+    my_ble_update_data();
+
+    vTaskDelay(pdMS_TO_TICKS(2000));
 
     my_ble_reset_data();
 }
@@ -317,11 +367,127 @@ void slave_proc_response_request_link(uint8_t *data, uint8_t len)
 
 void master_proc_rcv_verify_link(uint8_t *data, uint8_t len)
 {
-    if (s_ble_obj.is_run_config == 1 && s_ble_obj.step == WAIT_VERIFY_ACCEPT_LINK) {
+    // os_trace("%s, s_ble_obj.is_run_config: %u, step: %u\r\n", __func__, s_ble_obj.is_run_config, s_ble_obj.step);
+    if (s_ble_obj.is_run_config == 1) {
+        if (s_ble_obj.step == WAIT_VERIFY_ACCEPT_LINK || s_ble_obj.step == WAIT_SWITCH_RESPONSE_LINK) {
+            bt_addr_le_t adv_addr;
+            bt_get_local_public_address(&adv_addr);
+            // os_trace("%s step_1\r\n", __func__);
+            if (!memcmp(&data[10], adv_addr.a.val, 6) && !memcmp(&data[3], s_ble_obj.mac, 6)) {
+                s_ble_obj.step = MASTER_LINK_SUCCESS;
+            }
+        }
+    }
+}
+
+void slave_proc_rcv_switch_linking_request(uint8_t *data, uint8_t len)
+{
+    if (s_ble_obj.step == NOTHING) {
         bt_addr_le_t adv_addr;
         bt_get_local_public_address(&adv_addr);
-        if (!memcmp(&data[10], adv_addr.a.val, 6) && !memcmp(&data[3], s_ble_obj.mac, 6)) {
-            s_ble_obj.step = MASTER_LINK_SUCCESS;
+        if (!memcmp(&data[10], adv_addr.a.val, 6)) {
+            memcpy(s_ble_obj.mac, &data[3], 6);
+            s_ble_obj.step = RESPOND_TO_REQUEST_LINK;
+            s_ble_obj.type_device_config = DEVICE_NEW;
+            s_ble_obj.my_act = data[17];
+            s_ble_obj.opp_act = data[16];
+            os_trace("my_act: %u, opp_act: %u\r\n", s_ble_obj.my_act, s_ble_obj.opp_act);
+        }
+    }
+}
+
+void m_ble_set_state_change(uint8_t channel, uint8_t level)
+{
+    int result = -1;
+    for (uint8_t i = 0; i < obj_ble.num_devices_link; i++)
+    {
+        if (((obj_ble.list_child[i].my_act - 1) / 2) == channel){
+            result = i;
+            break;
+        }
+    }
+
+    if (result == -1)
+    {
+        return;
+    }
+    os_trace("%s: %u, %u\r\n", __func__, channel, level);
+
+    s_ble_obj.my_state &= ~(0b11 << (channel * 2));
+    if (level) {
+        s_ble_obj.my_state |= (0x01 << (channel * 2));
+    }
+    else 
+    {
+        s_ble_obj.my_state |= (0x02 << (channel * 2));
+    }
+}
+
+void m_ble_send_state(uint8_t need_rst)
+{
+    memset(data_adv, 0, sizeof(data_adv));
+
+    data_adv[0] = HUN_BLE_SERVICE_UUID & 0xFF;
+    data_adv[1] = HUN_BLE_SERVICE_UUID >> 8;
+    data_adv[2] = REQUEST_CHANGE_STATE;
+    bt_addr_le_t adv_addr;
+    bt_get_local_public_address(&adv_addr);
+    memcpy(&data_adv[3], adv_addr.a.val, 6);
+    data_adv[9] = ++s_ble_obj.tid;
+    data_adv[10] = 1;
+    data_adv[11] = s_ble_obj.my_state;
+    data_adv_len = 12;
+
+    s_ble_obj.last_state = s_ble_obj.my_state;
+    s_ble_obj.my_state = 0;
+
+    os_trace("m_ble_send_state\r\n");
+
+    my_ble_update_data();
+
+    // if (need_rst){
+    // vTaskDelay(pdMS_TO_TICKS(1000));
+
+    // my_ble_reset_data();
+    // }
+}
+
+void m_ble_request_state(uint8_t *data, uint8_t len)
+{
+    s_ble_obj.state_await = data[11]; 
+}
+
+void m_ble_sync_state(void)
+{
+    if (!s_ble_obj.state_await) {
+        return;
+    }
+    uint8_t state = s_ble_obj.state_await;
+    uint8_t my_channel_act, opp_channel_act;
+
+    int ind = -1;
+
+
+    s_ble_obj.state_await = 0;
+    os_trace("%s %u\r\n", __func__, state);
+    uint8_t temp = 0;
+    for (uint8_t j = 0; j < 4; j++) {
+        temp = (state >> (j * 2) & (0b11));
+        if (temp) {
+            for (uint8_t i = 0; i < obj_ble.num_devices_link; i++) {
+                my_channel_act = (obj_ble.list_child[i].my_act - 1) / 2 ;
+                opp_channel_act = (obj_ble.list_child[i].opp_act - 1) / 2 ;
+                if (opp_channel_act == j) {
+                    os_trace("j=%u, my_channel_act: %u, opp_channel_act: %u, temp=%u, level %u\r\n", j, my_channel_act, opp_channel_act, temp, m_switch_get_instance()._read_switch_cb(my_channel_act));
+                    if (temp == 1) {
+                        if (m_switch_get_instance()._read_switch_cb(my_channel_act) == 0)
+                            m_switch_get_instance()._control_switch_cb(CH1_ON + my_channel_act * 2, SRC_ACTION_LINK_BLE, 0, 1, 1, 1);
+                    } else if (temp == 2) {
+                        if (m_switch_get_instance()._read_switch_cb(my_channel_act) == 1)
+                            m_switch_get_instance()._control_switch_cb(CH1_OFF + my_channel_act * 2, SRC_ACTION_LINK_BLE, 0, 1, 1, 1);
+                    }
+                }
+            }
         }
     }
 }
@@ -344,6 +510,33 @@ static void check_config_timeout(void)
 	}
 }
 
+static uint8_t ble_db_add_child_new(uint8_t* mac, uint8_t type, uint8_t my_act, uint8_t opp_act)
+{
+
+    // int my_channel_index = (my_act - 1) / 2;
+    // int opp_channel_index = (opp_act - 1) / 2;
+    for (uint8_t i = 0; i < obj_ble.num_devices_link; i++)
+    {
+        if (!memcmp(obj_ble.list_child[i].mac, mac, 6) && 
+            ((my_act - 1) / 2) == ((obj_ble.list_child[i].my_act - 1) / 2) &&
+            ((opp_act - 1) / 2) == ((obj_ble.list_child[i].opp_act - 1) / 2)) {
+                os_trace("this link is existed\r\n");
+                return 0;
+        }
+    }
+
+    memcpy(obj_ble.list_child[obj_ble.num_devices_link].mac, mac, 6);
+    obj_ble.list_child[obj_ble.num_devices_link].data.holder = 0;
+    obj_ble.list_child[obj_ble.num_devices_link].type = type;
+    obj_ble.list_child[obj_ble.num_devices_link].my_act = my_act;
+    obj_ble.list_child[obj_ble.num_devices_link].opp_act = opp_act;
+    
+    obj_ble.num_devices_link++;
+    // sync database
+    m_db_get_instance()->_request_sync_db_ble();
+    return 1;
+}
+
 static uint8_t ble_db_add_child(uint8_t* mac, uint8_t type)
 {
     if (-1 != is_existed_in_db(mac)) {
@@ -362,8 +555,43 @@ static uint8_t ble_db_add_child(uint8_t* mac, uint8_t type)
     return 1;
 }
 
+uint8_t ble_db_remove_child(uint8_t id)
+{
+    if (id >= obj_ble.num_devices_link) {
+        os_trace("remove excceed range\r\n");
+        return 0;
+    }
+
+    for (uint8_t i = id + 1; i < obj_ble.num_devices_link; i++) {
+        obj_ble.list_child[i - 1] = obj_ble.list_child[i];
+    }
+
+    memset(&obj_ble.list_child[obj_ble.num_devices_link-1], 0, sizeof(ble_child_t));
+
+    obj_ble.num_devices_link--;
+    // sync database
+    m_db_get_instance()->_request_sync_db_ble();
+    return 1;
+}
+
 void ble_config_loop(void)
 {
+    if (!is_support_link_stair(device_type)) {
+        return;
+    }
+    static uint32_t tick_send_state = 0;
+    
+
+if (s_ble_obj.my_state){
+    tick_send_state += 100;
+    if (tick_send_state >= 500)
+    {
+        tick_send_state = 0;
+        m_ble_send_state(1);
+    }
+}
+
+m_ble_sync_state();
 
     switch (s_ble_obj.step)
     {
@@ -373,6 +601,17 @@ void ble_config_loop(void)
         check_config_timeout();
     }
     break;
+
+    case WAIT_SWITCH_RESPONSE_LINK:
+    {
+        vTaskDelay(pdMS_TO_TICKS(5000));
+        if (s_ble_obj.step == WAIT_SWITCH_RESPONSE_LINK) {
+            os_trace("timeout WAIT_SWITCH_RESPONSE\r\n");
+            s_ble_obj.is_run_config = 0;
+            memset(s_ble_obj.mac, 0, 6);
+            s_ble_obj.step = NOTHING;
+        }
+    } break;
 
     case SEND_REQUEST_LINK: // step_1: slave ->
     {
@@ -406,7 +645,11 @@ void ble_config_loop(void)
     case MASTER_LINK_SUCCESS:
     {
         os_trace("MASTER_LINK_SUCCESS, type: %u\r\n", s_ble_obj.type_device_config);
-        ble_db_add_child(s_ble_obj.mac, s_ble_obj.type_device_config);
+        if (s_ble_obj.type_device_config == DEVICE_NEW) {
+            ble_db_add_child_new(s_ble_obj.mac, s_ble_obj.type_device_config, s_ble_obj.my_act, s_ble_obj.opp_act);
+        } else {
+            ble_db_add_child(s_ble_obj.mac, s_ble_obj.type_device_config);
+        }
 
         s_ble_obj.is_run_config = 0;
         memset(s_ble_obj.mac, 0, 6);
@@ -418,7 +661,11 @@ void ble_config_loop(void)
     case SLAVE_LINK_SUCCESS:
     {
         os_trace("SLAVE_LINK_SUCCESS, type: %u\r\n", s_ble_obj.type_device_config);
-        ble_db_add_child(s_ble_obj.mac, s_ble_obj.type_device_config);
+        if (s_ble_obj.type_device_config == DEVICE_NEW) {
+            ble_db_add_child_new(s_ble_obj.mac, s_ble_obj.type_device_config, s_ble_obj.my_act, s_ble_obj.opp_act);
+        } else {
+            ble_db_add_child(s_ble_obj.mac, s_ble_obj.type_device_config);
+        }
 
         s_ble_obj.is_run_config = 0;
         memset(s_ble_obj.mac, 0, 6);

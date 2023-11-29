@@ -58,6 +58,7 @@
 #include "system_typedef.h"
 #include "aes_cbc128.h"
 #include "m_beacon.h"
+#include "hardware.h"
 
 #define BLE_MAX_QUEUE_ITEM 10
 
@@ -155,7 +156,8 @@ static void ble_task(void *pvParameters)
     memset(&message, 0, sizeof(message));
     memset(msg_aes, 0, sizeof(msg_aes));
 
-    ble_master_scan();
+    if (is_support_link_stair(device_type))
+        ble_master_scan();
     // ble_go_request_pair();
 
     while (1)

@@ -55,7 +55,7 @@ m_switch_state_t m_control_get_status_switch(uint8_t index)
 /**
  * Public API. Call this function to control switch
  */
-static uint8_t m_control_switch(uint32_t action, uint32_t act_id, uint32_t uid, bool respond, bool set_even_release)
+static uint8_t m_control_switch(uint32_t action, uint32_t act_id, uint32_t uid, bool respond, bool set_even_release, bool send_ble)
 {
     uint8_t channel_index = (action - 1) / 2;
     state_t state = (action % 2) ? HIGH : LOW;
@@ -105,6 +105,10 @@ static uint8_t m_control_switch(uint32_t action, uint32_t act_id, uint32_t uid, 
         {
             os_trace("Device is not connect mqtt\r\n");
         }
+    }
+
+    if (is_support_link_stair(device_type) && send_ble){
+        m_ble_set_state_change(channel_index, state);
     }
 
     return 1;
@@ -234,7 +238,7 @@ void blink_switch_config_loop(void)
                 m_set_tick_go_cfg(i, DEFAULT_TICK);
 
                 os_trace("go step %u\r\n", m_get_step_go_cfg(i));
-                m_control_switch(m_get_step_go_cfg(i) + i * 2, 0, 0, 0, 0);
+                m_control_switch(m_get_step_go_cfg(i) + i * 2, 0, 0, 0, 0, 0);
                 m_set_step_go_cfg(i, m_get_step_go_cfg(i) + 1);
                 return;
             }
@@ -301,7 +305,7 @@ static uint8_t m_toggle_switch(uint32_t index, uint32_t act_id, bool respond, bo
             {
                 reset_data_blink_config(0);
             }
-            return m_control_switch(CH1_OFF, act_id, 0, respond, set_even_release);
+            return m_control_switch(CH1_OFF, act_id, 0, respond, set_even_release, 1);
         }
         else
         {
@@ -313,7 +317,7 @@ static uint8_t m_toggle_switch(uint32_t index, uint32_t act_id, bool respond, bo
             {
                 reset_data_blink_config(0);
             }
-            return m_control_switch(CH1_ON, act_id, 0, respond, set_even_release);
+            return m_control_switch(CH1_ON, act_id, 0, respond, set_even_release, 1);
         }
     }
 
@@ -330,7 +334,7 @@ static uint8_t m_toggle_switch(uint32_t index, uint32_t act_id, bool respond, bo
             {
                 reset_data_blink_config(1);
             }
-            return m_control_switch(CH2_OFF, act_id, 0, respond, set_even_release);
+            return m_control_switch(CH2_OFF, act_id, 0, respond, set_even_release, 1);
         }
         else
         {
@@ -342,7 +346,7 @@ static uint8_t m_toggle_switch(uint32_t index, uint32_t act_id, bool respond, bo
             {
                 reset_data_blink_config(1);
             }
-            return m_control_switch(CH2_ON, act_id, 0, respond, set_even_release);
+            return m_control_switch(CH2_ON, act_id, 0, respond, set_even_release, 1);
         }
     }
 
@@ -351,11 +355,11 @@ static uint8_t m_toggle_switch(uint32_t index, uint32_t act_id, bool respond, bo
     {
         if (pin_value)
         {
-            return m_control_switch(CH3_OFF, act_id, 0, respond, set_even_release);
+            return m_control_switch(CH3_OFF, act_id, 0, respond, set_even_release, 1);
         }
         else
         {
-            return m_control_switch(CH3_ON, act_id, 0, respond, set_even_release);
+            return m_control_switch(CH3_ON, act_id, 0, respond, set_even_release, 1);
         }
     }
 
@@ -364,11 +368,11 @@ static uint8_t m_toggle_switch(uint32_t index, uint32_t act_id, bool respond, bo
     {
         if (pin_value)
         {
-            return m_control_switch(CH4_OFF, act_id, 0, respond, set_even_release);
+            return m_control_switch(CH4_OFF, act_id, 0, respond, set_even_release, 1);
         }
         else
         {
-            return m_control_switch(CH4_ON, act_id, 0, respond, set_even_release);
+            return m_control_switch(CH4_ON, act_id, 0, respond, set_even_release, 1);
         }
     }
 
