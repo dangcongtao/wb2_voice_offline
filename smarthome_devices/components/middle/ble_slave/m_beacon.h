@@ -39,7 +39,8 @@ typedef enum
     REQUEST_SEGMENT_MISS,
     SEND_SS_STATE_CBCT = 0x14,
     CMD_SS_INFO,
-    SWITCH_LINKING
+    SWITCH_LINKING,
+    SWITCH_REMOVE_LINK
 } ble_cmd_t;
 
 typedef enum
@@ -55,7 +56,8 @@ typedef enum
     LINK_SUCCESS, // when master finished link with slave
     CONFIG_LINK_SUCCESS,
     CTLK_NOTIFY_ONLINE,
-    PING_CTC_INTERVAL
+    PING_CTC_INTERVAL,
+    STEP_SWITCH_REMOVE_LINK
 } ble_config_state_t;
 
 typedef struct
@@ -136,7 +138,6 @@ typedef struct
     uint8_t opp_act;
     uint32_t last_time_notify_state;
     uint32_t last_time_request_sync_led_stt;
-
     uint32_t light_count_down_ss;
     uint32_t time_delay_light_off;
 
@@ -144,6 +145,10 @@ typedef struct
     uint8_t last_state;
 
     uint8_t state_await;
+
+    uint16_t time_cnt_startup;
+
+    uint8_t id_remove;
     struct
     {
         uint32_t is_init_ble_finished : 1;
@@ -152,7 +157,8 @@ typedef struct
         uint32_t need_sync_led_stt : 1;
         uint32_t active_motion_detect : 1;
         uint32_t flag_state_change : 4;
-        uint32_t : 22;
+        uint32_t flag_remove_link : 1;
+        uint32_t : 21;
     } flags;
 
 } m_ble_t;

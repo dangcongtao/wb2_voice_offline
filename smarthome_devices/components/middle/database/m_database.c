@@ -355,38 +355,38 @@ static void m_database_sync_task(void *param)
                 s_database_was_deleted_before = false;
             }
 
-            os_trace("ssid: %s\r\n", s_m_database._m_device._wifi_info->_ssid);
-            os_trace("pass: %s\r\n", s_m_database._m_device._wifi_info->_passwd);
-            os_trace("server: %s\r\n", s_m_database._m_device._mqtt_info->server);
-            os_trace("port: %ld\r\n", s_m_database._m_device._mqtt_info->port);
-            os_trace("username: %s\r\n", s_m_database._m_device._mqtt_info->username);
-            os_trace("passwd: %s\r\n", s_m_database._m_device._mqtt_info->passwd);
-            os_trace("topic_pub: %s\r\n", s_m_database._m_device._mqtt_info->topic_pub);
-            os_trace("topic_sub: %s\r\n", s_m_database._m_device._mqtt_info->topic_sub);
+            // os_trace("ssid: %s\r\n", s_m_database._m_device._wifi_info->_ssid);
+            // os_trace("pass: %s\r\n", s_m_database._m_device._wifi_info->_passwd);
+            // os_trace("server: %s\r\n", s_m_database._m_device._mqtt_info->server);
+            // os_trace("port: %ld\r\n", s_m_database._m_device._mqtt_info->port);
+            // os_trace("username: %s\r\n", s_m_database._m_device._mqtt_info->username);
+            // os_trace("passwd: %s\r\n", s_m_database._m_device._mqtt_info->passwd);
+            // os_trace("topic_pub: %s\r\n", s_m_database._m_device._mqtt_info->topic_pub);
+            // os_trace("topic_sub: %s\r\n", s_m_database._m_device._mqtt_info->topic_sub);
 
-            os_trace("default state: %u %u %u %u\r\n",
-                     s_m_database._m_device._switch_info->default_state[0],
-                     s_m_database._m_device._switch_info->default_state[1],
-                     s_m_database._m_device._switch_info->default_state[2],
-                     s_m_database._m_device._switch_info->default_state[3]);
+            // os_trace("default state: %u %u %u %u\r\n",
+            //          s_m_database._m_device._switch_info->default_state[0],
+            //          s_m_database._m_device._switch_info->default_state[1],
+            //          s_m_database._m_device._switch_info->default_state[2],
+            //          s_m_database._m_device._switch_info->default_state[3]);
 
-            os_trace("current state: %u %u %u %u\r\n",
-                     s_m_database._m_device._switch_info->current_state[0],
-                     s_m_database._m_device._switch_info->current_state[1],
-                     s_m_database._m_device._switch_info->current_state[2],
-                     s_m_database._m_device._switch_info->current_state[3]);
+            // os_trace("current state: %u %u %u %u\r\n",
+            //          s_m_database._m_device._switch_info->current_state[0],
+            //          s_m_database._m_device._switch_info->current_state[1],
+            //          s_m_database._m_device._switch_info->current_state[2],
+            //          s_m_database._m_device._switch_info->current_state[3]);
 
-            os_trace("lock mode: %u %u %u %u\r\n",
-                     s_m_database._m_device._switch_info->channel_lock_state[0],
-                     s_m_database._m_device._switch_info->channel_lock_state[1],
-                     s_m_database._m_device._switch_info->channel_lock_state[2],
-                     s_m_database._m_device._switch_info->channel_lock_state[3]);
+            // os_trace("lock mode: %u %u %u %u\r\n",
+            //          s_m_database._m_device._switch_info->channel_lock_state[0],
+            //          s_m_database._m_device._switch_info->channel_lock_state[1],
+            //          s_m_database._m_device._switch_info->channel_lock_state[2],
+            //          s_m_database._m_device._switch_info->channel_lock_state[3]);
 
-            os_trace("time release: %ld %ld %ld %ld\r\n",
-                     s_m_database._m_device._switch_info->time_release[0],
-                     s_m_database._m_device._switch_info->time_release[1],
-                     s_m_database._m_device._switch_info->time_release[2],
-                     s_m_database._m_device._switch_info->time_release[3]);
+            // os_trace("time release: %ld %ld %ld %ld\r\n",
+            //          s_m_database._m_device._switch_info->time_release[0],
+            //          s_m_database._m_device._switch_info->time_release[1],
+            //          s_m_database._m_device._switch_info->time_release[2],
+            //          s_m_database._m_device._switch_info->time_release[3]);
 
             s_request_sync_db = false;
         }

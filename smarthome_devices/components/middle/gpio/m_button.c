@@ -43,9 +43,14 @@ void on_button_event_cb(int button_pin, int event, void *data)
 {
     os_trace("Button %d, event %s\r\n", button_pin, event_name[event]);
 
-    if (m_db_get_instance()->_m_device._switch_info->channel_lock_state[button_pin] == 1)
-        if (is_wifi_connected())
+    if (device_type == SWMINI && button_pin == 2) {
+
+    } else if (m_db_get_instance()->_m_device._switch_info->channel_lock_state[button_pin] == 1) {
+        if (dev_is_online()) {
+            os_trace("channel %d is locked!\r\n", button_pin);
             return;
+        }
+    }
 
     switch (event)
     {

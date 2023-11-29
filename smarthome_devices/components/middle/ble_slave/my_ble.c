@@ -117,7 +117,7 @@ void my_ble_start_advertise(void)
     }
     else
     {
-        printf("Advertising started");
+        printf("Advertising started\r\n");
     }
 }
 

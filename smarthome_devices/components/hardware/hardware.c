@@ -6,7 +6,7 @@
 uint32_t device_type = 0;
 uint32_t max_number_channel = 0;
 /* refer to system_typedef.h/device_type_t */
-char *gs_dev_type[] = {"wswitch3v", "lhswitch3v", "swminiv2", "sswitch2v", "swshockv2", "swshock_hunv2"};
+char *gs_dev_type[] = {"wswitch3v", "lhswitch3v", "swminiv2", "sswitch2v", "swshockv2", "swshohuv2"};
 
 #define MAX_WIDTH   100
 #define MAX_LEN     512
@@ -40,4 +40,4 @@ void gpio_set_input(int pin)
     bl_gpio_enable_input(pin, 1, 0);
 }
 
-uint32_t sys_get_tick_ms(void) { return aos_now_ms(); }
+uint32_t sys_get_tick_ms(void) { return (uint32_t)aos_now_ms(); }

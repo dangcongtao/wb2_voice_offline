@@ -37,6 +37,7 @@ void master_proc_rcv_verify_link(uint8_t *data, uint8_t len);
 void slave_proc_rcv_switch_linking_request(uint8_t *data, uint8_t len);
 void m_ble_request_state(uint8_t *data, uint8_t len);
 void m_ble_send_state(uint8_t need_rst);
+void slave_proc_remove_link(uint8_t *data, uint8_t len);
 
 static int is_existed_in_db(uint8_t* mac)
 {
@@ -93,7 +94,7 @@ static bool scan_data_cb(struct bt_data *data, void *user_data)
             case REQUEST_CHANGE_STATE:
             {
                 if (is_tid_valid(is_existed_in_db((uint8_t*)(&data->data[3])), data->data[9])) {
-                    os_trace("state changed\r\n");
+                    // os_trace("state changed\r\n");
                     m_ble_request_state(data->data, data->data_len);
                 } else {
                     return true;
@@ -102,7 +103,7 @@ static bool scan_data_cb(struct bt_data *data, void *user_data)
 
             case SEND_SS_STATE_CBCT:{
                 if (is_tid_valid(is_existed_in_db((uint8_t*)(&data->data[3])), data->data[9])) {
-                    os_trace("bat den\r\n");
+                    // os_trace("bat den\r\n");
                 } else {
                     return true;
                 }
@@ -111,6 +112,11 @@ static bool scan_data_cb(struct bt_data *data, void *user_data)
             case SWITCH_LINKING:
             {
                 slave_proc_rcv_switch_linking_request(data->data, data->data_len);
+            } break;
+
+            case SWITCH_REMOVE_LINK:
+            {
+                slave_proc_remove_link(data->data, data->data_len);
             } break;
             
             default:
@@ -144,6 +150,7 @@ int ble_master_scan(void)
 
     memset(&s_ble_obj, 0, sizeof(m_ble_t));
     s_ble_obj.tid = rand() & 0xFF;
+    s_ble_obj.time_cnt_startup = 5000;
 
     int ret;
     struct bt_le_scan_param scan_param;
@@ -284,6 +291,33 @@ void slave_response_request_link(void)
 
     my_ble_reset_data();
 }
+
+void db_remove_child(uint8_t id)
+{
+    for (uint8_t i = id + 1; i < obj_ble.num_devices_link; i++) {
+        obj_ble.list_child[i - 1] = obj_ble.list_child[i];
+    }
+
+    memset(&obj_ble.list_child[obj_ble.num_devices_link-1], 0, sizeof(ble_child_t));
+
+    obj_ble.num_devices_link--;
+    // sync database
+    m_db_get_instance()->_request_sync_db_ble();
+}
+
+uint8_t ble_db_remove_child(uint8_t id)
+{
+    if (id >= obj_ble.num_devices_link || s_ble_obj.step != NOTHING) {
+        os_trace("remove excceed range, or invalid state \r\n");
+        return 0;
+    }
+
+    s_ble_obj.step = STEP_SWITCH_REMOVE_LINK;
+    s_ble_obj.id_remove = id;
+    
+    return 1;
+}
+
 void m_ble_switch_request_linking(uint8_t *mac, uint8_t act1, uint8_t act2)
 {
     s_ble_obj.is_run_config = 1;
@@ -311,6 +345,34 @@ void m_ble_switch_request_linking(uint8_t *mac, uint8_t act1, uint8_t act2)
     data_adv_len = 18;
 
     os_trace("VERIFY_LINKING: Pending\r\n");
+
+    my_ble_update_data();
+
+    vTaskDelay(pdMS_TO_TICKS(2000));
+
+    my_ble_reset_data();
+}
+
+void m_ble_remove_linking(uint8_t id)
+{
+    memset(data_adv, 0, sizeof(data_adv));
+
+    data_adv[0] = HUN_BLE_SERVICE_UUID & 0xFF;
+    data_adv[1] = HUN_BLE_SERVICE_UUID >> 8;
+    data_adv[2] = SWITCH_REMOVE_LINK;
+    bt_addr_le_t adv_addr;
+    bt_get_local_public_address(&adv_addr);
+    memcpy(&data_adv[3], adv_addr.a.val, 6);
+    data_adv[9] = ++s_ble_obj.tid;
+    memcpy(&data_adv[10], obj_ble.list_child[id].mac, 6);
+    data_adv[16] = obj_ble.list_child[id].my_act;
+    data_adv[17] = obj_ble.list_child[id].opp_act;
+
+    data_adv_len = 18;
+
+    db_remove_child(id);
+
+    os_trace("REMOVE_LINKING: Pending\r\n");
 
     my_ble_update_data();
 
@@ -376,6 +438,25 @@ void master_proc_rcv_verify_link(uint8_t *data, uint8_t len)
             if (!memcmp(&data[10], adv_addr.a.val, 6) && !memcmp(&data[3], s_ble_obj.mac, 6)) {
                 s_ble_obj.step = MASTER_LINK_SUCCESS;
             }
+        }
+    }
+}
+
+void slave_proc_remove_link(uint8_t *data, uint8_t len)
+{
+    if (s_ble_obj.step == NOTHING) {
+        bt_addr_le_t adv_addr;
+        bt_get_local_public_address(&adv_addr);
+        if (!memcmp(&data[10], adv_addr.a.val, 6)) {
+
+            for (uint8_t i = 0; i < obj_ble.num_devices_link; i++) {
+                if (obj_ble.list_child[i].my_act == data[17] && obj_ble.list_child[i].opp_act == data[16] && !memcmp(&data[3], obj_ble.list_child[i].mac, 6)) {
+                    db_remove_child(i);
+                    os_trace("REMOVE %u success\r\n", i);
+                    return;
+                }
+            }
+            os_trace("remove: can't find match data\r\n");
         }
     }
 }
@@ -465,9 +546,6 @@ void m_ble_sync_state(void)
     uint8_t state = s_ble_obj.state_await;
     uint8_t my_channel_act, opp_channel_act;
 
-    int ind = -1;
-
-
     s_ble_obj.state_await = 0;
     os_trace("%s %u\r\n", __func__, state);
     uint8_t temp = 0;
@@ -480,11 +558,19 @@ void m_ble_sync_state(void)
                 if (opp_channel_act == j) {
                     os_trace("j=%u, my_channel_act: %u, opp_channel_act: %u, temp=%u, level %u\r\n", j, my_channel_act, opp_channel_act, temp, m_switch_get_instance()._read_switch_cb(my_channel_act));
                     if (temp == 1) {
-                        if (m_switch_get_instance()._read_switch_cb(my_channel_act) == 0)
+                        if (s_ble_obj.time_cnt_startup || m_switch_get_instance()._read_switch_cb(my_channel_act) == 0) {
+                            if (s_ble_obj.time_cnt_startup) {
+                                s_ble_obj.time_cnt_startup = 0;
+                            }
                             m_switch_get_instance()._control_switch_cb(CH1_ON + my_channel_act * 2, SRC_ACTION_LINK_BLE, 0, 1, 1, 1);
+                        }
                     } else if (temp == 2) {
-                        if (m_switch_get_instance()._read_switch_cb(my_channel_act) == 1)
+                        if (s_ble_obj.time_cnt_startup || m_switch_get_instance()._read_switch_cb(my_channel_act) == 1) {
+                            if (s_ble_obj.time_cnt_startup) {
+                                s_ble_obj.time_cnt_startup = 0;
+                            }
                             m_switch_get_instance()._control_switch_cb(CH1_OFF + my_channel_act * 2, SRC_ACTION_LINK_BLE, 0, 1, 1, 1);
+                        }
                     }
                 }
             }
@@ -555,24 +641,6 @@ static uint8_t ble_db_add_child(uint8_t* mac, uint8_t type)
     return 1;
 }
 
-uint8_t ble_db_remove_child(uint8_t id)
-{
-    if (id >= obj_ble.num_devices_link) {
-        os_trace("remove excceed range\r\n");
-        return 0;
-    }
-
-    for (uint8_t i = id + 1; i < obj_ble.num_devices_link; i++) {
-        obj_ble.list_child[i - 1] = obj_ble.list_child[i];
-    }
-
-    memset(&obj_ble.list_child[obj_ble.num_devices_link-1], 0, sizeof(ble_child_t));
-
-    obj_ble.num_devices_link--;
-    // sync database
-    m_db_get_instance()->_request_sync_db_ble();
-    return 1;
-}
 
 void ble_config_loop(void)
 {
@@ -580,18 +648,21 @@ void ble_config_loop(void)
         return;
     }
     static uint32_t tick_send_state = 0;
-    
 
-if (s_ble_obj.my_state){
-    tick_send_state += 100;
-    if (tick_send_state >= 500)
-    {
-        tick_send_state = 0;
-        m_ble_send_state(1);
+    if (s_ble_obj.time_cnt_startup) {
+        s_ble_obj.time_cnt_startup -= 100;
     }
-}
+    
+    tick_send_state += 100;
+    if (s_ble_obj.my_state){
+        if (tick_send_state >= 300)
+        {
+            tick_send_state = 0;
+            m_ble_send_state(1);
+        }
+    }
 
-m_ble_sync_state();
+    m_ble_sync_state();
 
     switch (s_ble_obj.step)
     {
@@ -601,6 +672,12 @@ m_ble_sync_state();
         check_config_timeout();
     }
     break;
+
+    case STEP_SWITCH_REMOVE_LINK:
+    {
+        m_ble_remove_linking(s_ble_obj.id_remove);
+        s_ble_obj.step = NOTHING;
+    } break;
 
     case WAIT_SWITCH_RESPONSE_LINK:
     {

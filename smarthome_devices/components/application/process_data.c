@@ -23,7 +23,7 @@
 #include <timers.h>
 
 #include "m_http_services.h"
-
+#include "bl_sys.h"
 
 static char respond[512];
 extern char key[16], iv[16];
@@ -122,6 +122,10 @@ static void app_startup_message(void)
 {
     m_device_t app_databse = m_db_get_instance()->_m_device;
     uint32_t buffer_seek = 0, i;
+    extern uint8_t last_reason_reset;
+    static uint32_t num_send = 0;
+
+    m_wifi_get_instance().wifi_sync_rssi_cb();
 
     /* respond server here */
     memset(respond, 0, sizeof(respond));
@@ -131,14 +135,18 @@ static void app_startup_message(void)
 
     buffer_seek +=
         sprintf(respond,
-                "{\"%s\":100,\"u\":0,\"id\":\"%s\",\"ver\":%s,\"extras\":%d,"
+                "{\"%s\":100,\"reason\":%lu,\"u\":0,\"id\":\"%s\",\"ver\":%s,\"extras\":%d,"
                 "\"ssid\":\"%s\",\"pass\":\"%s\",\"streng\":%d,"
                 "\"ip\":\"%s\",\"mac_bt\":\"%02x:%02x:%02x:%02x:%02x:%02x\",\"po\":[",
-                gs_dev_type[device_type],
+                gs_dev_type[device_type], num_send * 100U + last_reason_reset * 10U + (uint32_t)bl_sys_rstinfo_get_hun(), // hang chuc: flash_reason reset, hang don vi: BL_RST_REASON_E
                 m_db_get_instance()->_get_dev_id(), FIRMWARE_VERSION, EXTRAS,
                 app_databse._wifi_info->_ssid, app_databse._wifi_info->_passwd,
                 app_databse._wifi_info->_rssi, app_databse._wifi_info->_ip,
                 mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+
+    num_send++;
+
+    num_send++;
 
     /* default state value */
     for (i = 0; i < m_db_get_number_channel(); i++)

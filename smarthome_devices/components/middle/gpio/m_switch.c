@@ -11,6 +11,7 @@
 
 static m_switch_t s_switch_obj;
 static char respond_msg[256];
+uint8_t last_reason_reset = 0;
 
 m_switch_state_t m_control_get_status_switch(uint8_t index)
 {
@@ -399,6 +400,7 @@ static void control_switch_default_state(void)
                 s_switch_obj._write_switch_cb(channel, state);
             }
         }
+        last_reason_reset = reason_reset;
         flash_set_rs_reason(0);
         return;
     }

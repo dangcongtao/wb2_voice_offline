@@ -23,8 +23,8 @@ void start_cylcic_timer(switch_action_t action, uint32_t time_act1, uint32_t tim
         cyclic_timer_arr[channel_index].time_off = time_act2;
     }
 
-    m_switch_get_instance()._control_switch_cb(action, 2, 0, true, false, 1);
-    previous_cyclic_timer_active[channel_index] = xTaskGetTickCount();
+    m_switch_get_instance()._control_switch_cb(action, 2, 0, true, false, true);
+    previous_cyclic_timer_active[channel_index] = sys_get_tick_ms();
 
     step_toggle[channel_index] = 0;
 
@@ -60,7 +60,7 @@ void m_switch_cyclic_timer_loop(void)
     {
         if (cyclic_timer_arr[i].enable)
         {
-            current_tick = xTaskGetTickCount();
+            current_tick = sys_get_tick_ms();
             if (previous_cyclic_timer_active[i] <= current_tick)
                 time_diff = current_tick - previous_cyclic_timer_active[i];
             else
@@ -70,22 +70,22 @@ void m_switch_cyclic_timer_loop(void)
             {
             case 0:
             {
-                if (time_diff > pdMS_TO_TICKS(cyclic_timer_arr[i].time_on * 1000))
+                if (time_diff >= cyclic_timer_arr[i].time_on * 1000)
                 {
                     m_switch_get_instance()._control_switch_cb(CH1_OFF + 2 * i, 2, 0, true, false, true);
                     step_toggle[i] = !step_toggle[i]; /* 1 -> 0 , 0 -> 1 */
-                    previous_cyclic_timer_active[i] = xTaskGetTickCount();
+                    previous_cyclic_timer_active[i] = sys_get_tick_ms();
                 }
             }
             break;
 
             case 1:
             {
-                if (time_diff > pdMS_TO_TICKS(cyclic_timer_arr[i].time_off * 1000))
+                if (time_diff >= cyclic_timer_arr[i].time_off * 1000)
                 {
                     m_switch_get_instance()._control_switch_cb(CH1_ON + 2 * i, 2, 0, true, false, true);
                     step_toggle[i] = !step_toggle[i]; /* 1 -> 0 , 0 -> 1 */
-                    previous_cyclic_timer_active[i] = xTaskGetTickCount();
+                    previous_cyclic_timer_active[i] = sys_get_tick_ms();
                 }
             }
             break;
@@ -113,7 +113,7 @@ void set_user_trigger_press_event(uint8_t channel_index, bool set_event, uint32_
     if (!set_event)
         return;
 
-    ms_tick_control_switch[channel_index] = xTaskGetTickCount();
+    ms_tick_control_switch[channel_index] = sys_get_tick_ms();
 
     uint32_t mode = m_db_get_instance()->_m_device._switch_info->release_mode[channel_index];
     if (mode == 0)
@@ -132,10 +132,17 @@ void m_switch_press_release_loop(void)
     /* loop for checking event switch controlled by user */
     for (uint8_t i = 0; i < m_switch_get_instance().max_number_channel; i++)
     {
-        time_diff_release = xTaskGetTickCount() - ms_tick_control_switch[i];
-        time_event = pdMS_TO_TICKS(m_db_get_instance()->_m_device._switch_info->time_release[i] * 1000);
+        // time_diff_release = sys_get_tick_ms() - ms_tick_control_switch[i];
 
-        if (user_control_switch_event[i] && time_diff_release > time_event)
+        uint32_t current_tick = sys_get_tick_ms();
+        if (ms_tick_control_switch[i] <= current_tick)
+                time_diff_release = current_tick - ms_tick_control_switch[i];
+            else
+                time_diff_release = UINT32_MAX - ms_tick_control_switch[i] + current_tick;
+
+        time_event = m_db_get_instance()->_m_device._switch_info->time_release[i] * 1000;
+
+        if (user_control_switch_event[i] && time_diff_release >= time_event)
         {
             user_control_switch_event[i] = 0;
             mode = m_db_get_instance()->_m_device._switch_info->release_mode[i];
