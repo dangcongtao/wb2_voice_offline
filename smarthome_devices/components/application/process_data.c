@@ -571,7 +571,7 @@ static void app_set_wifi(cJSON *jsRoot)
 
     /* implement */
     m_wifi_get_instance().wifi_change_wifi_cb(ssid, pass);
-    m_db_get_instance()->_request_sync_db();
+    m_db_get_instance()->_request_sync_db(BIT_FLAG_SYNC_WIFI);
 
 RESPONSE:
     /* respond server here */
@@ -936,12 +936,9 @@ static void app_link_device(cJSON *jsRoot)
     }
     act2 = jsAct2->valueint;
 
-    extern void m_ble_switch_request_linking(uint8_t *mac, uint8_t act1, uint8_t act2);
+    extern uint8_t m_ble_switch_request_linking(uint8_t *mac, uint8_t act1, uint8_t act2);
 
-    m_ble_switch_request_linking(my_mac, act1, act2);
-
-    /* implement here */
-    result = 1;
+    result = m_ble_switch_request_linking(my_mac, act1, act2);
 
 RESPONSE:
     /* respond server here */

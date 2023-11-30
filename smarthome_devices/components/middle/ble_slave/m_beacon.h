@@ -49,6 +49,7 @@ typedef enum
     WAIT_CONFIG,       // when master receive request link from slave
     SEND_REQUEST_LINK, // send requeste link to master
     WAIT_VERIFY_ACCEPT_LINK,
+    SEND_SWITCH_REQUEST_LINK,
     WAIT_SWITCH_RESPONSE_LINK,
     RESPOND_TO_REQUEST_LINK, // when master receive accept link from slave
     MASTER_LINK_SUCCESS,

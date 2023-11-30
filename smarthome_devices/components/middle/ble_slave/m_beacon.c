@@ -204,12 +204,12 @@ void my_ble_update_data(void)
     }
     else
     {
-        os_trace("beacon data success: ");
-        for (uint8_t i = 0; i < data_adv_len; i++)
-        {
-            os_trace("%02X ", data_adv[i]);
-        }
-        os_trace("\r\n");
+        // os_trace("beacon data success: ");
+        // for (uint8_t i = 0; i < data_adv_len; i++)
+        // {
+        //     os_trace("%02X ", data_adv[i]);
+        // }
+        // os_trace("\r\n");
     }
 }
 
@@ -302,7 +302,7 @@ void db_remove_child(uint8_t id)
 
     obj_ble.num_devices_link--;
     // sync database
-    m_db_get_instance()->_request_sync_db_ble();
+    m_db_get_instance()->_request_sync_db(BIT_FLAG_SYNC_BLE);
 }
 
 uint8_t ble_db_remove_child(uint8_t id)
@@ -318,17 +318,24 @@ uint8_t ble_db_remove_child(uint8_t id)
     return 1;
 }
 
-void m_ble_switch_request_linking(uint8_t *mac, uint8_t act1, uint8_t act2)
+uint8_t m_ble_switch_request_linking(uint8_t *mac, uint8_t act1, uint8_t act2)
 {
-    s_ble_obj.is_run_config = 1;
+    if (obj_ble.num_devices_link >= MAX_CTLK_SUPPORT || s_ble_obj.step != NOTHING) {
+        return 0;
+    }
     s_ble_obj.type_device_config = DEVICE_NEW;
-    s_ble_obj.step = WAIT_SWITCH_RESPONSE_LINK;
+    s_ble_obj.step = SEND_SWITCH_REQUEST_LINK;
 
     s_ble_obj.my_act = act1;
     s_ble_obj.opp_act = act2;
     memset(s_ble_obj.mac, 0, 6);
     memcpy(s_ble_obj.mac, mac, 6);
 
+    return 1;
+}
+
+static void ble_switch_send_linking(void)
+{
     memset(data_adv, 0, sizeof(data_adv));
 
     data_adv[0] = HUN_BLE_SERVICE_UUID & 0xFF;
@@ -492,7 +499,7 @@ void m_ble_set_state_change(uint8_t channel, uint8_t level)
     {
         return;
     }
-    os_trace("%s: %u, %u\r\n", __func__, channel, level);
+    // os_trace("%s: %u, %u\r\n", __func__, channel, level);
 
     s_ble_obj.my_state &= ~(0b11 << (channel * 2));
     if (level) {
@@ -547,7 +554,7 @@ void m_ble_sync_state(void)
     uint8_t my_channel_act, opp_channel_act;
 
     s_ble_obj.state_await = 0;
-    os_trace("%s %u\r\n", __func__, state);
+    // os_trace("%s %u\r\n", __func__, state);
     uint8_t temp = 0;
     for (uint8_t j = 0; j < 4; j++) {
         temp = (state >> (j * 2) & (0b11));
@@ -556,7 +563,7 @@ void m_ble_sync_state(void)
                 my_channel_act = (obj_ble.list_child[i].my_act - 1) / 2 ;
                 opp_channel_act = (obj_ble.list_child[i].opp_act - 1) / 2 ;
                 if (opp_channel_act == j) {
-                    os_trace("j=%u, my_channel_act: %u, opp_channel_act: %u, temp=%u, level %u\r\n", j, my_channel_act, opp_channel_act, temp, m_switch_get_instance()._read_switch_cb(my_channel_act));
+                    // os_trace("j=%u, my_channel_act: %u, opp_channel_act: %u, temp=%u, level %u\r\n", j, my_channel_act, opp_channel_act, temp, m_switch_get_instance()._read_switch_cb(my_channel_act));
                     if (temp == 1) {
                         if (s_ble_obj.time_cnt_startup || m_switch_get_instance()._read_switch_cb(my_channel_act) == 0) {
                             if (s_ble_obj.time_cnt_startup) {
@@ -619,7 +626,7 @@ static uint8_t ble_db_add_child_new(uint8_t* mac, uint8_t type, uint8_t my_act, 
     
     obj_ble.num_devices_link++;
     // sync database
-    m_db_get_instance()->_request_sync_db_ble();
+    m_db_get_instance()->_request_sync_db(BIT_FLAG_SYNC_BLE);
     return 1;
 }
 
@@ -637,7 +644,7 @@ static uint8_t ble_db_add_child(uint8_t* mac, uint8_t type)
     }
     obj_ble.num_devices_link++;
     // sync database
-    m_db_get_instance()->_request_sync_db_ble();
+    m_db_get_instance()->_request_sync_db(BIT_FLAG_SYNC_BLE);
     return 1;
 }
 
@@ -678,6 +685,13 @@ void ble_config_loop(void)
         m_ble_remove_linking(s_ble_obj.id_remove);
         s_ble_obj.step = NOTHING;
     } break;
+
+    case SEND_SWITCH_REQUEST_LINK:
+    {
+        s_ble_obj.is_run_config = 1;
+        ble_switch_send_linking();
+        s_ble_obj.step = WAIT_SWITCH_RESPONSE_LINK;
+    }
 
     case WAIT_SWITCH_RESPONSE_LINK:
     {

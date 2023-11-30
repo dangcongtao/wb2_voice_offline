@@ -28,7 +28,7 @@ void flash_init(void)
     m_mqtt_info_t*      _mqtt_info;
     m_switch_info_t*    _switch_info;
  */
-void flash_write_database(m_device_t object_data)
+void flash_write_database(m_device_t object_data, uint8_t request_flag)
 {
     uint32_t size = 0;
 
@@ -37,9 +37,10 @@ void flash_write_database(m_device_t object_data)
     {
         os_trace("object_data._wifi_info NULL\r\n");
     }
-    else
+    else if (GET(request_flag, BIT_FLAG_SYNC_WIFI))
     {
         size = sizeof(m_wifi_info_t);
+        os_trace("sync wifi info %lu\r\n", size);
         ef_set_bytes(WIFI_INFO, (uint8_t *)object_data._wifi_info, size);
     }
 
@@ -47,9 +48,10 @@ void flash_write_database(m_device_t object_data)
     {
         os_trace("object_data._mqtt_info NULL\r\n");
     }
-    else
+    else if (GET(request_flag, BIT_FLAG_SYNC_MQTT))
     {
         size = sizeof(m_mqtt_info_t);
+        os_trace("sync mqtt info %lu\r\n", size);
         ef_set_bytes(MQTT_INFO, (uint8_t *)object_data._mqtt_info, size);
     }
 
@@ -57,49 +59,27 @@ void flash_write_database(m_device_t object_data)
     {
         os_trace("object_data._switch_info NULL\r\n");
     }
-    else
+    else if (GET(request_flag, BIT_FLAG_SYNC_SWITCH))
     {
         size = sizeof(m_switch_info_t);
+        os_trace("sync switch info %lu\r\n", size);
         ef_set_bytes(SWITCH_INFO, (uint8_t *)object_data._switch_info, size);
     }
 
-    /* write state pair */
-    ef_set_u32(PAIR_STATE, object_data._device_is_paired);
-}
-
-void flash_ble_write_database(m_device_t object_data)
-{
-    uint32_t size = 0;
-
-    /* write ble info */
     if (object_data._ble_info == NULL)
     {
         os_trace("object_data._ble_info NULL\r\n");
     }
-    else
+    else if (GET(request_flag, BIT_FLAG_SYNC_BLE))
     {
         size = sizeof(m_ble_info_t);
         ef_set_bytes(BLE_INFO, (uint8_t *)object_data._ble_info, size);
     }
-}
 
-void flash_ble_read_database(m_device_t *object_data)
-{
-    uint32_t size = 0;
-    os_trace("%s\r\n", __func__);
-
-    if (object_data == NULL)
-        return;
-
-    if (object_data->_ble_info == NULL)
-    {
-        os_trace("object_data->_ble_info NULL\r\n");
-    }
-    else
-    {
-        /* read ble info */
-        size = sizeof(m_ble_info_t);
-        ef_get_bytes(BLE_INFO, (uint8_t *)object_data->_ble_info, size);
+    /* write state pair */
+    if (GET(request_flag, BIT_FLAG_SYNC_PAIR)) {
+        os_trace("sync pair state info\r\n");
+        ef_set_u32(PAIR_STATE, object_data._device_is_paired);
     }
 }
 
@@ -144,6 +124,17 @@ void flash_read_database(m_device_t *object_data)
         ef_get_bytes(SWITCH_INFO, (uint8_t *)object_data->_switch_info, size);
     }
 
+    if (object_data->_ble_info == NULL)
+    {
+        os_trace("object_data->_ble_info NULL\r\n");
+    }
+    else
+    {
+        /* read ble info */
+        size = sizeof(m_ble_info_t);
+        ef_get_bytes(BLE_INFO, (uint8_t *)object_data->_ble_info, size);
+    }
+
     /* read state pair */
     if ((ef_get_u32(PAIR_STATE, &(object_data->_device_is_paired)) == false) || (object_data->_device_is_paired == 0))
     {
@@ -169,7 +160,7 @@ void flash_write_device_id(void *device_id, uint32_t size)
 void flash_set_rs_reason(uint8_t is_set)
 {
     ef_set_bytes(REASON_RS, &is_set, sizeof(is_set));
-    m_db_get_instance()->_request_sync_db();
+    m_db_get_instance()->_request_sync_db(BIT_FLAG_SYNC_SWITCH);
 }
 
 uint8_t flash_read_rs_reason(void)

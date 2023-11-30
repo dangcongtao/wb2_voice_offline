@@ -18,8 +18,7 @@
 char key[16], iv[16];
 
 char s_device_id[64];
-static bool s_request_sync_db = false;
-static bool s_request_sync_db_ble = false;
+static uint8_t s_request_sync_db = 0;
 static bool s_request_reset_db = false;
 static bool s_request_reset_db_without_sync = false;
 static bool s_request_backup_db = false;
@@ -92,24 +91,20 @@ static bool m_db_dev_get_pair(void)
     return s_m_database._m_device._device_is_paired;
 }
 
-static void m_db_dev_set_pair(bool new_state)
-{
-    s_m_database._m_device._device_is_paired = new_state;
-}
-
 static char *m_get_dev_id(void)
 {
     return s_device_id;
 }
 
-static void m_db_request_sync_database(void)
+static void m_db_request_sync_database(uint8_t bit_flag)
 {
-    s_request_sync_db = true;
+    SET(s_request_sync_db, bit_flag);
 }
 
-static void m_db_ble_request_sync_database(void)
+static void m_db_dev_set_pair(bool new_state)
 {
-    s_request_sync_db_ble = true;
+    s_m_database._m_device._device_is_paired = new_state;
+    m_db_request_sync_database(BIT_FLAG_SYNC_PAIR);
 }
 
 static void m_db_reset_factory_database(void)
@@ -148,7 +143,7 @@ static void set_default_state(uint32_t index, uint8_t mode)
         return;
 
     s_m_database._m_device._switch_info->default_state[index] = mode;
-    m_db_request_sync_database();
+    m_db_request_sync_database(BIT_FLAG_SYNC_SWITCH);
 }
 
 static void set_lock_channel(uint32_t index, uint8_t lock)
@@ -157,7 +152,7 @@ static void set_lock_channel(uint32_t index, uint8_t lock)
         return;
 
     s_m_database._m_device._switch_info->channel_lock_state[index] = lock;
-    m_db_request_sync_database();
+    m_db_request_sync_database(BIT_FLAG_SYNC_SWITCH);
 }
 
 static void set_time_release(uint32_t index, uint32_t time, uint32_t mode)
@@ -165,7 +160,7 @@ static void set_time_release(uint32_t index, uint32_t time, uint32_t mode)
     s_m_database._m_device._switch_info->time_release[index] = time;
     s_m_database._m_device._switch_info->release_mode[index] = mode;
     os_trace("mode: %ld\r\n", s_m_database._m_device._switch_info->release_mode[index]);
-    m_db_request_sync_database();
+    m_db_request_sync_database(BIT_FLAG_SYNC_SWITCH);
 }
 
 static void get_time_release(uint32_t index, uint32_t *time, uint32_t *mode)
@@ -210,7 +205,6 @@ static void m_load_databse(void)
 
     // memset(s_m_database._m_device._ble_info, 0, sizeof(m_ble_info_t));
     // flash_ble_write_database(s_m_database._m_device);
-    flash_ble_read_database(&s_m_database._m_device);
 
     // memset(s_m_database._m_device._wifi_info, 0, sizeof(m_wifi_info_t));
     // memset(s_m_database._m_device._mqtt_info, 0, sizeof(m_mqtt_info_t));
@@ -306,7 +300,8 @@ static void m_database_sync_task(void *param)
             memset(&s_m_switch_info_backup, 0, sizeof(s_m_switch_info_backup));
 
             s_request_reset_db = 0;
-            s_request_sync_db = 1;
+            s_request_sync_db = 0xFF;
+
         }
 
         if (s_request_reset_db_without_sync)
@@ -343,13 +338,13 @@ static void m_database_sync_task(void *param)
         {
             os_trace("have backup database request\r\n");
             s_request_backup_db = 0;
-            s_request_sync_db = 1;
+            s_request_sync_db = 0XFF;
         }
 
         if (s_request_sync_db)
         {
-            os_trace("app sync database\r\n");
-            flash_write_database(s_m_database._m_device);
+            // os_trace("app sync database\r\n");
+            flash_write_database(s_m_database._m_device, s_request_sync_db);
             if (s_m_database._m_device._device_is_paired)
             {
                 s_database_was_deleted_before = false;
@@ -388,12 +383,7 @@ static void m_database_sync_task(void *param)
             //          s_m_database._m_device._switch_info->time_release[2],
             //          s_m_database._m_device._switch_info->time_release[3]);
 
-            s_request_sync_db = false;
-        }
-
-        if (s_request_sync_db_ble) {
-            flash_ble_write_database(s_m_database._m_device);
-            s_request_sync_db_ble = false;
+            s_request_sync_db = 0;
         }
 
         vTaskDelay(pdMS_TO_TICKS(100)); /* should be 500ms to make it's priority low */
@@ -414,7 +404,6 @@ void m_database_init(void)
     s_m_database._get_dev_pair_state = m_db_dev_get_pair;
     s_m_database._get_dev_id = m_get_dev_id;
     s_m_database._request_sync_db = m_db_request_sync_database;
-    s_m_database._request_sync_db_ble = m_db_ble_request_sync_database;
     s_m_database._reset_db_cb = m_db_reset_factory_database;
     s_m_database._reset_db_without_sync_cb = m_db_reset_factory_database_without_sync;
     s_m_database._backup_db_cb = m_db_backup_database;

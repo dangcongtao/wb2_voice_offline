@@ -62,7 +62,8 @@ uint8_t ble_cfg_parse_data(cJSON *js_Root)
 
     /* save database */
     m_db_get_instance()->_set_dev_pair_state(true);
-    m_db_get_instance()->_request_sync_db();
+    m_db_get_instance()->_request_sync_db(BIT_FLAG_SYNC_WIFI);
+    m_db_get_instance()->_request_sync_db(BIT_FLAG_SYNC_MQTT);
     vTaskDelay(pdMS_TO_TICKS(2000));
 
     smart_cfg_get_data = 1;
@@ -127,7 +128,7 @@ bool save_mqtt_info(char *json)
     mqtt.set_mqtt_passwd(temp, strlen(temp));
     os_trace("set_mqtt_passwd\r\n");
 
-    m_db_get_instance()->_request_sync_db();
+    m_db_get_instance()->_request_sync_db(BIT_FLAG_SYNC_MQTT);
     vTaskDelay(pdMS_TO_TICKS(2000));
 
     cJSON_Delete(js_Root);

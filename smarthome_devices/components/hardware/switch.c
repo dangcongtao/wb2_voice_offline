@@ -33,7 +33,7 @@ void hw_write_switch_pin(uint8_t index, uint8_t val)
 {
     if (index >= max_number_channel)
         return;
-    os_trace("hw_write_switch_pin: %d: %lu-%d\r\n", index, switch_arr[index], val);
+    // os_trace("hw_write_switch_pin: %d: %lu-%d\r\n", index, switch_arr[index], val);
 
     switch_state[index] = val;
     bl_gpio_output_set(switch_arr[index], switch_state[index]); /* set relay */

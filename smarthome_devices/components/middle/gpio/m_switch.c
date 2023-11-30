@@ -78,7 +78,7 @@ static uint8_t m_control_switch(uint32_t action, uint32_t act_id, uint32_t uid, 
     uint8_t def_state = s_switch_obj._switch_info.default_state[channel_index] % 3;
     if (def_state == SWITCH_ONE_KEEP_OLD_STATE)
     {
-        db_instance->_request_sync_db();
+        db_instance->_request_sync_db(BIT_FLAG_SYNC_SWITCH);
     }
 #if PROJECT_SHOCK
     if (m_mqtt_get_instance()._mqtt_state >= MQTT_INTIALIZED && is_shock_device(device_type))

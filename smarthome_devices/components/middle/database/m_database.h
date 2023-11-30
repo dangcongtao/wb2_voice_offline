@@ -11,6 +11,16 @@
 #include "m_switch.h"
 #include "m_beacon.h"
 
+#define BIT_FLAG_SYNC_WIFI      0
+#define BIT_FLAG_SYNC_MQTT      1
+#define BIT_FLAG_SYNC_SWITCH    2
+#define BIT_FLAG_SYNC_PAIR      3
+#define BIT_FLAG_SYNC_BLE       4
+
+#define SET(PIN,N) (PIN |=  (1<<N))
+#define CLR(PIN,N) (PIN &= ~(1<<N))
+#define GET(PIN,N) ((PIN >> N) & 1)
+
 /* for bootloader */
 typedef enum {
     FIRMWARE_NORMAL,
@@ -30,7 +40,7 @@ typedef bool (*p_dev_get_pair_t)(void);
 typedef void (*p_dev_set_pair_t)(bool new_state);
 typedef char* (*p_get_dev_id_t)(void);
 typedef void (*p_set_dev_id_t)(char* dev_id, uint32_t len);
-typedef void (*p_db_app_sync_t)(void);
+typedef void (*p_db_app_sync_t)(uint8_t flag);
 
 typedef void (*p_set_lock_channel_t)(uint32_t index, uint8_t lock);
 typedef void (*p_set_default_state_t)(uint32_t index, uint8_t mode);
@@ -61,7 +71,6 @@ typedef struct {
     p_set_dev_id_t      _set_dev_id;
     p_get_dev_id_t      _get_dev_id;
     p_db_app_sync_t     _request_sync_db;
-    p_db_app_sync_t     _request_sync_db_ble;
 
     p_set_default_state_t _set_current_state_cb;
     p_set_default_state_t _set_default_state_cb;
