@@ -590,14 +590,14 @@ bool decode(decode_results *results, irparams_t *save,
             }
             else if (results->rawbuf[h] > 600 && results->rawbuf[h] < 1000)
             {
-                // os_trace("1");
+                os_trace("1");
                 data_te |= ((uint64_t)1 << lenn);
 
                 lenn++;
             }
             else if (results->rawbuf[h] > 100 && results->rawbuf[h] < 500)
             {
-                // os_trace("0");
+                os_trace("0");
                 data_te |= ((uint64_t)0 << lenn);
                 lenn++;
             }
@@ -607,6 +607,8 @@ bool decode(decode_results *results, irparams_t *save,
                 lenn++;
             }
         }
+
+        os_trace("\r\n-%llu-0x%llx\r\n", lenn, data_te);
 
         fan |= (data_te >> 30) & 0b1;
         power = (data_te >> 36) & 0b1;
@@ -779,6 +781,11 @@ bool decode(decode_results *results, irparams_t *save,
     if (decodeFunikiAC(results, offset, kFunikiAcBits, true)) return true;
 #endif
 
+#if DECODE_AQUA
+    os_trace("Aqua AC\r\n");
+    if (decodeAquaAC(results, offset, kAquaAcBits, true)) return true;
+#endif
+
     }
 
 #if DECODE_HASH
@@ -918,13 +925,31 @@ void m_ir_task(void)
             os_trace("decode_type: %d, bits: %u, value: 0x%llx, command: %lx, address: 0x%llx\r\n", capture.decode_type, capture.bits, (uint64_t)capture.value, capture.command, (uint64_t)capture.address);
 
             resume();
-            // if (capture.decode_type == LG2) {
-            //     LG_setRaw(capture.value, capture.decode_type);
-            //     if (isValidLgAc())
-            //     {
-            //         lg_getString();
-            //     }
-            // }
+            if (capture.decode_type == LG2) {
+                LG_setRaw(capture.value, capture.decode_type);
+                if (isValidLgAc())
+                {
+                    lg_getString();
+                }
+            } else if (capture.decode_type == AQUA){
+                os_trace("data[16]: 0x");
+                for (uint8_t i = 0; i < 14; i++) {
+                    os_trace("%02x", capture.state[i]);
+                }
+                os_trace("\r\nAQUA: 0x");
+                for (uint8_t i = 6; i < 8; i++) {
+                    os_trace("%02x", capture.state[i]);
+                }
+                os_trace("\r\n");
+                AQUA_setRaw(capture.state, capture.decode_type);
+                aqua_getString();
+            } else if (capture.decode_type == FUNIKI){
+                os_trace("FUNIKI: 0x");
+                for (uint8_t i = 0; i < 12; i++) {
+                    os_trace("%02x", capture.state[i]);
+                }
+                os_trace("\r\n");
+            }
             // TODO
 
             /*

@@ -79,6 +79,8 @@ bool decodeFunikiAC(decode_results *results, uint16_t offset, const uint16_t nbi
 
     results->decode_type = FUNIKI;
     results->bits = nbits;
+    results->command = 0;
+    results->address = 0;
 
 
     os_trace("decode Funiki success\r\n");

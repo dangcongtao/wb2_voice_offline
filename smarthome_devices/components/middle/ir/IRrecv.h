@@ -25,11 +25,15 @@
 #define kFunikiAcStateLength  6
 #define kFunikiAcBits   (6 * 8)
 
+#define kAquaAcStateLength  14
+#define kAquaAcBits   (14 * 8)
+
 #define DECODE_LG   0
 #define DECODE_NEC  0
 #define DECODE_SAMSUNG 0
 #define DECODE_SAMSUNG_AC 0
-#define DECODE_FUNIKI 1
+#define DECODE_FUNIKI 0
+#define DECODE_AQUA   1
 
 typedef enum {
   UNKNOWN = -1,
@@ -161,8 +165,9 @@ typedef enum {
   CARRIER_AC84,  // 125
   YORK,
   FUNIKI,
+  AQUA,
   // Add new entries before this one, and update it to point to the last entry.
-  kLastDecodeType = FUNIKI,
+  kLastDecodeType = AQUA,
 } decode_type_t;
 
 #define IR_RX 1
@@ -278,6 +283,10 @@ bool decodeFunikiAC(decode_results *results, uint16_t offset,
                              const uint16_t nbits, const bool strict);
 #endif
 
+#if DECODE_AQUA
+bool decodeAquaAC(decode_results *results, uint16_t offset, const uint16_t nbits, const bool strict) ;
+#endif
+
 bool matchSpace(uint32_t measured, uint32_t desired, uint8_t tolerance,
                         int16_t excess);
 
@@ -289,6 +298,10 @@ bool matchAtLeast(uint32_t measured, uint32_t desired,
 void lg_getString(void);
 void LG_setRaw(const uint32_t new_code, const decode_type_t protocol);
 bool isValidLgAc(void);
+
+void AQUA_setRaw(const uint8_t* new_code, const decode_type_t protocol);
+void aqua_getString(void);
+
 
 void enableIRIn(const bool pullup);
 void ir_loop(void);
