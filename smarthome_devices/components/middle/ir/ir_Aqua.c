@@ -29,17 +29,72 @@ static uint8_t getTemp()
         num >>= 1;
     }
     os_trace("%s res: %u\r\n", __func__, res);
-    if (res >= 9) {
-        res += 7;
-    } else {
-        res += 23;
-    }
-    return res; 
+    return res + 16; 
 }
+
+static void get_fan_aqua(uint8_t *states, char* str)
+{
+    memset(str, 0, 20);
+    switch (states[5] & 0xF)
+    {
+    case 0x4:
+        sprintf(str, "HIGH");
+        break;
+
+    case 0x6:
+        sprintf(str, "LOW");
+        break;
+    
+    case 0x2:
+        sprintf(str, "MEDIUM");
+        break;
+    
+    case 0x5:
+        sprintf(str, "AUTO");
+        break;
+
+    // case 0x7:
+    //     sprintf(str, "AUTO WITCH LOCKED");
+    //     break;
+
+    default:
+        break;
+    }
+}
+
+static void get_mode_aqua(uint8_t *states, char* str)
+{
+    memset(str, 0, 20);
+    switch (states[7] & 0xF)
+    {
+    case 0x4:
+        sprintf(str, "COOL");
+        break;
+
+    case 0x2:
+        sprintf(str, "DRY");
+        break;
+    
+    default:
+        break;
+    }
+}
+
+static uint8_t is_power_on(uint8_t* states) 
+{
+    if (states[4] & 0xF) {
+        return 1;
+    }
+    return 0;
+}
+
 
 void aqua_getString(void)
 {
-    os_trace("power: 0, mode: 0, temp: %u, fan: 0\r\n", getTemp());
+    char mode_str[20], fan_str[20];
+    get_mode_aqua(_.data.raw, mode_str);
+    get_fan_aqua(_.data.raw, fan_str);
+    os_trace("power: %u, mode: %s, temp: %u, fan: %s\r\n", is_power_on(_.data.raw), mode_str, getTemp(), fan_str);
 }
 
 bool decodeAquaAC(decode_results *results, uint16_t offset, const uint16_t nbits, const bool strict) 
@@ -93,7 +148,7 @@ bool decodeAquaAC(decode_results *results, uint16_t offset, const uint16_t nbits
 
     uint16_t used;
     // Section Header + Section Data (7 bytes) + Section Footer
-    used = matchGeneric(results->rawbuf + offset, results->state,
+    used = matchGenericUint8(results->rawbuf + offset, results->state,
                         results->rawlen - offset, nbits,
                         0, kAquaHdrSpace,
                         kAquaBitOneMark, 2200,

@@ -267,6 +267,7 @@ uint16_t matchBytes(volatile uint16_t *data_ptr, uint8_t *result_ptr,
                                           MSBfirst, lastspace);
         if (result.success == false)
             return 0; // Fail
+        
         result_ptr[byte_pos] = (uint8_t)result.data;
         offset += result.used;
     }
@@ -374,6 +375,7 @@ uint16_t _matchGeneric(volatile uint16_t *data_ptr,
     }
     else
     { // bytes
+        os_trace("%s match bytes use_bits: %d\r\n", __func__, use_bits);
         uint16_t data_used = matchBytes(data_ptr + offset, result_bytes_ptr,
                                         remaining - offset, nbits / 8,
                                         onemark, onespace,
@@ -423,6 +425,24 @@ uint16_t matchGeneric(volatile uint16_t *data_ptr,
                       const bool MSBfirst)
 {
     return _matchGeneric(data_ptr, result_ptr, NULL, true, remaining, nbits,
+                         hdrmark, hdrspace, onemark, onespace,
+                         zeromark, zerospace, footermark, footerspace, atleast,
+                         tolerance, excess, MSBfirst);
+}
+
+uint16_t matchGenericUint8(volatile uint16_t *data_ptr,
+                        uint8_t *result_ptr,
+                        const uint16_t remaining, const uint16_t nbits,
+                        const uint16_t hdrmark, const uint32_t hdrspace,
+                        const uint16_t onemark, const uint32_t onespace,
+                        const uint16_t zeromark, const uint32_t zerospace,
+                        const uint16_t footermark, const uint32_t footerspace,
+                        const bool atleast,
+                        const uint8_t tolerance,
+                        const int16_t excess,
+                        const bool MSBfirst )
+{
+    return _matchGeneric(data_ptr, NULL, result_ptr, false, remaining, nbits,
                          hdrmark, hdrspace, onemark, onespace,
                          zeromark, zerospace, footermark, footerspace, atleast,
                          tolerance, excess, MSBfirst);
@@ -779,6 +799,8 @@ bool decode(decode_results *results, irparams_t *save,
 #if DECODE_FUNIKI
     os_trace("Funiki AC\r\n");
     if (decodeFunikiAC(results, offset, kFunikiAcBits, true)) return true;
+    if (decodeFunikiAC(results, offset, kFunikiAcExtendedBits, true)) return true;
+
 #endif
 
 #if DECODE_AQUA
@@ -945,10 +967,22 @@ void m_ir_task(void)
                 aqua_getString();
             } else if (capture.decode_type == FUNIKI){
                 os_trace("FUNIKI: 0x");
-                for (uint8_t i = 0; i < 12; i++) {
+                for (uint8_t i = 0; i < 18; i++) {
+                    if (i == 6) {
+                        os_trace("\t|\t");
+                    } else if (i == 12) {
+                        if (capture.bits == kFunikiAcBits)
+                            break;
+                        else {
+                            os_trace("\t|\t");
+                        }
+                    }
+
                     os_trace("%02x", capture.state[i]);
                 }
                 os_trace("\r\n");
+                Funiki_setRaw((uint8_t*)&capture.value, capture.decode_type);
+                Funiki_getString();
             }
             // TODO
 

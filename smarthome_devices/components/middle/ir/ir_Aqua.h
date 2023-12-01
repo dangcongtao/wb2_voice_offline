@@ -19,7 +19,8 @@ typedef struct
             // Byte 0
             uint8_t mode : 8;
             // Byte 1
-            uint8_t : 8;
+            uint8_t reverse_temp : 4;
+            uint8_t : 4;
             // Byte 2
             uint8_t reverse_mode : 8;
             // Byte 3
@@ -31,8 +32,7 @@ typedef struct
             // Byte 6
             uint8_t : 8;
             // Byte 7
-            uint8_t reverse_temp: 4;
-            uint8_t : 4;
+            uint8_t : 8;
         };
         struct
         { // Extended message map

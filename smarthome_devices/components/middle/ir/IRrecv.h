@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include "ir_LG.h"
 #include "ir_Samsung.h"
@@ -22,8 +23,11 @@
 #define kSamsungAcExtendedBits  (kSamsungAcExtendedStateLength * 8)
 #define kSamsungAcDefaultRepeat  kNoRepeat
 
-#define kFunikiAcStateLength  6
-#define kFunikiAcBits   (6 * 8)
+#define kFunikiAcStateLength  12
+#define kFunikiAcBits   (kFunikiAcStateLength * 8)
+
+#define kFunikiAcExtendedStateLength  18
+#define kFunikiAcExtendedBits   (kFunikiAcExtendedStateLength * 8)
 
 #define kAquaAcStateLength  14
 #define kAquaAcBits   (14 * 8)
@@ -211,12 +215,12 @@ typedef struct {
   // i.e. They MUST NOT be used at the same time as state, so we can use a union
   // structure to save us a handful of valuable bytes of memory.
   union {
+    uint8_t state[kStateSizeMax];  // Multi-byte results.
     struct {
       uint64_t value;    // Decoded value
       uint32_t address;  // Decoded device address.
       uint32_t command;  // Decoded command.
     };
-    uint8_t state[kStateSizeMax];  // Multi-byte results.
   };
   uint16_t bits;              // Number of bits in decoded value
   volatile uint16_t *rawbuf;  // Raw intervals in .5 us ticks
@@ -262,6 +266,18 @@ uint16_t matchGeneric(volatile uint16_t *data_ptr,
                               const int16_t excess,
                               const bool MSBfirst);
 
+uint16_t matchGenericUint8(volatile uint16_t *data_ptr,
+                        uint8_t *result_ptr,
+                        const uint16_t remaining, const uint16_t nbits,
+                        const uint16_t hdrmark, const uint32_t hdrspace,
+                        const uint16_t onemark, const uint32_t onespace,
+                        const uint16_t zeromark, const uint32_t zerospace,
+                        const uint16_t footermark, const uint32_t footerspace,
+                        const bool atleast,
+                        const uint8_t tolerance,
+                        const int16_t excess,
+                        const bool MSBfirst);
+
 #if DECODE_LG
 bool decodeLG(decode_results *results, uint16_t,
             const uint16_t nbits,
@@ -301,6 +317,9 @@ bool isValidLgAc(void);
 
 void AQUA_setRaw(const uint8_t* new_code, const decode_type_t protocol);
 void aqua_getString(void);
+
+void Funiki_setRaw(const uint8_t* new_code, const decode_type_t protocol);
+void Funiki_getString(void);
 
 
 void enableIRIn(const bool pullup);
