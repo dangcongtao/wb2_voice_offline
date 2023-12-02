@@ -57,7 +57,8 @@ typedef enum {
 	SWMINI,         // công tắc mini
     SSWITCH,        // ổ cắm SK01
     SWSHOCK,        // công tắc chống giật Datic
-    SWSHOCK_HUN     // công tắc chống giật Hunonic
+    SWSHOCK_HUN,     // công tắc chống giật Hunonic
+    IRWIFI
 } device_type_t;
 
 extern uint32_t device_type;

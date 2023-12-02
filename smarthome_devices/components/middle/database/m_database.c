@@ -42,7 +42,7 @@ void m_db_read_device_id(void)
     uint32_t len_device_id = sizeof(s_device_id);
     memset(s_device_id, 0, sizeof(s_device_id));
 
-    // sprintf(s_device_id, "HUN169502990671swminiv2N2");
+    // sprintf(s_device_id, "HUN1701499365irwifi1");
     // flash_write_device_id((void *)(&s_device_id), len_device_id);
 
     flash_read_device_id((void *)(&s_device_id), len_device_id);
@@ -77,6 +77,10 @@ void m_db_read_device_id(void)
     else if (strstr(s_device_id, gs_dev_type[SWSHOCK]) != NULL)
     {
         device_type = SWSHOCK;
+    }
+    else if (strstr(s_device_id, gs_dev_type[IRWIFI]) != NULL)
+    {
+        device_type = IRWIFI;
     }
 
     os_trace("device_type: %s\r\n", gs_dev_type[device_type]);

@@ -11,7 +11,7 @@
 #define gpio_get_level      bl_gpio_input_get_value
 #define gpio_set_level      bl_gpio_output_set
 
-#define LED_STT 12
+#define LED_STT 5
 #define LED_STT_SSW     1
 #define LED_STT_MINI    7
 
@@ -20,7 +20,7 @@
 
 #define MAX_NUM_BUTTON  4
 #define BTN_IDLE_LEVEL  1
-#define BUTTON1    1
+#define BUTTON1    8
 #define BUTTON2    5
 #define BUTTON3   21
 #define BUTTON4   20
@@ -43,6 +43,8 @@
 #define TS04_SWSHOCK    20
 #define TS04_IDLE_LEVEL     0
 #define TS04_ACTIVE_LEVEL   1
+
+#define IR_RX   12
 
 #if PROJECT_SHOCK
     #define LED_SWSHOCK_SW_LEAK_WHITE   7

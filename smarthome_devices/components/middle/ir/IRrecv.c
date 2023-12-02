@@ -928,6 +928,7 @@ char *lastIrReceived[256];
 
 void m_ir_task(void)
 {
+    os_trace("%s init\r\n", __func__);
     while (1)
     {
 
@@ -1041,7 +1042,7 @@ void m_ir_task(void)
 void m_ir_init(void)
 {
     bl_wdt_init(60000);
-    IRrecv_init(12, 1024, 50, false);
+    IRrecv_init(IR_RX, 1024, 50, false);
 
     enableIRIn(1);
 
