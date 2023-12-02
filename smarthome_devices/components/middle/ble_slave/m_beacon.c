@@ -436,7 +436,7 @@ void slave_proc_response_request_link(uint8_t *data, uint8_t len)
 
 void master_proc_rcv_verify_link(uint8_t *data, uint8_t len)
 {
-    // os_trace("%s, s_ble_obj.is_run_config: %u, step: %u\r\n", __func__, s_ble_obj.is_run_config, s_ble_obj.step);
+    os_trace("%s, s_ble_obj.is_run_config: %u, step: %u\r\n", __func__, s_ble_obj.is_run_config, s_ble_obj.step);
     if (s_ble_obj.is_run_config == 1) {
         if (s_ble_obj.step == WAIT_VERIFY_ACCEPT_LINK || s_ble_obj.step == WAIT_SWITCH_RESPONSE_LINK) {
             bt_addr_le_t adv_addr;
@@ -689,13 +689,13 @@ void ble_config_loop(void)
     case SEND_SWITCH_REQUEST_LINK:
     {
         s_ble_obj.is_run_config = 1;
-        ble_switch_send_linking();
         s_ble_obj.step = WAIT_SWITCH_RESPONSE_LINK;
+        ble_switch_send_linking();
     }
 
     case WAIT_SWITCH_RESPONSE_LINK:
     {
-        vTaskDelay(pdMS_TO_TICKS(5000));
+        vTaskDelay(pdMS_TO_TICKS(3000));
         if (s_ble_obj.step == WAIT_SWITCH_RESPONSE_LINK) {
             os_trace("timeout WAIT_SWITCH_RESPONSE\r\n");
             s_ble_obj.is_run_config = 0;
