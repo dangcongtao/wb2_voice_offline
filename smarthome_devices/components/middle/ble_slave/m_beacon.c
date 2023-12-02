@@ -695,7 +695,7 @@ void ble_config_loop(void)
 
     case WAIT_SWITCH_RESPONSE_LINK:
     {
-        vTaskDelay(pdMS_TO_TICKS(3000));
+        vTaskDelay(pdMS_TO_TICKS(2000));
         if (s_ble_obj.step == WAIT_SWITCH_RESPONSE_LINK) {
             os_trace("timeout WAIT_SWITCH_RESPONSE\r\n");
             s_ble_obj.is_run_config = 0;
