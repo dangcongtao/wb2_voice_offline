@@ -415,6 +415,7 @@ void m_ble_remove_all_nodes(void)
     memcpy(&data_adv[3], adv_addr.a.val, 6);
     data_adv[9] = ++s_ble_obj.tid;
     data_adv_len = 10;
+    my_ble_update_data();
 
     // db_remove_child(id);
 
