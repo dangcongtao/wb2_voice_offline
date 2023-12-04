@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <IRrecv.h>
+#include <IRsend.h>
 
 #define kFunikiBits (kAquaAcStateLength * 8)
 

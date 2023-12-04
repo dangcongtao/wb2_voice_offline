@@ -124,7 +124,7 @@ static bool validChecksum(const uint8_t state[], const uint16_t length) {
 bool decodeSamsungAC(decode_results *results, uint16_t offset,
                              const uint16_t nbits, const bool strict) {
   if (results->rawlen < 2 * nbits + kHeader * 3 + kFooter * 2 - 1 + offset){
-    os_trace("Can't possibly be a valid Samsung A/C message.\r\n");
+    // os_trace("Can't possibly be a valid Samsung A/C message.\r\n");
     return false;  // Can't possibly be a valid Samsung A/C message.
   }
   os_trace("step 1\r\n");
@@ -159,7 +159,7 @@ bool decodeSamsungAC(decode_results *results, uint16_t offset,
                         pos + kSamsungAcSectionLength >= nbits / 8,
                         _tolerance, 0, false);
     if (used == 0){
-      os_trace("step 2 not used failed\r\n");
+      os_trace("%s step 2 not used failed\r\n", __func__);
       return false;
     }
     offset += used;

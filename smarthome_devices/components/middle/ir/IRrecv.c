@@ -4,13 +4,14 @@
 #include "bl_timer.h"
 #include "hosal_gpio.h"
 #include "IRutils.h"
+#include "IRsend.h"
 #include "bl602_glb.h"
 #include <bl_os_hal.h>
 #include <bl_wdt.h>
 
 irparams_t params;
 irparams_t *params_save;
-hosal_gpio_irq_trigger_t trigger_type = HOSAL_IRQ_TRIG_POS_PULSE;
+hosal_gpio_irq_trigger_t trigger_type = HOSAL_IRQ_TRIG_NEG_PULSE;
 
 uint8_t _tolerance;
 
@@ -375,7 +376,7 @@ uint16_t _matchGeneric(volatile uint16_t *data_ptr,
     }
     else
     { // bytes
-        os_trace("%s match bytes use_bits: %d\r\n", __func__, use_bits);
+        // os_trace("%s match bytes use_bits: %d\r\n", __func__, use_bits);
         uint16_t data_used = matchBytes(data_ptr + offset, result_bytes_ptr,
                                         remaining - offset, nbits / 8,
                                         onemark, onespace,
@@ -529,8 +530,13 @@ bool decode(decode_results *results, irparams_t *save,
     results->command = 0;
     results->repeat = false;
 
+    if (results->rawlen == 1) {
+        trigger_type = HOSAL_IRQ_TRIG_NEG_PULSE;
+        bl_set_gpio_intmod(params.recvpin, GLB_GPIO_INT_CONTROL_ASYNC, trigger_type);
+    }
+
     os_trace("BUFF_LEN[%d]: ", results->rawlen);
-// if (0){
+if (0){
     char str_res[300];
     int seek = 0;
     memset(str_res, 0, sizeof(str_res));
@@ -546,12 +552,12 @@ bool decode(decode_results *results, irparams_t *save,
     }
     sprintf(&str_res[seek], "\r\n");
     os_trace(str_res);
-// }
+}
 
     
 
     // os_trace("bit: ");
-    if (results->rawlen == 200)
+    if (results->rawlen == 200 && 0)
     {
         uint64_t data_te = 0;
         uint64_t lenn = 0;
@@ -797,14 +803,14 @@ bool decode(decode_results *results, irparams_t *save,
 
 
 #if DECODE_FUNIKI
-    os_trace("Funiki AC\r\n");
+    os_trace("Attempting Funiki AC\r\n");
     if (decodeFunikiAC(results, offset, kFunikiAcBits, true)) return true;
     if (decodeFunikiAC(results, offset, kFunikiAcExtendedBits, true)) return true;
 
 #endif
 
 #if DECODE_AQUA
-    os_trace("Aqua AC\r\n");
+    os_trace("Attempting Aqua AC\r\n");
     if (decodeAquaAC(results, offset, kAquaAcBits, true)) return true;
 #endif
 
@@ -825,7 +831,7 @@ bool decode(decode_results *results, irparams_t *save,
     return false;
 }
 
-void enableIRIn(const bool pullup)
+static void enableIRIn(const bool pullup)
 {
     // ESP32's seem to require explicitly setting the GPIO to INPUT etc.
     // This wasn't required on the ESP8266s, but it shouldn't hurt to make sure.
@@ -947,6 +953,8 @@ void m_ir_task(void)
 
             os_trace("decode_type: %d, bits: %u, value: 0x%llx, command: %lx, address: 0x%llx\r\n", capture.decode_type, capture.bits, (uint64_t)capture.value, capture.command, (uint64_t)capture.address);
 
+            state_ir_t ir_state = {UNKNOWN, -1, false, opmode_kOff, 25, true, fanspeed_kAuto, swingv_kOff, swingh_kOff, false, false, false, false, false, false, false, -1, -1, kControlCommand, false, kNoTempValue};
+
             resume();
             if (capture.decode_type == LG2) {
                 LG_setRaw(capture.value, capture.decode_type);
@@ -959,13 +967,11 @@ void m_ir_task(void)
                 for (uint8_t i = 0; i < 14; i++) {
                     os_trace("%02x", capture.state[i]);
                 }
-                os_trace("\r\nAQUA: 0x");
-                for (uint8_t i = 6; i < 8; i++) {
-                    os_trace("%02x", capture.state[i]);
-                }
                 os_trace("\r\n");
-                AQUA_setRaw(capture.state, capture.decode_type);
-                aqua_getString();
+                AQUA_setRaw(capture.state, capture.decode_type, &ir_state);
+                IR_logCommon(ir_state);
+                // os_trace("power: %u, mode: %s, temp: %u, fan: %s\r\n", ir_state.power, ir_state.mode, ir_state.celsius, ir_state.fanspeed);
+                // aqua_getString();
             } else if (capture.decode_type == FUNIKI){
                 os_trace("FUNIKI: 0x");
                 for (uint8_t i = 0; i < 18; i++) {
@@ -982,8 +988,9 @@ void m_ir_task(void)
                     os_trace("%02x", capture.state[i]);
                 }
                 os_trace("\r\n");
-                Funiki_setRaw((uint8_t*)&capture.value, capture.decode_type);
-                Funiki_getString();
+                Funiki_setRaw((uint8_t*)&capture.value, capture.decode_type, &ir_state);
+                IR_logCommon(ir_state);
+                // Funiki_getString();
             }
             // TODO
 

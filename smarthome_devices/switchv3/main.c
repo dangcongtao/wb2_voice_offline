@@ -30,17 +30,17 @@
 
 void main_loop(void)
 {
-    uint32_t delay_ms = 100;
+    uint32_t delay_ms = 100, old = 0;
 
     while (true)
     {
         m_event_loop(delay_ms);
 
-        // old += 1;
-        // if (old > 20) {
-        //     old = 0;
-        //     os_trace("Free memory: %d\r\n", xPortGetFreeHeapSize());
-        // }
+        old += 1;
+        if (old > 20) {
+            old = 0;
+            os_trace("Free memory: %d\r\n", xPortGetFreeHeapSize());
+        }
 
         bl_wdt_feed();
 

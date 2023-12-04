@@ -14,68 +14,65 @@ const uint16_t kAquaZeroSpace = 550;
 
 static AquaProtocol _;
 
-void AQUA_setRaw(const uint8_t* new_code, const decode_type_t protocol) 
+static uint8_t getTemp(const uint8_t *states)
 {
-    memcpy(_.data.raw, new_code, kAquaAcStateLength);
-    // _.data.raw = new_code;
-}
-
-static uint8_t getTemp()
-{
+    // AquaProtocol _;
     uint8_t res = 0;
     uint8_t num = _.data.reverse_temp;
     for (int i = 0; i < 4; i++) {
         res = (res << 1) | (num & 1);
         num >>= 1;
     }
-    os_trace("%s res: %u\r\n", __func__, res);
+    // state_ir->celsius = res + 16;
     return res + 16; 
 }
 
-static void get_fan_aqua(uint8_t *states, char* str)
+static fanspeed_t get_fan_aqua(uint8_t *states)
 {
-    memset(str, 0, 20);
+    // memset(str, 0, 20);
     switch (states[5] & 0xF)
     {
     case 0x4:
-        sprintf(str, "HIGH");
+        return fanspeed_kMax;
+        // sprintf(str, "HIGH");
         break;
 
     case 0x6:
-        sprintf(str, "LOW");
+        // sprintf(str, "LOW");
+        return fanspeed_kMin;
         break;
     
     case 0x2:
-        sprintf(str, "MEDIUM");
+        // sprintf(str, "MEDIUM");
+        return fanspeed_kMedium;
         break;
     
     case 0x5:
-        sprintf(str, "AUTO");
+        // sprintf(str, "AUTO");
+        return fanspeed_kAuto;
         break;
-
-    // case 0x7:
-    //     sprintf(str, "AUTO WITCH LOCKED");
-    //     break;
-
     default:
+        return fanspeed_kAuto;
         break;
     }
 }
 
-static void get_mode_aqua(uint8_t *states, char* str)
+static opmode_t get_mode_aqua(uint8_t *states)
 {
-    memset(str, 0, 20);
     switch (states[7] & 0xF)
     {
     case 0x4:
-        sprintf(str, "COOL");
+        // sprintf(str, "COOL");
+        return opmode_kCool;
         break;
 
     case 0x2:
-        sprintf(str, "DRY");
+        // sprintf(str, "DRY");
+        return opmode_kDry;
         break;
     
     default:
+        return opmode_kAuto;
         break;
     }
 }
@@ -88,19 +85,33 @@ static uint8_t is_power_on(uint8_t* states)
     return 0;
 }
 
+void AQUA_toCommon(const uint8_t* new_code, state_ir_t* state_ir)
+{
+    state_ir->degrees = (float)getTemp(new_code);
+    state_ir->mode = get_mode_aqua(new_code);
+    state_ir->fanspeed = get_fan_aqua(new_code);
+    state_ir->power = is_power_on(new_code);
+}
+
+void AQUA_setRaw(const uint8_t* new_code, const decode_type_t protocol, state_ir_t* state_ir)
+{
+    memcpy(_.data.raw, new_code, kAquaAcStateLength);
+    AQUA_toCommon(new_code, state_ir);
+    // _.data.raw = new_code;
+}
 
 void aqua_getString(void)
 {
-    char mode_str[20], fan_str[20];
-    get_mode_aqua(_.data.raw, mode_str);
-    get_fan_aqua(_.data.raw, fan_str);
-    os_trace("power: %u, mode: %s, temp: %u, fan: %s\r\n", is_power_on(_.data.raw), mode_str, getTemp(), fan_str);
+    // char mode_str[20], fan_str[20];
+    // get_mode_aqua(_.data.raw, mode_str);
+    // get_fan_aqua(_.data.raw, fan_str);
+    // os_trace("power: %u, mode: %s, temp: %u, fan: %s\r\n", is_power_on(_.data.raw), mode_str, getTemp(), fan_str);
 }
 
 bool decodeAquaAC(decode_results *results, uint16_t offset, const uint16_t nbits, const bool strict) 
 {
 
-    os_trace("%s() offset: %d, nbits: %d, kLg32Bits: %d\r\n", __func__, offset, nbits, kFunikiBits);
+    // os_trace("%s() offset: %d, nbits: %d, kLg32Bits: %d\r\n", __func__, offset, nbits, kFunikiBits);
 
     // if (offset != kFunikiBits) {
     //     os_trace("step 1 failed\r\n");
@@ -108,7 +119,7 @@ bool decodeAquaAC(decode_results *results, uint16_t offset, const uint16_t nbits
     // }
 
     if (results->rawlen != 230) {
-        os_trace("aqua len invalid\r\n");
+        // os_trace("aqua len invalid\r\n");
         return false;
     }
 
@@ -130,17 +141,17 @@ bool decodeAquaAC(decode_results *results, uint16_t offset, const uint16_t nbits
     // }
 
     if (!matchMark(results->rawbuf[offset++], kAquaHdrMark, kUseDefTol, kMarkExcess)) {
-        os_trace("%s mark 1 failed\r\n", __func__);
+        // os_trace("%s mark 1 failed\r\n", __func__);
         return false;
     }
 
     if (!matchSpace(results->rawbuf[offset++], kAquaSpaceMark, kUseDefTol, kMarkExcess)) {
-        os_trace("%s space 2 failed\r\n", __func__);
+        // os_trace("%s space 2 failed\r\n", __func__);
         return false;
     }
 
     if (!matchMark(results->rawbuf[offset++], kAquaHdrMark, kUseDefTol, kMarkExcess)) {
-        os_trace("%s mark 3 failed\r\n", __func__);
+        // os_trace("%s mark 3 failed\r\n", __func__);
         return false;
     }
 
@@ -158,7 +169,7 @@ bool decodeAquaAC(decode_results *results, uint16_t offset, const uint16_t nbits
                         50, 0, false);
 
     if (used == 0){
-        os_trace("step 2 not used failed\r\n");
+        os_trace("%s step 2 not used failed\r\n", __func__);
         return false;
     }
     offset += used;

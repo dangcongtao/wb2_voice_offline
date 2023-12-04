@@ -36,21 +36,20 @@ const uint32_t kLgAcVaneSwingVBase = 0x8813200;
 bool decodeLG(decode_results *results, uint16_t offset,
                       const uint16_t nbits, const bool strict) {
   
-  os_trace("decodeLG() offset: %d, nbits: %d, kLg32Bits: %d\r\n", offset, nbits, kLg32Bits);
   if (nbits >= kLg32Bits) {
     if (results->rawlen <= 2 * nbits + 2 * (kHeader + kFooter) - 1 + offset){
-      os_trace("Can't possibly be a valid LG32 message %d %d\r\n", results->rawlen, 2 * nbits + 2 * (kHeader + kFooter) - 1 + offset);
+      // os_trace("Can't possibly be a valid LG32 message %d %d\r\n", results->rawlen, 2 * nbits + 2 * (kHeader + kFooter) - 1 + offset);
       return false;  // Can't possibly be a valid LG32 message.
     }
   } else {
     if (results->rawlen <= 2 * nbits + kHeader - 1 + offset){
-      os_trace("Can't possibly be a valid LG message %d %d\r\n", results->rawlen, 2 * nbits + kHeader - 1 + offset);
+      // os_trace("Can't possibly be a valid LG message %d %d\r\n", results->rawlen, 2 * nbits + kHeader - 1 + offset);
       return false;  // Can't possibly be a valid LG message.
     }
   }
   // Compliance
   if (strict && nbits != kLgBits && nbits != kLg32Bits){
-    os_trace("Doesn't comply with expected LG protocol\r\n");
+    // os_trace("Doesn't comply with expected LG protocol\r\n");
     return false;  // Doesn't comply with expected LG protocol.
   }
 
@@ -63,7 +62,7 @@ bool decodeLG(decode_results *results, uint16_t offset,
   else if (matchMark(results->rawbuf[offset], kLg32HdrMark, kUseDefTol, kMarkExcess))
     kHdrSpace = kLg32HdrSpace;
   else {
-    os_trace("kHdrSpace invalid\r\n");
+    // os_trace("kHdrSpace invalid\r\n");
     return false;
   }
   offset++;
@@ -80,7 +79,7 @@ bool decodeLG(decode_results *results, uint16_t offset,
                                kBitmark, kLgOneSpace, kBitmark, kLgZeroSpace,
                                kBitmark, kLgMinGap, true, kUseDefTol, 0, true);
   if (!used){ 
-    os_trace("used not match generic\r\n");
+    // os_trace("%s used not match generic\r\n", __func__);
     return false;
   }
   offset += used;

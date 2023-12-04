@@ -13,7 +13,7 @@ const uint16_t kSamsungAcSectionMark = 600;
 bool decodeFunikiAC(decode_results *results, uint16_t offset, const uint16_t nbits, const bool strict) 
 {
 
-    os_trace("decodeFunikiAC() offset: %d, nbits: %d, kFunikiBits: %d\r\n", offset, nbits, kFunikiBits);
+    // os_trace("decodeFunikiAC() offset: %d, nbits: %d, kFunikiBits: %d\r\n", offset, nbits, kFunikiBits);
 
     if (results->rawlen == 200 && nbits != kFunikiAcBits) {
         return false;
@@ -24,7 +24,7 @@ bool decodeFunikiAC(decode_results *results, uint16_t offset, const uint16_t nbi
     }
 
     if (results->rawlen != 200 && results->rawlen != 300) {
-        os_trace("funiki len invalid\r\n");
+        // os_trace("funiki len invalid\r\n");
         return false;
     }
 
@@ -35,14 +35,14 @@ bool decodeFunikiAC(decode_results *results, uint16_t offset, const uint16_t nbi
         used = matchGenericUint8(results->rawbuf + offset, (uint8_t*)(&results->state[pos]),
                             results->rawlen - offset, kFunikiAcSectionLength * 8,
                             5050, 4450,
-                            600, 1500,
-                            600, 460,
+                            480, 1500,
+                            480, 460,
                             600, 4300,
                             pos + kFunikiAcSectionLength >= nbits / 8,
                             50, 0, false);
 
         if (used == 0){
-            os_trace("step 2 not used failed\r\n");
+            os_trace("%s step 2 not used failed\r\n", __func__);
             return false;
         }
         offset += used;
@@ -128,62 +128,72 @@ static uint8_t get_temp_funiki(uint8_t *states)
     return temp;
 }
 
-static void get_mode_funiki(uint8_t *states, char* str)
+static opmode_t get_mode_funiki(uint8_t *states)
 {
-    memset(str, 0, 20);
+    // memset(str, 0, 20);
     switch ((states[11] >> 4) & 0xF)
     {
     case 0xF:
-        sprintf(str, "COOL");
+        // sprintf(str, "COOL");
+        return opmode_kCool;
         break;
 
     case 0xE:
-        sprintf(str, "AUTO");
+        // sprintf(str, "AUTO");
+        return opmode_kAuto;
         break;
     
     case 0xC:
-        sprintf(str, "HEAT");
+        // sprintf(str, "HEAT");
+        return opmode_kHeat;
         break;
     
     case 0xD:
         if ((states[11] & 0xF) == 0x8) {
-            sprintf(str, "FAN");
+            // sprintf(str, "FAN");
+            return opmode_kFan;
         } else {
-            sprintf(str, "DRY");
+            // sprintf(str, "DRY");
+            return opmode_kDry;
         }
         break;
     
     default:
+        return opmode_kAuto;
         break;
     }
 }
 
-static void get_fan_funiki(uint8_t *states, char* str)
+static fanspeed_t get_fan_funiki(uint8_t *states)
 {
-    memset(str, 0, 20);
+    // memset(str, 0, 20);
     switch (states[9] & 0xF)
     {
     case 0x3:
-        sprintf(str, "HIGH");
+        // sprintf(str, "HIGH");
+        return fanspeed_kMax;
         break;
 
     case 0x6:
-        sprintf(str, "LOW");
+        // sprintf(str, "LOW");
+        return fanspeed_kMin;
         break;
     
     case 0x5:
-        sprintf(str, "MEDIUM");
+        // sprintf(str, "MEDIUM");
+        return fanspeed_kMedium;
         break;
     
-    case 0x2:
-        sprintf(str, "AUTO");
-        break;
+    // case 0x2:
+    //     sprintf(str, "AUTO");
+    //     break;
 
-    case 0x7:
-        sprintf(str, "AUTO WITCH LOCKED");
-        break;
+    // case 0x7:
+    //     sprintf(str, "AUTO WITCH LOCKED");
+    //     break;
 
     default:
+        return fanspeed_kAuto;
         break;
     }
 }
@@ -196,18 +206,27 @@ static uint8_t is_power_on(uint8_t* states)
     return 1;
 }
 
-static FunikiProtocol _;
+// static FunikiProtocol _;
 
-void Funiki_setRaw(const uint8_t* new_code, const decode_type_t protocol) 
+static void Funiki_toCommon(const uint8_t* new_code, state_ir_t *ir_state)
 {
-    memcpy(_.data.raw, new_code, kFunikiAcStateLength);
+    ir_state->mode = get_mode_funiki(new_code);
+    ir_state->fanspeed = get_fan_funiki(new_code);
+    ir_state->power = is_power_on(new_code);
+    ir_state->degrees = get_temp_funiki(new_code);
+}
+
+void Funiki_setRaw(const uint8_t* new_code, const decode_type_t protocol, state_ir_t *ir_state) 
+{
+    // memcpy(_.data.raw, new_code, kFunikiAcStateLength);
+    Funiki_toCommon(new_code, ir_state);
     // _.data.raw = new_code;
 }
 
-void Funiki_getString(void)
-{
-    char mode_str[20], fan_str[20];
-    get_mode_funiki(_.data.raw, mode_str);
-    get_fan_funiki(_.data.raw, fan_str);
-    os_trace("power: %u, mode: %s, temp: %u, fan: %s\r\n", is_power_on(_.data.raw), mode_str, get_temp_funiki(_.data.raw), fan_str);
-}
+// void Funiki_getString(void)
+// {
+//     // char mode_str[20], fan_str[20];
+//     // get_mode_funiki(_.data.raw);
+//     // get_fan_funiki(_.data.raw);
+//     // os_trace("power: %u, mode: %s, temp: %u, fan: %s\r\n", is_power_on(_.data.raw), mode_str, get_temp_funiki(_.data.raw), fan_str);
+// }
