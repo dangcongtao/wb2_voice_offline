@@ -508,6 +508,7 @@ void slave_proc_remove_all_nodes(uint8_t *data, uint8_t len)
         if (!memcmp(&data[3], obj_ble.list_child[i].mac, 6)) {
             db_remove_child(i);
             os_trace("REMOVE %u success\r\n", i);
+            i--;
         }
     }
 }
