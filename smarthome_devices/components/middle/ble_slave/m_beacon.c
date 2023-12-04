@@ -601,17 +601,15 @@ void m_ble_sync_state(void)
     uint8_t my_channel_act, opp_channel_act;
 
     s_ble_obj.state_await = 0;
-    bt_addr_le_t adv_addr;
-    bt_get_local_public_address(&adv_addr);
     // os_trace("%s %u\r\n", __func__, state);
     uint8_t temp = 0;
     for (uint8_t j = 0; j < 4; j++) {
         temp = (state >> (j * 2) & (0b11));
-        if (temp && !memcmp(s_ble_obj.mac_request_state, adv_addr.a.val, 6)) {
+        if (temp) {
             for (uint8_t i = 0; i < obj_ble.num_devices_link; i++) {
                 my_channel_act = (obj_ble.list_child[i].my_act - 1) / 2 ;
                 opp_channel_act = (obj_ble.list_child[i].opp_act - 1) / 2 ;
-                if (opp_channel_act == j) {
+                if (opp_channel_act == j && memcmp(s_ble_obj.mac_request_state, obj_ble.list_child[i].mac, 6)) {
                     // os_trace("j=%u, my_channel_act: %u, opp_channel_act: %u, temp=%u, level %u\r\n", j, my_channel_act, opp_channel_act, temp, m_switch_get_instance()._read_switch_cb(my_channel_act));
                     if (temp == 1) {
                         if (s_ble_obj.time_cnt_startup || m_switch_get_instance()._read_switch_cb(my_channel_act) == 0) {
