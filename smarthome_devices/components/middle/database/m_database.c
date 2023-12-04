@@ -290,6 +290,7 @@ static void m_database_sync_task(void *param)
             memset(s_m_database._m_device._switch_info, 0, sizeof(m_switch_info_t));
             memset(s_m_database._m_device._wifi_info, 0, sizeof(m_wifi_info_t));
             memset(s_m_database._m_device._mqtt_info, 0, sizeof(m_mqtt_info_t));
+            memset(s_m_database._m_device._ble_info, 0, sizeof(m_ble_info_t));
             s_m_database._m_device._device_is_paired = 0;
             s_m_database._m_device._switch_info->default_state[0] = SWITCH_ONE_DEFAULT_OFF;
             s_m_database._m_device._switch_info->default_state[1] = SWITCH_TWO_DEFAULT_OFF;
@@ -301,6 +302,7 @@ static void m_database_sync_task(void *param)
 
             s_request_reset_db = 0;
             s_request_sync_db = 0xFF;
+            ble_db_remove_all_nodes();
 
         }
 

@@ -709,6 +709,8 @@ static void app_remove_device(cJSON *jsRoot)
     app_send_offline_message(2);
     /* factory reset database */
     m_db_get_instance()->_reset_db_cb();
+    vTaskDelay(pdMS_TO_TICKS(2000));
+
     m_wifi_get_instance().start_smart_config_cb();
     result = 1;
 

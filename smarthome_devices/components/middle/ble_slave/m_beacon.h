@@ -40,7 +40,8 @@ typedef enum
     SEND_SS_STATE_CBCT = 0x14,
     CMD_SS_INFO,
     SWITCH_LINKING,
-    SWITCH_REMOVE_LINK
+    SWITCH_REMOVE_LINK,
+    SWITCH_REMOVE_ALL_NODE
 } ble_cmd_t;
 
 typedef enum
@@ -58,7 +59,8 @@ typedef enum
     CONFIG_LINK_SUCCESS,
     CTLK_NOTIFY_ONLINE,
     PING_CTC_INTERVAL,
-    STEP_SWITCH_REMOVE_LINK
+    STEP_SWITCH_REMOVE_LINK,
+    STEP_SWITCH_REMOVE_ALL_NODE
 } ble_config_state_t;
 
 typedef struct
@@ -197,6 +199,7 @@ void master_accept_request_link(void);
 uint8_t ble_db_remove_child(uint8_t id);
 void m_ble_get_mac_addr(uint8_t *my_mac);
 void m_ble_set_state_change(uint8_t channel, uint8_t level);
+void ble_db_remove_all_nodes(void);
 m_ble_info_t* m_ble_get_info_reference(void);
 
 #endif

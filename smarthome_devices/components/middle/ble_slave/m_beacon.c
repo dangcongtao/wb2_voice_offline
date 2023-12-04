@@ -38,6 +38,7 @@ void slave_proc_rcv_switch_linking_request(uint8_t *data, uint8_t len);
 void m_ble_request_state(uint8_t *data, uint8_t len);
 void m_ble_send_state(uint8_t need_rst);
 void slave_proc_remove_link(uint8_t *data, uint8_t len);
+void slave_proc_remove_all_nodes(uint8_t *data, uint8_t len);
 
 static int is_existed_in_db(uint8_t* mac)
 {
@@ -116,7 +117,16 @@ static bool scan_data_cb(struct bt_data *data, void *user_data)
 
             case SWITCH_REMOVE_LINK:
             {
-                slave_proc_remove_link(data->data, data->data_len);
+                if (is_tid_valid(is_existed_in_db((uint8_t*)(&data->data[3])), data->data[9])) {
+                    slave_proc_remove_link(data->data, data->data_len);
+                }
+            } break;
+
+            case SWITCH_REMOVE_ALL_NODE:
+            {
+                if (is_tid_valid(is_existed_in_db((uint8_t*)(&data->data[3])), data->data[9])) {
+                    slave_proc_remove_all_nodes(data->data, data->data_len);
+                }
             } break;
             
             default:
@@ -318,6 +328,11 @@ uint8_t ble_db_remove_child(uint8_t id)
     return 1;
 }
 
+void ble_db_remove_all_nodes(void)
+{
+    s_ble_obj.step = STEP_SWITCH_REMOVE_ALL_NODE;
+}
+
 uint8_t m_ble_switch_request_linking(uint8_t *mac, uint8_t act1, uint8_t act2)
 {
     if (obj_ble.num_devices_link >= MAX_CTLK_SUPPORT || s_ble_obj.step != NOTHING) {
@@ -388,6 +403,24 @@ void m_ble_remove_linking(uint8_t id)
     my_ble_reset_data();
 }
 
+void m_ble_remove_all_nodes(void)
+{
+    memset(data_adv, 0, sizeof(data_adv));
+
+    data_adv[0] = HUN_BLE_SERVICE_UUID & 0xFF;
+    data_adv[1] = HUN_BLE_SERVICE_UUID >> 8;
+    data_adv[2] = SWITCH_REMOVE_ALL_NODE;
+    bt_addr_le_t adv_addr;
+    bt_get_local_public_address(&adv_addr);
+    memcpy(&data_adv[3], adv_addr.a.val, 6);
+    data_adv[9] = ++s_ble_obj.tid;
+    data_adv_len = 10;
+
+    // db_remove_child(id);
+
+    os_trace("REMOVE_ALL_NODES: Pending\r\n");
+}
+
 void master_proc_rcv_request_link(uint8_t *data, uint8_t len)
 {
     if (s_ble_obj.step > WAIT_CONFIG) {
@@ -451,19 +484,29 @@ void master_proc_rcv_verify_link(uint8_t *data, uint8_t len)
 
 void slave_proc_remove_link(uint8_t *data, uint8_t len)
 {
-    if (s_ble_obj.step == NOTHING) {
-        bt_addr_le_t adv_addr;
-        bt_get_local_public_address(&adv_addr);
-        if (!memcmp(&data[10], adv_addr.a.val, 6)) {
+    // if (s_ble_obj.step == NOTHING) {
+    bt_addr_le_t adv_addr;
+    bt_get_local_public_address(&adv_addr);
+    if (!memcmp(&data[10], adv_addr.a.val, 6)) {
 
-            for (uint8_t i = 0; i < obj_ble.num_devices_link; i++) {
-                if (obj_ble.list_child[i].my_act == data[17] && obj_ble.list_child[i].opp_act == data[16] && !memcmp(&data[3], obj_ble.list_child[i].mac, 6)) {
-                    db_remove_child(i);
-                    os_trace("REMOVE %u success\r\n", i);
-                    return;
-                }
+        for (uint8_t i = 0; i < obj_ble.num_devices_link; i++) {
+            if (obj_ble.list_child[i].my_act == data[17] && obj_ble.list_child[i].opp_act == data[16] && !memcmp(&data[3], obj_ble.list_child[i].mac, 6)) {
+                db_remove_child(i);
+                os_trace("REMOVE %u success\r\n", i);
+                return;
             }
-            os_trace("remove: can't find match data\r\n");
+        }
+        os_trace("remove: can't find match data\r\n");
+    }
+    // }
+}
+
+void slave_proc_remove_all_nodes(uint8_t *data, uint8_t len)
+{
+    for (uint8_t i = 0; i < obj_ble.num_devices_link; i++) {
+        if (obj_ble.list_child[i].my_act == data[17] && obj_ble.list_child[i].opp_act == data[16] && !memcmp(&data[3], obj_ble.list_child[i].mac, 6)) {
+            db_remove_child(i);
+            os_trace("REMOVE %u success\r\n", i);
         }
     }
 }
@@ -683,6 +726,12 @@ void ble_config_loop(void)
     case STEP_SWITCH_REMOVE_LINK:
     {
         m_ble_remove_linking(s_ble_obj.id_remove);
+        s_ble_obj.step = NOTHING;
+    } break;
+
+    case STEP_SWITCH_REMOVE_ALL_NODE:
+    {
+        m_ble_remove_all_nodes();
         s_ble_obj.step = NOTHING;
     } break;
 
