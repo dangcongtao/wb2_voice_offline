@@ -148,6 +148,7 @@ typedef struct
     uint8_t last_state;
 
     uint8_t state_await;
+    uint8_t mac_request_state[6];
 
     uint16_t time_cnt_startup;
 

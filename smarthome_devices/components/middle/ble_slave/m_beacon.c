@@ -586,7 +586,9 @@ void m_ble_send_state(uint8_t need_rst)
 
 void m_ble_request_state(uint8_t *data, uint8_t len)
 {
-    s_ble_obj.state_await = data[11]; 
+    s_ble_obj.state_await = data[11];
+    memset(s_ble_obj.mac_request_state, 0, 6);
+    memcpy(s_ble_obj.mac_request_state, &data[3], 6);
 }
 
 void m_ble_sync_state(void)
@@ -598,11 +600,13 @@ void m_ble_sync_state(void)
     uint8_t my_channel_act, opp_channel_act;
 
     s_ble_obj.state_await = 0;
+    bt_addr_le_t adv_addr;
+    bt_get_local_public_address(&adv_addr);
     // os_trace("%s %u\r\n", __func__, state);
     uint8_t temp = 0;
     for (uint8_t j = 0; j < 4; j++) {
         temp = (state >> (j * 2) & (0b11));
-        if (temp) {
+        if (temp && !memcmp(s_ble_obj.mac_request_state, adv_addr.a.val, 6)) {
             for (uint8_t i = 0; i < obj_ble.num_devices_link; i++) {
                 my_channel_act = (obj_ble.list_child[i].my_act - 1) / 2 ;
                 opp_channel_act = (obj_ble.list_child[i].opp_act - 1) / 2 ;
