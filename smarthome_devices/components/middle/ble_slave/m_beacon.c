@@ -503,8 +503,9 @@ void slave_proc_remove_link(uint8_t *data, uint8_t len)
 
 void slave_proc_remove_all_nodes(uint8_t *data, uint8_t len)
 {
+    os_trace("%s\r\n", __func__);
     for (uint8_t i = 0; i < obj_ble.num_devices_link; i++) {
-        if (obj_ble.list_child[i].my_act == data[17] && obj_ble.list_child[i].opp_act == data[16] && !memcmp(&data[3], obj_ble.list_child[i].mac, 6)) {
+        if (!memcmp(&data[3], obj_ble.list_child[i].mac, 6)) {
             db_remove_child(i);
             os_trace("REMOVE %u success\r\n", i);
         }
