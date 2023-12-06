@@ -28,6 +28,18 @@ const uint8_t  kLgAcSwingHOffsetSize = kLgAcChecksumSize + 1;
 const uint32_t kLgAcSwingHSignature  = kLgAcSwingHOff >> kLgAcSwingHOffsetSize;
 const uint32_t kLgAcVaneSwingVBase = 0x8813200;
 
+LGProtocol _;
+uint8_t _temp;
+bool _light;
+uint32_t _swingv;
+uint32_t _swingv_prev;
+uint8_t _vaneswingv[kLgAcSwingVMaxVanes];
+uint8_t _vaneswingv_prev[kLgAcSwingVMaxVanes];
+bool _swingh;
+bool _swingh_prev;
+decode_type_t _protocol;  ///< Protocol version
+lg_ac_remote_model_t _model;  ///< Model type
+
 #ifdef VANESWINGVPOS
 #undef VANESWINGVPOS
 #endif
@@ -120,17 +132,54 @@ bool decodeLG(decode_results *results, uint16_t offset,
   return true;
 }
 
-LGProtocol _;
-uint8_t _temp;
-bool _light;
-uint32_t _swingv;
-uint32_t _swingv_prev;
-uint8_t _vaneswingv[kLgAcSwingVMaxVanes];
-uint8_t _vaneswingv_prev[kLgAcSwingVMaxVanes];
-bool _swingh;
-bool _swingh_prev;
-decode_type_t _protocol;  ///< Protocol version
-lg_ac_remote_model_t _model;  ///< Model type
+void sendLG(uint64_t data, uint16_t nbits, uint16_t repeat) {
+  uint16_t repeatHeaderMark = 0;
+  uint8_t duty = kDutyDefault;
+
+  // if (nbits >= kLg32Bits) {
+  //   // LG 32bit protocol is near identical to Samsung except for repeats.
+  //   sendSAMSUNG(data, nbits, 0);  // Send it as a single Samsung message.
+  //   repeatHeaderMark = kLg32RptHdrMark;
+  //   duty = 33;
+  //   repeat++;
+  // } else {
+    // LG (28-bit) protocol.
+    repeatHeaderMark = kLgHdrMark;
+    sendGeneric1(kLgHdrMark, kLgHdrSpace, kLgBitMark, kLgOneSpace, kLgBitMark,
+                kLgZeroSpace, kLgBitMark, kLgMinGap, kLgMinMessageLength, data,
+                nbits, 38, true, 0,  // Repeats are handled later.
+                duty);
+  // }
+
+  // Repeat
+  // Protocol has a mandatory repeat-specific code sent after every command.
+  if (repeat)
+    sendGeneric1(repeatHeaderMark, kLgRptSpace, 0, 0, 0, 0,  // No data is sent.
+                kLgBitMark, kLgMinGap, kLgMinMessageLength, 0, 0,  // No data.
+                38, true, repeat - 1, duty);
+}
+
+void sendLG2(uint64_t data, uint16_t nbits, uint16_t repeat) {
+  if (nbits >= kLg32Bits) {
+    // Let the original routine handle it.
+    sendLG(data, nbits, repeat);  // Send it as a single Samsung message.
+    return;
+  }
+
+  // LGv2 (28-bit) protocol.
+  sendGeneric1(kLg2HdrMark, kLg2HdrSpace, kLg2BitMark, kLgOneSpace, kLg2BitMark,
+              kLgZeroSpace, kLg2BitMark, kLgMinGap, kLgMinMessageLength, data,
+              nbits, 38, true, 0,  // Repeats are handled later.
+              33);  // Use a duty cycle of 33% (Testing)
+
+  // TODO(crackn): Verify the details of what repeat messages look like.
+  // Repeat
+  // Protocol has a mandatory repeat-specific code sent after every command.
+  if (repeat)
+    sendGeneric1(kLg2HdrMark, kLgRptSpace, 0, 0, 0, 0,  // No data is sent.
+                kLgBitMark, kLgMinGap, kLgMinMessageLength, 0, 0,  // No data.
+                38, true, repeat - 1, 50);
+}
 
 bool isSwingVToggle(void) { return _.data.raw == kLgAcSwingVToggle; }
 
@@ -178,6 +227,15 @@ uint8_t getVaneCode(const uint32_t raw) {
   return (raw - kLgAcVaneSwingVBase) >> kLgAcChecksumSize;
 }
 
+static void _setTemp(const uint8_t value) { _.data.Temp = value; }
+
+static void setTemp(const uint8_t degrees) {
+  uint8_t temp = max(kLgAcMinTemp, degrees);
+  temp = min(kLgAcMaxTemp, temp);
+  _temp = temp;
+  _setTemp(temp - kLgAcTempAdjust);
+}
+
 uint8_t getTemp(void) {
   return _isNormal() ? _.data.Temp + kLgAcTempAdjust : _temp;
 }
@@ -199,9 +257,123 @@ void setModel(const lg_ac_remote_model_t model) {
   _model = model;
 }
 
-void LG_setRaw(const uint32_t new_code, const decode_type_t protocol) 
+uint8_t getPower(void) {
+  return _.data.Power == kLgAcPowerOn;
+}
+
+static void setMode(const uint8_t mode) {
+  switch (mode) {
+    case kLgAcAuto:
+    case kLgAcDry:
+    case kLgAcHeat:
+    case kLgAcCool:
+    case kLgAcFan:
+      _.data.Mode = mode;
+      break;
+    default:
+      _.data.Mode = kLgAcAuto;
+  }
+}
+
+static void setFan(const uint8_t speed) {
+  uint8_t _speed = speed;
+  // Only model AKB74955603 has these speeds, so convert if we have to.
+  switch (speed) {
+    case kLgAcFanLowAlt:
+      _.data.Fan = kLgAcFanLow;
+      return;
+    case kLgAcFanHigh:
+      _.data.Fan = kLgAcFanMax;
+      return;
+  }
+
+  switch (speed) {
+    case kLgAcFanLow:
+    case kLgAcFanLowAlt:
+      _speed = kLgAcFanLow;
+      break;
+    case kLgAcFanHigh:
+      _speed = kLgAcFanMax;
+      break;
+    case kLgAcFanAuto:
+    case kLgAcFanLowest:
+    case kLgAcFanMedium:
+    case kLgAcFanMax:
+      _speed = speed;
+      break;
+    default:
+      _speed = kLgAcFanAuto;
+  }
+  _.data.Fan = _speed;
+}
+
+void setPower(const bool on) {
+  _.data.Power = (on ? kLgAcPowerOn : kLgAcPowerOff);
+  if (on)
+    setTemp(_temp);  // Reset the temp if we are on.
+  else
+    _setTemp(0);  // Off clears the temp.
+}
+
+static opmode_t toCommonMode(const uint8_t mode) {
+  switch (mode) {
+    case kLgAcCool: return opmode_kCool;
+    case kLgAcHeat: return opmode_kHeat;
+    case kLgAcDry:  return opmode_kDry;
+    case kLgAcFan:  return opmode_kFan;
+    default:        return opmode_kAuto;
+  }
+}
+
+static fanspeed_t toCommonFanSpeed(const uint8_t speed) {
+  switch (speed) {
+    case kLgAcFanMax:     return fanspeed_kMax;
+    case kLgAcFanHigh:    return fanspeed_kHigh;
+    case kLgAcFanMedium:  return fanspeed_kMedium;
+    case kLgAcFanLow:
+    case kLgAcFanLowAlt:  return fanspeed_kLow;
+    case kLgAcFanLowest:  return fanspeed_kMin;
+    default:              return fanspeed_kAuto;
+  }
+}
+
+void LG_toCommon(state_ir_t *result)
+{
+  result->light = true;
+  // result->swingv = toCommonSwingV(getSwingV());
+  result->protocol = _protocol;
+  if (isLightToggle()) {
+    result->light = !result->light;
+    return;
+  } else {
+    result->light = _light;
+  }
+  // result->model = getModel();
+  result->power = getPower();
+  result->mode = toCommonMode(_.data.Mode);
+  result->celsius = true;
+  result->degrees = getTemp();
+  result->fanspeed = toCommonFanSpeed(_.data.Fan);
+  // if (isSwingV()) result->swingv = toCommonSwingV(getSwingV());
+  // if (isVaneSwingV())
+  //   result->swingv = toCommonVaneSwingV(VANESWINGVPOS(getVaneCode(_.raw)));
+  // result->swingh = isSwingH() ? stdAc::swingh_t::kAuto : stdAc::swingh_t::kOff;
+  // Not supported.
+  result->quiet = false;
+  result->turbo = false;
+  result->filter = false;
+  result->clean = false;
+  result->econo = false;
+  result->beep = false;
+  result->sleep = -1;
+  result->clock = -1;
+  return;
+}
+
+void LG_setRaw(const uint32_t new_code, const decode_type_t protocol, state_ir_t *ir_state) 
 {
   _.data.raw = new_code;
+  LG_toCommon(ir_state);
   // Set the default model for this protocol, if the protocol is supplied.
   switch (protocol) {
     case LG:
@@ -236,8 +408,30 @@ void LG_setRaw(const uint32_t new_code, const decode_type_t protocol)
   _temp = getTemp();
 }
 
-uint8_t getPower(void) {
-  return _.data.Power == kLgAcPowerOn;
+void checksum(void);
+static void send(const uint16_t repeat) {
+  if (getPower()) {
+    checksum();
+    os_trace("%s raw_data: %llx\r\n", __func__, (uint64_t)_.data.raw);
+    sendLG2(_.data.raw, kLgBits, repeat);
+  }
+}
+
+void Lg_test_send(void)
+{
+  os_trace("%s \r\n", __func__);
+  IRsend_begin();
+  state_ir_t state_ir;
+  LG_setRaw(kLgAcOffCommand, LG2, &state_ir);
+  setModel(AKB75215403);
+
+  setTemp(23);
+  setMode(kLgAcCool);
+  setFan(kLgAcFanMax);
+  setPower(1);
+  
+  send(kNoRepeat);
+  
 }
 
 void lg_getString(void)
@@ -247,6 +441,11 @@ void lg_getString(void)
 
 uint8_t calcChecksum(const uint32_t state) {
   return sumNibbles(state >> kLgAcChecksumSize, 4, 0, true);
+}
+
+void checksum(void)
+{
+  _.data.Sum = calcChecksum(_.data.raw);
 }
 
 static bool validChecksum(const uint32_t state) {

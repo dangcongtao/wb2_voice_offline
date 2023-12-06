@@ -67,12 +67,14 @@ COMPONENT_SRCS := database/m_database.c \
 				  event_driven/event_driven.c \
 				  ir/IRrecv.c \
 				  ir/IRutils.c \
+				  ir/IRtimer.c \
 				  ir/IRsend.c \
 				  ir/ir_LG.c \
 				  ir/ir_NEC.c \
 				  ir/ir_Samsung.c \
 				  ir/ir_Funiki.c \
 				  ir/ir_Aqua.c \
+				  ir/ir_Casper.c \
 				  
 COMPONENT_OBJS := $(patsubst %.c,%.o, $(COMPONENT_SRCS))
 

@@ -5,7 +5,17 @@
 #include <stdbool.h>
 #include "IRremoteWB2.h"
 
+#define min(a, b) (((a) < (b)) ? (a) : (b))
+#define max(a, b) (((a) < (b)) ? (b) : (a))
+
 #define kNoTempValue -100.0
+
+#define kPeriodOffset -2
+#define kDutyDefault  50  // Percentage
+#define kDutyMax  100     // Percentage
+#define kMaxAccurateUsecDelay  16383
+//  Usecs to wait between messages we don't know the proper gap time.
+#define kDefaultMessageGap  100000
 
 typedef enum {
   GE6711AR2853M = 1,  // (1) LG 28-bit Protocol (default)
@@ -100,5 +110,38 @@ typedef struct {
 // typedef struct state_ss state_ir_t;
 
 void IR_logCommon(state_ir_t ir_state);
+void enableIROut(uint32_t freq, uint8_t duty);
+uint16_t mark(uint16_t usec);
+void space(uint32_t time);
+void sendData(uint16_t onemark, uint32_t onespace, uint16_t zeromark,
+              uint32_t zerospace, uint64_t data, uint16_t nbits,
+              bool MSBfirst);
+void sendGenericBytes(const uint16_t headermark, const uint32_t headerspace,
+                         const uint16_t onemark, const uint32_t onespace,
+                         const uint16_t zeromark, const uint32_t zerospace,
+                         const uint16_t footermark, const uint32_t gap,
+                         const uint8_t *dataptr, const uint16_t nbytes,
+                         const uint16_t frequency, const bool MSBfirst,
+                         const uint16_t repeat, const uint8_t dutycycle);
+
+void sendGeneric(const uint16_t headermark, const uint32_t headerspace,
+                         const uint16_t onemark, const uint32_t onespace,
+                         const uint16_t zeromark, const uint32_t zerospace,
+                         const uint16_t footermark, const uint32_t gap,
+                         const uint64_t data, const uint16_t nbits,
+                         const uint16_t frequency, const bool MSBfirst,
+                         const uint16_t repeat, const uint8_t dutycycle);
+
+void sendGeneric1(const uint16_t headermark, const uint32_t headerspace,
+                         const uint16_t onemark, const uint32_t onespace,
+                         const uint16_t zeromark, const uint32_t zerospace,
+                         const uint16_t footermark, const uint32_t gap,
+                         const uint32_t mesgtime, const uint64_t data,
+                         const uint16_t nbits, const uint16_t frequency,
+                         const bool MSBfirst, const uint16_t repeat,
+                         const uint8_t dutycycle);
+
+void IRsend_init(uint16_t IRsendPin, bool inverted, bool use_modulation);
+void IRsend_begin(void);
 
 #endif

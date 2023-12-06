@@ -101,6 +101,8 @@ void resume(void)
     params.rcvstate = kIdleState;
     params.rawlen = 0;
     params.overflow = false;
+    trigger_type = HOSAL_IRQ_TRIG_NEG_PULSE;
+    bl_set_gpio_intmod(params.recvpin, GLB_GPIO_INT_CONTROL_ASYNC, trigger_type);
 #if defined(ESP32)
     timerAlarmDisable(timer);
     gpio_intr_enable((gpio_num_t)params.recvpin);
@@ -483,16 +485,6 @@ bool decode(decode_results *results, irparams_t *save,
 #endif
     os_trace("%s\r\n", __func__);
 
-    // Clear the entry we are currently pointing to when we got the timeout.
-    // i.e. Stopped collecting IR data.
-    // It's junk as we never wrote an entry to it and can only confuse decoding.
-    // This is done here rather than logically the best place in read_timeout()
-    // as it saves a few bytes of ICACHE_RAM as that routine is bound to an
-    // interrupt. decode() is not stored in ICACHE_RAM.
-    // Another better option would be to zero the entire irparams.rawbuf[] on
-    // resume() but that is a much more expensive operation compare to this.
-    // However, don't do this if rawbuf is already full as we stomp over the heap.
-    // See: https://github.com/crankyoldgit/IRremoteESP8266/issues/1516
     if (!params.overflow)
         params.rawbuf[params.rawlen] = 0;
 
@@ -533,10 +525,13 @@ bool decode(decode_results *results, irparams_t *save,
     if (results->rawlen == 1) {
         trigger_type = HOSAL_IRQ_TRIG_NEG_PULSE;
         bl_set_gpio_intmod(params.recvpin, GLB_GPIO_INT_CONTROL_ASYNC, trigger_type);
+        if (!resumed) // Check if we have already resumed.
+            resume();
+        return false;
     }
 
     os_trace("BUFF_LEN[%d]: ", results->rawlen);
-if (0){
+if (1){
     char str_res[300];
     int seek = 0;
     memset(str_res, 0, sizeof(str_res));
@@ -806,12 +801,16 @@ if (0){
     os_trace("Attempting Funiki AC\r\n");
     if (decodeFunikiAC(results, offset, kFunikiAcBits, true)) return true;
     if (decodeFunikiAC(results, offset, kFunikiAcExtendedBits, true)) return true;
-
 #endif
 
 #if DECODE_AQUA
     os_trace("Attempting Aqua AC\r\n");
     if (decodeAquaAC(results, offset, kAquaAcBits, true)) return true;
+#endif
+
+#if DECODE_CASPER
+    os_trace("Attempting Casper AC\r\n");
+    if (decodeCasperAC(results, offset, kCasperAcBits, true)) return true;
 #endif
 
     }
@@ -937,111 +936,51 @@ void m_ir_task(void)
     os_trace("%s init\r\n", __func__);
     while (1)
     {
-
-// #if IR_RX
-// #if REPORT_UNKNOWNS
-//         if (decode(&capture))
-//         {
-// #else  // REPORT_UNKNOWNS
-        if (decode(&capture, NULL, 0, 0)
-            // &&
-            //     capture.decode_type != UNKNOWN
-        )
+        if (decode(&capture, NULL, 0, 0))
         {
-// #endif // REPORT_UNKNOWNS
-            // lastIrReceivedTime = bl_timer_now_us();
-
             os_trace("decode_type: %d, bits: %u, value: 0x%llx, command: %lx, address: 0x%llx\r\n", capture.decode_type, capture.bits, (uint64_t)capture.value, capture.command, (uint64_t)capture.address);
-
             state_ir_t ir_state = {UNKNOWN, -1, false, opmode_kOff, 25, true, fanspeed_kAuto, swingv_kOff, swingh_kOff, false, false, false, false, false, false, false, -1, -1, kControlCommand, false, kNoTempValue};
-
-            resume();
             if (capture.decode_type == LG2) {
-                LG_setRaw(capture.value, capture.decode_type);
-                if (isValidLgAc())
-                {
-                    lg_getString();
-                }
+                LG_setRaw(capture.value, capture.decode_type, &ir_state);
             } else if (capture.decode_type == AQUA){
-                os_trace("data[16]: 0x");
-                for (uint8_t i = 0; i < 14; i++) {
-                    os_trace("%02x", capture.state[i]);
-                }
-                os_trace("\r\n");
+                // os_trace("data[16]: 0x");
+                // for (uint8_t i = 0; i < 14; i++) {
+                //     os_trace("%02x", capture.state[i]);
+                // }
+                // os_trace("\r\n");
                 AQUA_setRaw(capture.state, capture.decode_type, &ir_state);
-                IR_logCommon(ir_state);
-                // os_trace("power: %u, mode: %s, temp: %u, fan: %s\r\n", ir_state.power, ir_state.mode, ir_state.celsius, ir_state.fanspeed);
-                // aqua_getString();
             } else if (capture.decode_type == FUNIKI){
-                os_trace("FUNIKI: 0x");
-                for (uint8_t i = 0; i < 18; i++) {
-                    if (i == 6) {
+                // os_trace("FUNIKI: 0x");
+                // for (uint8_t i = 0; i < 18; i++) {
+                //     if (i == 6) {
+                //         os_trace("\t|\t");
+                //     } else if (i == 12) {
+                //         if (capture.bits == kFunikiAcBits)
+                //             break;
+                //         else {
+                //             os_trace("\t|\t");
+                //         }
+                //     }
+                //     os_trace("%02x", capture.state[i]);
+                // }
+                // os_trace("\r\n");
+                Funiki_setRaw((uint8_t*)&capture.value, capture.decode_type, &ir_state);
+            } else if (capture.decode_type == CASPER){
+                os_trace("CASPER: 0x");
+                for (uint8_t i = 0; i < 21; i++) {
+                    if (i == 6 || i == 14) {
                         os_trace("\t|\t");
-                    } else if (i == 12) {
-                        if (capture.bits == kFunikiAcBits)
-                            break;
-                        else {
-                            os_trace("\t|\t");
-                        }
                     }
-
                     os_trace("%02x", capture.state[i]);
                 }
                 os_trace("\r\n");
-                Funiki_setRaw((uint8_t*)&capture.value, capture.decode_type, &ir_state);
-                IR_logCommon(ir_state);
-                // Funiki_getString();
+                Casper_setRaw((uint8_t*)&capture.value, capture.decode_type, &ir_state);
             }
-            // TODO
-
-            /*
-            memset(lastIrReceived, 0, sizeof(lastIrReceived));
-            int seek = 0;
-            char result_str[128];
-            memset(result_str, 0, sizeof(result_str));
-            resultToHexidecimal(&capture, result_str);
-            seek += sprintf(lastIrReceived, "%d,", capture.decode_type, result_str);
-// #if REPORT_RAW_UNKNOWNS
-//             if (capture.decode_type == UNKNOWN)
-//             {
-//                 lastIrReceived += ';';
-//                 for (uint16_t i = 1; i < capture.rawlen; i++)
-//                 {
-//                     uint32_t usecs;
-//                     for (usecs = capture.rawbuf[i] * kRawTick; usecs > UINT16_MAX;
-//                          usecs -= UINT16_MAX)
-//                     {
-//                         lastIrReceived += uint64ToString(UINT16_MAX);
-//                         lastIrReceived += F(",0,");
-//                     }
-//                     lastIrReceived += uint64ToString(usecs, 10);
-//                     if (i < capture.rawlen - 1)
-//                         lastIrReceived += ',';
-//                 }
-//             }
-// #endif // REPORT_RAW_UNKNOWNS
-       // If it isn't an AC code, add the bits.
-            if (!hasACState(capture.decode_type))
-            {
-                seek += sprintf(&lastIrReceived[seek], ",%d", capture.bits);
-            }
-            os_trace("\r\nDECODE: %s\r\n", lastIrReceived);
-            */
-// #if MQTT_ENABLE
-//             mqtt_client.publish(MqttRecv.c_str(), lastIrReceived.c_str());
-//             mqttSentCounter++;
-//             debug("Incoming IR message sent to MQTT:");
-//             debug(lastIrReceived.c_str());
-// #endif // MQTT_ENABLE
+            IR_logCommon(ir_state);
             irRecvCounter++;
-// #if USE_DECODED_AC_SETTINGS
-//             if (decodeCommonAc(&capture))
-//                 lastClimateSource = F("IR");
-// #endif // USE_DECODED_AC_SETTINGS
+            resume();
         }
-// #endif // IR_RX
-       // delay(100);
-        // }
+
         vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
@@ -1049,6 +988,8 @@ void m_ir_task(void)
 void m_ir_init(void)
 {
     bl_wdt_init(60000);
+    bl_gpio_enable_output(IRpin, 0, 0);
+    IRsend_init(IRpin, false, true);
     IRrecv_init(IR_RX, 1024, 50, false);
 
     enableIRIn(1);

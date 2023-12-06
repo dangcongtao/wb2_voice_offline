@@ -27,20 +27,34 @@
 #include "IRrecv.h"
 
 #include <bl_wdt.h>
+#include "IRsend.h"
 
 void main_loop(void)
 {
     uint32_t delay_ms = 100, old = 0;
 
+    // uint8_t led = 0;
+    // gpio_set_output(IRpin);
+
+    // extern void ledOff();
+    // extern void ledOn();
+    // ledOn();
+
     while (true)
     {
         m_event_loop(delay_ms);
 
-        old += 1;
-        if (old > 20) {
-            old = 0;
-            os_trace("Free memory: %d\r\n", xPortGetFreeHeapSize());
-        }
+        // old += 1;
+        // if (old > 20) {
+        //     led = !led;
+        //     if (led) {
+        //         ledOn();
+        //     } else {
+        //         ledOff();
+        //     }
+        //     old = 0;
+        //     os_trace("Free memory: %d\r\n", xPortGetFreeHeapSize());
+        // }
 
         bl_wdt_feed();
 

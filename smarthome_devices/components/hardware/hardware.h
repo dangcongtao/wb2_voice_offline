@@ -20,7 +20,7 @@
 
 #define MAX_NUM_BUTTON  4
 #define BTN_IDLE_LEVEL  1
-#define BUTTON1    8
+#define BUTTON1    2
 #define BUTTON2    5
 #define BUTTON3   21
 #define BUTTON4   20
@@ -45,6 +45,7 @@
 #define TS04_ACTIVE_LEVEL   1
 
 #define IR_RX   12
+#define IRpin   11
 
 #if PROJECT_SHOCK
     #define LED_SWSHOCK_SW_LEAK_WHITE   7

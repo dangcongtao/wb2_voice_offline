@@ -49,6 +49,10 @@ void on_button_event_cb(int button_pin, int event, void *data)
     {
     case APP_BTN_EVT_PRESSED:
     {
+        // extern void Casper_test_send_ir(void);
+        // Casper_test_send_ir();
+        // extern void Lg_test_send(void);
+        // Lg_test_send();
         if (device_type == SWMINI && button_pin < 2) {
             m_switch_get_instance()._toggle_switch_cb(button_pin, 1, true, true);
         }

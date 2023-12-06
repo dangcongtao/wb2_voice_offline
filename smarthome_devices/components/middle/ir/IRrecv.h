@@ -9,8 +9,6 @@
 #include "ir_Samsung.h"
 #include "IRsend.h"
 
-#define min(a, b) (((a) < (b)) ? (a) : (b))
-#define max(a, b) (((a) < (b)) ? (b) : (a))
 #define MS_TO_USEC(x) ((x) * 1000U)  // Convert milli-Seconds to micro-Seconds.
 
 #define kNoRepeat  0
@@ -31,14 +29,20 @@
 #define kFunikiAcExtendedBits   (kFunikiAcExtendedStateLength * 8)
 
 #define kAquaAcStateLength  14
-#define kAquaAcBits   (14 * 8)
+#define kAquaAcBits   (kAquaAcStateLength * 8)
+
+#define kCasperAcStateLength  21
+#define kCasperAcBits   (kCasperAcStateLength * 8)
+
+
 
 #define DECODE_LG   1
 #define DECODE_NEC  0
-#define DECODE_SAMSUNG 0
+#define DECODE_SAMSUNG 1
 #define DECODE_SAMSUNG_AC 1
 #define DECODE_FUNIKI 1
 #define DECODE_AQUA   1
+#define DECODE_CASPER   1
 
 #define IR_RX 1
 #define DECODE_AC 1
@@ -169,6 +173,10 @@ bool decodeFunikiAC(decode_results *results, uint16_t offset,
 bool decodeAquaAC(decode_results *results, uint16_t offset, const uint16_t nbits, const bool strict) ;
 #endif
 
+#if DECODE_CASPER
+bool decodeCasperAC(decode_results *results, uint16_t offset, const uint16_t nbits, const bool strict);
+#endif
+
 bool matchSpace(uint32_t measured, uint32_t desired, uint8_t tolerance,
                         int16_t excess);
 
@@ -178,7 +186,7 @@ bool matchAtLeast(uint32_t measured, uint32_t desired,
 
 
 void lg_getString(void);
-void LG_setRaw(const uint32_t new_code, const decode_type_t protocol);
+void LG_setRaw(const uint32_t new_code, const decode_type_t protocol, state_ir_t *ir_state);
 bool isValidLgAc(void);
 
 void AQUA_setRaw(const uint8_t* new_code, const decode_type_t protocol, state_ir_t* state_ir);
@@ -186,6 +194,8 @@ void aqua_getString(void);
 
 void Funiki_setRaw(const uint8_t* new_code, const decode_type_t protocol, state_ir_t *ir_state);
 // void Funiki_getString(void);
+
+void Casper_setRaw(const uint8_t* new_code, const decode_type_t protocol, state_ir_t *ir_state);
 
 
 // void enableIRIn(const bool pullup);

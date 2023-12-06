@@ -172,6 +172,7 @@ bool decodeAquaAC(decode_results *results, uint16_t offset, const uint16_t nbits
         os_trace("%s step 2 not used failed\r\n", __func__);
         return false;
     }
+    os_trace("used: %u\r\n", used);
     offset += used;
 
     // if (!matchMark(results->rawbuf[offset++], kFunikiHdr2Mark, kUseDefTol, kMarkExcess)){
