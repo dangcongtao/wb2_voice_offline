@@ -22,12 +22,15 @@
 
 #include "m_http_services.h"
 #include "bl_sys.h"
+#include "IRremoteWB2.h"
+#include "IRsend.h"
 
 static char respond[512];
 extern char key[16], iv[16];
 
 static void app_startup_message(void);
 static void app_control_pin(cJSON *jsRoot);
+static void ir_control(cJSON *jsRoot);
 static void app_get_info(cJSON *jsRoot);
 static void app_set_power_on(cJSON *jsRoot);
 static void app_set_lock(cJSON *jsRoot);
@@ -49,6 +52,9 @@ static void app_fake_leakage(cJSON *jsRoot);
 static void ble_config_step1(cJSON *jsRoot);
 static void ble_config_step2(cJSON *jsRoot);
 
+static void AC_LG_Callback(cJSON *jsRoot);
+static void AC_Casper_Callback(cJSON *jsRoot);
+
 wswitch_handler_t array_handler[] = {
     {app_control_pin, 0},        
     {app_start_cyclic_timer, 64},
@@ -69,8 +75,17 @@ wswitch_handler_t array_handler[] = {
     {app_set_lock, 133},
     {app_backup_db, 151},
 
+    {ir_control, 1}, 
+};
+
+wswitch_handler_t array_ble_handler[] = {
     {ble_config_step1, 1}, 
     {ble_config_step2, 3}, 
+};
+
+wswitch_handler_t array_ir_control_handler[] = {
+    {AC_Casper_Callback, 102}, // 102
+    {AC_LG_Callback, 23}, // 51
 };
 
 QueueHandle_t pqueue;
@@ -231,6 +246,238 @@ RESPONSE:
         gs_dev_type[device_type], type, action, uid, act_id, result);
     app_send_data(respond, strlen(respond));
 }
+
+/*  {"irwifi":1,"type":1,"brand":102,"power":1,"temp":25,"mode":4,"fan":6,"act":0}  */
+static void ir_control(cJSON *jsRoot)
+{
+    cJSON *jsBrand, *jsPower, *jsTemp, *jsMode, *jsFan, *jsU, *jsAct_ID;
+    uint32_t type = 0, brand = 0, power = 0, temp = 0, mode = 0, fan = 0, act_id = 0;
+    uint8_t result = 0;
+
+    if (jsRoot == NULL)
+    {
+        os_trace("jsRoot NULL\n");
+        goto RESPONSE;
+    }
+
+    cJSON *jsType = cJSON_GetObjectItem(jsRoot, gs_dev_type[device_type]);
+    if (jsType == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    type = jsType->valueint;
+
+    jsBrand = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_BRAND);
+    if (jsBrand == NULL)
+    {
+        os_trace("jsBrand NULL\n");
+        goto RESPONSE;
+    }
+    brand = jsBrand->valueint;
+
+    uint32_t arr_size = sizeof(array_ir_control_handler) / sizeof(array_ir_control_handler[0]);
+    os_trace("arr_size_ir_control: %lu\r\n", arr_size);
+    for (uint32_t i = 0; i < arr_size; i++)
+    {
+        if (array_ir_control_handler[i]._cmd_number == brand)
+        {
+            os_trace("ir brand: %ld\r\n", brand);
+            array_ir_control_handler[i]._handler(jsRoot);
+            break;
+        }
+    }
+
+RESPONSE:
+    /* respond server here */
+    memset(respond, 0, sizeof(respond));
+    // sprintf(
+    //     respond,
+    //     "{\"%s\":%ld, \"action\":%ld, \"u\":%ld, \"act\": %ld, \"result\": %d}",
+    //     gs_dev_type[device_type], type, action, uid, act_id, result);
+    // app_send_data(respond, strlen(respond));
+}
+
+/*  {"irwifi":1,"type":1,"brand":102,"power":1,"temp":25,"mode":4,"fan":6,"act":0}  */
+static void AC_Casper_Callback(cJSON *jsRoot)
+{
+    cJSON *jsBrand, *jsPower, *jsTemp, *jsMode, *jsFan, *jsU, *jsAct_ID;
+    uint32_t type = 0, brand = 0, power = 0, temp = 0, mode = 0, fan = 0, act_id = 0;
+    uint8_t result = 0;
+
+    if (jsRoot == NULL)
+    {
+        os_trace("jsRoot NULL\n");
+        goto RESPONSE;
+    }
+
+    cJSON *jsType = cJSON_GetObjectItem(jsRoot, gs_dev_type[device_type]);
+    if (jsType == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    type = jsType->valueint;
+
+    jsAct_ID = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_ACT);
+    if (jsAct_ID == NULL)
+    {
+        os_trace("jsAct_ID NULL\n");
+        goto RESPONSE;
+    }
+    act_id = jsAct_ID->valueint;
+
+    jsBrand = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_BRAND);
+    if (jsBrand == NULL)
+    {
+        os_trace("jsBrand NULL\n");
+        goto RESPONSE;
+    }
+    brand = jsBrand->valueint;
+
+    jsPower = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_POWER);
+    if (jsPower == NULL)
+    {
+        os_trace("jsPower NULL\n");
+        goto RESPONSE;
+    }
+    power = jsPower->valueint;
+
+    jsTemp = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_TEMP);
+    if (jsTemp == NULL)
+    {
+        os_trace("jsTemp NULL\n");
+        goto RESPONSE;
+    }
+    temp = jsTemp->valueint;
+
+    jsMode = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_MODE);
+    if (jsMode == NULL)
+    {
+        os_trace("jsMode NULL\n");
+        goto RESPONSE;
+    }
+    mode = jsMode->valueint;
+
+    jsFan = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_FAN);
+    if (jsFan == NULL)
+    {
+        os_trace("jsFan NULL\n");
+        goto RESPONSE;
+    }
+    fan = jsFan->valueint;
+
+    state_ir_t state_ir;
+    state_ir.power = (power ? true : false);
+    state_ir.degrees = temp;
+    state_ir.mode = mode;
+    state_ir.fanspeed = fan;
+
+    os_trace("power: %u\r\n", state_ir.power);
+
+    Casper_send(state_ir);
+
+    result = 1;
+
+
+RESPONSE:
+    /* respond server here */
+    memset(respond, 0, sizeof(respond));
+    sprintf(
+        respond,
+        "{\"%s\":%lu,\"type\":1,\"brand\":%lu,\"power\":%lu,\"temp\":%lu,\"mode\":%lu,\"fan\":%lu,\"act\":%lu,\"result\":%d}",
+        gs_dev_type[device_type], type, brand, power, temp, mode, fan, act_id, result);
+    app_send_data(respond, strlen(respond));
+}
+static void AC_LG_Callback(cJSON *jsRoot)
+{
+    cJSON *jsBrand, *jsPower, *jsTemp, *jsMode, *jsFan, *jsU, *jsAct_ID;
+    uint32_t type = 0, brand = 0, power = 0, temp = 0, mode = 0, fan = 0, act_id = 0;
+    uint8_t result = 0;
+
+    if (jsRoot == NULL)
+    {
+        os_trace("jsRoot NULL\n");
+        goto RESPONSE;
+    }
+
+    cJSON *jsType = cJSON_GetObjectItem(jsRoot, gs_dev_type[device_type]);
+    if (jsType == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    type = jsType->valueint;
+
+    jsAct_ID = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_ACT);
+    if (jsAct_ID == NULL)
+    {
+        os_trace("jsAct_ID NULL\n");
+        goto RESPONSE;
+    }
+    act_id = jsAct_ID->valueint;
+
+    jsBrand = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_BRAND);
+    if (jsBrand == NULL)
+    {
+        os_trace("jsBrand NULL\n");
+        goto RESPONSE;
+    }
+    brand = jsBrand->valueint;
+
+    jsPower = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_POWER);
+    if (jsPower == NULL)
+    {
+        os_trace("jsPower NULL\n");
+        goto RESPONSE;
+    }
+    power = jsPower->valueint;
+
+    jsTemp = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_TEMP);
+    if (jsTemp == NULL)
+    {
+        os_trace("jsTemp NULL\n");
+        goto RESPONSE;
+    }
+    temp = jsTemp->valueint;
+
+    jsMode = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_MODE);
+    if (jsMode == NULL)
+    {
+        os_trace("jsMode NULL\n");
+        goto RESPONSE;
+    }
+    mode = jsMode->valueint;
+
+    jsFan = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_FAN);
+    if (jsFan == NULL)
+    {
+        os_trace("jsFan NULL\n");
+        goto RESPONSE;
+    }
+    fan = jsFan->valueint;
+
+    state_ir_t state_ir;
+    state_ir.power = (power ? true : false);
+    state_ir.degrees = (float)temp;
+    state_ir.mode = mode;
+    state_ir.fanspeed = fan;
+
+    LG_send(state_ir);
+
+    result = 1;
+
+
+RESPONSE:
+    /* respond server here */
+    memset(respond, 0, sizeof(respond));
+    sprintf(
+        respond,
+        "{\"%s\":%lu,\"type\":1,\"brand\":%lu,\"power\":%lu,\"temp\":%lu,\"mode\":%lu,\"fan\":%lu,\"act\":%lu,\"result\":%d}",
+        gs_dev_type[device_type], type, brand, power, temp, mode, fan, act_id, result);
+    app_send_data(respond, strlen(respond));
+}
+
 
 /* 105 */
 static void app_get_info(cJSON *jsRoot)
@@ -984,16 +1231,30 @@ void app_handler_msg_task(void * arg)
             }
             uint32_t cmd = jsType->valueint;
 
-            uint32_t arr_size = sizeof(array_handler) / sizeof(array_handler[0]);
-            os_trace("arr_size: %lu\r\n", arr_size);
-
-            for (uint32_t i = 0; i < arr_size; i++)
-            {
-                if (array_handler[i]._cmd_number == cmd)
+            
+            if (msg.method_trasmit == MQTT_MSG) {
+                uint32_t arr_size = sizeof(array_handler) / sizeof(array_handler[0]);
+                os_trace("arr_size_mqtt: %lu\r\n", arr_size);
+                for (uint32_t i = 0; i < arr_size; i++)
                 {
-                    os_trace("_cmd_number: %ld\r\n", cmd);
-                    array_handler[i]._handler(jsRoot);
-                    break;
+                    if (array_handler[i]._cmd_number == cmd)
+                    {
+                        os_trace("_cmd_number: %ld\r\n", cmd);
+                        array_handler[i]._handler(jsRoot);
+                        break;
+                    }
+                }
+            } else {
+                uint32_t arr_size = sizeof(array_ble_handler) / sizeof(array_ble_handler[0]);
+                os_trace("arr_size_ble: %lu\r\n", arr_size);
+                for (uint32_t i = 0; i < arr_size; i++)
+                {
+                    if (array_ble_handler[i]._cmd_number == cmd)
+                    {
+                        os_trace("_cmd_number: %ld\r\n", cmd);
+                        array_ble_handler[i]._handler(jsRoot);
+                        break;
+                    }
                 }
             }
 

@@ -127,24 +127,20 @@ bool decodeSamsungAC(decode_results *results, uint16_t offset,
     // os_trace("Can't possibly be a valid Samsung A/C message.\r\n");
     return false;  // Can't possibly be a valid Samsung A/C message.
   }
-  os_trace("step 1\r\n");
   if (nbits != kSamsungAcBits && nbits != kSamsungAcExtendedBits){
-    os_trace("step 1 failed\r\n");
+    // os_trace("step 1 failed\r\n");
     return false;
   }
-  os_trace("step 2\r\n");
 
   // Message Header
   if (!matchMark(results->rawbuf[offset++], kSamsungAcBitMark, kUseDefTol, kMarkExcess)){
-    os_trace("match mark failed\r\n");
+    // os_trace("match mark failed\r\n");
     return false;
   }
-  os_trace("step 3\r\n");
   if (!matchSpace(results->rawbuf[offset++], kSamsungAcHdrSpace, kUseDefTol, kMarkExcess)){
-    os_trace("match space failed\r\n");
+    // os_trace("match space failed\r\n");
     return false;
   }
-  os_trace("step 4\r\n");
   // Section(s)
   for (uint16_t pos = 0; pos <= (nbits / 8) - kSamsungAcSectionLength;
        pos += kSamsungAcSectionLength) {

@@ -40,6 +40,13 @@
 #define CJSON_KEY_TIMESTAMP      "timestamp"
 #define CJSON_KEY_LEAKAGE       "leakage"
 
+/* JSON KEY USE FOR IR CONTROL*/
+#define CJSON_KEY_IR_BRAND      "brand"
+#define CJSON_KEY_IR_POWER      "power"
+#define CJSON_KEY_IR_TEMP       "temp"
+#define CJSON_KEY_IR_MODE       "mode"
+#define CJSON_KEY_IR_FAN        "fan"
+#define CJSON_KEY_IR_ACT        "act"
 
 #define DEFAULT_AES_KEY "0000000000000000"
 #define DEFAULT_AES_IV  "0000000000000000"

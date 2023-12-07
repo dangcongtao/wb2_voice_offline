@@ -144,4 +144,8 @@ void sendGeneric1(const uint16_t headermark, const uint32_t headerspace,
 void IRsend_init(uint16_t IRsendPin, bool inverted, bool use_modulation);
 void IRsend_begin(void);
 
+// IR BRAND SEND
+void Casper_send(state_ir_t ir_state);
+void LG_send(state_ir_t state_ir);
+
 #endif

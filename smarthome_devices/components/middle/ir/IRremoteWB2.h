@@ -105,7 +105,7 @@ typedef enum {
   XMP,
   TRUMA,  // 100
   HAIER_AC176,
-  TEKNOPOINT,
+  CASPER,
   KELON,
   TROTEC_3550,
   SANYO_AC88,  // 105
@@ -132,9 +132,9 @@ typedef enum {
   YORK,
   FUNIKI,
   AQUA,
-  CASPER,
+  TEKNOPOINT,
   // Add new entries before this one, and update it to point to the last entry.
-  kLastDecodeType = CASPER,
+  kLastDecodeType = TEKNOPOINT,
 } decode_type_t;
 
 

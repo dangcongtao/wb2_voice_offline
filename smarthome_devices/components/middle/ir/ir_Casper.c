@@ -186,7 +186,8 @@ static uint8_t is_power_on(uint8_t* states)
 
 static void hash_code(uint8_t* states, const state_ir_t *ir_state)
 {
-    if (!ir_state->power) {
+    if (ir_state->power == false) {
+        os_trace("%s power off\r\n", __func__);
         uint8_t dta_off[] = {0x83,0x06,0x04,0x82,0x00,0x00,0x80,0x00,0x00,0x00,0x00,0x00,0x00,0x06,0x00,0x01,0x00,0x00,0x28,0x00,0x29};
         memset(states, 0, kCasperAcStateLength);
         memcpy(states, dta_off, kCasperAcStateLength);
@@ -220,32 +221,6 @@ static void hash_code(uint8_t* states, const state_ir_t *ir_state)
         break;
     }
 
-    
-
-    //
-    // case 0x2:
-    //     return fanspeed_kMax;
-    //     break;
-
-    // case 0x6:
-    //     return fanspeed_kMin;
-    //     break;
-    
-    // case 0x4:
-    //     return fanspeed_kMedium;
-    //     break;
-
-    // case 0x3:
-    //     return fanspeed_kHigh;
-    //     break;
-    
-    // case 0x7:
-    //     return fanspeed_kLow;
-    //     break;
-    
-    // default:
-    //     return fanspeed_kAuto;
-
     // fanspeed
     switch (ir_state->fanspeed)
     {
@@ -270,9 +245,14 @@ static void hash_code(uint8_t* states, const state_ir_t *ir_state)
         break;
     }
 
-    states[3] |= (((uint8_t)ir_state->degrees - 16) << 4);
-
-    uint8_t hash13 = ((((uint8_t)ir_state->degrees - 8) % 16) << 4);
+    uint8_t hash13;
+    if (ir_state->mode == opmode_kFan) {
+        states[3] |= (((uint8_t)0x7) << 4);
+        hash13 = (((uint8_t)0xF) << 4);
+    } else {
+        states[3] |= (((uint8_t)ir_state->degrees - 16) << 4);
+        hash13 = ((((uint8_t)ir_state->degrees - 8) % 16) << 4);
+    }
 
     // if (ir_state->fanspeed == fanspeed_kHigh || ir_state->fanspeed == fanspeed_kLow) {
     //     states[17] = 0x40;
@@ -292,6 +272,50 @@ static void hash_code(uint8_t* states, const state_ir_t *ir_state)
     
 }
 
+void Casper_send(state_ir_t ir_state)
+{
+    uint8_t dataa[21];
+    switch ((uint8_t)ir_state.mode)
+    {
+    case 2:
+        ir_state.mode = opmode_kFan;
+        break;
+    
+    case 4:
+        ir_state.mode = opmode_kCool;
+        break;
+    
+    case 12:
+        ir_state.mode = opmode_kDry;
+        break;
+    
+    case 0:
+        ir_state.mode = opmode_kHeat;
+        break;
+    
+    default:
+        break;
+    }
+
+
+    if (ir_state.fanspeed == 6)
+    {
+        ir_state.fanspeed = fanspeed_kAuto;
+    }
+
+    os_trace("power: %u\r\n", ir_state.power);
+    hash_code(dataa, &ir_state);
+    os_trace("CASPER_HASH: 0x");
+    for (uint8_t i = 0; i < 21; i++) {
+        if (i == 6 || i == 14) {
+            os_trace("\t|\t");
+        }
+        os_trace("%02x", dataa[i]);
+    }
+    os_trace("\r\n");
+    sendCasperAc(dataa, kCasperAcStateLength, 0);
+}
+
 void Casper_test_send_ir(void)
 {
     state_ir_t ir_state;
@@ -299,6 +323,10 @@ void Casper_test_send_ir(void)
     ir_state.degrees = 22;
     ir_state.fanspeed = fanspeed_kMin;
     ir_state.power = 1;
+
+    
+
+
     uint8_t dataa[21];
     hash_code(dataa, &ir_state);
     os_trace("CASPER_HASH: 0x");

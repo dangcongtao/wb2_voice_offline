@@ -522,7 +522,7 @@ bool decode(decode_results *results, irparams_t *save,
     results->command = 0;
     results->repeat = false;
 
-    if (results->rawlen == 1) {
+    if (results->rawlen <= 10) {
         trigger_type = HOSAL_IRQ_TRIG_NEG_PULSE;
         bl_set_gpio_intmod(params.recvpin, GLB_GPIO_INT_CONTROL_ASYNC, trigger_type);
         if (!resumed) // Check if we have already resumed.

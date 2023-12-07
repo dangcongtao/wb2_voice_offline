@@ -181,6 +181,12 @@ void sendLG2(uint64_t data, uint16_t nbits, uint16_t repeat) {
                 38, true, repeat - 1, 50);
 }
 
+void updateSwingPrev(void) {
+  _swingv_prev = _swingv;
+  for (uint8_t i = 0; i < kLgAcSwingVMaxVanes; i++)
+    _vaneswingv_prev[i] = _vaneswingv[i];
+}
+
 bool isSwingVToggle(void) { return _.data.raw == kLgAcSwingVToggle; }
 
 bool isSwing(void) {
@@ -307,13 +313,16 @@ static void setFan(const uint8_t speed) {
   _.data.Fan = _speed;
 }
 
-void setPower(const bool on) {
-  _.data.Power = (on ? kLgAcPowerOn : kLgAcPowerOff);
+static void setPower(const bool on) {
   if (on)
     setTemp(_temp);  // Reset the temp if we are on.
-  else
+  else {
     _setTemp(0);  // Off clears the temp.
+  }
+  _.data.Power = (on ? kLgAcPowerOn : kLgAcPowerOff);
 }
+
+lg_ac_remote_model_t getModel(void) { return _model; }
 
 static opmode_t toCommonMode(const uint8_t mode) {
   switch (mode) {
@@ -373,7 +382,7 @@ void LG_toCommon(state_ir_t *result)
 void LG_setRaw(const uint32_t new_code, const decode_type_t protocol, state_ir_t *ir_state) 
 {
   _.data.raw = new_code;
-  LG_toCommon(ir_state);
+  // LG_toCommon(ir_state);
   // Set the default model for this protocol, if the protocol is supplied.
   switch (protocol) {
     case LG:
@@ -414,24 +423,58 @@ static void send(const uint16_t repeat) {
     checksum();
     os_trace("%s raw_data: %llx\r\n", __func__, (uint64_t)_.data.raw);
     sendLG2(_.data.raw, kLgBits, repeat);
+  } else {
+    os_trace("%s send off cmd\r\n", __func__);
+    _.data.raw = kLgAcOffCommand;
+    sendLG2(_.data.raw, kLgBits, repeat);
   }
 }
 
 void Lg_test_send(void)
 {
-  os_trace("%s \r\n", __func__);
-  IRsend_begin();
-  state_ir_t state_ir;
-  LG_setRaw(kLgAcOffCommand, LG2, &state_ir);
-  setModel(AKB75215403);
+  // os_trace("%s \r\n", __func__);
+  // IRsend_begin();
+  // state_ir_t state_ir;
+  // LG_setRaw(kLgAcOffCommand, LG2, &state_ir);
+  // setModel(AKB75215403);
 
-  setTemp(23);
+  // setTemp(23);
   setMode(kLgAcCool);
   setFan(kLgAcFanMax);
-  setPower(1);
+  // setPower(1);
+  
+  // send(kNoRepeat);
+  
+}
+
+void stateReset(void) {
+  // LG_setRaw(kLgAcOffCommand);
+  setModel(GE6711AR2853M);
+  _light = true;
+  _swingv = kLgAcSwingVOff;
+  _swingh = false;
+  for (uint8_t i = 0; i < kLgAcSwingVMaxVanes; i++)
+    _vaneswingv[i] = 0;  // Reset to an unused value.
+  updateSwingPrev();
+}
+
+void LG_send(state_ir_t state_ir)
+{
+  os_trace("%s \r\n", __func__);
+  IRsend_begin();
+  state_ir_t state_ir_new;
+  LG_setRaw(kLgAcOffCommand, LG2, &state_ir_new);
+  setModel(AKB73757604);
+
+  os_trace("degress: %u, mode: %u, fanspeed: %u, power: %u\r\n", (uint8_t)state_ir.degrees, (uint8_t)state_ir.mode, (uint8_t)state_ir.fanspeed, (uint8_t)state_ir.power);
+
+  setTemp((uint8_t)state_ir.degrees);
+
+  setMode((uint8_t)state_ir.mode);
+  setFan((uint8_t)state_ir.fanspeed);
+  setPower(state_ir.power ? 1 : 0);
   
   send(kNoRepeat);
-  
 }
 
 void lg_getString(void)
