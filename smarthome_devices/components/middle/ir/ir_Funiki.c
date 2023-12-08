@@ -34,10 +34,10 @@ bool decodeFunikiAC(decode_results *results, uint16_t offset, const uint16_t nbi
         // Section Header + Section Data (7 bytes) + Section Footer
         used = matchGenericUint8(results->rawbuf + offset, (uint8_t*)(&results->state[pos]),
                             results->rawlen - offset, kFunikiAcSectionLength * 8,
-                            5050, 4450,
+                            4400, 4400,
                             480, 1500,
                             480, 460,
-                            600, 4300,
+                            500, 5300,
                             pos + kFunikiAcSectionLength >= nbits / 8,
                             50, 0, false);
 
@@ -61,8 +61,42 @@ bool decodeFunikiAC(decode_results *results, uint16_t offset, const uint16_t nbi
     return true;
 }
 
+void sendFunikiAc(const uint8_t *data, uint16_t nbytes, uint16_t repeat)
+{
+    vTaskEnterCritical();
+    uint16_t repeatHeaderMark = 0;
+    uint8_t duty = kDutyDefault;
+
+    enableIROut(38, 50);
+
+    for (uint16_t offset = 0; offset < nbytes; offset += kFunikiAcSectionLength){
+        sendGenericBytes(4400, 4400, 480, 1500, 480, 460, 500, 5300, data + offset, kFunikiAcSectionLength, 38, false, repeat, 50);
+    }
+
+    // mark(9000);
+    // space(4500);
+    
+    // for (uint16_t offset = 0; offset < nbytes;) {
+
+    //     sendData(502, 1650, 501, 600, *(data + offset), 8, false);
+
+    //     offset++;
+    //     if (offset == 6) {
+    //         mark(480);
+    //         space(8000);
+    //     } else if (offset == 14) {
+    //         mark(480);
+    //         space(8000);
+    //     }
+    // }
+
+    // mark(500);
+    vTaskExitCritical();
+}
+
 static uint8_t get_temp_funiki(uint8_t *states)
 {
+    os_trace("temp_huy: %u\r\n", ((~(states[11])) & 0xF));
     uint8_t temp = 0;
     switch (states[11] & 0xF)
     {
@@ -184,13 +218,11 @@ static fanspeed_t get_fan_funiki(uint8_t *states)
         return fanspeed_kMedium;
         break;
     
-    // case 0x2:
+    case 0x2:
     //     sprintf(str, "AUTO");
     //     break;
 
     // case 0x7:
-    //     sprintf(str, "AUTO WITCH LOCKED");
-    //     break;
 
     default:
         return fanspeed_kAuto;
@@ -220,7 +252,213 @@ void Funiki_setRaw(const uint8_t* new_code, const decode_type_t protocol, state_
 {
     // memcpy(_.data.raw, new_code, kFunikiAcStateLength);
     Funiki_toCommon(new_code, ir_state);
+    FunikiProtocol _;
+    memset(&_, 0, sizeof(FunikiProtocol));
+    memcpy(&_.data.raw, new_code, 12);
+    os_trace("fan: %u\r\n", _.data.fan);
     // _.data.raw = new_code;
+}
+
+static void hash_code(FunikiProtocol* data, state_ir_t state_ir)
+{
+    if (state_ir.power) {
+        data->data.power = 0;
+        switch ((uint8_t)state_ir.degrees)
+        {
+        case 17:
+            data->data.temp = 0xF;
+            break;
+        
+        case 18:
+            data->data.temp = 0x7;
+            break;
+        
+        case 19:
+            data->data.temp = 0x3;
+            break;
+        
+        case 20:
+            data->data.temp = 0xb;
+            break;
+        
+        case 21:
+            data->data.temp = 0x9;
+            break;
+        
+        case 22:
+            data->data.temp = 0x1;
+            break;
+        
+        case 23:
+            data->data.temp = 0x5;
+            break;
+        
+        case 24:
+            data->data.temp = 0xD;
+            break;
+        
+        case 25:
+            data->data.temp = 0xC;
+            break;
+        
+        case 26:
+            data->data.temp = 0x4;
+            break;
+        
+        case 27:
+            data->data.temp = 0x6;
+            break;
+        
+        case 28:
+            data->data.temp = 0xE;
+            break;
+        
+        case 29:
+            data->data.temp = 0xA;
+            break;
+        
+        case 30:
+            data->data.temp = 0x2;
+            break;
+        
+        default:
+            break;
+        }
+
+        switch (state_ir.mode)
+        {
+        case opmode_kCool:
+            data->data.mode = 0xF;
+            break;
+
+        case opmode_kAuto:
+            data->data.mode = 0xE;
+            break;
+        
+        case opmode_kHeat:
+            data->data.mode = 0xC;
+            break;
+        
+        case opmode_kFan:
+            data->data.temp = 0x8;
+        case opmode_kDry:
+            data->data.mode = 0xD;
+            break;
+        
+        default:
+            break;
+        }
+
+        switch (state_ir.fanspeed)
+        {
+        case fanspeed_kMax:
+            data->data.fan = 0x3;
+            break;
+
+        case fanspeed_kMin:
+            data->data.fan = 0x6;
+            break;
+        
+        case fanspeed_kMedium:
+            data->data.fan = 0x5;
+            break;
+        
+        case fanspeed_kAuto:
+            data->data.fan = 0x2;
+            break;
+
+        default:
+            break;
+        }
+
+        if (state_ir.mode == opmode_kAuto || state_ir.mode == opmode_kDry) {
+            data->data.fan = 0x7;
+        }
+    } else {
+        data->data.power = 1;
+        data->data.temp = 0x8;
+        data->data.fan = 0x1;
+        data->data.mode = 0xF;
+    }
+
+    
+
+    data->data.raw[0] = 0x4d;
+    data->data.raw[1] = 0xb2;
+
+
+    data->data.raw[2] = (~data->data.raw[3] & 0xFF);
+    data->data.raw[4] = (~data->data.raw[5] & 0xFF);
+
+    memcpy(&data->data.raw[6], &data->data.raw[0], 6);
+}
+
+void Funiki_send(state_ir_t state_ir)
+{
+
+    switch ((uint8_t)state_ir.mode)
+    {
+    case 1:
+        state_ir.mode = opmode_kDry;
+        break;
+    
+    case 0:
+        state_ir.mode = opmode_kCool;
+        break;
+    
+    case 2:
+        state_ir.mode = opmode_kAuto;
+        break;
+    
+    case 3:
+        state_ir.mode = opmode_kHeat;
+        break;
+    
+    case 4:
+        state_ir.mode = opmode_kFan;
+        break;
+    
+    default:
+        break;
+    }
+
+    switch (state_ir.fanspeed)
+    {
+    case 5:
+        state_ir.fanspeed = fanspeed_kAuto;
+        break;
+    
+    case 4:
+        state_ir.fanspeed = fanspeed_kMin;
+        break;
+    
+    case 2:
+        state_ir.fanspeed = fanspeed_kMedium;
+        break;
+    
+    case 1:
+        state_ir.fanspeed = fanspeed_kMax;
+        break;
+    
+    default:
+        break;
+    }
+
+    FunikiProtocol _;
+    hash_code(&_, state_ir);
+
+    // os_trace("FUNIKI_SEND: 0x");
+    // for (uint8_t i = 0; i < 18; i++) {
+    //     if (i == 6) {
+    //         os_trace("\t|\t");
+    //     } else if (i == 12) {
+    //             break;
+    //     }
+    //     os_trace("%02x", _.data.raw[i]);
+    // }
+    // os_trace("\r\n");
+
+    sendFunikiAc(_.data.raw, kFunikiAcStateLength, 0);
 }
 
 // void Funiki_getString(void)

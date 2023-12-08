@@ -950,20 +950,20 @@ void m_ir_task(void)
                 // os_trace("\r\n");
                 AQUA_setRaw(capture.state, capture.decode_type, &ir_state);
             } else if (capture.decode_type == FUNIKI){
-                // os_trace("FUNIKI: 0x");
-                // for (uint8_t i = 0; i < 18; i++) {
-                //     if (i == 6) {
-                //         os_trace("\t|\t");
-                //     } else if (i == 12) {
-                //         if (capture.bits == kFunikiAcBits)
-                //             break;
-                //         else {
-                //             os_trace("\t|\t");
-                //         }
-                //     }
-                //     os_trace("%02x", capture.state[i]);
-                // }
-                // os_trace("\r\n");
+                os_trace("FUNIKI: 0x");
+                for (uint8_t i = 0; i < 18; i++) {
+                    if (i == 6) {
+                        os_trace("\t|\t");
+                    } else if (i == 12) {
+                        if (capture.bits == kFunikiAcBits)
+                            break;
+                        else {
+                            os_trace("\t|\t");
+                        }
+                    }
+                    os_trace("%02x", capture.state[i]);
+                }
+                os_trace("\r\n");
                 Funiki_setRaw((uint8_t*)&capture.value, capture.decode_type, &ir_state);
             } else if (capture.decode_type == CASPER){
                 os_trace("CASPER: 0x");

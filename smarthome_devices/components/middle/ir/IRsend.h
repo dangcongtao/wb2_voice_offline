@@ -10,7 +10,7 @@
 
 #define kNoTempValue -100.0
 
-#define kPeriodOffset -2
+#define kPeriodOffset -5
 #define kDutyDefault  50  // Percentage
 #define kDutyMax  100     // Percentage
 #define kMaxAccurateUsecDelay  16383
@@ -147,5 +147,6 @@ void IRsend_begin(void);
 // IR BRAND SEND
 void Casper_send(state_ir_t ir_state);
 void LG_send(state_ir_t state_ir);
+void Funiki_send(state_ir_t state_ir);
 
 #endif

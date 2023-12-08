@@ -237,7 +237,8 @@ void sendGenericBytes(const uint16_t headermark, const uint32_t headerspace,
                          const uint16_t footermark, const uint32_t gap,
                          const uint8_t *dataptr, const uint16_t nbytes,
                          const uint16_t frequency, const bool MSBfirst,
-                         const uint16_t repeat, const uint8_t dutycycle) {
+                         const uint16_t repeat, const uint8_t dutycycle) 
+{
   // Setup
   enableIROut(frequency, dutycycle);
   // We always send a message, even for repeat=0, hence '<= repeat'.
@@ -266,7 +267,7 @@ void sendGeneric1(const uint16_t headermark, const uint32_t headerspace,
                   const bool MSBfirst, const uint16_t repeat,
                   const uint8_t dutycycle)
 {
-  os_trace("%s \r\n", __func__);
+  os_trace("%s dutycycle: %u\r\n", __func__, dutycycle);
   vTaskEnterCritical();
   // Setup
   enableIROut(frequency, dutycycle);

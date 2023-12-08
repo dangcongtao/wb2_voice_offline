@@ -13,7 +13,8 @@
 
 const uint32_t kCasperMinMessageLength = 108050;  ///< uSeconds.
 
-void sendCasperAc(const uint8_t *data, uint16_t nbytes, uint16_t repeat) {
+void sendCasperAc(const uint8_t *data, uint16_t nbytes, uint16_t repeat)
+{
     os_trace("%s enter\r\n", __func__);
     vTaskEnterCritical();
     uint16_t repeatHeaderMark = 0;

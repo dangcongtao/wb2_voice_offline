@@ -16,7 +16,8 @@ typedef struct
             uint32_t Fan : 4;
             uint32_t Temp : 4;
             uint32_t Mode : 3;
-            uint32_t : 3;
+            uint32_t BitA : 1;
+            uint32_t : 2;
             uint32_t Power : 2;
             uint32_t Sign : 8;
         };

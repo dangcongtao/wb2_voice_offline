@@ -382,7 +382,7 @@ void LG_toCommon(state_ir_t *result)
 void LG_setRaw(const uint32_t new_code, const decode_type_t protocol, state_ir_t *ir_state) 
 {
   _.data.raw = new_code;
-  // LG_toCommon(ir_state);
+  LG_toCommon(ir_state);
   // Set the default model for this protocol, if the protocol is supplied.
   switch (protocol) {
     case LG:
@@ -415,6 +415,7 @@ void LG_setRaw(const uint32_t new_code, const decode_type_t protocol, state_ir_t
   }
   _temp = 15;  // Ensure there is a "sane" previous temp.
   _temp = getTemp();
+  os_trace("LG model: %u\r\n", getModel());
 }
 
 void checksum(void);
@@ -423,6 +424,9 @@ static void send(const uint16_t repeat) {
     checksum();
     os_trace("%s raw_data: %llx\r\n", __func__, (uint64_t)_.data.raw);
     sendLG2(_.data.raw, kLgBits, repeat);
+    state_ir_t ir_state;
+    LG_setRaw(_.data.raw, LG2, &ir_state);
+    IR_logCommon(ir_state);
   } else {
     os_trace("%s send off cmd\r\n", __func__);
     _.data.raw = kLgAcOffCommand;
@@ -439,8 +443,8 @@ void Lg_test_send(void)
   // setModel(AKB75215403);
 
   // setTemp(23);
-  setMode(kLgAcCool);
-  setFan(kLgAcFanMax);
+  // setMode(kLgAcCool);
+  // setFan(kLgAcFanMax);
   // setPower(1);
   
   // send(kNoRepeat);
@@ -464,7 +468,7 @@ void LG_send(state_ir_t state_ir)
   IRsend_begin();
   state_ir_t state_ir_new;
   LG_setRaw(kLgAcOffCommand, LG2, &state_ir_new);
-  setModel(AKB73757604);
+  setModel(AKB75215403);
 
   os_trace("degress: %u, mode: %u, fanspeed: %u, power: %u\r\n", (uint8_t)state_ir.degrees, (uint8_t)state_ir.mode, (uint8_t)state_ir.fanspeed, (uint8_t)state_ir.power);
 
@@ -472,7 +476,7 @@ void LG_send(state_ir_t state_ir)
 
   setMode((uint8_t)state_ir.mode);
   setFan((uint8_t)state_ir.fanspeed);
-  setPower(state_ir.power ? 1 : 0);
+  setPower((state_ir.power ? 1 : 0));
   
   send(kNoRepeat);
 }
@@ -488,6 +492,8 @@ uint8_t calcChecksum(const uint32_t state) {
 
 void checksum(void)
 {
+  // _.data.BitA = 1;
+  _.data.Sign = kLgAcSignature;
   _.data.Sum = calcChecksum(_.data.raw);
 }
 
