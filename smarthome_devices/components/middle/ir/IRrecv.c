@@ -272,6 +272,7 @@ uint16_t matchBytes(volatile uint16_t *data_ptr, uint8_t *result_ptr,
             return 0; // Fail
         
         result_ptr[byte_pos] = (uint8_t)result.data;
+        // os_trace("result_ptr[%u]: %u\r\n", byte_pos, result_ptr[byte_pos]);
         offset += result.used;
     }
     return offset;
@@ -943,37 +944,37 @@ void m_ir_task(void)
             if (capture.decode_type == LG2) {
                 LG_setRaw(capture.value, capture.decode_type, &ir_state);
             } else if (capture.decode_type == AQUA){
-                // os_trace("data[16]: 0x");
-                // for (uint8_t i = 0; i < 14; i++) {
+                os_trace("AQUA[16]: 0x");
+                for (uint8_t i = 0; i < 14; i++) {
+                    os_trace("%02x", capture.state[i]);
+                }
+                os_trace("\r\n");
+                AQUA_setRaw(capture.state, capture.decode_type, &ir_state);
+            } else if (capture.decode_type == FUNIKI){
+                // os_trace("FUNIKI: 0x");
+                // for (uint8_t i = 0; i < 18; i++) {
+                //     if (i == 6) {
+                //         os_trace("\t|\t");
+                //     } else if (i == 12) {
+                //         if (capture.bits == kFunikiAcBits)
+                //             break;
+                //         else {
+                //             os_trace("\t|\t");
+                //         }
+                //     }
                 //     os_trace("%02x", capture.state[i]);
                 // }
                 // os_trace("\r\n");
-                AQUA_setRaw(capture.state, capture.decode_type, &ir_state);
-            } else if (capture.decode_type == FUNIKI){
-                os_trace("FUNIKI: 0x");
-                for (uint8_t i = 0; i < 18; i++) {
-                    if (i == 6) {
-                        os_trace("\t|\t");
-                    } else if (i == 12) {
-                        if (capture.bits == kFunikiAcBits)
-                            break;
-                        else {
-                            os_trace("\t|\t");
-                        }
-                    }
-                    os_trace("%02x", capture.state[i]);
-                }
-                os_trace("\r\n");
                 Funiki_setRaw((uint8_t*)&capture.value, capture.decode_type, &ir_state);
             } else if (capture.decode_type == CASPER){
-                os_trace("CASPER: 0x");
-                for (uint8_t i = 0; i < 21; i++) {
-                    if (i == 6 || i == 14) {
-                        os_trace("\t|\t");
-                    }
-                    os_trace("%02x", capture.state[i]);
-                }
-                os_trace("\r\n");
+                // os_trace("CASPER: 0x");
+                // for (uint8_t i = 0; i < 21; i++) {
+                //     if (i == 6 || i == 14) {
+                //         os_trace("\t|\t");
+                //     }
+                //     os_trace("%02x", capture.state[i]);
+                // }
+                // os_trace("\r\n");
                 Casper_setRaw((uint8_t*)&capture.value, capture.decode_type, &ir_state);
             }
             IR_logCommon(ir_state);

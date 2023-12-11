@@ -148,5 +148,6 @@ void IRsend_begin(void);
 void Casper_send(state_ir_t ir_state);
 void LG_send(state_ir_t state_ir);
 void Funiki_send(state_ir_t state_ir);
+void Aqua_send(state_ir_t state_ir);
 
 #endif
