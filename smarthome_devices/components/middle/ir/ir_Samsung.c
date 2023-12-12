@@ -27,8 +27,8 @@
 #define kSamsungAcSectionMark 3086
 #define kSamsungAcSectionSpace 8864
 #define kSamsungAcSectionGap 2886
-#define kSamsungAcBitMark 586
-#define kSamsungAcOneSpace 1432
+#define kSamsungAcBitMark 560
+#define kSamsungAcOneSpace 1560
 #define kSamsungAcZeroSpace 436
 
 // Data from https://github.com/crankyoldgit/IRremoteESP8266/issues/1220
@@ -216,7 +216,7 @@ void sendSamsungAC(const uint8_t data[], const uint16_t nbytes,
                            const uint16_t repeat) {
   if (nbytes < kSamsungAcStateLength && nbytes % kSamsungAcSectionLength)
     return;  // Not an appropriate number of bytes to send a proper message.
-
+  vTaskEnterCritical();
   enableIROut(38, 50);
   for (uint16_t r = 0; r <= repeat; r++) {
     // Header
@@ -225,7 +225,7 @@ void sendSamsungAC(const uint8_t data[], const uint16_t nbytes,
     // Send in 7 byte sections.
     for (uint16_t offset = 0; offset < nbytes;
          offset += kSamsungAcSectionLength) {
-      sendGeneric(kSamsungAcSectionMark, kSamsungAcSectionSpace,
+      sendGenericBytes(kSamsungAcSectionMark, kSamsungAcSectionSpace,
                   kSamsungAcBitMark, kSamsungAcOneSpace, kSamsungAcBitMark,
                   kSamsungAcZeroSpace, kSamsungAcBitMark, kSamsungAcSectionGap,
                   data + offset, kSamsungAcSectionLength,  // 7 bytes == 56 bits
@@ -234,6 +234,7 @@ void sendSamsungAC(const uint8_t data[], const uint16_t nbytes,
     // Complete made up guess at inter-message gap.
     space(kDefaultMessageGap - kSamsungAcSectionGap);
   }
+  vTaskExitCritical();
 }
 
 void Samsung_sendExtended(state_ir_t state_ir) 
@@ -272,15 +273,21 @@ void Samsung_sendExtended(state_ir_t state_ir)
     case kSamsungAcFanMed:
     case kSamsungAcFanHigh:
     case kSamsungAcFanTurbo:
-      if (_.Mode == kSamsungAcAuto) return;  // Not valid in Auto mode.
+      if (_.Mode == kSamsungAcAuto) {
+          break;  // Not valid in Auto mode.
+      }
+      _.Fan = (uint8_t)state_ir.fanspeed;
       break;
     case kSamsungAcFanAuto2:  // Special fan setting for when in Auto mode.
-      if (_.Mode != kSamsungAcAuto) return;
+      if (_.Mode != kSamsungAcAuto){
+        break;
+      }
+      _.Fan = (uint8_t)state_ir.fanspeed;
       break;
-    default:
-      return;
+    default: {
+      break;
+    }
   }
-  _.Fan = (uint8_t)state_ir.fanspeed;
 
   _.Power1 = _.Power2 = (state_ir.power ? 0b11 : 0b00);
 
@@ -313,6 +320,7 @@ void Samsung_sendExtended(state_ir_t state_ir)
 // send 14 bytes
 void Samsung_send(state_ir_t state_ir)
 {
+  os_trace("%s\r\n", __func__);
   SamsungProtocol _;
 
   static const uint8_t kReset[kSamsungAcExtendedStateLength] = {
@@ -346,19 +354,50 @@ void Samsung_send(state_ir_t state_ir)
     case kSamsungAcFanMed:
     case kSamsungAcFanHigh:
     case kSamsungAcFanTurbo:
-      if (_.Mode == kSamsungAcAuto) return;  // Not valid in Auto mode.
+      if (_.Mode == kSamsungAcAuto) {
+          // os_trace("Not valid in Auto mode\r\n");
+          break;  // Not valid in Auto mode.
+      }
+      _.Fan = (uint8_t)state_ir.fanspeed;
       break;
     case kSamsungAcFanAuto2:  // Special fan setting for when in Auto mode.
-      if (_.Mode != kSamsungAcAuto) return;
+      if (_.Mode != kSamsungAcAuto){
+        // os_trace("Special fan setting for when in Auto mode.\r\n");
+        break;
+      }
+      _.Fan = (uint8_t)state_ir.fanspeed;
       break;
-    default:
-      return;
+    default: {
+      // os_trace("default fanspeed not valid %u\r\n", (uint8_t)state_ir.fanspeed);
+      break;
+    }
   }
-  _.Fan = (uint8_t)state_ir.fanspeed;
-
+  
   _.Power1 = _.Power2 = (state_ir.power ? 0b11 : 0b00);
 
   checksum(&_);
+
+  os_trace("SAMSUNG_SEND: 0x");
+  for (uint8_t i = 0; i < 14; i++) {
+      if (i == 7) {
+          os_trace("\t|\t");
+      } else if (i == 14) {
+        break;
+      }
+      os_trace("%02x", _.raw[i]);
+  }
+  os_trace("\r\n");
+
+  // state_ir_t my_state_ir;
+
+  // if (!validChecksum(_.raw, kSamsungAcStateLength)) {
+  //   os_trace("DEBUG: Checksum failed!\r\n");
+  //   // return false;
+  // }
+
+  // Samsung_setRaw(_.raw, kSamsungAcStateLength, SAMSUNG_AC, &my_state_ir);
+
+  // IR_logCommon(my_state_ir);
 
   sendSamsungAC(_.raw, kSamsungAcStateLength, 0);
 }

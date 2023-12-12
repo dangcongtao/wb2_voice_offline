@@ -205,6 +205,9 @@ void ir_loop(void);
 void IRrecv_init(const uint32_t recvpin, const uint16_t bufsize,
                  const uint8_t timeout, const bool save_buffer);
 
+void Irrecv_pause(void);
+void resume(void);
+
 void m_ir_init(void);
 
 #endif

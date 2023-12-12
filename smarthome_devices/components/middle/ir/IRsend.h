@@ -10,7 +10,7 @@
 
 #define kNoTempValue -100.0
 
-#define kPeriodOffset -5
+#define kPeriodOffset -2
 #define kDutyDefault  50  // Percentage
 #define kDutyMax  100     // Percentage
 #define kMaxAccurateUsecDelay  16383

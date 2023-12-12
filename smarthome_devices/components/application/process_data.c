@@ -24,6 +24,7 @@
 #include "bl_sys.h"
 #include "IRremoteWB2.h"
 #include "IRsend.h"
+#include "IRrecv.h"
 
 static char respond[512];
 extern char key[16], iv[16];
@@ -289,7 +290,9 @@ static void ir_control(cJSON *jsRoot)
         if (array_ir_control_handler[i]._cmd_number == brand)
         {
             os_trace("ir brand: %ld\r\n", brand);
+            // Irrecv_pause();
             array_ir_control_handler[i]._handler(jsRoot);
+            // resume();
             break;
         }
     }
@@ -736,7 +739,7 @@ static void AC_Samsung_Callback(cJSON *jsRoot)
     state_ir.mode = mode;
     state_ir.fanspeed = fan;
 
-    Samsung_sendExtended(state_ir);
+    Samsung_send(state_ir);
 
     result = 1;
 

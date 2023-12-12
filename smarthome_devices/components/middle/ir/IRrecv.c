@@ -28,6 +28,11 @@ static void timer3_cb(void *data)
     // bl_os_timer_start_periodic(timer1,(delay_ms / 1000),((delay_ms % 1000) * 1e6));
 }
 
+void Irrecv_pause(void)
+{
+    params.rcvstate = kStopState;
+}
+
 /// Interrupt handler for changes on the GPIO pin handling incoming IR messages.
 static void gpio_intr(void)
 {
