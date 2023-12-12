@@ -197,6 +197,8 @@ void Funiki_setRaw(const uint8_t* new_code, const decode_type_t protocol, state_
 
 void Casper_setRaw(const uint8_t* new_code, const decode_type_t protocol, state_ir_t *ir_state);
 
+void Samsung_setRaw(const uint8_t* new_code, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state);
+
 
 // void enableIRIn(const bool pullup);
 void ir_loop(void);

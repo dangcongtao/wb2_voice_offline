@@ -242,6 +242,7 @@ static uint8_t is_power_on(uint8_t* states)
 
 static void Funiki_toCommon(const uint8_t* new_code, state_ir_t *ir_state)
 {
+    ir_state->protocol = FUNIKI;
     ir_state->mode = get_mode_funiki(new_code);
     ir_state->fanspeed = get_fan_funiki(new_code);
     ir_state->power = is_power_on(new_code);

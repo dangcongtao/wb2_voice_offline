@@ -1,4 +1,5 @@
 #include "IRutils.h"
+#include "hardware.h"
 
 bool hasACState(const decode_type_t protocol) 
 {
@@ -66,7 +67,7 @@ bool hasACState(const decode_type_t protocol)
   }
 }
 
-uint16_t countBits(const uint8_t * const start, const uint16_t length,
+uint16_t countBits(uint8_t *start, const uint16_t length,
                    const bool ones, const uint16_t init) {
   uint16_t count = init;
   for (uint16_t offset = 0; offset < length; offset++)
@@ -78,6 +79,20 @@ uint16_t countBits(const uint8_t * const start, const uint16_t length,
     return count;
   else
     return (length * 8) - count;
+}
+
+uint16_t countBits64(const uint64_t data, const uint8_t length, const bool ones,
+                   const uint16_t init) 
+{
+  uint16_t count = init;
+  uint8_t bitsSoFar = length;
+  for (uint64_t remainder = data; remainder && bitsSoFar;
+       remainder >>= 1, bitsSoFar--)
+      if (remainder & 1) count++;
+  if (ones || length == 0)
+    return count;
+  else
+    return length - count;
 }
 
 uint64_t reverseBits(uint64_t input, uint16_t nbits) {

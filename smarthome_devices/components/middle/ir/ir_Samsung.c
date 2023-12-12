@@ -94,14 +94,32 @@ uint8_t getSectionChecksum(const uint8_t *section) {
           GETBITS8(*(section + 1), kHighNibble, kNibbleSize));
 }
 
-uint8_t calcSectionChecksum(const uint8_t *section) {
+uint8_t calcSectionChecksum(uint8_t *section) {
   uint8_t sum = 0;
 
-  sum += countBits(*section, 8, true, 0);  // Include the entire first byte
+  // sum += countBits(section, 8, true, 0);  // Include the entire first byte
+
+  // os_trace("%s sum1: %u\r\n", __func__, sum);
+  // // The lower half of the second byte.
+  // uint8_t data = GETBITS8(*(section + 1), kLowNibble, kNibbleSize);
+  // sum += countBits(&data, 8, true, 0);
+
+  // os_trace("%s sum2: %u\r\n", __func__, sum);
+  // // The upper half of the third byte.
+  // data = GETBITS8(*(section + 2), kHighNibble, kNibbleSize);
+  // sum += countBits(&data, 8, true, 0);
+
+  // os_trace("%s sum3: %u\r\n", __func__, sum);
+  // // The next 4 bytes.
+  // sum += countBits(section + 3, 4, true, 0);
+
+  // os_trace("%s sum4: %u\r\n", __func__, sum);
+
+  sum += countBits64(*section, 8, true, 0);  // Include the entire first byte
   // The lower half of the second byte.
-  sum += countBits(GETBITS8(*(section + 1), kLowNibble, kNibbleSize), 8, true, 0);
+  sum += countBits64(GETBITS8(*(section + 1), kLowNibble, kNibbleSize), 8, true, 0);
   // The upper half of the third byte.
-  sum += countBits(GETBITS8(*(section + 2), kHighNibble, kNibbleSize), 8, true, 0);
+  sum += countBits64(GETBITS8(*(section + 2), kHighNibble, kNibbleSize), 8, true, 0);
   // The next 4 bytes.
   sum += countBits(section + 3, 4, true, 0);
   // Bitwise invert the result.
@@ -115,9 +133,12 @@ static bool validChecksum(const uint8_t state[], const uint16_t length) {
                                                : length;
   for (uint16_t offset = 0;
        offset + kSamsungAcSectionLength <= maxlength;
-       offset += kSamsungAcSectionLength)
-    result &= (getSectionChecksum(state + offset) ==
-               calcSectionChecksum(state + offset));
+       offset += kSamsungAcSectionLength) {
+
+        uint8_t cal2 = calcSectionChecksum(state + offset);
+        uint8_t cal1 = getSectionChecksum(state + offset);
+    result &= (cal1 == cal2);
+  }
   return result;
 }
 
@@ -153,19 +174,18 @@ bool decodeSamsungAC(decode_results *results, uint16_t offset,
                         kSamsungAcBitMark, kSamsungAcZeroSpace,
                         kSamsungAcBitMark, kSamsungAcSectionGap,
                         pos + kSamsungAcSectionLength >= nbits / 8,
-                        _tolerance, 0, false);
+                        40, 0, false);
     if (used == 0){
       os_trace("%s step 2 not used failed\r\n", __func__);
       return false;
     }
     offset += used;
   }
-  os_trace("step 5\r\n");
   // Compliance
   if (strict) {
     // Is the checksum valid?
     if (!validChecksum(results->state, nbits / 8)) {
-      os_trace("DEBUG: Checksum failed!");
+      os_trace("DEBUG: Checksum failed!\r\n");
       return false;
     }
   }
@@ -177,4 +197,234 @@ bool decodeSamsungAC(decode_results *results, uint16_t offset,
   // is a union data type.
   os_trace("decode samsung ac success\r\n");
   return true;
+}
+
+static void checksum(SamsungProtocol *_) {
+  uint8_t sectionsum = calcSectionChecksum(_->raw);
+  _->Sum1Upper = GETBITS8(sectionsum, kHighNibble, kNibbleSize);
+  _->Sum1Lower = GETBITS8(sectionsum, kLowNibble, kNibbleSize);
+  sectionsum = calcSectionChecksum(_->raw + kSamsungAcSectionLength);
+  _->Sum2Upper = GETBITS8(sectionsum, kHighNibble, kNibbleSize);
+  _->Sum2Lower = GETBITS8(sectionsum, kLowNibble, kNibbleSize);
+  sectionsum = calcSectionChecksum(_->raw + kSamsungAcSectionLength * 2);
+  _->Sum3Upper = GETBITS8(sectionsum, kHighNibble, kNibbleSize);
+  _->Sum3Lower = GETBITS8(sectionsum, kLowNibble, kNibbleSize);
+}
+
+
+void sendSamsungAC(const uint8_t data[], const uint16_t nbytes,
+                           const uint16_t repeat) {
+  if (nbytes < kSamsungAcStateLength && nbytes % kSamsungAcSectionLength)
+    return;  // Not an appropriate number of bytes to send a proper message.
+
+  enableIROut(38, 50);
+  for (uint16_t r = 0; r <= repeat; r++) {
+    // Header
+    mark(kSamsungAcHdrMark);
+    space(kSamsungAcHdrSpace);
+    // Send in 7 byte sections.
+    for (uint16_t offset = 0; offset < nbytes;
+         offset += kSamsungAcSectionLength) {
+      sendGeneric(kSamsungAcSectionMark, kSamsungAcSectionSpace,
+                  kSamsungAcBitMark, kSamsungAcOneSpace, kSamsungAcBitMark,
+                  kSamsungAcZeroSpace, kSamsungAcBitMark, kSamsungAcSectionGap,
+                  data + offset, kSamsungAcSectionLength,  // 7 bytes == 56 bits
+                  38000, false, 0, 50);                    // Send in LSBF order
+    }
+    // Complete made up guess at inter-message gap.
+    space(kDefaultMessageGap - kSamsungAcSectionGap);
+  }
+}
+
+void Samsung_sendExtended(state_ir_t state_ir) 
+{
+
+  SamsungProtocol _;
+
+  static const uint8_t kReset[kSamsungAcExtendedStateLength] = {
+      0x02, 0x92, 0x0F, 0x00, 0x00, 0x00, 0xF0,
+      0x01, 0x02, 0xAE, 0x71, 0x00, 0x15, 0xF0};
+  memcpy(_.raw, kReset, kSamsungAcExtendedStateLength);
+
+  // temp
+  uint8_t my_temp = (uint8_t)state_ir.degrees;
+  uint8_t newtemp = max(kSamsungAcMinTemp, my_temp);
+  newtemp = min(kSamsungAcMaxTemp, newtemp);
+  _.Temp = newtemp - kSamsungAcMinTemp;
+
+  // mode
+  uint8_t newmode = state_ir.mode;
+  if (newmode > kSamsungAcHeat) newmode = kSamsungAcAuto;
+  _.Mode = newmode;
+
+  // Auto mode has a special fan setting valid only in auto mode.
+  if (newmode == kSamsungAcAuto) {
+    _.Fan = kSamsungAcFanAuto2;
+  } else {
+    // Non-Auto can't have this fan setting
+    if (_.Fan == kSamsungAcFanAuto2)
+      _.Fan = kSamsungAcFanAuto;  // Default to something safe.
+  }
+
+  switch ((uint8_t)state_ir.fanspeed) {
+    case kSamsungAcFanAuto:
+    case kSamsungAcFanLow:
+    case kSamsungAcFanMed:
+    case kSamsungAcFanHigh:
+    case kSamsungAcFanTurbo:
+      if (_.Mode == kSamsungAcAuto) return;  // Not valid in Auto mode.
+      break;
+    case kSamsungAcFanAuto2:  // Special fan setting for when in Auto mode.
+      if (_.Mode != kSamsungAcAuto) return;
+      break;
+    default:
+      return;
+  }
+  _.Fan = (uint8_t)state_ir.fanspeed;
+
+  _.Power1 = _.Power2 = (state_ir.power ? 0b11 : 0b00);
+
+  static const uint8_t extended_middle_section[kSamsungAcSectionLength] = {
+      0x01, 0xD2, 0x0F, 0x00, 0x00, 0x00, 0x00};
+
+  memcpy(_.raw + 2 * kSamsungAcSectionLength,
+              _.raw + kSamsungAcSectionLength,
+              kSamsungAcSectionLength);
+  memcpy(_.raw + kSamsungAcSectionLength, extended_middle_section,
+              kSamsungAcSectionLength);
+
+
+  _.OnTimerEnable = 0;
+  _.OnTimeDay = 0;
+
+  checksum(&_);
+
+  // Send it.
+  sendSamsungAC(_.raw, kSamsungAcExtendedStateLength, 0);
+  // Now revert it by copying the third section over the second section.
+  // memcpy(_.raw + kSamsungAcSectionLength,
+  //             _.raw + 2 * kSamsungAcSectionLength,
+  //             kSamsungAcSectionLength);
+
+  // _forceextended = false;  // It has now been sent, so clear the flag if set.
+}
+
+
+// send 14 bytes
+void Samsung_send(state_ir_t state_ir)
+{
+  SamsungProtocol _;
+
+  static const uint8_t kReset[kSamsungAcExtendedStateLength] = {
+      0x02, 0x92, 0x0F, 0x00, 0x00, 0x00, 0xF0,
+      0x01, 0x02, 0xAE, 0x71, 0x00, 0x15, 0xF0};
+  memcpy(_.raw, kReset, kSamsungAcExtendedStateLength);
+
+  // temp
+  uint8_t my_temp = (uint8_t)state_ir.degrees;
+  uint8_t newtemp = max(kSamsungAcMinTemp, my_temp);
+  newtemp = min(kSamsungAcMaxTemp, newtemp);
+  _.Temp = newtemp - kSamsungAcMinTemp;
+
+  // mode
+  uint8_t newmode = state_ir.mode;
+  if (newmode > kSamsungAcHeat) newmode = kSamsungAcAuto;
+  _.Mode = newmode;
+
+  // Auto mode has a special fan setting valid only in auto mode.
+  if (newmode == kSamsungAcAuto) {
+    _.Fan = kSamsungAcFanAuto2;
+  } else {
+    // Non-Auto can't have this fan setting
+    if (_.Fan == kSamsungAcFanAuto2)
+      _.Fan = kSamsungAcFanAuto;  // Default to something safe.
+  }
+
+  switch ((uint8_t)state_ir.fanspeed) {
+    case kSamsungAcFanAuto:
+    case kSamsungAcFanLow:
+    case kSamsungAcFanMed:
+    case kSamsungAcFanHigh:
+    case kSamsungAcFanTurbo:
+      if (_.Mode == kSamsungAcAuto) return;  // Not valid in Auto mode.
+      break;
+    case kSamsungAcFanAuto2:  // Special fan setting for when in Auto mode.
+      if (_.Mode != kSamsungAcAuto) return;
+      break;
+    default:
+      return;
+  }
+  _.Fan = (uint8_t)state_ir.fanspeed;
+
+  _.Power1 = _.Power2 = (state_ir.power ? 0b11 : 0b00);
+
+  checksum(&_);
+
+  sendSamsungAC(_.raw, kSamsungAcStateLength, 0);
+}
+
+static opmode_t get_mode(const uint8_t mode)
+{
+  switch (mode) {
+    case kSamsungAcCool: return opmode_kCool;
+    case kSamsungAcHeat: return opmode_kHeat;
+    case kSamsungAcDry:  return opmode_kDry;
+    case kSamsungAcFan:  return opmode_kFan;
+    default:             return opmode_kAuto;
+  }
+}
+
+static opmode_t get_fan(const uint8_t spd)
+{
+  switch (spd) {
+    case kSamsungAcFanTurbo: return fanspeed_kMax;
+    case kSamsungAcFanHigh:  return fanspeed_kHigh;
+    case kSamsungAcFanMed:   return fanspeed_kMedium;
+    case kSamsungAcFanLow:   return fanspeed_kMin;
+    default:                 return fanspeed_kAuto;
+  }
+}
+
+static bool getPower(SamsungProtocol _)
+{
+  return _.Power1 == 0b11 && _.Power2 == 0b11;
+}
+
+static uint8_t getTemp(SamsungProtocol _)
+{
+  return _.Temp + kSamsungAcMinTemp;
+}
+
+static void Samsung_toCommon(SamsungProtocol _, state_ir_t *ir_state)
+{
+    ir_state->protocol = SAMSUNG_AC;
+    ir_state->model = -1;
+    ir_state->mode = get_mode(_.Mode);
+    ir_state->fanspeed = get_fan(_.Fan);
+    ir_state->power = getPower(_);
+    ir_state->degrees = getTemp(_);
+}
+
+void Samsung_setRaw(const uint8_t* new_code, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state) 
+{
+    // memcpy(_.data.raw, new_code, kFunikiAcStateLength);
+    SamsungProtocol _;
+    memset(&_, 0, sizeof(SamsungProtocol));
+    memcpy(_.raw, new_code, min(length, kSamsungAcExtendedStateLength));
+    
+    if (length > kSamsungAcStateLength) {
+      // _OnTimerEnable = _.OnTimerEnable;
+      // _OffTimerEnable = _.OffTimerEnable;
+      // _Sleep = _.Sleep5 && _.Sleep12;
+      // _OnTimer = _getOnTimer();
+      // _OffTimer = _getOffTimer();
+      for (uint8_t i = kSamsungAcStateLength; i < length; i++)
+        _.raw[i - kSamsungAcSectionLength] = _.raw[i];
+    }
+
+    Samsung_toCommon(_, ir_state);
+    
+    // memcpy(&_.data.raw, new_code, 12);
+    // os_trace("fan: %u\r\n", _.data.fan);
+    // _.data.raw = new_code;
 }

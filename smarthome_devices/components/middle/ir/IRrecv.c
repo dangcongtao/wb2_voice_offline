@@ -484,7 +484,7 @@ bool decode(decode_results *results, irparams_t *save,
     if (params.rcvstate != kStopState)
         return false;
 #endif
-    os_trace("%s\r\n", __func__);
+    os_trace("%s %u\r\n", __func__, params.rawlen);
 
     if (!params.overflow)
         params.rawbuf[params.rawlen] = 0;
@@ -788,13 +788,13 @@ if (1){
 #endif
 
 #if DECODE_SAMSUNG_AC
-    // os_trace("Attempting Samsung AC (extended) decode\r\n");
+    os_trace("Attempting Samsung AC (extended) decode\r\n");
     // Check the extended size first, as it should fail fast due to longer
     // length.
-    // if (decodeSamsungAC(results, offset, kSamsungAcExtendedBits, true)) return true;
+    if (decodeSamsungAC(results, offset, kSamsungAcExtendedBits, true)) return true;
     // Now check for the more common length.
     os_trace("Attempting Samsung AC decode\r\n");
-    if (decodeSamsungAC(results, offset, kSamsungAcBits, false)) return true;
+    if (decodeSamsungAC(results, offset, kSamsungAcBits, true)) return true;
 #endif
 
 
@@ -976,6 +976,41 @@ void m_ir_task(void)
                 // }
                 // os_trace("\r\n");
                 Casper_setRaw((uint8_t*)&capture.value, capture.decode_type, &ir_state);
+            } else if (capture.decode_type == SAMSUNG_AC){
+                os_trace("SAMSUNG: 0x");
+                for (uint8_t i = 0; i < 21; i++) {
+                    if (i == 7) {
+                        os_trace("\t|\t");
+                    } else if (i == 14) {
+                        if (capture.bits == kSamsungAcBits)
+                            break;
+                        else {
+                            os_trace("\t|\t");
+                        }
+                    }
+                    os_trace("%02x", capture.state[i]);
+                }
+                os_trace("\r\n");
+                // if (capture.bits == kSamsungAcBits) {
+                //     Samsung_setRaw((uint8_t*)&capture.value, kSamsungAcStateLength, capture.decode_type, &ir_state);
+                // } else if (capture.bits == kSamsungAcExtendedBits) {
+                //     Samsung_setRaw((uint8_t*)&capture.value, kSamsungAcExtendedStateLength, capture.decode_type, &ir_state);
+                // }
+
+                switch (capture.bits)
+                {
+                case kSamsungAcBits:
+                    Samsung_setRaw((uint8_t*)&capture.value, kSamsungAcStateLength, capture.decode_type, &ir_state);
+                    break;
+                
+                case kSamsungAcExtendedBits:
+                    Samsung_setRaw((uint8_t*)&capture.value, kSamsungAcExtendedStateLength, capture.decode_type, &ir_state);
+                    break;
+                
+                default:
+                    break;
+                }
+                
             }
             IR_logCommon(ir_state);
             irRecvCounter++;

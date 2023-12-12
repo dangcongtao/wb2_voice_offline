@@ -29,7 +29,9 @@ uint8_t sumNibbles(const uint64_t data, const uint8_t count,
 uint64_t reverseBits(uint64_t input, uint16_t nbits);
 void resultToHexidecimal(const decode_results * const result, char *output);
 
-uint16_t countBits(const uint8_t * const start, const uint16_t length,
-                   const bool ones, const uint16_t init);
+uint16_t countBits(uint8_t * start, uint16_t length,
+                   bool ones, uint16_t init);
+uint16_t countBits64(const uint64_t data, const uint8_t length, const bool ones,
+                   const uint16_t init);
 
 #endif

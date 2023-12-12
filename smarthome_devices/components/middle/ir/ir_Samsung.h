@@ -149,7 +149,7 @@ typedef struct
             // Byte 20
             uint8_t : 8;
         };
-    } data;
+    };
 } SamsungProtocol;
 
 
