@@ -154,7 +154,7 @@ bool decodeAquaAC(decode_results *results, uint16_t offset, const uint16_t nbits
     // results->address = 0;
 
 
-    os_trace("decode Aqua success\r\n");
+    os_trace("%s success\r\n", __func__);
     return true;
 }
 

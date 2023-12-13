@@ -57,7 +57,7 @@ bool decodeFunikiAC(decode_results *results, uint16_t offset, const uint16_t nbi
     // results->address = 0;
 
 
-    os_trace("decode Funiki success\r\n");
+    os_trace("%s success\r\n", __func__);
     return true;
 }
 

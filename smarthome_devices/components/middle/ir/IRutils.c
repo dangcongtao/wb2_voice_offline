@@ -118,6 +118,35 @@ uint8_t sumNibbles(const uint64_t data, const uint8_t count,
   return nibbleonly ? sum & 0xF : sum;
 }
 
+uint8_t xorBytes(const uint8_t * const start, const uint16_t length,
+                 const uint8_t init) {
+  uint8_t checksum = init;
+  const uint8_t *ptr;
+  for (ptr = start; ptr - start < length; ptr++) checksum ^= *ptr;
+  return checksum;
+}
+
+bool checkInvertedBytePairs(uint8_t *ptr,
+                              const uint16_t length) 
+{
+  for (uint16_t i = 1; i < length; i += 2) {
+    // Code done this way to avoid a compiler warning bug.
+    uint8_t inv = ~*(ptr + i - 1);
+    if (*(ptr + i) != inv) return false;
+  }
+  return true;
+}
+
+uint8_t * invertBytePairs(uint8_t *ptr, const uint16_t length)
+{
+  for (uint16_t i = 1; i < length; i += 2) {
+    // Code done this way to avoid a compiler warning bug.
+    uint8_t inv = ~*(ptr + i - 1);
+    *(ptr + i) = inv;
+  }
+  return ptr;
+}
+
 // void resultToHexidecimal(const decode_results * const result, char *output) 
 // {
 //   strcpy(output, "0x");

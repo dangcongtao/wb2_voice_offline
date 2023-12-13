@@ -137,5 +137,15 @@ typedef enum {
   kLastDecodeType = TEKNOPOINT,
 } decode_type_t;
 
+#define kSingleRepeat 1
+
+#define kToshibaACStateLength 9
+#define kToshibaACBits  (kToshibaACStateLength * 8)
+#define kToshibaACMinRepeat  kSingleRepeat
+#define kToshibaACStateLengthShort  (kToshibaACStateLength - 2)
+#define kToshibaACBitsShort  (kToshibaACStateLengthShort * 8)
+#define kToshibaACStateLengthLong  (kToshibaACStateLength + 1)
+#define kToshibaACBitsLong (kToshibaACStateLengthLong * 8)
+
 
 #endif

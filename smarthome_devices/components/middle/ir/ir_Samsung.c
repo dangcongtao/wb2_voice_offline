@@ -85,7 +85,7 @@ bool decodeSAMSUNG(decode_results *results, uint16_t offset,
   // command & address need to be reversed as they are transmitted LSB first,
   results->command = reverseBits(command, sizeof(command) * 8);
   results->address = reverseBits(address, sizeof(address) * 8);
-  os_trace("decode samsung success\r\n");
+  os_trace("%s success\r\n", __func__);
   return true;
 }
 

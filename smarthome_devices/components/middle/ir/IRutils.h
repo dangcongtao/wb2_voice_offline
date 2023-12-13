@@ -34,4 +34,11 @@ uint16_t countBits(uint8_t * start, uint16_t length,
 uint16_t countBits64(const uint64_t data, const uint8_t length, const bool ones,
                    const uint16_t init);
 
+uint8_t xorBytes(const uint8_t * const start, const uint16_t length,
+                 const uint8_t init);
+bool checkInvertedBytePairs(uint8_t *ptr,
+                              const uint16_t length);
+uint8_t * invertBytePairs(uint8_t *ptr, const uint16_t length);
+
+
 #endif

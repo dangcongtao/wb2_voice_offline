@@ -128,7 +128,7 @@ bool decodeLG(decode_results *results, uint16_t offset,
   results->value = data;
   results->command = command;
   results->address = data >> 20;  // The bits before the command.
-  os_trace("LG success\r\n");
+  os_trace("%s success\r\n", __func__);
   return true;
 }
 

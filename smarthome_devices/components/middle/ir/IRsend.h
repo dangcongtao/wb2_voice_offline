@@ -151,5 +151,6 @@ void Funiki_send(state_ir_t state_ir);
 void Aqua_send(state_ir_t state_ir);
 void Samsung_send(state_ir_t state_ir);
 void Samsung_sendExtended(state_ir_t state_ir);
+void Toshiba_send(state_ir_t state_ir);
 
 #endif

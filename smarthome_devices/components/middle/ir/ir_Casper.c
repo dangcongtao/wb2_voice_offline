@@ -49,19 +49,20 @@ bool decodeCasperAC(decode_results *results, uint16_t offset, const uint16_t nbi
 {
 
     // os_trace("decodeFunikiAC() offset: %d, nbits: %d, kFunikiBits: %d\r\n", offset, nbits, kFunikiBits);
+    if (results->rawlen != 344 || nbits != kCasperBits) {
+        return false;
+    }
 
     if (!matchMark(results->rawbuf[offset++], 9000, kUseDefTol, kMarkExcess)){
-        os_trace("%s match mark failed\r\n", __func__);
+        // os_trace("%s match mark failed\r\n", __func__);
         return false;
     }
     if (!matchSpace(results->rawbuf[offset++], 4500, kUseDefTol, kMarkExcess)){
-        os_trace("%s match space failed\r\n", __func__);
+        // os_trace("%s match space failed\r\n", __func__);
         return false;
     }
 
-    if (results->rawlen == 344 && nbits != kCasperBits) {
-        return false;
-    }
+    
     for (uint16_t pos = 0; pos < kCasperAcStateLength;) {
         uint16_t used;
         uint8_t temp_nbits;
@@ -105,7 +106,7 @@ bool decodeCasperAC(decode_results *results, uint16_t offset, const uint16_t nbi
     // results->address = 0;
 
 
-    os_trace("decode Casper success\r\n");
+    os_trace("%s success\r\n", __func__);
     return true;
 }
 

@@ -43,6 +43,7 @@
 #define DECODE_FUNIKI 1
 #define DECODE_AQUA   1
 #define DECODE_CASPER   1
+#define DECODE_TOSHIBA  1
 
 #define IR_RX 1
 #define DECODE_AC 1
@@ -177,6 +178,11 @@ bool decodeAquaAC(decode_results *results, uint16_t offset, const uint16_t nbits
 bool decodeCasperAC(decode_results *results, uint16_t offset, const uint16_t nbits, const bool strict);
 #endif
 
+#if DECODE_TOSHIBA
+bool decodeToshibaAC(decode_results* results, uint16_t offset,
+                             const uint16_t nbits, const bool strict);
+#endif
+
 bool matchSpace(uint32_t measured, uint32_t desired, uint8_t tolerance,
                         int16_t excess);
 
@@ -199,6 +205,7 @@ void Casper_setRaw(const uint8_t* new_code, const decode_type_t protocol, state_
 
 void Samsung_setRaw(const uint8_t* new_code, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state);
 
+void Toshiba_setRaw(const uint8_t* newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state); 
 
 // void enableIRIn(const bool pullup);
 void ir_loop(void);

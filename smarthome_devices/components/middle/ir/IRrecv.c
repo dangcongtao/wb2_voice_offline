@@ -277,7 +277,9 @@ uint16_t matchBytes(volatile uint16_t *data_ptr, uint8_t *result_ptr,
             return 0; // Fail
         
         result_ptr[byte_pos] = (uint8_t)result.data;
-        // os_trace("result_ptr[%u]: %u\r\n", byte_pos, result_ptr[byte_pos]);
+        #if DEBUG_LOG_RX
+        os_trace("result_ptr[%u]: %u\r\n", byte_pos, result_ptr[byte_pos]);
+        #endif
         offset += result.used;
     }
     return offset;
@@ -819,6 +821,15 @@ if (1){
     if (decodeCasperAC(results, offset, kCasperAcBits, true)) return true;
 #endif
 
+#if DECODE_TOSHIBA
+    os_trace("Attempting Toshiba AC 72bit decode\r\n");
+    if (decodeToshibaAC(results, offset, kToshibaACBits, true)) return true;
+    // os_trace("Attempting Toshiba AC 80bit decode\r\n");
+    // if (decodeToshibaAC(results, offset, kToshibaACBitsLong, true)) return true;
+    // os_trace("Attempting Toshiba AC 56bit decode\r\n");
+    // if (decodeToshibaAC(results, offset, kToshibaACBitsShort, true)) return true;
+#endif
+
     }
 
 #if DECODE_HASH
@@ -996,11 +1007,6 @@ void m_ir_task(void)
                     os_trace("%02x", capture.state[i]);
                 }
                 os_trace("\r\n");
-                // if (capture.bits == kSamsungAcBits) {
-                //     Samsung_setRaw((uint8_t*)&capture.value, kSamsungAcStateLength, capture.decode_type, &ir_state);
-                // } else if (capture.bits == kSamsungAcExtendedBits) {
-                //     Samsung_setRaw((uint8_t*)&capture.value, kSamsungAcExtendedStateLength, capture.decode_type, &ir_state);
-                // }
 
                 switch (capture.bits)
                 {
@@ -1016,7 +1022,26 @@ void m_ir_task(void)
                     break;
                 }
                 
+            } else if (capture.decode_type == TOSHIBA_AC){
+                switch (capture.bits)
+                {
+                case kToshibaACBits:
+                    Toshiba_setRaw((uint8_t*)capture.state, kToshibaACStateLength, capture.decode_type, &ir_state);
+                    break;
+                
+                case kToshibaACBitsShort:
+                    Toshiba_setRaw((uint8_t*)capture.state, kToshibaACStateLengthShort, capture.decode_type, &ir_state);
+                    break;
+                
+                case kToshibaACBitsLong:
+                    Toshiba_setRaw((uint8_t*)capture.state, kToshibaACStateLengthLong, capture.decode_type, &ir_state);
+                    break;
+                
+                default:
+                    break;
+                }
             }
+            
             IR_logCommon(ir_state);
             irRecvCounter++;
             resume();
