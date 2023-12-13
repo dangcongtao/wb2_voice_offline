@@ -74,7 +74,7 @@ bool decodeCasperAC(decode_results *results, uint16_t offset, const uint16_t nbi
             temp_nbits = 7;
         }
         // Section Header + Section Data (7 bytes) + Section Footer
-        used = matchGenericUint8(results->rawbuf + offset, (uint8_t*)(&results->state[pos]),
+        used = matchGenericState(results->rawbuf + offset, (uint8_t*)(&results->state[pos]),
                             results->rawlen - offset, temp_nbits * 8,
                             0, 0,
                             502, 1650,

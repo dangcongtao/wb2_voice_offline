@@ -8,10 +8,11 @@
 #include "bl602_glb.h"
 #include <bl_os_hal.h>
 #include <bl_wdt.h>
+#include "axk_attr.h"
 
-irparams_t params;
+DRAM_ATTR irparams_t params;
 irparams_t *params_save;
-hosal_gpio_irq_trigger_t trigger_type = HOSAL_IRQ_TRIG_NEG_PULSE;
+DRAM_ATTR hosal_gpio_irq_trigger_t trigger_type = HOSAL_IRQ_TRIG_NEG_PULSE;
 
 uint8_t _tolerance;
 
@@ -33,15 +34,23 @@ void Irrecv_pause(void)
     params.rcvstate = kStopState;
 }
 
-/// Interrupt handler for changes on the GPIO pin handling incoming IR messages.
-static void gpio_intr(void)
-{
 
+/// Interrupt handler for changes on the GPIO pin handling incoming IR messages.
+IRAM_ATTR void gpio_intr(void)
+{
     uint32_t now = bl_timer_now_us();
 
-    // bl_os_timer_stop(timer3, BL_OS_NO_WAITING);
-    static uint32_t start = 0;
+    if (trigger_type == HOSAL_IRQ_TRIG_NEG_PULSE)
+    {
+        trigger_type = HOSAL_IRQ_TRIG_POS_PULSE;
+    }
+    else
+    {
+        trigger_type = HOSAL_IRQ_TRIG_NEG_PULSE;
+    }
+    bl_set_gpio_intmod(params.recvpin, GLB_GPIO_INT_CONTROL_ASYNC, trigger_type);
 
+    static uint32_t  start = 0;
 #if defined(ESP8266)
     uint32_t gpio_status = GPIO_REG_READ(GPIO_STATUS_ADDRESS);
     os_timer_disarm(&timer);
@@ -83,18 +92,9 @@ static void gpio_intr(void)
 
     start = now;
 
-    uint32_t delay_ms = (uint32_t)params.timeout;
-    bl_os_timer_start_once(timer3, (delay_ms / 1000), ((delay_ms % 1000) * 1e6));
+    bl_os_timer_start_once(timer3, ((uint32_t)params.timeout / 1000), (((uint32_t)params.timeout % 1000) * 1e6));
 
-    if (trigger_type == HOSAL_IRQ_TRIG_NEG_PULSE)
-    {
-        trigger_type = HOSAL_IRQ_TRIG_POS_PULSE;
-    }
-    else
-    {
-        trigger_type = HOSAL_IRQ_TRIG_NEG_PULSE;
-    }
-    bl_set_gpio_intmod(params.recvpin, GLB_GPIO_INT_CONTROL_ASYNC, trigger_type);
+    
 
     // #if defined(ESP8266)
     //   os_timer_arm(&timer, params.timeout, ONCE);
@@ -441,7 +441,7 @@ uint16_t matchGeneric(volatile uint16_t *data_ptr,
                          tolerance, excess, MSBfirst);
 }
 
-uint16_t matchGenericUint8(volatile uint16_t *data_ptr,
+uint16_t matchGenericState(volatile uint16_t *data_ptr,
                         uint8_t *result_ptr,
                         const uint16_t remaining, const uint16_t nbits,
                         const uint16_t hdrmark, const uint32_t hdrspace,
@@ -456,6 +456,255 @@ uint16_t matchGenericUint8(volatile uint16_t *data_ptr,
     return _matchGeneric(data_ptr, NULL, result_ptr, false, remaining, nbits,
                          hdrmark, hdrspace, onemark, onespace,
                          zeromark, zerospace, footermark, footerspace, atleast,
+                         tolerance, excess, MSBfirst);
+}
+
+// HUNONIC_LIMIT
+
+bool matchLimit(uint32_t measured, uint32_t lower_limit, uint32_t upper_limit)
+{
+#if DEBUG_LOG_RX
+    os_trace("%s measured: %lu, lower_limit: %lu, upper_limit: %lu\r\n", __func__, measured, lower_limit, upper_limit);
+#endif
+    return measured * 2 >= lower_limit && measured * 2 <= upper_limit;
+}
+
+match_result_t matchDataLimit(
+    volatile uint16_t *data_ptr, const uint16_t nbits, 
+                    const uint16_t onemarkLower,
+                    const uint16_t onemarkUpper,
+                    const uint32_t onespaceLower,
+                    const uint32_t onespaceUpper,
+                    const uint16_t zeromarkLower,
+                    const uint16_t zeromarkUpper,
+                    const uint32_t zerospaceLower,
+                    const uint32_t zerospaceUpper,
+    const uint8_t tolerance, const int16_t excess, const bool MSBfirst,
+    const bool expectlastspace)
+{
+    match_result_t result;
+    result.success = false; // Fail by default.
+    result.data = 0;
+    if (expectlastspace)
+    { // We are expecting data with a final space.
+        for (result.used = 0; result.used < nbits * 2;
+             result.used += 2, data_ptr += 2)
+        {
+            // Is the bit a '1'?
+            if (matchLimit(*data_ptr, onemarkLower, onemarkUpper) &&
+                matchLimit(*(data_ptr + 1), onespaceLower, onespaceUpper))
+            {
+                result.data = (result.data << 1) | 1;
+                #if DEBUG_LOG_RX
+                os_trace("\r\n%u======>1\r\n", result.used);
+                #endif
+            }
+            else if (matchLimit(*data_ptr, zeromarkLower, zeromarkUpper) &&
+                     matchLimit(*(data_ptr + 1), zerospaceLower, zerospaceUpper))
+            {
+                result.data <<= 1; // The bit is a '0'.
+                #if DEBUG_LOG_RX
+                os_trace("\r\n%u======>0\r\n", result.used);
+                #endif
+            }
+            else
+            {
+                if (!MSBfirst)
+                    result.data = reverseBits(result.data, result.used / 2);
+                return result; // It's neither, so fail.
+            }
+        }
+        result.success = true;
+    }
+    else
+    { // We are expecting data without a final space.
+        // Match all but the last bit, as it may not match easily.
+        result = matchDataLimit(data_ptr, nbits ? nbits - 1 : 0, onemarkLower, onemarkUpper, onespaceLower, onespaceUpper,
+                                          zeromarkLower, zeromarkUpper, zerospaceLower, zerospaceUpper, tolerance, excess, true, true);
+        if (result.success)
+        {
+            // Is the bit a '1'?
+            if (matchLimit(*(data_ptr + result.used), onemarkLower, onemarkUpper))
+                result.data = (result.data << 1) | 1;
+            else if (matchLimit(*(data_ptr + result.used), zeromarkLower, zeromarkUpper))
+                result.data <<= 1; // The bit is a '0'.
+            else
+                result.success = false;
+            if (result.success)
+                result.used++;
+        }
+    }
+    if (!MSBfirst)
+        result.data = reverseBits(result.data, nbits);
+    return result;
+}
+
+uint16_t matchBytesLimit(volatile uint16_t *data_ptr, uint8_t *result_ptr,
+                    const uint16_t remaining, const uint16_t nbytes,
+                    const uint16_t onemarkLower,
+                    const uint16_t onemarkUpper,
+                    const uint32_t onespaceLower,
+                    const uint32_t onespaceUpper,
+                    const uint16_t zeromarkLower,
+                    const uint16_t zeromarkUpper,
+                    const uint32_t zerospaceLower,
+                    const uint32_t zerospaceUpper,
+                    const uint8_t tolerance, const int16_t excess,
+                    const bool MSBfirst, const bool expectlastspace)
+{
+    // Check if there is enough capture buffer to possibly have the desired bytes.
+    if (remaining + expectlastspace < (nbytes * 8 * 2) + 1)
+        return 0; // Nope, so abort.
+    uint16_t offset = 0;
+    for (uint16_t byte_pos = 0; byte_pos < nbytes; byte_pos++)
+    {
+        bool lastspace = (byte_pos + 1 == nbytes) ? expectlastspace : true;
+        match_result_t result = matchDataLimit(data_ptr + offset, 8, onemarkLower, onemarkUpper, onespaceLower, onespaceUpper,
+                                          zeromarkLower, zeromarkUpper, zerospaceLower, zerospaceUpper, tolerance, excess,
+                                          MSBfirst, lastspace);
+        if (result.success == false)
+            return 0; // Fail
+        
+        result_ptr[byte_pos] = (uint8_t)result.data;
+        #if DEBUG_LOG_RX
+        os_trace("result_ptr[%u]: %u\r\n", byte_pos, result_ptr[byte_pos]);
+        #endif
+        offset += result.used;
+    }
+    return offset;
+}
+
+uint16_t _matchGenericLimit(volatile uint16_t *data_ptr,
+                       uint64_t *result_bits_ptr,
+                       uint8_t *result_bytes_ptr,
+                       const bool use_bits,
+                       const uint16_t remaining,
+                       const uint16_t nbits,
+                       const uint16_t hdrmarkLower,
+                       const uint16_t hdrmarkUpper,
+                       const uint32_t hdrspaceLower,
+                       const uint32_t hdrspaceUpper,
+                       const uint16_t onemarkLower,
+                       const uint16_t onemarkUpper,
+                       const uint32_t onespaceLower,
+                       const uint32_t onespaceUpper,
+                       const uint16_t zeromarkLower,
+                       const uint16_t zeromarkUpper,
+                       const uint32_t zerospaceLower,
+                       const uint32_t zerospaceUpper,
+                       const uint16_t footermarkLower,
+                       const uint16_t footermarkUpper,
+                       const uint32_t footerspaceLower,
+                       const uint32_t footerspaceUpper,
+                       const bool atleast,
+                       const uint8_t tolerance,
+                       const int16_t excess,
+                       const bool MSBfirst)
+{
+    // If we are expecting byte sizes, check it's a factor of 8 or fail.
+    if (!use_bits && nbits % 8 != 0)
+        return 0;
+    // Calculate if we expect a trailing space in the data section.
+    const bool kexpectspace = footermarkLower || (onespaceLower != zerospaceLower);
+    // Calculate how much remaining buffer is required.
+    uint16_t min_remaining = nbits * 2 - (kexpectspace ? 0 : 1);
+
+    if (hdrmarkLower)
+        min_remaining++;
+    if (hdrspaceLower)
+        min_remaining++;
+    if (footermarkLower)
+        min_remaining++;
+    // Don't need to extend for footerspace because it could be the end of message
+
+    // Check if there is enough capture buffer to possibly have the message.
+    if (remaining < min_remaining)
+        return 0; // Nope, so abort.
+    uint16_t offset = 0;
+
+    // Header
+    if (hdrmarkLower && !matchLimit(*(data_ptr + offset++), hdrmarkLower, hdrmarkUpper))
+        return 0;
+    if (hdrspaceLower && !matchLimit(*(data_ptr + offset++), hdrspaceLower, hdrspaceUpper))
+        return 0;
+
+    // Data
+    if (use_bits)
+    { // Bits.
+        match_result_t result = matchDataLimit(data_ptr + offset, nbits,
+                                          onemarkLower, onemarkUpper, onespaceLower, onespaceUpper,
+                                          zeromarkLower, zeromarkUpper, zerospaceLower, zerospaceUpper,
+                                          tolerance,
+                                          excess, MSBfirst, kexpectspace);
+        if (!result.success)
+            return 0;
+        *result_bits_ptr = result.data;
+        offset += result.used;
+    }
+    else
+    { // bytes
+        // os_trace("%s match bytes use_bits: %d\r\n", __func__, use_bits);
+        uint16_t data_used = matchBytesLimit(data_ptr + offset, result_bytes_ptr,
+                                        remaining - offset, nbits / 8,
+                                        onemarkLower, onemarkUpper, onespaceLower, onespaceUpper,
+                                        zeromarkLower, zeromarkUpper, zerospaceLower, zerospaceUpper, 
+                                        tolerance,
+                                        excess, MSBfirst, kexpectspace);
+        if (!data_used)
+            return 0;
+        offset += data_used;
+    }
+    // Footer
+    if (footermarkLower && !matchLimit(*(data_ptr + offset++), footermarkLower, footermarkUpper))
+        return 0;
+    // If we have something still to match & haven't reached the end of the buffer
+    if (footerspaceLower && offset < remaining)
+    {
+        if (atleast)
+        {
+            if (!matchLimit(*(data_ptr + offset), footerspaceLower, footerspaceUpper))
+                return 0;
+        }
+        else
+        {
+            if (!matchLimit(*(data_ptr + offset), footerspaceLower, footerspaceUpper))
+                return 0;
+        }
+        offset++;
+    }
+    return offset;
+}
+
+uint16_t matchGenericStateLimit(volatile uint16_t *data_ptr,
+                        uint8_t *result_ptr,
+                        const uint16_t remaining, const uint16_t nbits,
+                        const uint16_t hdrmarkLower,
+                       const uint16_t hdrmarkUpper,
+                       const uint32_t hdrspaceLower,
+                       const uint32_t hdrspaceUpper,
+                       const uint16_t onemarkLower,
+                       const uint16_t onemarkUpper,
+                       const uint32_t onespaceLower,
+                       const uint32_t onespaceUpper,
+                       const uint16_t zeromarkLower,
+                       const uint16_t zeromarkUpper,
+                       const uint32_t zerospaceLower,
+                       const uint32_t zerospaceUpper,
+                       const uint16_t footermarkLower,
+                       const uint16_t footermarkUpper,
+                       const uint32_t footerspaceLower,
+                       const uint32_t footerspaceUpper,
+                        const bool atleast,
+                        const uint8_t tolerance,
+                        const int16_t excess,
+                        const bool MSBfirst )
+{
+    return _matchGenericLimit(data_ptr, NULL, result_ptr, false, remaining, nbits,
+                         hdrmarkLower,hdrmarkUpper, hdrspaceLower, hdrspaceUpper,
+                         onemarkLower, onemarkUpper, onespaceLower, onespaceUpper,
+                                          zeromarkLower, zeromarkUpper, zerospaceLower, zerospaceUpper, 
+                                          footermarkLower,footermarkUpper, footerspaceLower, footerspaceUpper, 
+                                          atleast,
                          tolerance, excess, MSBfirst);
 }
 
@@ -557,210 +806,6 @@ if (1){
     os_trace(str_res);
 }
 
-    
-
-    // os_trace("bit: ");
-    if (results->rawlen == 200 && 0)
-    {
-        uint64_t data_te = 0;
-        uint64_t lenn = 0;
-        int step = 0;
-        uint8_t temp = 0, fan = 0, mode = 0, power = 0;
-        uint8_t neg_mode_dry = 0;
-        uint8_t btn = 0;
-        char fan_str[10], mode_str[10];
-        char btn_str[10];
-
-        for (uint32_t h = 4; h < results->rawlen; h += 2)
-        {
-            if (results->rawbuf[h] > 2000)
-            {
-                os_trace("-%llu-0x%llx", lenn, data_te);
-                os_trace("|");
-                if (step == 0)
-                {
-                    temp = (data_te >> 28) & 0xf;
-                    mode = (data_te >> 24) & 0xf;
-                    fan = (data_te >> 12) & 0b110000;
-                    neg_mode_dry = (data_te >> 22) & 0b1;
-                }
-                else if (step == 1)
-                {
-                    if (mode == 3 || mode == 4)
-                    { // mode DRY or FAN
-                        if ((data_te >> 60) == 0xf)
-                        {
-                            temp = 0xf;
-                        }
-                        else if (mode == 3)
-                        {
-                            uint8_t temp_1 = (data_te >> 60);
-                            switch (temp_1)
-                            {
-                            case 0xa:
-                            case 0xe:
-                                temp = 0x1;
-                                break;
-                            case 0x9:
-                            case 0xd:
-                                temp = 0x2;
-                                break;
-
-                            default:
-                                temp = 0xf;
-                                break;
-                            }
-                        }
-                    }
-                }
-                data_te = 0;
-                lenn = 0;
-                step++;
-            }
-            else if (results->rawbuf[h] > 600 && results->rawbuf[h] < 1000)
-            {
-                os_trace("1");
-                data_te |= ((uint64_t)1 << lenn);
-
-                lenn++;
-            }
-            else if (results->rawbuf[h] > 100 && results->rawbuf[h] < 500)
-            {
-                os_trace("0");
-                data_te |= ((uint64_t)0 << lenn);
-                lenn++;
-            }
-            else
-            {
-                os_trace("INVALID(%u)", results->rawbuf[h]);
-                lenn++;
-            }
-        }
-
-        os_trace("\r\n-%llu-0x%llx\r\n", lenn, data_te);
-
-        fan |= (data_te >> 30) & 0b1;
-        power = (data_te >> 36) & 0b1;
-        btn = (data_te >> 8) & 0x1F;
-
-        memset(fan_str, 0, sizeof(fan_str));
-        memset(mode_str, 0, sizeof(mode_str));
-        memset(btn_str, 0, sizeof(btn_str));
-
-        switch (btn)
-        {
-        case 0x00:
-            sprintf(btn_str, "LIGHT_OFF");
-            break;
-        case 0x01:
-            sprintf(btn_str, "POWER");
-            break;
-        case 0x02:
-            sprintf(btn_str, "TEMP");
-            break;
-        case 0x04:
-            sprintf(btn_str, "SUPER");
-            break;
-        case 0x05:
-            sprintf(btn_str, "TIMER");
-            break;
-        case 0x06:
-            sprintf(btn_str, "MODE");
-            break;
-        case 0x7:
-            sprintf(btn_str, "DIR_HOR");
-            break;
-        case 0x8:
-            sprintf(btn_str, "DIR_VER");
-            break;
-        case 0x0c:
-            sprintf(btn_str, "ECO");
-            break;
-        case 0x11:
-            sprintf(btn_str, "FAN SPEED");
-            break;
-        case 0x03:
-            sprintf(btn_str, "SLEEP");
-            break;
-        case 0x0b:
-            sprintf(btn_str, "QUITE");
-            break;
-        case 0x17:
-            sprintf(btn_str, "SMART");
-            break;
-        
-        default:
-            sprintf(btn_str, "INVALID");
-            break;
-        }
-
-
-
-        if (fan == 0x00)
-        {
-            sprintf(fan_str, "AUTO");
-        }
-        else if (fan == 0x10)
-        {
-            sprintf(fan_str, "VERY HIGH");
-        }
-        else if (fan == 0x11)
-        {
-            sprintf(fan_str, "HIGH");
-        }
-        else if (fan == 0x20)
-        {
-            sprintf(fan_str, "MEDIUM");
-        }
-        else if (fan == 0x31)
-        {
-            sprintf(fan_str, "LOW");
-        }
-        else if (fan == 0x30)
-        {
-            sprintf(fan_str, "VERY LOW");
-        }
-        else if (fan == 0x40)
-        {
-            sprintf(fan_str, "POWER OFF");
-        }
-        else
-        {
-            sprintf(fan_str, "INVALID");
-        }
-
-        switch (mode)
-        {
-        case 0:
-            sprintf(mode_str, "HEAT");
-            break;
-
-        case 2:
-            sprintf(mode_str, "COOL");
-            break;
-
-        case 3:
-            sprintf(mode_str, "DRY");
-            // if (temp == 2 && temp != 0xf) {
-            temp += (data_te >> 18) & 0x7;
-            // }
-            break;
-
-        case 4:
-            sprintf(mode_str, "FAN");
-            break;
-
-        default:
-            sprintf(mode_str, "INVALID");
-            break;
-        }
-
-        os_trace("-%llu-0x%llx", lenn, data_te);
-        os_trace("\r\n");
-
-        os_trace("btn: %s, power: %u, temp: %u *C, mode: %s/%u, fan: %s/%02X, neg_mode_dry: %u(-)%u\r\n", btn_str, power, temp + 16, mode_str, mode, fan_str, fan, neg_mode_dry, temp);
-    }
-
 #if ENABLE_NOISE_FILTER_OPTION
     crudeNoiseFilter(results, noise_floor);
 #endif // ENABLE_NOISE_FILTER_OPTION
@@ -828,6 +873,11 @@ if (1){
     // if (decodeToshibaAC(results, offset, kToshibaACBitsLong, true)) return true;
     // os_trace("Attempting Toshiba AC 56bit decode\r\n");
     // if (decodeToshibaAC(results, offset, kToshibaACBitsShort, true)) return true;
+#endif
+
+#if DECODE_DAIKIN
+    os_trace("Attempting Daikin AC decode\r\n");
+    if (decodeDaikin(results, offset, kDaikinBits, true)) return true;
 #endif
 
     }

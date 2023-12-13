@@ -147,6 +147,25 @@ uint8_t * invertBytePairs(uint8_t *ptr, const uint16_t length)
   return ptr;
 }
 
+uint8_t sumBytesState(const uint8_t * const start, const uint16_t length,
+                 const uint8_t init) 
+{
+  uint8_t checksum = init;
+  const uint8_t *ptr;
+  for (ptr = start; ptr - start < length; ptr++) checksum += *ptr;
+  return checksum;
+}
+
+uint16_t sumBytesData(const uint64_t data, const uint8_t count,
+                  const uint8_t init, const bool byteonly) 
+{
+  uint16_t sum = init;
+  uint64_t copy = data;
+  const uint8_t nrofbytes = (count < 8) ? count : (64 / 8);
+  for (uint8_t i = 0; i < nrofbytes; i++, copy >>= 8) sum += (copy & 0xFF);
+  return byteonly ? sum & 0xFF : sum;
+}
+
 // void resultToHexidecimal(const decode_results * const result, char *output) 
 // {
 //   strcpy(output, "0x");

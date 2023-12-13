@@ -133,7 +133,7 @@ bool decodeAquaAC(decode_results *results, uint16_t offset, const uint16_t nbits
 
     uint16_t used;
     // Section Header + Section Data (7 bytes) + Section Footer
-    used = matchGenericUint8(results->rawbuf + offset, (uint8_t*)&(results->state[0]),
+    used = matchGenericState(results->rawbuf + offset, (uint8_t*)&(results->state[0]),
                         results->rawlen - offset, nbits,
                         kAquaHdrMark, kAquaHdrSpace,
                         kAquaBitOneMark, 2200,

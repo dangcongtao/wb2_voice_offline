@@ -139,6 +139,38 @@ typedef enum {
 
 #define kSingleRepeat 1
 
+#define kDaikinStateLength (35)
+#define kDaikinBits (kDaikinStateLength * 8)
+#define kDaikinStateLengthShort (kDaikinStateLength - 8)
+#define kDaikinBitsShort (kDaikinStateLengthShort * 8)
+#define kDaikinDefaultRepeat (kNoRepeat)
+#define kDaikin2StateLength (39)
+#define kDaikin2Bits (kDaikin2StateLength * 8)
+#define kDaikin2DefaultRepeat (kNoRepeat)
+#define kDaikin64Bits (64)
+#define kDaikin64DefaultRepeat (kNoRepeat)
+#define kDaikin160StateLength (20)
+#define kDaikin160Bits (kDaikin160StateLength * 8)
+#define kDaikin160DefaultRepeat (kNoRepeat)
+#define kDaikin128StateLength (16)
+#define kDaikin128Bits (kDaikin128StateLength * 8)
+#define kDaikin128DefaultRepeat (kNoRepeat)
+#define kDaikin152StateLength (19)
+#define kDaikin152Bits (kDaikin152StateLength * 8)
+#define kDaikin152DefaultRepeat (kNoRepeat)
+#define kDaikin176StateLength (22)
+#define kDaikin176Bits (kDaikin176StateLength * 8)
+#define kDaikin176DefaultRepeat (kNoRepeat)
+#define kDaikin200StateLength (25)
+#define kDaikin200Bits (kDaikin200StateLength * 8)
+#define kDaikin200DefaultRepeat (kNoRepeat)
+#define kDaikin216StateLength (27)
+#define kDaikin216Bits (kDaikin216StateLength * 8)
+#define kDaikin216DefaultRepeat (kNoRepeat)
+#define kDaikin312StateLength (39)
+#define kDaikin312Bits (kDaikin312StateLength * 8)
+#define kDaikin312DefaultRepeat (kNoRepeat)
+
 #define kToshibaACStateLength 9
 #define kToshibaACBits  (kToshibaACStateLength * 8)
 #define kToshibaACMinRepeat  kSingleRepeat
@@ -146,6 +178,8 @@ typedef enum {
 #define kToshibaACBitsShort  (kToshibaACStateLengthShort * 8)
 #define kToshibaACStateLengthLong  (kToshibaACStateLength + 1)
 #define kToshibaACBitsLong (kToshibaACStateLengthLong * 8)
+
+
 
 
 #endif

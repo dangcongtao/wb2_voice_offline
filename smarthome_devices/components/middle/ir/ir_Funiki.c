@@ -32,7 +32,7 @@ bool decodeFunikiAC(decode_results *results, uint16_t offset, const uint16_t nbi
        pos += kFunikiAcSectionLength) {
         uint16_t used;
         // Section Header + Section Data (7 bytes) + Section Footer
-        used = matchGenericUint8(results->rawbuf + offset, (uint8_t*)(&results->state[pos]),
+        used = matchGenericState(results->rawbuf + offset, (uint8_t*)(&results->state[pos]),
                             results->rawlen - offset, kFunikiAcSectionLength * 8,
                             4400, 4400,
                             480, 1500,

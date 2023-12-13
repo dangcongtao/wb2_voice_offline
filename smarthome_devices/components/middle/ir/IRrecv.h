@@ -44,6 +44,7 @@
 #define DECODE_AQUA   1
 #define DECODE_CASPER   1
 #define DECODE_TOSHIBA  1
+#define DECODE_DAIKIN   1
 
 #define IR_RX 1
 #define DECODE_AC 1
@@ -137,7 +138,7 @@ uint16_t matchGeneric(volatile uint16_t *data_ptr,
                               const int16_t excess,
                               const bool MSBfirst);
 
-uint16_t matchGenericUint8(volatile uint16_t *data_ptr,
+uint16_t matchGenericState(volatile uint16_t *data_ptr,
                         uint8_t *result_ptr,
                         const uint16_t remaining, const uint16_t nbits,
                         const uint16_t hdrmark, const uint32_t hdrspace,
@@ -148,6 +149,12 @@ uint16_t matchGenericUint8(volatile uint16_t *data_ptr,
                         const uint8_t tolerance,
                         const int16_t excess,
                         const bool MSBfirst);
+
+match_result_t matchData(
+    volatile uint16_t *data_ptr, const uint16_t nbits, const uint16_t onemark,
+    const uint32_t onespace, const uint16_t zeromark, const uint32_t zerospace,
+    const uint8_t tolerance, const int16_t excess, const bool MSBfirst,
+    const bool expectlastspace);
 
 #if DECODE_LG
 bool decodeLG(decode_results *results, uint16_t,
@@ -183,13 +190,55 @@ bool decodeToshibaAC(decode_results* results, uint16_t offset,
                              const uint16_t nbits, const bool strict);
 #endif
 
+#if DECODE_DAIKIN
+bool decodeDaikin(decode_results *results, uint16_t offset,
+                          const uint16_t nbits, const bool strict);
+#endif
+
 bool matchSpace(uint32_t measured, uint32_t desired, uint8_t tolerance,
                         int16_t excess);
 
 bool matchAtLeast(uint32_t measured, uint32_t desired,
                           uint8_t tolerance, uint16_t delta);
 
+bool matchLimit(uint32_t measured, uint32_t lower_limit, uint32_t upper_limit);
 
+match_result_t matchDataLimit(
+    volatile uint16_t *data_ptr, const uint16_t nbits, 
+                    const uint16_t onemarkLower,
+                    const uint16_t onemarkUpper,
+                    const uint32_t onespaceLower,
+                    const uint32_t onespaceUpper,
+                    const uint16_t zeromarkLower,
+                    const uint16_t zeromarkUpper,
+                    const uint32_t zerospaceLower,
+                    const uint32_t zerospaceUpper,
+    const uint8_t tolerance, const int16_t excess, const bool MSBfirst,
+    const bool expectlastspace);
+
+uint16_t matchGenericStateLimit(volatile uint16_t *data_ptr,
+                        uint8_t *result_ptr,
+                        const uint16_t remaining, const uint16_t nbits,
+                        const uint16_t hdrmarkLower,
+                       const uint16_t hdrmarkUpper,
+                       const uint32_t hdrspaceLower,
+                       const uint32_t hdrspaceUpper,
+                       const uint16_t onemarkLower,
+                       const uint16_t onemarkUpper,
+                       const uint32_t onespaceLower,
+                       const uint32_t onespaceUpper,
+                       const uint16_t zeromarkLower,
+                       const uint16_t zeromarkUpper,
+                       const uint32_t zerospaceLower,
+                       const uint32_t zerospaceUpper,
+                       const uint16_t footermarkLower,
+                       const uint16_t footermarkUpper,
+                       const uint32_t footerspaceLower,
+                       const uint32_t footerspaceUpper,
+                        const bool atleast,
+                        const uint8_t tolerance,
+                        const int16_t excess,
+                        const bool MSBfirst );
 
 void lg_getString(void);
 void LG_setRaw(const uint32_t new_code, const decode_type_t protocol, state_ir_t *ir_state);

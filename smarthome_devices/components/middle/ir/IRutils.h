@@ -40,5 +40,9 @@ bool checkInvertedBytePairs(uint8_t *ptr,
                               const uint16_t length);
 uint8_t * invertBytePairs(uint8_t *ptr, const uint16_t length);
 
+uint8_t sumBytesState(const uint8_t * const start, const uint16_t length,
+                 const uint8_t init);
+uint16_t sumBytesData(const uint64_t data, const uint8_t count,
+                  const uint8_t init, const bool byteonly);
 
 #endif

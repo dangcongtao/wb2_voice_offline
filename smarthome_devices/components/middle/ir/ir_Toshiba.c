@@ -48,14 +48,14 @@ bool decodeToshibaAC(decode_results* results, uint16_t offset,
   }
 
   // Match Header + Data + Footer
-  if (!matchGenericUint8(results->rawbuf + offset, results->state,
+  if (!matchGenericState(results->rawbuf + offset, results->state,
                     results->rawlen - offset, nbits,
                     kToshibaAcHdrMark, kToshibaAcHdrSpace,
                     kToshibaAcBitMark, kToshibaAcOneSpace,
                     kToshibaAcBitMark, kToshibaAcZeroSpace,
                     kToshibaAcBitMark, kToshibaAcMinGap, true,
                     40, kMarkExcess, true)) {
-                        os_trace("%s matchGenericUint8 failed\r\n", __func__);
+                        os_trace("%s matchGenericState failed\r\n", __func__);
                         return false;
                     }
   // Compliance
