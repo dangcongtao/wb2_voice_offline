@@ -75,9 +75,9 @@ bool decodeDaikin(decode_results *results, uint16_t offset,
     // Section Header + Section Data (7 bytes) + Section Footer
     used = matchGenericStateLimit(results->rawbuf + offset, results->state + pos,
                         results->rawlen - offset, ksectionSize[section] * 8,
-                        kDaikinHdrMark-400, kDaikinHdrMark+500, kDaikinHdrSpace-400, kDaikinHdrSpace+400,
-                        kDaikinBitMark-300, kDaikinBitMark+300, kDaikinOneSpace-400, kDaikinOneSpace+300,
-                        kDaikinBitMark-300, kDaikinBitMark+300, kDaikinZeroSpace-300, kDaikinZeroSpace+300,
+                        kDaikinHdrMark-400, kDaikinHdrMark+500, kDaikinHdrSpace-500, kDaikinHdrSpace+400,
+                        kDaikinBitMark-300, kDaikinBitMark+300, kDaikinOneSpace-300, kDaikinOneSpace+300,
+                        kDaikinBitMark-300, kDaikinBitMark+300, kDaikinZeroSpace-300, kDaikinZeroSpace+400,
                         kDaikinBitMark-300, kDaikinBitMark+300, kDaikinZeroSpace + kDaikinGap-7000, kDaikinZeroSpace + kDaikinGap+7000,
                         section >= kDaikinSections - 1,
                         45, kDaikinMarkExcess, false);

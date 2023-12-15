@@ -45,6 +45,7 @@
 #define TS04_ACTIVE_LEVEL   1
 
 #define IR_RX   12
+#define IR_RX_POS   1
 #define IRpin   11
 
 #if PROJECT_SHOCK

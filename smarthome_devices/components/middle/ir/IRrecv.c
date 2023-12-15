@@ -16,7 +16,8 @@ DRAM_ATTR hosal_gpio_irq_trigger_t trigger_type = HOSAL_IRQ_TRIG_NEG_PULSE;
 
 uint8_t _tolerance;
 
-hosal_gpio_dev_t touch_gpio;
+hosal_gpio_dev_t touch_gpio_pos;
+hosal_gpio_dev_t touch_gpio_neg;
 
 struct timer_adpt *timer3;
 
@@ -34,23 +35,12 @@ void Irrecv_pause(void)
     params.rcvstate = kStopState;
 }
 
-
+DRAM_ATTR uint32_t  start = 0;
 /// Interrupt handler for changes on the GPIO pin handling incoming IR messages.
-IRAM_ATTR void gpio_intr(void)
+IRAM_ATTR void gpio_intr_neg(void)
 {
     uint32_t now = bl_timer_now_us();
 
-    if (trigger_type == HOSAL_IRQ_TRIG_NEG_PULSE)
-    {
-        trigger_type = HOSAL_IRQ_TRIG_POS_PULSE;
-    }
-    else
-    {
-        trigger_type = HOSAL_IRQ_TRIG_NEG_PULSE;
-    }
-    bl_set_gpio_intmod(params.recvpin, GLB_GPIO_INT_CONTROL_ASYNC, trigger_type);
-
-    static uint32_t  start = 0;
 #if defined(ESP8266)
     uint32_t gpio_status = GPIO_REG_READ(GPIO_STATUS_ADDRESS);
     os_timer_disarm(&timer);
@@ -100,14 +90,68 @@ IRAM_ATTR void gpio_intr(void)
     //   os_timer_arm(&timer, params.timeout, ONCE);
     // #endif  // ESP8266
 }
+IRAM_ATTR void gpio_intr_pos(void)
+{
+    uint32_t now = bl_timer_now_us();
+    
+#if defined(ESP8266)
+    uint32_t gpio_status = GPIO_REG_READ(GPIO_STATUS_ADDRESS);
+    os_timer_disarm(&timer);
+    GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, gpio_status);
+#endif // ESP8266
+
+    // Grab a local copy of rawlen to reduce instructions used in IRAM.
+    // This is an ugly premature optimisation code-wise, but we do everything we
+    // can to save IRAM.
+    // It seems referencing the value via the structure uses more instructions.
+    // Less instructions means faster and less IRAM used.
+    // N.B. It saves about 13 bytes of IRAM.
+    uint16_t rawlen = params.rawlen;
+
+    if (rawlen >= params.bufsize)
+    {
+        params.overflow = true;
+        params.rcvstate = kStopState;
+    }
+
+    if (params.rcvstate == kStopState)
+        // os_trace("stop_state\r\n");
+        return;
+
+    if (params.rcvstate == kIdleState)
+    {
+        return;
+        params.rcvstate = kMarkState;
+        params.rawbuf[rawlen] = 1;
+    }
+    else
+    {
+        if (now < start)
+            params.rawbuf[rawlen] = (UINT32_MAX - start + now) / kRawTick;
+        else
+            params.rawbuf[rawlen] = (now - start) / kRawTick;
+    }
+    // os_trace("[%d]%d\r\n", params.rawlen, params.rawbuf[rawlen]);
+    params.rawlen++;
+
+    start = now;
+
+    bl_os_timer_start_once(timer3, ((uint32_t)params.timeout / 1000), (((uint32_t)params.timeout % 1000) * 1e6));
+
+    
+
+    // #if defined(ESP8266)
+    //   os_timer_arm(&timer, params.timeout, ONCE);
+    // #endif  // ESP8266
+}
 
 void resume(void)
 {
     params.rcvstate = kIdleState;
     params.rawlen = 0;
     params.overflow = false;
-    trigger_type = HOSAL_IRQ_TRIG_NEG_PULSE;
-    bl_set_gpio_intmod(params.recvpin, GLB_GPIO_INT_CONTROL_ASYNC, trigger_type);
+    // trigger_type = HOSAL_IRQ_TRIG_NEG_PULSE;
+    // bl_set_gpio_intmod(params.recvpin, GLB_GPIO_INT_CONTROL_ASYNC, trigger_type);
 #if defined(ESP32)
     timerAlarmDisable(timer);
     gpio_intr_enable((gpio_num_t)params.recvpin);
@@ -509,8 +553,11 @@ match_result_t matchDataLimit(
             }
             else
             {
-                if (!MSBfirst)
+                if (!MSBfirst) {
+                    os_trace("%s !MSBfirst one mark data: %u, %u %u, space %u %u %u\r\n", __func__, *(data_ptr), onemarkLower, onemarkUpper,*(data_ptr + 1), onespaceLower, onespaceUpper);
+                    os_trace("%s !MSBfirst zero mark data: %u, %u %u, space %u %u %u\r\n", __func__, *(data_ptr), zeromarkLower, zeromarkUpper,*(data_ptr + 1), zerospaceLower, zerospaceUpper);
                     result.data = reverseBits(result.data, result.used / 2);
+                }
                 return result; // It's neither, so fail.
             }
         }
@@ -528,8 +575,10 @@ match_result_t matchDataLimit(
                 result.data = (result.data << 1) | 1;
             else if (matchLimit(*(data_ptr + result.used), zeromarkLower, zeromarkUpper))
                 result.data <<= 1; // The bit is a '0'.
-            else
+            else {
+                os_trace("%s data: %u, %u %u %u %u\r\n", __func__, *(data_ptr + result.used), onemarkLower, onemarkUpper, zeromarkLower, zeromarkUpper);
                 result.success = false;
+            }
             if (result.success)
                 result.used++;
         }
@@ -905,8 +954,10 @@ static void enableIRIn(const bool pullup)
     timer3 = bl_os_timer_create(timer3_cb, NULL);
 
     bl_gpio_enable_input(params.recvpin, 1, 0);
+    bl_gpio_enable_input(IR_RX_POS, 1, 0);
 
-    touch_gpio.port = params.recvpin;
+    touch_gpio_neg.port = params.recvpin;
+    touch_gpio_pos.port = IR_RX_POS;
 
 //   if (pullup) {
 // #ifndef UNIT_TEST
@@ -948,7 +999,8 @@ static void enableIRIn(const bool pullup)
        // Attach Interrupt
        //   attachInterrupt(params.recvpin, gpio_intr, CHANGE);
     //    trigger_type = HOSAL_IRQ_TRIG_NEG_PULSE;
-    hosal_gpio_irq_set(&touch_gpio, trigger_type, gpio_intr, NULL);
+    hosal_gpio_irq_set(&touch_gpio_neg, HOSAL_IRQ_TRIG_NEG_PULSE, gpio_intr_neg, NULL);
+    hosal_gpio_irq_set(&touch_gpio_pos, HOSAL_IRQ_TRIG_POS_PULSE, gpio_intr_pos, NULL);
 #endif // UNIT_TEST
 }
 
