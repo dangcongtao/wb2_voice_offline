@@ -132,6 +132,7 @@ typedef enum {
   YORK,
   FUNIKI,
   AQUA,
+  NAGAKAWA,
   TEKNOPOINT,
   // Add new entries before this one, and update it to point to the last entry.
   kLastDecodeType = TEKNOPOINT,
@@ -178,6 +179,20 @@ typedef enum {
 #define kToshibaACBitsShort  (kToshibaACStateLengthShort * 8)
 #define kToshibaACStateLengthLong  (kToshibaACStateLength + 1)
 #define kToshibaACBitsLong (kToshibaACStateLengthLong * 8)
+
+#define kGreeStateLength  8
+#define kGreeBits  (kGreeStateLength * 8)
+#define kGreeDefaultRepeat  kNoRepeat
+
+#define kMitsubishi112StateLength  14
+#define kMitsubishi112Bits  (kMitsubishi112StateLength * 8)
+#define kMitsubishi112MinRepeat kNoRepeat
+
+#define kNagakawaStateLength  14
+
+#define kTcl112AcStateLength  14
+#define kTcl112AcBits  (kTcl112AcStateLength * 8)
+#define kTcl112AcDefaultRepeat (kNoRepeat)
 
 
 

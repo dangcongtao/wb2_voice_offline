@@ -135,7 +135,7 @@ bool decodeLG(decode_results *results, uint16_t offset,
 void sendLG(uint64_t data, uint16_t nbits, uint16_t repeat) {
   uint16_t repeatHeaderMark = 0;
   uint8_t duty = kDutyDefault;
-
+  vTaskEnterCritical();
   // if (nbits >= kLg32Bits) {
   //   // LG 32bit protocol is near identical to Samsung except for repeats.
   //   sendSAMSUNG(data, nbits, 0);  // Send it as a single Samsung message.
@@ -157,15 +157,19 @@ void sendLG(uint64_t data, uint16_t nbits, uint16_t repeat) {
     sendGeneric1(repeatHeaderMark, kLgRptSpace, 0, 0, 0, 0,  // No data is sent.
                 kLgBitMark, kLgMinGap, kLgMinMessageLength, 0, 0,  // No data.
                 38, true, repeat - 1, duty);
+  
+  vTaskExitCritical();
 }
 
 void sendLG2(uint64_t data, uint16_t nbits, uint16_t repeat) {
   if (nbits >= kLg32Bits) {
     // Let the original routine handle it.
+    vTaskEnterCritical();
     sendLG(data, nbits, repeat);  // Send it as a single Samsung message.
+    vTaskExitCritical();
     return;
   }
-
+  vTaskEnterCritical();
   // LGv2 (28-bit) protocol.
   sendGeneric1(kLg2HdrMark, kLg2HdrSpace, kLg2BitMark, kLgOneSpace, kLg2BitMark,
               kLgZeroSpace, kLg2BitMark, kLgMinGap, kLgMinMessageLength, data,
@@ -179,6 +183,8 @@ void sendLG2(uint64_t data, uint16_t nbits, uint16_t repeat) {
     sendGeneric1(kLg2HdrMark, kLgRptSpace, 0, 0, 0, 0,  // No data is sent.
                 kLgBitMark, kLgMinGap, kLgMinMessageLength, 0, 0,  // No data.
                 38, true, repeat - 1, 50);
+
+  vTaskExitCritical();
 }
 
 void updateSwingPrev(void) {
@@ -413,6 +419,7 @@ void LG_setRaw(const uint32_t new_code, const decode_type_t protocol, state_ir_t
       _swingh = (_.data.raw == kLgAcSwingHAuto);
     }
   }
+  ir_state->model = getModel();
   _temp = 15;  // Ensure there is a "sane" previous temp.
   _temp = getTemp();
   os_trace("LG model: %u\r\n", getModel());

@@ -267,8 +267,6 @@ void sendGeneric1(const uint16_t headermark, const uint32_t headerspace,
                   const bool MSBfirst, const uint16_t repeat,
                   const uint8_t dutycycle)
 {
-  os_trace("%s dutycycle: %u\r\n", __func__, dutycycle);
-  vTaskEnterCritical();
   // Setup
   enableIROut(frequency, dutycycle);
   IRtimer_t usecs;
@@ -297,7 +295,6 @@ void sendGeneric1(const uint16_t headermark, const uint32_t headerspace,
     else
       space(max(gap, mesgtime - elapsed1));
   }
-  vTaskExitCritical();
 }
 
 void sendGeneric(const uint16_t headermark, const uint32_t headerspace,

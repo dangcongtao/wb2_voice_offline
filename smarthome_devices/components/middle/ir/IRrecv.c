@@ -554,8 +554,8 @@ match_result_t matchDataLimit(
             else
             {
                 if (!MSBfirst) {
-                    os_trace("%s !MSBfirst one mark data: %u, %u %u, space %u %u %u\r\n", __func__, *(data_ptr), onemarkLower, onemarkUpper,*(data_ptr + 1), onespaceLower, onespaceUpper);
-                    os_trace("%s !MSBfirst zero mark data: %u, %u %u, space %u %u %u\r\n", __func__, *(data_ptr), zeromarkLower, zeromarkUpper,*(data_ptr + 1), zerospaceLower, zerospaceUpper);
+                    os_trace("%s !MSBfirst one mark data: %lu, %lu %lu, space %lu, %lu %lu\r\n", __func__, *data_ptr * 2, onemarkLower, onemarkUpper,*(data_ptr + 1) * 2, onespaceLower, onespaceUpper);
+                    os_trace("%s !MSBfirst zero mark data: %lu, %lu %lu, space %lu, %lu %lu\r\n", __func__, *data_ptr * 2, zeromarkLower, zeromarkUpper,(*(data_ptr + 1)) * 2, zerospaceLower, zerospaceUpper);
                     result.data = reverseBits(result.data, result.used / 2);
                 }
                 return result; // It's neither, so fail.
@@ -829,15 +829,16 @@ bool decode(decode_results *results, irparams_t *save,
     results->repeat = false;
 
     if (results->rawlen <= 10) {
-        trigger_type = HOSAL_IRQ_TRIG_NEG_PULSE;
-        bl_set_gpio_intmod(params.recvpin, GLB_GPIO_INT_CONTROL_ASYNC, trigger_type);
+        // trigger_type = HOSAL_IRQ_TRIG_NEG_PULSE;
+        // bl_set_gpio_intmod(params.recvpin, GLB_GPIO_INT_CONTROL_ASYNC, trigger_type);
         if (!resumed) // Check if we have already resumed.
             resume();
         return false;
     }
 
-    os_trace("BUFF_LEN[%d]: ", results->rawlen);
+    
 if (1){
+    os_trace("BUFF_LEN[%d]: ", results->rawlen);
     char str_res[300];
     int seek = 0;
     memset(str_res, 0, sizeof(str_res));
@@ -929,6 +930,16 @@ if (1){
     if (decodeDaikin(results, offset, kDaikinBits, true)) return true;
 #endif
 
+#if DECODE_GREE
+    os_trace("Attempting Gree AC decode\r\n");
+    if (decodeGree(results, offset, kGreeBits, true)) return true;
+#endif
+
+#if DECODE_MITSUBISHI112
+    os_trace("Attempting decodeMitsubishi, Tcl, Nagakawa 112bit AC decode\r\n");
+    if (decodeMitsubishi112(results, offset, kMitsubishi112Bits, true)) return true;
+#endif
+
     }
 
 #if DECODE_HASH
@@ -953,11 +964,11 @@ static void enableIRIn(const bool pullup)
 
     timer3 = bl_os_timer_create(timer3_cb, NULL);
 
-    bl_gpio_enable_input(params.recvpin, 1, 0);
-    bl_gpio_enable_input(IR_RX_POS, 1, 0);
-
     touch_gpio_neg.port = params.recvpin;
     touch_gpio_pos.port = IR_RX_POS;
+
+    bl_gpio_enable_input(params.recvpin, 1, 0);
+    bl_gpio_enable_input(IR_RX_POS, 0, 1);
 
 //   if (pullup) {
 // #ifndef UNIT_TEST
@@ -1061,55 +1072,13 @@ void m_ir_task(void)
             state_ir_t ir_state = {UNKNOWN, -1, false, opmode_kOff, 25, true, fanspeed_kAuto, swingv_kOff, swingh_kOff, false, false, false, false, false, false, false, -1, -1, kControlCommand, false, kNoTempValue};
             if (capture.decode_type == LG2) {
                 LG_setRaw(capture.value, capture.decode_type, &ir_state);
-            } else if (capture.decode_type == AQUA){
-                os_trace("AQUA[16]: 0x");
-                for (uint8_t i = 0; i < 14; i++) {
-                    os_trace("%02x", capture.state[i]);
-                }
-                os_trace("\r\n");
+            } else if (capture.decode_type == AQUA){;
                 AQUA_setRaw(capture.state, capture.decode_type, &ir_state);
             } else if (capture.decode_type == FUNIKI){
-                // os_trace("FUNIKI: 0x");
-                // for (uint8_t i = 0; i < 18; i++) {
-                //     if (i == 6) {
-                //         os_trace("\t|\t");
-                //     } else if (i == 12) {
-                //         if (capture.bits == kFunikiAcBits)
-                //             break;
-                //         else {
-                //             os_trace("\t|\t");
-                //         }
-                //     }
-                //     os_trace("%02x", capture.state[i]);
-                // }
-                // os_trace("\r\n");
                 Funiki_setRaw((uint8_t*)&capture.value, capture.decode_type, &ir_state);
             } else if (capture.decode_type == CASPER){
-                // os_trace("CASPER: 0x");
-                // for (uint8_t i = 0; i < 21; i++) {
-                //     if (i == 6 || i == 14) {
-                //         os_trace("\t|\t");
-                //     }
-                //     os_trace("%02x", capture.state[i]);
-                // }
-                // os_trace("\r\n");
                 Casper_setRaw((uint8_t*)&capture.value, capture.decode_type, &ir_state);
             } else if (capture.decode_type == SAMSUNG_AC){
-                os_trace("SAMSUNG: 0x");
-                for (uint8_t i = 0; i < 21; i++) {
-                    if (i == 7) {
-                        os_trace("\t|\t");
-                    } else if (i == 14) {
-                        if (capture.bits == kSamsungAcBits)
-                            break;
-                        else {
-                            os_trace("\t|\t");
-                        }
-                    }
-                    os_trace("%02x", capture.state[i]);
-                }
-                os_trace("\r\n");
-
                 switch (capture.bits)
                 {
                 case kSamsungAcBits:
@@ -1142,6 +1111,36 @@ void m_ir_task(void)
                 default:
                     break;
                 }
+            } 
+            else if (capture.decode_type == DAIKIN){
+                Daikin_setRaw((uint8_t*)capture.state, kDaikinStateLength, capture.decode_type, &ir_state);
+            }
+            else if (capture.decode_type == GREE){
+                Gree_setRaw((uint8_t*)capture.state, capture.decode_type, &ir_state);
+            }
+            else if (capture.decode_type == MITSUBISHI112){
+                os_trace("MITSUBISHI112: 0x ");
+                for(uint8_t i = 0; i < 14; i++) {
+                    os_trace("%02X-", capture.state[i]);
+                }
+                os_trace("\r\n");
+                Mitsubishi112_setRaw((uint8_t*)capture.state, capture.decode_type, &ir_state);
+            }
+            else if (capture.decode_type == NAGAKAWA){
+                os_trace("NAGAKAWA: 0x ");
+                for(uint8_t i = 0; i < 14; i++) {
+                    os_trace("%02X-", capture.state[i]);
+                }
+                os_trace("\r\n");
+                Nagakawa_setRaw((uint8_t*)capture.state, capture.decode_type, &ir_state);
+            }
+            else if (capture.decode_type == TCL112AC){
+                os_trace("TCL: 0x ");
+                for(uint8_t i = 0; i < 14; i++) {
+                    os_trace("%02X-", capture.state[i]);
+                }
+                os_trace("\r\n");
+                Tcl112_setRaw((uint8_t*)capture.state, capture.decode_type, &ir_state);
             }
             
             IR_logCommon(ir_state);
@@ -1149,7 +1148,7 @@ void m_ir_task(void)
             resume();
         }
 
-        vTaskDelay(pdMS_TO_TICKS(100));
+        vTaskDelay(pdMS_TO_TICKS(50));
     }
 }
 

@@ -5,6 +5,10 @@
 #include <stdbool.h>
 #include <IRrecv.h>
 
+/*
+Model: TYPE: RG10B(E)/BGEF
+*/
+
 #define kFunikiBits (kFunikiAcStateLength * 8)
 
 #define kFunikiAcSectionLength     6

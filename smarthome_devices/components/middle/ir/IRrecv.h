@@ -45,6 +45,10 @@
 #define DECODE_CASPER   1
 #define DECODE_TOSHIBA  1
 #define DECODE_DAIKIN   1
+#define DECODE_GREE   1
+#define DECODE_MITSUBISHI112  1
+#define DECODE_NAGAKAWA   1
+#define DECODE_TCL112AC   1
 
 #define IR_RX 1
 #define DECODE_AC 1
@@ -195,6 +199,16 @@ bool decodeDaikin(decode_results *results, uint16_t offset,
                           const uint16_t nbits, const bool strict);
 #endif
 
+#if DECODE_GREE
+bool decodeGree(decode_results* results, uint16_t offset,
+                        const uint16_t nbits, bool const strict);
+#endif
+
+#if DECODE_MITSUBISHI112
+bool decodeMitsubishi112(decode_results *results, uint16_t offset,
+                                 const uint16_t nbits, const bool strict);
+#endif
+
 bool matchSpace(uint32_t measured, uint32_t desired, uint8_t tolerance,
                         int16_t excess);
 
@@ -255,6 +269,17 @@ void Casper_setRaw(const uint8_t* new_code, const decode_type_t protocol, state_
 void Samsung_setRaw(const uint8_t* new_code, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state);
 
 void Toshiba_setRaw(const uint8_t* newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state); 
+
+void Daikin_setRaw(const uint8_t* newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state) ;
+
+void Gree_setRaw(const uint8_t* newState, const decode_type_t protocol, state_ir_t *ir_state);
+
+void Mitsubishi112_setRaw(const uint8_t* newState, const decode_type_t protocol, state_ir_t *ir_state);
+
+void Nagakawa_setRaw(const uint8_t* newState, const decode_type_t protocol, state_ir_t *ir_state);
+
+void Tcl112_setRaw(const uint8_t* newState, const decode_type_t protocol, state_ir_t *ir_state);
+
 
 // void enableIRIn(const bool pullup);
 void ir_loop(void);

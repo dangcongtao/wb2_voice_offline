@@ -166,6 +166,9 @@ uint16_t sumBytesData(const uint64_t data, const uint8_t count,
   return byteonly ? sum & 0xFF : sum;
 }
 
+float celsiusToFahrenheit(const float deg) { return (deg * 9.0) / 5.0 + 32.0; }
+
+float fahrenheitToCelsius(const float deg) { return (deg - 32.0) * 5.0 / 9.0; }
 // void resultToHexidecimal(const decode_results * const result, char *output) 
 // {
 //   strcpy(output, "0x");

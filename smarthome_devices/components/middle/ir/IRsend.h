@@ -24,6 +24,12 @@ typedef enum {
   AKB73757604,        // (4) LG2 Variant of AKB74955603
   LG6711A20083V,      // (5) Same as GE6711AR2853M, but only SwingV toggle.
 } lg_ac_remote_model_t;
+typedef enum {
+  YAW1F = 1,  // (1) Ultimate, EKOKAI, RusClimate (Default)
+  YBOFB,      // (2) Green, YBOFB2, YAPOF3
+  YX1FSF,     // (3) Soleus Air window unit (Similar to YAW1F, but with an
+              //     Operation mode of Energy Saver (Econo))
+} gree_ac_remote_model_t;
 
 typedef enum {
   kControlCommand = 0,
@@ -152,5 +158,10 @@ void Aqua_send(state_ir_t state_ir);
 void Samsung_send(state_ir_t state_ir);
 void Samsung_sendExtended(state_ir_t state_ir);
 void Toshiba_send(state_ir_t state_ir);
+void Daikin_send(state_ir_t state_ir);
+void Gree_send(state_ir_t state_ir);
+void Nagakawa_send(state_ir_t state_ir);
+void Tcl112_send(state_ir_t state_ir);
+void Mitsubishi112_send(state_ir_t state_ir);
 
 #endif
