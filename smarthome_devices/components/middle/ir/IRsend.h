@@ -163,5 +163,6 @@ void Gree_send(state_ir_t state_ir);
 void Nagakawa_send(state_ir_t state_ir);
 void Tcl112_send(state_ir_t state_ir);
 void Mitsubishi112_send(state_ir_t state_ir);
+void Midea_send(state_ir_t state_ir);
 
 #endif

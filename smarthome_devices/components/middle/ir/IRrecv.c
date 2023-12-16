@@ -935,9 +935,21 @@ if (1){
     if (decodeGree(results, offset, kGreeBits, true)) return true;
 #endif
 
-#if DECODE_MITSUBISHI112
+#if (DECODE_MITSUBISHI112 || DECODE_NAGAKAWA || DECODE_TCL112AC)
     os_trace("Attempting decodeMitsubishi, Tcl, Nagakawa 112bit AC decode\r\n");
     if (decodeMitsubishi112(results, offset, kMitsubishi112Bits, true)) return true;
+#endif
+
+#if DECODE_MIDEA
+    os_trace("Attempting decodeMidea AC decode\r\n");        
+    if (decodeMidea(results, offset, kMideaBits, true)) return true;
+
+    // os_trace("Attempting decodeMidea 24bit AC decode\r\n");        
+    // if (decodeMidea24(results, offset, kMidea24Bits, true)) return true;
+#endif
+
+#if DECODE_SHARP
+    if (decodeSharpAc(results, offset, kSharpAcBits, true)) return true;
 #endif
 
     }
@@ -1072,7 +1084,7 @@ void m_ir_task(void)
             state_ir_t ir_state = {UNKNOWN, -1, false, opmode_kOff, 25, true, fanspeed_kAuto, swingv_kOff, swingh_kOff, false, false, false, false, false, false, false, -1, -1, kControlCommand, false, kNoTempValue};
             if (capture.decode_type == LG2) {
                 LG_setRaw(capture.value, capture.decode_type, &ir_state);
-            } else if (capture.decode_type == AQUA){;
+            } else if (capture.decode_type == AQUA){
                 AQUA_setRaw(capture.state, capture.decode_type, &ir_state);
             } else if (capture.decode_type == FUNIKI){
                 Funiki_setRaw((uint8_t*)&capture.value, capture.decode_type, &ir_state);
@@ -1141,6 +1153,9 @@ void m_ir_task(void)
                 }
                 os_trace("\r\n");
                 Tcl112_setRaw((uint8_t*)capture.state, capture.decode_type, &ir_state);
+            }
+            else if (capture.decode_type == MIDEA){
+                Midea_setRaw(capture.value, capture.decode_type, &ir_state);
             }
             
             IR_logCommon(ir_state);

@@ -49,6 +49,13 @@ bool decodeFunikiAC(decode_results *results, uint16_t offset, const uint16_t nbi
 
     }
 
+    if (strict) {
+        if (memcmp(&results->state[0], &results->state[kFunikiAcSectionLength], kFunikiAcSectionLength)) {
+            os_trace("%s invalid checksum\r\n", __func__);
+            return false;
+        }
+    }
+
     results->decode_type = FUNIKI;
     results->bits = nbits;
 

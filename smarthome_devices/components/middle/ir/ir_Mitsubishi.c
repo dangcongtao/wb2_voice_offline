@@ -145,7 +145,7 @@ bool decodeMitsubishi112(decode_results *results, uint16_t offset,
                                bitmark_lower, bitmark_upper, gap - 100, gap + 100,
                                true, tolerance, 0, false);
   if (!used) {
-    os_trace("%s matchGenericState failed\r\n", __func__);
+    // os_trace("%s matchGenericState failed\r\n", __func__);
     return false;
   }
   if (strict) {

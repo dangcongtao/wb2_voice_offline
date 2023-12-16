@@ -11,7 +11,7 @@
 
 #define MS_TO_USEC(x) ((x) * 1000U)  // Convert milli-Seconds to micro-Seconds.
 
-#define kNoRepeat  0
+
 #define kSamsungBits  32
 #define kSamsung36Bits  36
 #define kSamsungAcStateLength  14
@@ -37,7 +37,7 @@
 
 
 #define DECODE_LG   1
-#define DECODE_NEC  0
+#define DECODE_NEC  1
 #define DECODE_SAMSUNG 1
 #define DECODE_SAMSUNG_AC 1
 #define DECODE_FUNIKI 1
@@ -49,6 +49,8 @@
 #define DECODE_MITSUBISHI112  1
 #define DECODE_NAGAKAWA   1
 #define DECODE_TCL112AC   1
+#define DECODE_MIDEA    1
+#define DECODE_SHARP    1
 
 #define IR_RX 1
 #define DECODE_AC 1
@@ -209,6 +211,18 @@ bool decodeMitsubishi112(decode_results *results, uint16_t offset,
                                  const uint16_t nbits, const bool strict);
 #endif
 
+#if DECODE_MIDEA
+bool decodeMidea(decode_results *results, uint16_t offset,
+                         const uint16_t nbits, const bool strict);
+bool decodeMidea24(decode_results *results, uint16_t offset,
+                            const uint16_t nbits, const bool strict);
+#endif
+
+#if DECODE_SHARP
+bool decodeSharpAc(decode_results *results, uint16_t offset,
+                           const uint16_t nbits, const bool strict);
+#endif
+
 bool matchSpace(uint32_t measured, uint32_t desired, uint8_t tolerance,
                         int16_t excess);
 
@@ -280,6 +294,7 @@ void Nagakawa_setRaw(const uint8_t* newState, const decode_type_t protocol, stat
 
 void Tcl112_setRaw(const uint8_t* newState, const decode_type_t protocol, state_ir_t *ir_state);
 
+void Midea_setRaw(const uint64_t new_code, const decode_type_t protocol, state_ir_t *ir_state);
 
 // void enableIRIn(const bool pullup);
 void ir_loop(void);

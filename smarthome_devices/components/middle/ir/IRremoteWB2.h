@@ -140,6 +140,7 @@ typedef enum {
 
 #define kSingleRepeat 1
 
+#define kNoRepeat  0
 #define kDaikinStateLength (35)
 #define kDaikinBits (kDaikinStateLength * 8)
 #define kDaikinStateLengthShort (kDaikinStateLength - 8)
@@ -194,6 +195,17 @@ typedef enum {
 #define kTcl112AcBits  (kTcl112AcStateLength * 8)
 #define kTcl112AcDefaultRepeat (kNoRepeat)
 
+#define kMideaBits  48
+#define kMideaMinRepeat  (kNoRepeat)
+#define kMidea24Bits 24
+#define kMidea24MinRepeat  kSingleRepeat
+
+#define kSharpAddressBits  5
+#define kSharpCommandBits  8
+#define kSharpBits  (kSharpAddressBits + kSharpCommandBits + 2)  // 15
+#define kSharpAcStateLength  13
+#define kSharpAcBits  (kSharpAcStateLength * 8)  // 104
+#define kSharpAcDefaultRepeat  kNoRepeat
 
 
 

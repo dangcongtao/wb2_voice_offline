@@ -341,6 +341,5 @@ void IRsend_init(uint16_t IRsendPin, bool inverted, bool use_modulation)
     _dutycycle = kDutyMax;
   }
 
-  // gpio_set_output(IRpin);
-  // ledOn();
+  IRsend_begin();
 }

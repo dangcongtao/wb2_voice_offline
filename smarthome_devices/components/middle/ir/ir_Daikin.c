@@ -72,13 +72,13 @@ bool decodeDaikin(decode_results *results, uint16_t offset,
                          kDaikinSections * (kHeader + kFooter) + kFooter - 1) +
                          offset) 
     {
-        os_trace("%s Is there enough data to match successfully\r\n", __func__);
+        // os_trace("%s Is there enough data to match successfully\r\n", __func__);
         return false;
     }
 
   // Compliance
   if (strict && nbits != kDaikinBits) {
-    os_trace("%s Compliance\r\n", __func__);
+    // os_trace("%s Compliance\r\n", __func__);
     return false;
   }
 
