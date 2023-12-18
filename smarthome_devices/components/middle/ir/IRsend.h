@@ -172,5 +172,6 @@ void Tcl112_send(state_ir_t state_ir);
 void Mitsubishi112_send(state_ir_t state_ir);
 void Midea_send(state_ir_t state_ir);
 void SharpAc_send(state_ir_t state_ir);
+void Daikin2_send(state_ir_t state_ir);
 
 #endif

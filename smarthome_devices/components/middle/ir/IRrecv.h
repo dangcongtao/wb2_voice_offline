@@ -45,6 +45,7 @@
 #define DECODE_CASPER   1
 #define DECODE_TOSHIBA  1
 #define DECODE_DAIKIN   1
+#define DECODE_DAIKIN2  1
 #define DECODE_GREE   1
 #define DECODE_MITSUBISHI112  1
 #define DECODE_NAGAKAWA   1
@@ -201,6 +202,11 @@ bool decodeDaikin(decode_results *results, uint16_t offset,
                           const uint16_t nbits, const bool strict);
 #endif
 
+#if DECODE_DAIKIN2
+bool decodeDaikin2(decode_results *results, uint16_t offset,
+                           const uint16_t nbits, const bool strict);
+#endif
+
 #if DECODE_GREE
 bool decodeGree(decode_results* results, uint16_t offset,
                         const uint16_t nbits, bool const strict);
@@ -284,6 +290,7 @@ void Samsung_setRaw(const uint8_t* new_code, const uint16_t length, const decode
 void Toshiba_setRaw(const uint8_t* newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state); 
 
 void Daikin_setRaw(const uint8_t* newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state) ;
+void Daikin2_setRaw(const uint8_t* newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state) ;
 
 void Gree_setRaw(const uint8_t* newState, const decode_type_t protocol, state_ir_t *ir_state);
 

@@ -704,20 +704,26 @@ uint16_t _matchGenericLimit(volatile uint16_t *data_ptr,
         offset += data_used;
     }
     // Footer
-    if (footermarkLower && !matchLimit(*(data_ptr + offset++), footermarkLower, footermarkUpper))
+    if (footermarkLower && !matchLimit(*(data_ptr + offset++), footermarkLower, footermarkUpper)) {
+        os_trace("%s footer, mark: %lu, %lu %lu\r\n", __func__, *(data_ptr + offset - 1) * 2, footermarkLower, footermarkUpper);
         return 0;
+    }
     // If we have something still to match & haven't reached the end of the buffer
     if (footerspaceLower && offset < remaining)
     {
         if (atleast)
         {
-            if (!matchLimit(*(data_ptr + offset), footerspaceLower, footerspaceUpper))
+            if (!matchLimit(*(data_ptr + offset), footerspaceLower, footerspaceUpper)) {
+                os_trace("%s atleast 1, offset:%u, space: %lu, %lu %lu, space %lu, %lu %lu\r\n", __func__, offset, *(data_ptr + offset) * 2, footerspaceLower, footerspaceUpper);
                 return 0;
+            }
         }
         else
         {
-            if (!matchLimit(*(data_ptr + offset), footerspaceLower, footerspaceUpper))
+            if (!matchLimit(*(data_ptr + offset), footerspaceLower, footerspaceUpper)) {
+                os_trace("%s atleast 0, offset:%u, space: %lu, %lu %lu, space %lu, %lu %lu\r\n", __func__, offset, *(data_ptr + offset) * 2, footerspaceLower, footerspaceUpper);
                 return 0;
+            }
         }
         offset++;
     }
@@ -930,6 +936,13 @@ if (1){
     if (decodeDaikin(results, offset, kDaikinBits, true)) return true;
 #endif
 
+#if DECODE_DAIKIN2
+    os_trace("Attempting Daikin AC decode\r\n");
+    if (decodeDaikin2(results, offset, kDaikin2Bits, true)) return true;
+#endif
+
+
+
 #if DECODE_GREE
     os_trace("Attempting Gree AC decode\r\n");
     if (decodeGree(results, offset, kGreeBits, true)) return true;
@@ -1126,6 +1139,9 @@ void m_ir_task(void)
             } 
             else if (capture.decode_type == DAIKIN){
                 Daikin_setRaw((uint8_t*)capture.state, kDaikinStateLength, capture.decode_type, &ir_state);
+            }
+            else if (capture.decode_type == DAIKIN2){
+                Daikin2_setRaw((uint8_t*)capture.state, kDaikin2StateLength, capture.decode_type, &ir_state);
             }
             else if (capture.decode_type == GREE){
                 Gree_setRaw((uint8_t*)capture.state, capture.decode_type, &ir_state);
