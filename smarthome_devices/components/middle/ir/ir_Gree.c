@@ -79,7 +79,7 @@ bool decodeGree(decode_results* results, uint16_t offset,
                       0, 0, false,
                       45, kMarkExcess, false);
   if (used == 0) {
-    os_trace("%s matchGenericState 1 failed\r\n", __func__);
+    // os_trace("%s matchGenericState 1 failed\r\n", __func__);
     return false;
   }
   offset += used;

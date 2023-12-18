@@ -268,7 +268,6 @@ uint16_t matchGenericStateLimit(volatile uint16_t *data_ptr,
                         const int16_t excess,
                         const bool MSBfirst );
 
-void lg_getString(void);
 void LG_setRaw(const uint32_t new_code, const decode_type_t protocol, state_ir_t *ir_state);
 bool isValidLgAc(void);
 
@@ -295,6 +294,8 @@ void Nagakawa_setRaw(const uint8_t* newState, const decode_type_t protocol, stat
 void Tcl112_setRaw(const uint8_t* newState, const decode_type_t protocol, state_ir_t *ir_state);
 
 void Midea_setRaw(const uint64_t new_code, const decode_type_t protocol, state_ir_t *ir_state);
+
+void SharpAc_setRaw(const uint8_t* newState, const decode_type_t protocol, state_ir_t *ir_state);
 
 // void enableIRIn(const bool pullup);
 void ir_loop(void);

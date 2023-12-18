@@ -1157,6 +1157,9 @@ void m_ir_task(void)
             else if (capture.decode_type == MIDEA){
                 Midea_setRaw(capture.value, capture.decode_type, &ir_state);
             }
+            else if (capture.decode_type == SHARP_AC){
+                SharpAc_setRaw((uint8_t*)capture.state, capture.decode_type, &ir_state);
+            }
             
             IR_logCommon(ir_state);
             irRecvCounter++;

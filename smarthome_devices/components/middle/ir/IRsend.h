@@ -30,6 +30,13 @@ typedef enum {
   YX1FSF,     // (3) Soleus Air window unit (Similar to YAW1F, but with an
               //     Operation mode of Energy Saver (Econo))
 } gree_ac_remote_model_t;
+typedef enum {
+  A907 = 1,
+  A705 = 2,
+  A903 = 3,  // 820 too
+} sharp_ac_remote_model_t;
+
+
 
 typedef enum {
   kControlCommand = 0,
@@ -164,5 +171,6 @@ void Nagakawa_send(state_ir_t state_ir);
 void Tcl112_send(state_ir_t state_ir);
 void Mitsubishi112_send(state_ir_t state_ir);
 void Midea_send(state_ir_t state_ir);
+void SharpAc_send(state_ir_t state_ir);
 
 #endif

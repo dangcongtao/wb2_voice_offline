@@ -441,23 +441,6 @@ static void send(const uint16_t repeat) {
   }
 }
 
-void Lg_test_send(void)
-{
-  // os_trace("%s \r\n", __func__);
-  // IRsend_begin();
-  // state_ir_t state_ir;
-  // LG_setRaw(kLgAcOffCommand, LG2, &state_ir);
-  // setModel(AKB75215403);
-
-  // setTemp(23);
-  // setMode(kLgAcCool);
-  // setFan(kLgAcFanMax);
-  // setPower(1);
-  
-  // send(kNoRepeat);
-  
-}
-
 void stateReset(void) {
   // LG_setRaw(kLgAcOffCommand);
   setModel(GE6711AR2853M);
@@ -488,11 +471,6 @@ void LG_send(state_ir_t state_ir)
   send(kNoRepeat);
 }
 
-void lg_getString(void)
-{
-  os_trace("power: %u, mode: %u, temp: %u, fan: %u\r\n", getPower(), _.data.Mode, getTemp(), _.data.Fan);
-}
-
 uint8_t calcChecksum(const uint32_t state) {
   return sumNibbles(state >> kLgAcChecksumSize, 4, 0, true);
 }
@@ -514,4 +492,3 @@ bool isValidLgAc(void)
 {
   return validChecksum(_.data.raw) && (_.data.Sign == kLgAcSignature);
 }
-

@@ -73,7 +73,7 @@ bool decodeMidea(decode_results *results, uint16_t offset,
                         45, kMarkExcess, true);
                     
     if (!used) {
-        os_trace("%s matchGeneric failed %u\r\n", __func__, i);
+        // os_trace("%s matchGeneric failed %u\r\n", __func__, i);
         return false;
     }
     offset += used;
@@ -91,6 +91,7 @@ bool decodeMidea(decode_results *results, uint16_t offset,
         return false;
     }
     if (!validChecksum(data)) {
+        os_trace("%s invalid checksum\r\n", __func__);
         return false;
     }
   }
