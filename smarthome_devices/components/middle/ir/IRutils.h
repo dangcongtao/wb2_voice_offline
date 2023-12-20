@@ -26,6 +26,8 @@
 bool hasACState(const decode_type_t protocol);
 uint8_t sumNibbles(const uint64_t data, const uint8_t count,
                     const uint8_t init, const bool nibbleonly);
+uint8_t sumNibblesByte(const uint8_t * const start, const uint16_t length,
+                     const uint8_t init);
 uint64_t reverseBits(uint64_t input, uint16_t nbits);
 void resultToHexidecimal(const decode_results * const result, char *output);
 
@@ -47,5 +49,7 @@ uint16_t sumBytesData(const uint64_t data, const uint8_t count,
 float celsiusToFahrenheit(const float deg);
 float fahrenheitToCelsius(const float deg);
 
+uint8_t bcdToUint8(const uint8_t bcd);
+uint8_t uint8ToBcd(const uint8_t integer);
 
 #endif

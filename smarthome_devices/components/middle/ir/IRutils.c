@@ -118,6 +118,15 @@ uint8_t sumNibbles(const uint64_t data, const uint8_t count,
   return nibbleonly ? sum & 0xF : sum;
 }
 
+uint8_t sumNibblesByte(const uint8_t * const start, const uint16_t length,
+                     const uint8_t init) {
+  uint8_t sum = init;
+  const uint8_t *ptr;
+  for (ptr = start; ptr - start < length; ptr++)
+    sum += (*ptr >> 4) + (*ptr & 0xF);
+  return sum;
+}
+
 uint8_t xorBytes(const uint8_t * const start, const uint16_t length,
                  const uint8_t init) {
   uint8_t checksum = init;
@@ -169,6 +178,17 @@ uint16_t sumBytesData(const uint64_t data, const uint8_t count,
 float celsiusToFahrenheit(const float deg) { return (deg * 9.0) / 5.0 + 32.0; }
 
 float fahrenheitToCelsius(const float deg) { return (deg - 32.0) * 5.0 / 9.0; }
+
+uint8_t bcdToUint8(const uint8_t bcd) {
+  if (bcd > 0x99) return 255;  // Too big.
+  return (bcd >> 4) * 10 + (bcd & 0xF);
+}
+
+uint8_t uint8ToBcd(const uint8_t integer)
+{
+  if (integer > 99) return 255;  // Too big.
+  return ((integer / 10) << 4) + (integer % 10);
+}
 // void resultToHexidecimal(const decode_results * const result, char *output) 
 // {
 //   strcpy(output, "0x");

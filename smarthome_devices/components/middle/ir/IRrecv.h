@@ -46,6 +46,11 @@
 #define DECODE_TOSHIBA  1
 #define DECODE_DAIKIN   1
 #define DECODE_DAIKIN2  1
+#define DECODE_DAIKIN152  1
+#define DECODE_DAIKIN160  1
+#define DECODE_DAIKIN216  1
+#define DECODE_DAIKIN128  1
+#define DECODE_DAIKIN64  1
 #define DECODE_GREE   1
 #define DECODE_MITSUBISHI112  1
 #define DECODE_NAGAKAWA   1
@@ -207,6 +212,27 @@ bool decodeDaikin2(decode_results *results, uint16_t offset,
                            const uint16_t nbits, const bool strict);
 #endif
 
+#if DECODE_DAIKIN152
+bool decodeDaikin152(decode_results *results, uint16_t offset,
+                             const uint16_t nbits, const bool strict);
+#endif
+#if DECODE_DAIKIN160
+bool decodeDaikin160(decode_results *results, uint16_t offset,
+                             const uint16_t nbits, const bool strict);
+#endif
+#if DECODE_DAIKIN216
+bool decodeDaikin216(decode_results *results, uint16_t offset,
+                             const uint16_t nbits, const bool strict);
+#endif
+#if DECODE_DAIKIN128
+bool decodeDaikin128(decode_results *results, uint16_t offset,
+                             const uint16_t nbits, const bool strict);
+#endif
+#if DECODE_DAIKIN64
+bool decodeDaikin64(decode_results *results, uint16_t offset,
+                            const uint16_t nbits, const bool strict);
+#endif
+
 #if DECODE_GREE
 bool decodeGree(decode_results* results, uint16_t offset,
                         const uint16_t nbits, bool const strict);
@@ -249,6 +275,30 @@ match_result_t matchDataLimit(
                     const uint32_t zerospaceUpper,
     const uint8_t tolerance, const int16_t excess, const bool MSBfirst,
     const bool expectlastspace);
+uint16_t matchGenericDataLimit(volatile uint16_t *data_ptr,
+                      uint64_t *result_ptr,
+                      const uint16_t remaining,
+                      const uint16_t nbits,
+                      const uint16_t hdrmarkLower,
+                       const uint16_t hdrmarkUpper,
+                       const uint32_t hdrspaceLower,
+                       const uint32_t hdrspaceUpper,
+                       const uint16_t onemarkLower,
+                       const uint16_t onemarkUpper,
+                       const uint32_t onespaceLower,
+                       const uint32_t onespaceUpper,
+                       const uint16_t zeromarkLower,
+                       const uint16_t zeromarkUpper,
+                       const uint32_t zerospaceLower,
+                       const uint32_t zerospaceUpper,
+                       const uint16_t footermarkLower,
+                       const uint16_t footermarkUpper,
+                       const uint32_t footerspaceLower,
+                       const uint32_t footerspaceUpper,
+                      const bool atleast,
+                      const uint8_t tolerance,
+                      const int16_t excess,
+                      const bool MSBfirst);
 
 uint16_t matchGenericStateLimit(volatile uint16_t *data_ptr,
                         uint8_t *result_ptr,
@@ -291,6 +341,11 @@ void Toshiba_setRaw(const uint8_t* newState, const uint16_t length, const decode
 
 void Daikin_setRaw(const uint8_t* newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state) ;
 void Daikin2_setRaw(const uint8_t* newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state) ;
+void Daikin152_setRaw(const uint8_t* newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state);
+void Daikin160_setRaw(const uint8_t* newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state);
+void Daikin216_setRaw(const uint8_t* newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state);
+void Daikin128_setRaw(const uint8_t* newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state);
+void Daikin64_setRaw(const uint64_t new_state, const decode_type_t protocol, state_ir_t *ir_state);
 
 void Gree_setRaw(const uint8_t* newState, const decode_type_t protocol, state_ir_t *ir_state);
 

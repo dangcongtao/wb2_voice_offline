@@ -730,6 +730,39 @@ uint16_t _matchGenericLimit(volatile uint16_t *data_ptr,
     return offset;
 }
 
+uint16_t matchGenericDataLimit(volatile uint16_t *data_ptr,
+                      uint64_t *result_ptr,
+                      const uint16_t remaining,
+                      const uint16_t nbits,
+                      const uint16_t hdrmarkLower,
+                       const uint16_t hdrmarkUpper,
+                       const uint32_t hdrspaceLower,
+                       const uint32_t hdrspaceUpper,
+                       const uint16_t onemarkLower,
+                       const uint16_t onemarkUpper,
+                       const uint32_t onespaceLower,
+                       const uint32_t onespaceUpper,
+                       const uint16_t zeromarkLower,
+                       const uint16_t zeromarkUpper,
+                       const uint32_t zerospaceLower,
+                       const uint32_t zerospaceUpper,
+                       const uint16_t footermarkLower,
+                       const uint16_t footermarkUpper,
+                       const uint32_t footerspaceLower,
+                       const uint32_t footerspaceUpper,
+                      const bool atleast,
+                      const uint8_t tolerance,
+                      const int16_t excess,
+                      const bool MSBfirst)
+{
+    return _matchGenericLimit(data_ptr, result_ptr, NULL, true, remaining, nbits,
+                         hdrmarkLower,hdrmarkUpper, hdrspaceLower, hdrspaceUpper,
+                         onemarkLower, onemarkUpper, onespaceLower, onespaceUpper,
+                                          zeromarkLower, zeromarkUpper, zerospaceLower, zerospaceUpper, 
+                                          footermarkLower,footermarkUpper, footerspaceLower, footerspaceUpper, 
+                                          atleast, tolerance, excess, MSBfirst); 
+}
+
 uint16_t matchGenericStateLimit(volatile uint16_t *data_ptr,
                         uint8_t *result_ptr,
                         const uint16_t remaining, const uint16_t nbits,
@@ -937,8 +970,33 @@ if (1){
 #endif
 
 #if DECODE_DAIKIN2
-    os_trace("Attempting Daikin AC decode\r\n");
+    os_trace("Attempting Daikin 2 AC decode\r\n");
     if (decodeDaikin2(results, offset, kDaikin2Bits, true)) return true;
+#endif
+
+#if DECODE_DAIKIN152
+    os_trace("Attempting Daikin 152 bit AC decode\r\n");
+    if (decodeDaikin152(results, offset, kDaikin152Bits, true)) return true;
+#endif
+
+#if DECODE_DAIKIN160
+    os_trace("Attempting Daikin 160 bit AC decode\r\n");
+    if (decodeDaikin160(results, offset, kDaikin160Bits, true)) return true;
+#endif
+
+#if DECODE_DAIKIN216
+    os_trace("Attempting Daikin 216 bit AC decode\r\n");
+    if (decodeDaikin216(results, offset, kDaikin216Bits, true)) return true;
+#endif
+
+#if DECODE_DAIKIN128
+    os_trace("Attempting Daikin 128 bit AC decode\r\n");
+    if (decodeDaikin128(results, offset, kDaikin128Bits, true)) return true;
+#endif
+
+#if DECODE_DAIKIN64
+    os_trace("Attempting Daikin 64 bit AC decode\r\n");
+    if (decodeDaikin64(results, offset, kDaikin64Bits, true)) return true;
 #endif
 
 
@@ -1142,6 +1200,21 @@ void m_ir_task(void)
             }
             else if (capture.decode_type == DAIKIN2){
                 Daikin2_setRaw((uint8_t*)capture.state, kDaikin2StateLength, capture.decode_type, &ir_state);
+            }
+            else if (capture.decode_type == DAIKIN64){
+                Daikin64_setRaw(capture.value, capture.decode_type, &ir_state);
+            }
+            else if (capture.decode_type == DAIKIN152){
+                Daikin152_setRaw((uint8_t*)capture.state, kDaikin152StateLength, capture.decode_type, &ir_state);
+            }
+            else if (capture.decode_type == DAIKIN160){
+                Daikin160_setRaw((uint8_t*)capture.state, kDaikin160StateLength, capture.decode_type, &ir_state);
+            }
+            else if (capture.decode_type == DAIKIN216){
+                Daikin216_setRaw((uint8_t*)capture.state, kDaikin216StateLength, capture.decode_type, &ir_state);
+            }
+            else if (capture.decode_type == DAIKIN128){
+                Daikin128_setRaw((uint8_t*)capture.state, kDaikin128StateLength, capture.decode_type, &ir_state);
             }
             else if (capture.decode_type == GREE){
                 Gree_setRaw((uint8_t*)capture.state, capture.decode_type, &ir_state);
