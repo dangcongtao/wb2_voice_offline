@@ -9,6 +9,7 @@
 #include <bl_os_hal.h>
 #include <bl_wdt.h>
 #include "axk_attr.h"
+#include "IRutils.h"
 
 DRAM_ATTR irparams_t params;
 irparams_t *params_save;
@@ -1137,12 +1138,52 @@ void IRrecv_init(const uint32_t recvpin, const uint16_t bufsize,
     _tolerance = kTolerance;
 }
 
-decode_results capture;
-uint32_t lastIrReceivedTime = 0;
-uint32_t irRecvCounter = 0;
-char *lastIrReceived[256];
+#include "base64.h"
+#include "m_mqtt.h"
 
-#include "IRutils.h"
+static decode_results capture;
+static uint32_t lastIrReceivedTime = 0;
+static uint32_t irRecvCounter = 0;
+static uint32_t old_time_learn_ir = 0;
+uint16_t result_temp[len_temp];
+
+
+void IR_start_learn(void)
+{
+    old_time_learn_ir = sys_get_tick_ms() | 1;
+}
+
+static void learnIR(decode_results *results)
+{
+    // decode_results cb;
+    // decode_results *results = &cb;
+    // results->rawlen = 739;
+    // results->rawbuf = results1->rawbuf;
+    // memset(results->rawbuf + results1->rawlen, 100, sizeof(uint16_t)*(results->rawlen-results1->rawlen));
+    uint16_t len_temp = getCorrectedRawLength(results);
+    os_trace("%s step 1 %u\r\n", __func__, len_temp);
+    
+
+    resultToRawArray(results, result_temp);
+    os_trace("%s step 2\r\n", __func__);
+
+    int size_rawData = getCorrectedRawLength(results) * sizeof(uint16_t);
+    os_trace("%s step 3\r\n", __func__);
+
+    uint8_t buffDataIR[2001];
+    memset(buffDataIR, 0, sizeof(buffDataIR));
+    b64_encode((unsigned char *)result_temp, size_rawData, (unsigned char *)buffDataIR);
+    os_trace("%s step 4: len_buffDataIR: %u\r\n\r\n\r\n", __func__, strlen((const char*)buffDataIR));
+    // os_trace("%s step 5: len_buffDataIR: %u\r\n\r\n\r\n", __func__, strlen((const char*)buffDataIR));
+
+    char str[MAXIMUM_SIZE_MESSAGE];
+    memset(str, 0, MAXIMUM_SIZE_MESSAGE);
+
+    sprintf(str, "{\"%s\":3,\"data\":\"%s\"}", gs_dev_type[device_type], buffDataIR);
+    // os_trace("datasend[%u]:", strlen(str));
+    // os_trace("'%s'\r\n", str);
+    m_mqtt_get_instance()._mqtt_publish(str, strlen(str));
+}
 
 void m_ir_task(void)
 {
@@ -1249,10 +1290,22 @@ void m_ir_task(void)
             else if (capture.decode_type == SHARP_AC){
                 SharpAc_setRaw((uint8_t*)capture.state, capture.decode_type, &ir_state);
             }
+
+            if (old_time_learn_ir) {
+                learnIR(&capture);
+                old_time_learn_ir = 0;
+            }
             
             IR_logCommon(ir_state);
             irRecvCounter++;
+            
             resume();
+        }
+
+        if (old_time_learn_ir) {
+            if (sys_get_tick_ms() - old_time_learn_ir >= 120000) {
+                old_time_learn_ir = 0;
+            }
         }
 
         vTaskDelay(pdMS_TO_TICKS(50));
@@ -1261,7 +1314,7 @@ void m_ir_task(void)
 
 void m_ir_init(void)
 {
-    bl_wdt_init(60000);
+    // bl_wdt_init(60000);
     bl_gpio_enable_output(IRpin, 0, 0);
     IRsend_init(IRpin, false, true);
     IRrecv_init(IR_RX, 1024, 50, false);
@@ -1270,7 +1323,7 @@ void m_ir_init(void)
 
     xTaskCreate(m_ir_task,   /* Function that implements the task. */
                 "m_ir_task", /* Text name for the task. */
-                1024,        /* Stack size in words, not bytes. */
+                1024*3,        /* Stack size in words, not bytes. */
                 NULL,        /* Parameter passed into the task. */
                 1,           /* Priority at which the task is created. */
                 NULL);

@@ -52,4 +52,7 @@ float fahrenheitToCelsius(const float deg);
 uint8_t bcdToUint8(const uint8_t bcd);
 uint8_t uint8ToBcd(const uint8_t integer);
 
+uint16_t getCorrectedRawLength(const decode_results * const results);
+void resultToRawArray(const decode_results * const decode, uint16_t* result);
+
 #endif

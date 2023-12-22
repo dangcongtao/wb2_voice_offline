@@ -41,6 +41,8 @@
 #define CJSON_KEY_LEAKAGE       "leakage"
 
 /* JSON KEY USE FOR IR CONTROL*/
+#define CJSON_KEY_IR_TYPE_SEND  "type"
+#define CJSON_KEY_IR_DATA       "data"
 #define CJSON_KEY_IR_BRAND      "brand"
 #define CJSON_KEY_IR_POWER      "power"
 #define CJSON_KEY_IR_TEMP       "temp"
@@ -115,7 +117,7 @@ typedef enum
     MQTT_MSG,
 } method_trasmit_t;
 
-#define DATA_MAX_LEN    512
+#define DATA_MAX_LEN    2048
 
 typedef struct
 {

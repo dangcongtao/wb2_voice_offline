@@ -155,6 +155,7 @@ void sendGeneric1(const uint16_t headermark, const uint32_t headerspace,
                          const uint8_t dutycycle);
 
 void IRsend_init(uint16_t IRsendPin, bool inverted, bool use_modulation);
+void sendRaw(const uint16_t buf[], const uint16_t len, const uint16_t hz);
 void IRsend_begin(void);
 
 // IR BRAND SEND

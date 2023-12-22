@@ -368,5 +368,6 @@ void Irrecv_pause(void);
 void resume(void);
 
 void m_ir_init(void);
+void IR_start_learn(void);
 
 #endif

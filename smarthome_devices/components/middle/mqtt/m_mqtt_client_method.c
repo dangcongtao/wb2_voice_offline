@@ -84,6 +84,7 @@ static axk_err_t mqtt_event_handler_cb(axk_mqtt_event_handle_t event)
         os_trace("TOPIC=%.*s\r\n", event->topic_len, event->topic);
         // os_trace("MQTT Data[%u]: [%s]\r\n", event->data_len, event->data);
         // mqtt_on_message(event->data, event->data_len);
+        os_trace("%s lendata: %lu\r\n", __func__, event->data_len);
 
         if (event->data_len < DATA_MAX_LEN)
         {
@@ -120,7 +121,7 @@ void m_mqtt_publish(char *data, uint32_t length)
 
     m_mqtt_msg_t message;
     memset(&message, 0, sizeof(message));
-    memcpy(message.topic_pub, topic, strlen(topic));
+    // memcpy(message.topic_pub, topic, strlen(topic));
     memcpy(message.msg_pub, data, length);
     message.length = length;
 
@@ -132,11 +133,14 @@ void m_mqtt_publish(char *data, uint32_t length)
 
 void m_mqtt_publish_directly(char *data, uint32_t length)
 {
-    char *topic = s_mqtt_obj.mqtt_info.topic_pub;
+    char topic[MAXIMUM_SIZE_MQTT_TOPIC]; 
+    char *p_topic = s_mqtt_obj.mqtt_info.topic_pub;
+    memset(topic, 0, MAXIMUM_SIZE_MQTT_TOPIC);
+    memcpy(topic, p_topic, strlen(topic));
 
     m_mqtt_msg_t message;
     memset(&message, 0, sizeof(message));
-    memcpy(message.topic_pub, topic, strlen(topic));
+    // memcpy(message.topic_pub, topic, strlen(topic));
     memcpy(message.msg_pub, data, length);
     message.length = length;
 
@@ -158,7 +162,7 @@ void m_mqtt_publish_directly(char *data, uint32_t length)
     /* call platform mqtt-publish api */
     if (client != NULL)
     {
-        if (axk_mqtt_client_publish(client, message.topic_pub, msg_encrypted, len_msg_encrypted, 0, 0) < 0)
+        if (axk_mqtt_client_publish(client, topic, msg_encrypted, len_msg_encrypted, 0, 0) < 0)
         {
             os_trace("\tmqtt_client: publish message fail\r\n");
         }
@@ -236,7 +240,8 @@ void m_mqtt_start(void)
     mqtt_cfg.lwt_topic = s_mqtt_obj.mqtt_info.topic_pub;
     mqtt_cfg.lwt_qos = 0;
     mqtt_cfg.event_handle = mqtt_event_handler_cb;
-    
+    mqtt_cfg.buffer_size = MAXIMUM_SIZE_MESSAGE;
+    mqtt_cfg.out_buffer_size = 256;
     char client_id[128];
     memset(client_id, 0, sizeof(client_id));
     sprintf(client_id, "%s_%s_%s", BRAND, gs_dev_type[device_type], m_db_get_instance()->_get_dev_id());

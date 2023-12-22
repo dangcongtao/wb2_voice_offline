@@ -454,6 +454,9 @@ static void control_switch_default_state(void)
 /************************* public api ****************************/
 void m_switch_init(void)
 {
+    if (device_type == IRWIFI) {
+        return;
+    }
     os_trace("m_switch_init: %ld\r\n", max_number_channel);
 
     s_switch_obj.max_number_channel = max_number_channel;

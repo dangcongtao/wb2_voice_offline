@@ -4,12 +4,12 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define MAXIMUM_SIZE_MQTT_TOPIC                         256
-#define MAXIMUM_SIZE_MESSAGE							324
-#define MAXIMUM_QUEUE_ITEM                              16
+#define MAXIMUM_SIZE_MQTT_TOPIC                         324
+#define MAXIMUM_SIZE_MESSAGE							2048
+#define MAXIMUM_QUEUE_ITEM                              1
 
 typedef struct {
-	char topic_pub[MAXIMUM_SIZE_MQTT_TOPIC];
+	// char topic_pub[MAXIMUM_SIZE_MQTT_TOPIC];
 	char msg_pub[MAXIMUM_SIZE_MESSAGE];
 	uint32_t length;
 } m_mqtt_msg_t; /* message to publish - tx */

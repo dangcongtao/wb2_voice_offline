@@ -191,8 +191,10 @@ static void button_scan_task(void *param)
         if (!is_leakage_current())
 {
 #endif
+    if (device_type != IRWIFI) {
         m_switch_press_release_loop();
         m_switch_cyclic_timer_loop();
+    }
 #if PROJECT_SHOCK
 }
 #endif

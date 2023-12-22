@@ -37,13 +37,13 @@ void main_loop(void)
     {
         m_event_loop(delay_ms);
 
-        // old += 1;
-        // if (old > 20) {
-        //     old = 0;
-        //     os_trace("Free memory: %d\r\n", xPortGetFreeHeapSize());
-        // }
+        old += 1;
+        if (old > 20) {
+            old = 0;
+            os_trace("Free memory: %d\r\n", xPortGetFreeHeapSize());
+        }
 
-        bl_wdt_feed();
+        // bl_wdt_feed();
 
         vTaskDelay(pdMS_TO_TICKS(delay_ms));
     }
@@ -86,5 +86,11 @@ void main(void)
     m_event_init();
     
     /* start stack */
-    main_loop();
+    xTaskCreate(main_loop,  /* Function that implements the task. */
+                "main_loop", /* Text name for the task. */
+                1024 * 2,          /* Stack size in words, not bytes. */
+                NULL,              /* Parameter passed into the task. */
+                4,                 /* Priority at which the task is created. */
+                NULL);
+    // main_loop();
 }

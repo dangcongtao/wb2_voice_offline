@@ -310,6 +310,24 @@ void sendGeneric(const uint16_t headermark, const uint32_t headerspace,
                dutycycle);
 }
 
+void sendRaw(const uint16_t buf[], const uint16_t len, const uint16_t hz)
+{
+  // os_trace("%s len: %u\r\n", __func__, len);
+  vTaskEnterCritical();
+  // Set IR carrier frequency
+  enableIROut(hz, 50);
+  for (uint16_t i = 0; i < len; i++) {
+    if (i & 1) {  // Odd bit.
+      space(buf[i]);
+    } else {  // Even bit.
+      mark(buf[i]);
+    }
+  }
+  ledOff();  // We potentially have ended with a mark(), so turn of the LED.
+  // bl_timer_delay_us(1000);
+  vTaskExitCritical();
+}
+
 void IRsend_begin(void) 
 {
 #ifndef UNIT_TEST

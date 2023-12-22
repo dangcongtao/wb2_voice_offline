@@ -189,6 +189,33 @@ uint8_t uint8ToBcd(const uint8_t integer)
   if (integer > 99) return 255;  // Too big.
   return ((integer / 10) << 4) + (integer % 10);
 }
+
+uint16_t getCorrectedRawLength(const decode_results * const results) {
+  uint16_t extended_length = results->rawlen - 1;
+  for (uint16_t i = 0; i < results->rawlen - 1; i++) {
+    uint32_t usecs = ((uint32_t)results->rawbuf[i]) * kRawTick;
+    // Add two extra entries for multiple larger than UINT16_MAX it is.
+    extended_length += (usecs / (UINT16_MAX + 1)) * 2;
+  }
+  return extended_length;
+}
+
+void resultToRawArray(const decode_results * const decode, uint16_t* result) 
+{
+  
+    // Convert the decode data.
+    uint16_t pos = 0;
+    for (uint16_t i = 1; i < decode->rawlen; i++) {
+      uint32_t usecs = ((uint32_t)decode->rawbuf[i]) * kRawTick;
+      while (usecs > UINT16_MAX) {  // Keep truncating till it fits.
+        result[pos++] = UINT16_MAX;
+        result[pos++] = 0;  // A 0 in a sendRaw() array basically means skip.
+        usecs -= UINT16_MAX;
+      }
+      result[pos++] = (uint16_t)usecs;
+    }
+}
+
 // void resultToHexidecimal(const decode_results * const result, char *output) 
 // {
 //   strcpy(output, "0x");

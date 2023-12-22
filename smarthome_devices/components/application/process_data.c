@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "cJSON.h"
+#include "base64.h"
 #include "m_database.h"
 #include "app_config.h"
 #include "m_mqtt.h"
@@ -31,7 +32,6 @@ extern char key[16], iv[16];
 
 static void app_startup_message(void);
 static void app_control_pin(cJSON *jsRoot);
-static void ir_control(cJSON *jsRoot);
 static void app_get_info(cJSON *jsRoot);
 static void app_set_power_on(cJSON *jsRoot);
 static void app_set_lock(cJSON *jsRoot);
@@ -44,6 +44,10 @@ static void app_remove_device(cJSON *jsRoot);
 static void app_start_cyclic_timer(cJSON *jsRoot);
 static void app_stop_cyclic_timer(cJSON *jsRoot);
 static void app_backup_db(cJSON *jsRoot);
+
+// IR
+static void ir_control(cJSON *jsRoot);
+static void ir_start_learn(cJSON *jsRoot);
 
 #if PROJECT_SHOCK
 static void app_get_leakage(cJSON *jsRoot);
@@ -92,6 +96,7 @@ wswitch_handler_t array_handler[] = {
     {app_backup_db, 151},
 
     {ir_control, 1}, 
+    {ir_start_learn, 2}, 
 };
 
 wswitch_handler_t array_ble_handler[] = {
@@ -278,11 +283,31 @@ RESPONSE:
     app_send_data(respond, strlen(respond));
 }
 
+static void ir_send_data(cJSON *jsRoot)
+{
+    cJSON *jsData;
+    uint16_t result_temp[750];
+    uint32_t len_data_b64 = 0;
+    
+    jsData = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_DATA);
+    if (jsData == NULL)
+    {
+        os_trace("Get JSON jsData mqtt message fail\n");
+        return;
+    }
+    char* data_dec = jsData->valuestring;
+    len_data_b64 = strlen(data_dec);
+    os_trace("%s len_base64_dec_data: %lu\r\n", __func__, len_data_b64);
+    memset(result_temp, 0, sizeof(result_temp));
+    b64_decode((unsigned char *)data_dec, len_data_b64, (unsigned char *)result_temp);
+    sendRaw(result_temp, (uint16_t)((len_data_b64 * 3) / 8), 38);
+}
+
 /*  {"irwifi":1,"type":1,"brand":102,"power":1,"temp":25,"mode":4,"fan":6,"act":0}  */
 static void ir_control(cJSON *jsRoot)
 {
-    cJSON *jsBrand, *jsPower, *jsTemp, *jsMode, *jsFan, *jsU, *jsAct_ID;
-    uint32_t type = 0, brand = 0, power = 0, temp = 0, mode = 0, fan = 0, act_id = 0;
+    cJSON *jsBrand, *jsTypeSend, *jsTemp, *jsMode, *jsFan, *jsU, *jsAct_ID;
+    uint32_t type = 0, brand = 0, typesend = 0, temp = 0, mode = 0, fan = 0, act_id = 0;
     uint8_t result = 0;
 
     if (jsRoot == NULL)
@@ -299,26 +324,39 @@ static void ir_control(cJSON *jsRoot)
     }
     type = jsType->valueint;
 
-    jsBrand = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_BRAND);
-    if (jsBrand == NULL)
+    jsTypeSend = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_TYPE_SEND);
+    if (jsTypeSend == NULL)
     {
-        os_trace("jsBrand NULL\n");
+        os_trace("Get JSON TypeSend mqtt message fail\n");
         goto RESPONSE;
     }
-    brand = jsBrand->valueint;
+    typesend = jsTypeSend->valueint;
 
-    uint32_t arr_size = sizeof(array_ir_control_handler) / sizeof(array_ir_control_handler[0]);
-    os_trace("arr_size_ir_control: %lu\r\n", arr_size);
-    for (uint32_t i = 0; i < arr_size; i++)
-    {
-        if (array_ir_control_handler[i]._cmd_number == brand)
+    if (typesend == 1) {
+        jsBrand = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_BRAND);
+        if (jsBrand == NULL)
         {
-            os_trace("ir brand: %ld\r\n", brand);
-            // Irrecv_pause();
-            array_ir_control_handler[i]._handler(jsRoot);
-            // resume();
-            break;
+            os_trace("jsBrand NULL\n");
+            goto RESPONSE;
         }
+        brand = jsBrand->valueint;
+
+        uint32_t arr_size = sizeof(array_ir_control_handler) / sizeof(array_ir_control_handler[0]);
+        os_trace("arr_size_ir_control: %lu\r\n", arr_size);
+        for (uint32_t i = 0; i < arr_size; i++)
+        {
+            if (array_ir_control_handler[i]._cmd_number == brand)
+            {
+                os_trace("ir brand: %ld\r\n", brand);
+                // Irrecv_pause();
+                array_ir_control_handler[i]._handler(jsRoot);
+                // resume();
+                break;
+            }
+        }
+    } else if (typesend == 2) {
+        // send by time
+        ir_send_data(jsRoot);
     }
 
 RESPONSE:
@@ -329,6 +367,37 @@ RESPONSE:
     //     "{\"%s\":%ld, \"action\":%ld, \"u\":%ld, \"act\": %ld, \"result\": %d}",
     //     gs_dev_type[device_type], type, action, uid, act_id, result);
     // app_send_data(respond, strlen(respond));
+}
+
+static void ir_start_learn(cJSON *jsRoot)
+{
+    uint8_t result = 0;
+    uint32_t type = 0;
+
+    if (jsRoot == NULL)
+    {
+        os_trace("jsRoot NULL\n");
+        goto RESPONSE;
+    }
+
+    cJSON *jsType = cJSON_GetObjectItem(jsRoot, gs_dev_type[device_type]);
+    if (jsType == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    type = jsType->valueint;
+    IR_start_learn();
+    result = 1;
+
+RESPONSE:
+    /* respond server here */
+    memset(respond, 0, sizeof(respond));
+    sprintf(
+        respond,
+        "{\"%s\":%ld,\"result\":%d}",
+        gs_dev_type[device_type], type, result);
+    app_send_data(respond, strlen(respond));
 }
 
 /*  {"irwifi":1,"type":1,"brand":102,"power":1,"temp":25,"mode":4,"fan":6,"act":0}  */
@@ -2574,8 +2643,9 @@ void app_handler_msg_task(void * arg)
                 os_trace("Can not decrypt message\r\n");
                 continue;
             }
-            
-            printf("\r\ndecoded: %s\r\n", raw_data);
+            if (raw_len < 450) {
+                printf("\r\ndecoded[%lu]: %s\r\n", raw_len, raw_data);
+            }
 
             /* find handler of data */
             jsRoot = cJSON_Parse(raw_data);
