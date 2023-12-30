@@ -1145,7 +1145,7 @@ static decode_results capture;
 static uint32_t lastIrReceivedTime = 0;
 static uint32_t irRecvCounter = 0;
 static uint32_t old_time_learn_ir = 0;
-uint16_t result_temp[len_temp];
+
 
 
 void IR_start_learn(void)
@@ -1162,6 +1162,7 @@ static void learnIR(decode_results *results)
     // memset(results->rawbuf + results1->rawlen, 100, sizeof(uint16_t)*(results->rawlen-results1->rawlen));
     uint16_t len_temp = getCorrectedRawLength(results);
     os_trace("%s step 1 %u\r\n", __func__, len_temp);
+    uint16_t result_temp[len_temp];
     
 
     resultToRawArray(results, result_temp);
