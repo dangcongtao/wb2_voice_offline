@@ -13,6 +13,13 @@ void wifi_not_cfg_to_ap_cfg_handler(void *arg)
 {
     clear_timeout_reset();
     m_led_stt_get_instance()._set_led_stt_ap_config_cb();
+
+    /* ble rename */
+    ble_set_name("Dungnt98", 1);
+
+    // stop mqtt
+    m_mqtt_get_instance()._mqtt_stop();
+
     // stop wifi sta
     m_wifi_get_instance().wifi_sta_stop_cb();
 

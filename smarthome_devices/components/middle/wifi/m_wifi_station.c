@@ -13,6 +13,7 @@
 #include "m_led_stt.h"
 #include "event_driven.h"
 #include <lwip/dns.h>
+#include <lwip/dns.h>
 
 extern m_wifi_t g_wifi_obj;
 extern int g_wifi_mode;
@@ -71,9 +72,9 @@ void m_wifi_sta_event_cb(input_event_t *event, void *private_data)
 
         ip_addr_t dnsserver;
         // os_trace("SYSTEM_EVENT_STA_GOT_IP\r\n");
-        inet_pton(AF_INET, "8.8.8.8", &dnsserver);
+        inet_pton(AF_INET, GOOGLE_DNS_1, &dnsserver);
         dns_setserver(0, &dnsserver);
-        inet_pton(AF_INET, "8.8.4.4", &dnsserver);
+        inet_pton(AF_INET, GOOGLE_DNS_2, &dnsserver);
         dns_setserver(1, &dnsserver);
         
         // Start the connection of MQTT
