@@ -49,11 +49,17 @@ typedef enum {
 	OS_RESET_DEFAULT_BY_SERVER = 2
 } app_reset_src_t;
 
+typedef struct {
+	bool send_ble;
+	bool need_create_new_id;
+	uint8_t mac_source[6];
+} m_ble_send_t;
+
 typedef void(*p_switch_cfg_t)(uint8_t _index);
 typedef uint8_t(*p_read_switch_t)(uint8_t _index);
 typedef void(*p_write_switch_t)(uint8_t _index, uint8_t _value);
 typedef uint8_t(*p_toggle_switch_t)(uint32_t _index, uint32_t act_id, bool respond, bool set_event_release);
-typedef uint8_t(*p_control_switch_t)(uint32_t action, uint32_t act_id, uint32_t uid, bool respond, bool set_event_release, bool send_ble);
+typedef uint8_t(*p_control_switch_t)(uint32_t action, uint32_t act_id, uint32_t uid, bool respond, bool set_event_release, m_ble_send_t send_ble);
 
 typedef struct {
 	m_state_default_switch_t default_state[APP_MAX_CHANNEL_SUPPORT];

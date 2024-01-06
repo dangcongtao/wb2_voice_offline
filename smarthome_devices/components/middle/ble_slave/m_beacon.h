@@ -6,6 +6,7 @@
 #include <stddef.h>
 
 #include "system_typedef.h"
+#include "m_switch.h"
 
 #define MASTER_SCAN_MAX 36
 #define NAME_LEN 30
@@ -106,6 +107,7 @@ typedef struct
         {
             uint8_t mac[6];
             uint8_t state;
+            uint8_t mac_source[6];
         } request_change_state;
 
         struct
@@ -145,9 +147,12 @@ typedef struct
     uint32_t time_delay_light_off;
 
     uint8_t my_state;
+    uint8_t mac_source[6];
+
     uint8_t last_state;
 
     uint8_t state_await;
+    uint8_t check_mac_source[6];
     uint8_t mac_request_state[6];
 
     uint16_t time_cnt_startup;
@@ -199,7 +204,7 @@ void ble_go_request_pair(void);
 void master_accept_request_link(void);
 uint8_t ble_db_remove_child(uint8_t id);
 void m_ble_get_mac_addr(uint8_t *my_mac);
-void m_ble_set_state_change(uint8_t channel, uint8_t level);
+void m_ble_set_state_change(uint8_t channel, uint8_t level, m_ble_send_t send_ble);
 void ble_db_remove_all_nodes(void);
 m_ble_info_t* m_ble_get_info_reference(void);
 

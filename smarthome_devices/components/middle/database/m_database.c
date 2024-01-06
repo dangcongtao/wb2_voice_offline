@@ -247,6 +247,20 @@ static void m_load_databse(void)
              s_m_database._m_device._switch_info->time_release[1],
              s_m_database._m_device._switch_info->time_release[2],
              s_m_database._m_device._switch_info->time_release[3]);
+    
+    os_trace("ble_info:\r\n");
+    for (uint8_t i = 0; i < s_m_database._m_device._ble_info->num_devices_link; i++)
+    {
+        os_trace("%u %02X:%02X:%02X:%02X:%02X:%02X %u %u\r\n", i, 
+            s_m_database._m_device._ble_info->list_child[i].mac[0], 
+            s_m_database._m_device._ble_info->list_child[i].mac[1], 
+            s_m_database._m_device._ble_info->list_child[i].mac[2], 
+            s_m_database._m_device._ble_info->list_child[i].mac[3], 
+            s_m_database._m_device._ble_info->list_child[i].mac[4], 
+            s_m_database._m_device._ble_info->list_child[i].mac[5],
+            s_m_database._m_device._ble_info->list_child[i].my_act,
+            s_m_database._m_device._ble_info->list_child[i].opp_act);
+    }
     if (s_m_database._m_device._device_is_paired)
     {
         os_trace("device was paired\r\n");

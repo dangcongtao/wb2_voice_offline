@@ -22,8 +22,10 @@ void start_cylcic_timer(switch_action_t action, uint32_t time_act1, uint32_t tim
         cyclic_timer_arr[channel_index].time_on = time_act1;
         cyclic_timer_arr[channel_index].time_off = time_act2;
     }
-
-    m_switch_get_instance()._control_switch_cb(action, 2, 0, true, false, true);
+    m_ble_send_t ble_send;
+    ble_send.send_ble = true;
+    ble_send.need_create_new_id = true;
+    m_switch_get_instance()._control_switch_cb(action, 2, 0, true, false, ble_send);
     previous_cyclic_timer_active[channel_index] = sys_get_tick_ms();
 
     step_toggle[channel_index] = 0;
@@ -66,13 +68,16 @@ void m_switch_cyclic_timer_loop(void)
             else
                 time_diff = UINT32_MAX - previous_cyclic_timer_active[i] + current_tick;
 
+            m_ble_send_t ble_send;
+            ble_send.send_ble = true;
+            ble_send.need_create_new_id = true;
             switch (step_toggle[i])
             {
             case 0:
             {
                 if (time_diff >= cyclic_timer_arr[i].time_on * 1000)
                 {
-                    m_switch_get_instance()._control_switch_cb(CH1_OFF + 2 * i, 2, 0, true, false, true);
+                    m_switch_get_instance()._control_switch_cb(CH1_OFF + 2 * i, 2, 0, true, false, ble_send);
                     step_toggle[i] = !step_toggle[i]; /* 1 -> 0 , 0 -> 1 */
                     previous_cyclic_timer_active[i] = sys_get_tick_ms();
                 }
@@ -83,7 +88,7 @@ void m_switch_cyclic_timer_loop(void)
             {
                 if (time_diff >= cyclic_timer_arr[i].time_off * 1000)
                 {
-                    m_switch_get_instance()._control_switch_cb(CH1_ON + 2 * i, 2, 0, true, false, true);
+                    m_switch_get_instance()._control_switch_cb(CH1_ON + 2 * i, 2, 0, true, false, ble_send);
                     step_toggle[i] = !step_toggle[i]; /* 1 -> 0 , 0 -> 1 */
                     previous_cyclic_timer_active[i] = sys_get_tick_ms();
                 }
