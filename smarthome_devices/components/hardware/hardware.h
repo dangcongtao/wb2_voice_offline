@@ -36,8 +36,8 @@
 #define SWITCH3    3
 #define SWITCH4    0
 
-#define SWITCH1_MINI    14
-#define SWITCH2_MINI    3
+#define SWITCH1_MINI    3
+#define SWITCH2_MINI    14
 
 #define TS04    22
 #define TS04_SWSHOCK    20
