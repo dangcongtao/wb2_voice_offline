@@ -237,6 +237,7 @@ void m_mqtt_start(void)
 
     client = axk_mqtt_client_init(&mqtt_cfg);
     if (axk_mqtt_client_start(client) != AXK_OK){
+        flash_set_rs_reason(10);
         vTaskDelay(2000);
         bl_sys_reset_por();
     }
