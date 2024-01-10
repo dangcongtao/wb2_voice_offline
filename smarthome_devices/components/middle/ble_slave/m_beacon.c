@@ -96,6 +96,7 @@ static bool scan_data_cb(struct bt_data *data, void *user_data)
                 if (is_tid_valid(is_existed_in_db((uint8_t*)(&data->data[3])), data->data[9])) {
                     os_trace("state changed %d ->> %u\r\n", is_existed_in_db((uint8_t*)(&data->data[3])), data->data[9]);
                     m_ble_request_state(data->data, data->data_len);
+                    return false;
                 } else {
                     return true;
                 }
@@ -104,6 +105,7 @@ static bool scan_data_cb(struct bt_data *data, void *user_data)
             case SEND_SS_STATE_CBCT:{
                 if (is_tid_valid(is_existed_in_db((uint8_t*)(&data->data[3])), data->data[9])) {
                     // os_trace("bat den\r\n");
+                    return false;
                 } else {
                     return true;
                 }
@@ -118,6 +120,7 @@ static bool scan_data_cb(struct bt_data *data, void *user_data)
             {
                 if (is_tid_valid(is_existed_in_db((uint8_t*)(&data->data[3])), data->data[9])) {
                     slave_proc_remove_link(data->data, data->data_len);
+                    return false;
                 }
             } break;
 
@@ -125,6 +128,7 @@ static bool scan_data_cb(struct bt_data *data, void *user_data)
             {
                 if (is_tid_valid(is_existed_in_db((uint8_t*)(&data->data[3])), data->data[9])) {
                     slave_proc_remove_all_nodes(data->data, data->data_len);
+                    return false;
                 }
             } break;
             
