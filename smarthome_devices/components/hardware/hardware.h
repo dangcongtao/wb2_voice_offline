@@ -85,7 +85,7 @@ inline uint8_t is_shock_device(uint8_t dev_type)
 
 inline uint8_t is_support_link_stair(uint8_t dev_type)
 {
-    return (dev_type == WSWITCH || dev_type == LHSWITCH);
+    return (dev_type == WSWITCH || dev_type == WSDATIC || dev_type == LHSWITCH);
 }
 
 /* switch */

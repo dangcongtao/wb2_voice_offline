@@ -57,6 +57,10 @@ void m_db_read_device_id(void)
     {
         device_type = WSWITCH;
     }
+    else if (strstr(s_device_id, gs_dev_type[WSDATIC]) != NULL)
+    {
+        device_type = WSDATIC;
+    }
     else if (strstr(s_device_id, gs_dev_type[LHSWITCH]) != NULL)
     {
         device_type = LHSWITCH;

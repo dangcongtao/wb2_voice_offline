@@ -184,7 +184,7 @@ static void m_button_config(void)
     app_btn_register_callback(APP_BTN_EVT_RELEASED, on_button_event_cb, NULL);
     app_btn_register_callback(APP_BTN_EVT_HOLD, on_button_event_cb, NULL);
     app_btn_register_callback(APP_BTN_EVT_HOLD_SO_LONG, on_button_event_cb, NULL);
-    if (device_type == WSWITCH || is_shock_device(device_type)) {
+    if (device_type == WSWITCH || device_type == WSDATIC || is_shock_device(device_type)) {
         app_btn_register_callback(APP_BTN_EVT_HOLD_HONG_PHIM, on_button_event_cb, NULL);
     }
 }
@@ -210,7 +210,7 @@ static void button_scan_task(void *param)
 #endif
         app_btn_scan(NULL);
 
-        if (device_type == WSWITCH || is_shock_device(device_type)) {
+        if (device_type == WSWITCH || device_type == WSDATIC || is_shock_device(device_type)) {
             if (time_cnt_down_reset_TS04 == 0) {
                 uint8_t s_check = 0;
                 for (uint8_t i = 0; i < max_number_channel; i++)

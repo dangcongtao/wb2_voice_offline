@@ -54,7 +54,8 @@
 #define STATE_OTA_SUCCESS   2
 
 typedef enum {
-    WSWITCH = 0,    // công tắc âm tường cảm hứng
+    WSWITCH = 0,    // công tắc âm tường cảm ứng hunonic
+    WSDATIC,        // công tắc âm tường cảm ứng datic
     LHSWITCH,       // công tắc lahu
 	SWMINI,         // công tắc mini
     SSWITCH,        // ổ cắm SK01
