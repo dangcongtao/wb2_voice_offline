@@ -21,16 +21,16 @@ void wifi_not_cfg_to_smart_cfg_handler(void *arg)
 
     m_mqtt_get_instance()._mqtt_stop();
 
-    // enable ble
-    // ble_deinit();
-    ble_set_name(s_device_id, 1);
-    // ble_init();
-
     // stop wifi sta
     m_wifi_get_instance().wifi_sta_stop_cb();
 
     // scan wifi
     m_wifi_get_instance().wifi_scan_cb();
+
+    // enable ble
+    // ble_deinit();
+    ble_set_name(s_device_id, 1);
+    // ble_init();
 
     app_btn_on_hold_time_fire_event_ms = APP_BTN_HOLD_EVENT_5S;
 }

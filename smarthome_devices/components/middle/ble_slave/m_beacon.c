@@ -170,7 +170,7 @@ int ble_master_scan(void)
     scan_param.type = BT_LE_SCAN_TYPE_PASSIVE;
     scan_param.filter_dup = BT_LE_SCAN_FILTER_DUPLICATE;
     scan_param.interval = 0xA0; // 100 ms
-    scan_param.window = BT_GAP_SCAN_FAST_WINDOW;
+    scan_param.window = 0x10;
 
     // master_current_scan = 0;
     memset(scan_le_addr, 0, sizeof(scan_le_addr));
@@ -775,7 +775,7 @@ void ble_config_loop(void)
 
     case WAIT_SWITCH_RESPONSE_LINK:
     {
-        vTaskDelay(pdMS_TO_TICKS(2000));
+        vTaskDelay(pdMS_TO_TICKS(3000));
         if (s_ble_obj.step == WAIT_SWITCH_RESPONSE_LINK) {
             os_trace("timeout WAIT_SWITCH_RESPONSE\r\n");
             s_ble_obj.is_run_config = 0;

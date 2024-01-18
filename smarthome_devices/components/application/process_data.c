@@ -1170,7 +1170,7 @@ void app_handler_msg_task(void * arg)
                 continue;
             }
             
-            printf("\r\ndecoded: %s\r\n", raw_data);
+            printf("\r\ndecoded: '%s'\r\n", raw_data);
 
             /* find handler of data */
             jsRoot = cJSON_Parse(raw_data);

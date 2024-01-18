@@ -158,7 +158,6 @@ static void ble_task(void *pvParameters)
 
     if (is_support_link_stair(device_type))
         ble_master_scan();
-    // ble_go_request_pair();
 
     while (1)
     {

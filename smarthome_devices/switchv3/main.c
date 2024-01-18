@@ -23,6 +23,7 @@
 #include "process_data.h"
 #include "m_ble.h"
 #include "event_driven.h"
+#include "bl_wdt.h"
 
 void main_loop(void)
 {
@@ -30,6 +31,7 @@ void main_loop(void)
 
     while (true)
     {
+        bl_wdt_feed();
         m_event_loop(delay_ms);
 
         // old += 1;
@@ -57,6 +59,7 @@ void main(void)
     bl_sys_logall_disable();
     #endif
     // hw_switch_cfg(0);
+    bl_wdt_init(20000);
 
     easyflash_init();
     tcpip_init(NULL, NULL);

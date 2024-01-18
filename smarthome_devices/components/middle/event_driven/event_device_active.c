@@ -132,17 +132,17 @@ void dev_actived_to_smart_cfg_handler(void *arg)
     // stop sta
     m_wifi_get_instance().wifi_sta_stop_cb();
 
-    // re-enable ble
-    // ble_deinit();
-    ble_set_name(s_device_id, 1);
-    // ble_init();
-
     // set led
     m_led_stt_get_instance()._set_led_stt_smart_config_cb();
     
 
     // scan wifi
     m_wifi_get_instance().wifi_scan_cb();
+
+    // re-enable ble
+    // ble_deinit();
+    ble_set_name(s_device_id, 1);
+    // ble_init();
 }
 m_state_transmit_t dev_actived_to_smart_cfg = {
     .context = M_WIFI_DEV_ACTIVE,
