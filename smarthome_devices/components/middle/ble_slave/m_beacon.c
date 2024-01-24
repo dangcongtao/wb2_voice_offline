@@ -6,7 +6,7 @@
 
 // static ble_scan_info_t master_scan_tbl[MASTER_SCAN_MAX];
 // static int master_current_scan;
-static uint8_t scan_le_addr[6];
+// static uint8_t scan_le_addr[6];
 m_ble_t s_ble_obj;
 m_ble_info_t obj_ble;
 
@@ -160,6 +160,10 @@ static void scan_device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t evtype,
 
 int ble_master_scan(void)
 {
+    if (!is_support_link_stair(device_type)) {
+        printf("%s not support link stair\r\n", __func__);
+        return -1;
+    }
 
     memset(&s_ble_obj, 0, sizeof(m_ble_t));
     s_ble_obj.tid = rand() & 0xFF;
@@ -173,7 +177,7 @@ int ble_master_scan(void)
     scan_param.window = 0x10;
 
     // master_current_scan = 0;
-    memset(scan_le_addr, 0, sizeof(scan_le_addr));
+    // memset(scan_le_addr, 0, sizeof(scan_le_addr));
     // memset(master_scan_tbl, 0, sizeof(master_scan_tbl));
 
     ret = bt_le_scan_start(&scan_param, scan_device_found);
@@ -184,6 +188,13 @@ int ble_master_scan(void)
     }
 
     return 0;
+}
+
+void ble_master_deinit(void)
+{
+    if (is_support_link_stair(device_type)) {
+        bt_le_scan_stop();
+    }
 }
 
 

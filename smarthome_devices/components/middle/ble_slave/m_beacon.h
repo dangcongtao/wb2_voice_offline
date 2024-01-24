@@ -199,6 +199,7 @@ typedef struct
 } m_ble_info_t;
 
 int ble_master_scan(void);
+void ble_master_deinit(void);
 void ble_config_loop(void);
 void ble_go_request_pair(void);
 void master_accept_request_link(void);

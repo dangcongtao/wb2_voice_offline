@@ -156,8 +156,7 @@ static void ble_task(void *pvParameters)
     memset(&message, 0, sizeof(message));
     memset(msg_aes, 0, sizeof(msg_aes));
 
-    if (is_support_link_stair(device_type))
-        ble_master_scan();
+    ble_master_scan();
 
     while (1)
     {
