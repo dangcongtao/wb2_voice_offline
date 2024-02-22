@@ -222,7 +222,7 @@ static void button_scan_task(void *param)
             }
         }
 
-        blink_switch_config_loop();
+        // blink_switch_config_loop();
 
         if (!dev_is_doing_config()) {
             if (is_ota == STATE_OTA_PROCESS) {

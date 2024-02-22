@@ -63,6 +63,7 @@ void main(void)
     #if DEBUG_ENABLE == 0
     bl_sys_logall_disable();
     #endif
+    bl_sys_init(); // if use ble ,must init
     // hw_switch_cfg(0);
 
     easyflash_init();
@@ -81,7 +82,8 @@ void main(void)
     m_led_stt_init();
 
     process_data_init();
-    ble_init();
+    // ble_init();
+    // ble_init_first();
     m_ir_init();
     m_event_init();
     

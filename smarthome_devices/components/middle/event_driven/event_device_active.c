@@ -69,7 +69,7 @@ void device_active_handler(void *arg)
     ble_set_name("Dungnt98", 1);
     // ble_init();
 
-    app_btn_on_hold_time_fire_event_ms = APP_BTN_HOLD_EVENT_15S;
+    // app_btn_on_hold_time_fire_event_ms = APP_BTN_HOLD_EVENT_15S;
 }
 m_state_transmit_t dev_actived = {
     .context = M_WIFI_MQTT_CONNECTING,

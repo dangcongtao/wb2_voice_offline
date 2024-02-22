@@ -27,12 +27,14 @@ extern bool request_send_command_online;
 
 axk_mqtt_client_handle_t client = NULL;
 
+m_data_t message_rcv_mqtt;
+
 static uint32_t time_disconnect_mqtt = 0;
 static uint8_t is_disconnected = 0;
 static const uint32_t TIMEOUT_DISCONNECTED_MS = 1000 * 60 * 5; // 5 minutes
 
 extern void signal_post(m_signal_t sig);
-extern void push_data_to_pqueue(m_data_t *message);
+extern void push_data_to_pqueue(void);
 
 static void mqtt_on_message(char *data, uint32_t len);
 
@@ -88,12 +90,12 @@ static axk_err_t mqtt_event_handler_cb(axk_mqtt_event_handle_t event)
 
         if (event->data_len < DATA_MAX_LEN)
         {
-            m_data_t message;
-            memset(&message, 0, sizeof(message));
-            memcpy(message.data, event->data, event->data_len);
-            message.length = event->data_len;
-            message.method_trasmit = MQTT_MSG;
-            push_data_to_pqueue(&message);
+            // m_data_t message_rcv_mqtt;
+            memset(&message_rcv_mqtt, 0, sizeof(message_rcv_mqtt));
+            memcpy(message_rcv_mqtt.data, event->data, event->data_len);
+            message_rcv_mqtt.length = event->data_len;
+            message_rcv_mqtt.method_trasmit = MQTT_MSG;
+            push_data_to_pqueue();
         }
         break;
 
@@ -120,7 +122,7 @@ void m_mqtt_publish_directly(char *data, uint32_t length)
     char topic[MAXIMUM_SIZE_MQTT_TOPIC]; 
     char *p_topic = s_mqtt_obj.mqtt_info.topic_pub;
     memset(topic, 0, MAXIMUM_SIZE_MQTT_TOPIC);
-    memcpy(topic, p_topic, strlen(topic));
+    memcpy(topic, p_topic, strlen(p_topic));
 
     m_mqtt_msg_t message;
     memset(&message, 0, sizeof(message));
@@ -148,6 +150,8 @@ void m_mqtt_publish_directly(char *data, uint32_t length)
     {
         if (axk_mqtt_client_publish(client, topic, msg_encrypted, len_msg_encrypted, 0, 0) < 0)
         {
+            os_trace("\ttopic:'%s'\r\n", topic);
+            os_trace("\tlen_msg_encrypted:%lu\r\n", len_msg_encrypted);
             os_trace("\t%smqtt_client: publish message fail\r\n", __func__);
         }
     }
@@ -173,15 +177,15 @@ void m_mqtt_publish(char *data, uint32_t length)
 
 void m_mqtt_task_loop(void)
 {
-    if (is_disconnected && time_disconnect_mqtt > 0)
-    {
-        if ((xTaskGetTickCount() - time_disconnect_mqtt) >= pdMS_TO_TICKS(TIMEOUT_DISCONNECTED_MS))
-        {
-            flash_set_rs_reason(1);
-            vTaskDelay(pdMS_TO_TICKS(3000));
-            bl_sys_reset_por();
-        }
-    }
+    // if (is_disconnected && time_disconnect_mqtt > 0)
+    // {
+    //     if ((xTaskGetTickCount() - time_disconnect_mqtt) >= pdMS_TO_TICKS(TIMEOUT_DISCONNECTED_MS))
+    //     {
+    //         flash_set_rs_reason(1);
+    //         vTaskDelay(pdMS_TO_TICKS(3000));
+    //         bl_sys_reset_por();
+    //     }
+    // }
 
     /* send message after online */
     if (request_send_command_online && s_mqtt_obj._mqtt_pub_startup_msg != NULL)

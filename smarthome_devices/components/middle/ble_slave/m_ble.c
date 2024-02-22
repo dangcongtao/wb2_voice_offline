@@ -65,9 +65,8 @@ extern char key[16], iv[16];
 extern unsigned char bleuart_connect_status;
 static struct bt_gatt_exchange_params exchange_params;
 static QueueHandle_t ble_tx_queue;
-static TaskHandle_t xHandle = NULL;
 
-extern void push_data_to_pqueue(m_data_t *message);
+extern void push_data_to_pqueue_ble(m_ble_data_t *message);
 
 static void exchange_func(struct bt_conn *conn, u8_t err, struct bt_gatt_exchange_params *params)
 {
@@ -103,14 +102,14 @@ static void ble_recv_data_cb(struct bt_conn *conn, const char *buf, u16_t len)
         return;
     }
 
-    m_data_t message;
+    m_ble_data_t message;
     memset(&message, 0, sizeof(message));
     memcpy(message.data, buf, len);
     message.length = len;
     message.method_trasmit = BLE_MSG;
 
     os_trace("ble receive[%d] %s\r\n", len, message.data);
-    push_data_to_pqueue(&message);
+    push_data_to_pqueue_ble(&message);
 
     memset((void *)buf, 0, sizeof(buf));
 }
@@ -123,11 +122,11 @@ static void ble_user_init(void)
     bleuart_connect_status = 0;
 }
 
-static bool ble_init_queue(void)
+bool ble_init_queue(void)
 {
     if (ble_tx_queue == NULL)
     {
-        ble_tx_queue = xQueueCreate(BLE_MAX_QUEUE_ITEM, sizeof(m_data_t));
+        ble_tx_queue = xQueueCreate(BLE_MAX_QUEUE_ITEM, sizeof(m_ble_data_t));
         if (ble_tx_queue == NULL)
         {
             os_trace("%s fail\r\n", __func__);
@@ -141,45 +140,43 @@ static bool ble_init_queue(void)
     return true;
 }
 
-static void ble_task(void *pvParameters)
-{
-    char msg_aes[DATA_MAX_LEN];
-    uint32_t len_aes = DATA_MAX_LEN;
-    uint32_t aes_encrypt_result = 0;
-    m_ble_data_t message;
+char msg_aes[BLE_DATA_MAX_LEN];
+uint32_t len_aes = BLE_DATA_MAX_LEN;
+uint32_t aes_encrypt_result = 0;
+m_ble_data_t message;
 
-    bl_sys_init(); // if use ble ,must init
+void ble_init_first(void)
+{
     ble_user_init();
 
     memset(&message, 0, sizeof(message));
     memset(msg_aes, 0, sizeof(msg_aes));
+}
 
-    while (1)
+void ble_loop(void)
+{
+    if (xQueueReceive(ble_tx_queue, &message, 1) == pdPASS)
     {
-        if (xQueueReceive(ble_tx_queue, &message, 1) == pdPASS)
+        printf("[%s]:\r\n", message.data);
+
+        /* Encode AES */
+        len_aes = BLE_DATA_MAX_LEN;
+        memset(msg_aes, 0, len_aes);
+
+        aes_cbc128_init((uint8_t *)key, (uint8_t *)iv);
+        aes_encrypt_result = aes_cbc128_encrypt((uint8_t *)message.data, message.length,
+                                                (uint8_t *)msg_aes, (size_t *)&len_aes);
+        if (aes_encrypt_result != AES_SUCCESS)
         {
-            printf("[%s]:\r\n", message.data);
-
-            /* Encode AES */
-            len_aes = DATA_MAX_LEN;
-            memset(msg_aes, 0, len_aes);
-
-            aes_cbc128_init((uint8_t *)key, (uint8_t *)iv);
-            aes_encrypt_result = aes_cbc128_encrypt((uint8_t *)message.data, message.length,
-                                                    (uint8_t *)msg_aes, (size_t *)&len_aes);
-            if (aes_encrypt_result != AES_SUCCESS)
-            {
-                os_trace("Encode fail,error-code: %ld\r\n", aes_encrypt_result);
-                break;
-            }
-
-            /* call platform mqtt-publish api */
-            my_ble_notify(pconn, msg_aes, len_aes);
-
+            os_trace("Encode fail,error-code: %ld\r\n", aes_encrypt_result);
             memset(&message, 0, sizeof(message));
+            return;
         }
 
-        vTaskDelay(pdMS_TO_TICKS(100));
+        /* call platform mqtt-publish api */
+        my_ble_notify(pconn, msg_aes, len_aes);
+
+        memset(&message, 0, sizeof(message));
     }
 }
 
@@ -193,7 +190,7 @@ void ble_send_data(char *data, uint32_t length)
     m_ble_data_t message;
     memset(&message, 0, sizeof(message));
 
-    if (length > DATA_MAX_LEN)
+    if (length > BLE_DATA_MAX_LEN)
     {
         os_trace("data ble too long to send %u\r\n", length);
         return;
@@ -219,23 +216,9 @@ void ble_send_data(char *data, uint32_t length)
     os_trace("\r\n");
 }
 
-void ble_init(void)
-{
-    os_trace("MY BLE SLAVE ble_init\r\n");
-
-    if (xHandle != NULL)
-        return;
-
-    ble_init_queue();
-    xTaskCreate(ble_task, "ble slave", 1024 * 3, NULL, 15, &xHandle);
-}
-
 void ble_deinit(void)
 {
     os_trace("MY BLE SLAVE ble_deinit\r\n");
-
-    if (xHandle == NULL)
-        return;
 
     m_ble_data_t message;
     if (ble_tx_queue != NULL) {
@@ -245,9 +228,6 @@ void ble_deinit(void)
     }
 
     my_ble_deinit();
-
-    vTaskDelete(xHandle);
-    xHandle = NULL;
 
     if (ble_tx_queue != NULL) {
         vQueueDelete(ble_tx_queue);
