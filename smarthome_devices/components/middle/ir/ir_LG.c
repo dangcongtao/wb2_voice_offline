@@ -425,6 +425,51 @@ void LG_setRaw(const uint32_t new_code, const decode_type_t protocol, state_ir_t
   os_trace("LG model: %u\r\n", getModel());
 }
 
+void LG_setInfo(const uint32_t new_code, const decode_type_t protocol, state_ir_t *ir_state) 
+{
+  _.data.raw = new_code;
+  ir_state->power = getPower();
+  ir_state->mode = _.data.Mode;
+  ir_state->celsius = true;
+  ir_state->degrees = getTemp();
+  ir_state->fanspeed = _.data.Fan;
+
+  // Set the default model for this protocol, if the protocol is supplied.
+  switch (protocol) {
+    case LG:
+      if (isSwingVToggle())  // This model uses a swingv toggle message.
+        setModel(LG6711A20083V);
+      else  // Assume others are a different model.
+        setModel(GE6711AR2853M);
+      break;
+    case LG2:
+      setModel(AKB75215403);
+      break;
+    default:
+      // Don't change anything if it isn't an expected protocol.
+      break;
+  }
+  // Look for model specific settings/features to improve model detection.
+  if (_isAKB74955603()) {
+    setModel(AKB74955603);
+    if (isSwingV()) _swingv = new_code;
+  }
+  if (_isAKB73757604()) {
+    setModel(AKB73757604);
+    if (isVaneSwingV()) {
+      // Extract just the vane nr and position part of the message.
+      const uint32_t vanecode = getVaneCode(_.data.raw);
+      _vaneswingv[vanecode / kLgAcVaneSwingVSize] = VANESWINGVPOS(vanecode);
+    } else if (isSwingH()) {
+      _swingh = (_.data.raw == kLgAcSwingHAuto);
+    }
+  }
+  ir_state->model = getModel();
+  _temp = 15;  // Ensure there is a "sane" previous temp.
+  _temp = getTemp();
+  os_trace("LG model: %u\r\n", getModel());
+}
+
 void checksum(void);
 static void send(const uint16_t repeat) {
   if (getPower()) {

@@ -48,6 +48,9 @@ static void app_backup_db(cJSON *jsRoot);
 // IR
 static void ir_control(cJSON *jsRoot);
 static void ir_start_learn(cJSON *jsRoot);
+static void ir_stop_learn(cJSON *jsRoot);
+static void ir_start_learn_auto(cJSON *jsRoot);
+static void ir_stop_learn_auto(cJSON *jsRoot);
 
 #if PROJECT_SHOCK
 static void app_get_leakage(cJSON *jsRoot);
@@ -97,6 +100,9 @@ wswitch_handler_t array_handler[] = {
 
     {ir_control, 1}, 
     {ir_start_learn, 2}, 
+    {ir_stop_learn, 4}, 
+    {ir_start_learn_auto, 15}, 
+    {ir_stop_learn_auto, 16}, 
 };
 
 wswitch_handler_t array_ble_handler[] = {
@@ -408,6 +414,99 @@ static void ir_start_learn(cJSON *jsRoot)
     }
     type = jsType->valueint;
     IR_start_learn();
+    result = 1;
+
+RESPONSE:
+    /* respond server here */
+    memset(respond, 0, sizeof(respond));
+    sprintf(
+        respond,
+        "{\"%s\":%ld,\"result\":%d}",
+        gs_dev_type[device_type], type, result);
+    app_send_data(respond, strlen(respond));
+}
+
+static void ir_stop_learn(cJSON *jsRoot)
+{
+    uint8_t result = 0;
+    uint32_t type = 0;
+
+    if (jsRoot == NULL)
+    {
+        os_trace("jsRoot NULL\n");
+        goto RESPONSE;
+    }
+
+    cJSON *jsType = cJSON_GetObjectItem(jsRoot, gs_dev_type[device_type]);
+    if (jsType == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    type = jsType->valueint;
+    IR_stop_learn();
+    result = 1;
+
+RESPONSE:
+    /* respond server here */
+    memset(respond, 0, sizeof(respond));
+    sprintf(
+        respond,
+        "{\"%s\":%ld,\"result\":%d}",
+        gs_dev_type[device_type], type, result);
+    app_send_data(respond, strlen(respond));
+}
+
+static void ir_start_learn_auto(cJSON *jsRoot)
+{
+    uint8_t result = 0;
+    uint32_t type = 0;
+
+    if (jsRoot == NULL)
+    {
+        os_trace("jsRoot NULL\n");
+        goto RESPONSE;
+    }
+
+    cJSON *jsType = cJSON_GetObjectItem(jsRoot, gs_dev_type[device_type]);
+    if (jsType == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    type = jsType->valueint;
+    IR_start_learn_auto();
+    result = 1;
+
+RESPONSE:
+    /* respond server here */
+    memset(respond, 0, sizeof(respond));
+    sprintf(
+        respond,
+        "{\"%s\":%ld,\"result\":%d}",
+        gs_dev_type[device_type], type, result);
+    app_send_data(respond, strlen(respond));
+}
+
+static void ir_stop_learn_auto(cJSON *jsRoot)
+{
+    uint8_t result = 0;
+    uint32_t type = 0;
+
+    if (jsRoot == NULL)
+    {
+        os_trace("jsRoot NULL\n");
+        goto RESPONSE;
+    }
+
+    cJSON *jsType = cJSON_GetObjectItem(jsRoot, gs_dev_type[device_type]);
+    if (jsType == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    type = jsType->valueint;
+    IR_stop_learn_auto();
     result = 1;
 
 RESPONSE:

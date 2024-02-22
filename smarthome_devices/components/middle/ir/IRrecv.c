@@ -1145,12 +1145,30 @@ static decode_results capture;
 static uint32_t lastIrReceivedTime = 0;
 static uint32_t irRecvCounter = 0;
 static uint32_t old_time_learn_ir = 0;
+static uint32_t old_time_learn_ir_auto = 0;
 
 
 
 void IR_start_learn(void)
 {
     old_time_learn_ir = sys_get_tick_ms() | 1;
+    old_time_learn_ir_auto = 0;
+}
+
+void IR_stop_learn(void)
+{
+    old_time_learn_ir = 0;
+}
+
+void IR_start_learn_auto(void)
+{
+    old_time_learn_ir_auto = sys_get_tick_ms() | 1;
+    old_time_learn_ir = 0;
+}
+
+void IR_stop_learn_auto(void)
+{
+    old_time_learn_ir_auto = 0;
 }
 
 static void learnIR(decode_results *results)
@@ -1195,8 +1213,11 @@ void m_ir_task(void)
         {
             os_trace("decode_type: %d, bits: %u, value: 0x%llx, command: %lx, address: 0x%llx\r\n", capture.decode_type, capture.bits, (uint64_t)capture.value, capture.command, (uint64_t)capture.address);
             state_ir_t ir_state = {UNKNOWN, -1, false, opmode_kOff, 25, true, fanspeed_kAuto, swingv_kOff, swingh_kOff, false, false, false, false, false, false, false, -1, -1, kControlCommand, false, kNoTempValue};
+            state_ir_t ir_state_recv = {UNKNOWN, -1, false, opmode_kOff, 25, true, fanspeed_kAuto, swingv_kOff, swingh_kOff, false, false, false, false, false, false, false, -1, -1, kControlCommand, false, kNoTempValue};
+            
             if (capture.decode_type == LG2) {
                 LG_setRaw(capture.value, capture.decode_type, &ir_state);
+                LG_setInfo(capture.value, capture.decode_type, &ir_state_recv);
             } else if (capture.decode_type == AQUA){
                 AQUA_setRaw(capture.state, capture.decode_type, &ir_state);
             } else if (capture.decode_type == FUNIKI){
@@ -1296,6 +1317,30 @@ void m_ir_task(void)
                 learnIR(&capture);
                 old_time_learn_ir = 0;
             }
+            else if(old_time_learn_ir_auto) 
+            {
+                char str[128];
+                memset(str, 0, 128);
+
+                sprintf(str, "{\"%s\":17,\"type\":1,\"brand\":\"%d\",\"model\":%d}", 
+                gs_dev_type[device_type], capture.decode_type, ir_state_recv.model);
+                os_trace("learn_auto_datasend[%u]:", strlen(str));
+                os_trace("'%s'\r\n", str);
+                m_mqtt_get_instance()._mqtt_publish(str, strlen(str));
+
+                old_time_learn_ir_auto = 0;
+            }
+            else
+            {
+                char str[325];
+                memset(str, 0, 325);
+
+                sprintf(str, "{\"%s\":10,\"type\":1,\"brand\":\"%d\",\"model\":%d,\"power\":%u,\"mode\":%d,\"temp\":%.1f,\"fan\":%d}", 
+                gs_dev_type[device_type], capture.decode_type, ir_state_recv.model, ir_state_recv.power, ir_state_recv.mode, ir_state_recv.degrees, ir_state_recv.fanspeed);
+                os_trace("datarcv[%u]:", strlen(str));
+                os_trace("'%s'\r\n", str);
+                m_mqtt_get_instance()._mqtt_publish(str, strlen(str));
+            }
             
             IR_logCommon(ir_state);
             irRecvCounter++;
@@ -1306,6 +1351,10 @@ void m_ir_task(void)
         if (old_time_learn_ir) {
             if (sys_get_tick_ms() - old_time_learn_ir >= 120000) {
                 old_time_learn_ir = 0;
+            }
+        } else if (old_time_learn_ir_auto) {
+            if (sys_get_tick_ms() - old_time_learn_ir_auto >= 120000) {
+                old_time_learn_ir_auto = 0;
             }
         }
 

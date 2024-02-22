@@ -359,6 +359,9 @@ void Midea_setRaw(const uint64_t new_code, const decode_type_t protocol, state_i
 
 void SharpAc_setRaw(const uint8_t* newState, const decode_type_t protocol, state_ir_t *ir_state);
 
+/*------------SET_INFO----------------*/
+void LG_setInfo(const uint32_t new_code, const decode_type_t protocol, state_ir_t *ir_state);
+
 // void enableIRIn(const bool pullup);
 void ir_loop(void);
 void IRrecv_init(const uint32_t recvpin, const uint16_t bufsize,
@@ -369,5 +372,8 @@ void resume(void);
 
 void m_ir_init(void);
 void IR_start_learn(void);
+void IR_stop_learn(void);
+void IR_start_learn_auto(void);
+void IR_stop_learn_auto(void);
 
 #endif

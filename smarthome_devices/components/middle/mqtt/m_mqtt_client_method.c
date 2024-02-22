@@ -124,19 +124,19 @@ void m_mqtt_publish_directly(char *data, uint32_t length)
     memset(topic, 0, MAXIMUM_SIZE_MQTT_TOPIC);
     memcpy(topic, p_topic, strlen(p_topic));
 
-    m_mqtt_msg_t message;
-    memset(&message, 0, sizeof(message));
-    // memcpy(message.topic_pub, topic, strlen(topic));
-    memcpy(message.msg_pub, data, length);
-    message.length = length;
+    // m_mqtt_msg_t message;
+    // memset(&message, 0, sizeof(message));
+    // // memcpy(message.topic_pub, topic, strlen(topic));
+    // memcpy(message.msg_pub, data, length);
+    // message.length = length;
 
     /* encode data */
     char msg_encrypted[MAXIMUM_SIZE_MESSAGE];
     uint32_t len_msg_encrypted = MAXIMUM_SIZE_MESSAGE;
     memset(msg_encrypted, 0, sizeof(msg_encrypted));
     aes_cbc128_init((uint8_t *)key, (uint8_t *)iv);
-    uint32_t aes_encrypt_result = aes_cbc128_encrypt((uint8_t *)message.msg_pub,
-                                                     message.length,
+    uint32_t aes_encrypt_result = aes_cbc128_encrypt((uint8_t *)data,
+                                                     length,
                                                      (uint8_t *)msg_encrypted,
                                                      (size_t *)&len_msg_encrypted);
     if (aes_encrypt_result != AES_SUCCESS)
