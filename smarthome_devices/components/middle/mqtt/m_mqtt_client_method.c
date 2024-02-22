@@ -22,7 +22,7 @@
 
 extern char key[16], iv[16];
 extern m_mqtt_t s_mqtt_obj;
-extern QueueHandle_t mqtt_tx_queue;
+// extern QueueHandle_t mqtt_tx_queue;
 extern bool request_send_command_online;
 
 axk_mqtt_client_handle_t client = NULL;
@@ -115,22 +115,6 @@ static axk_err_t mqtt_event_handler_cb(axk_mqtt_event_handle_t event)
     return AXK_OK;
 }
 
-void m_mqtt_publish(char *data, uint32_t length)
-{
-    char *topic = s_mqtt_obj.mqtt_info.topic_pub;
-
-    m_mqtt_msg_t message;
-    memset(&message, 0, sizeof(message));
-    // memcpy(message.topic_pub, topic, strlen(topic));
-    memcpy(message.msg_pub, data, length);
-    message.length = length;
-
-    if (xQueueSend(mqtt_tx_queue, &message, pdMS_TO_TICKS(0)) != pdPASS)
-    {
-        os_trace("Push to queue tx fail\r\n");
-    }
-}
-
 void m_mqtt_publish_directly(char *data, uint32_t length)
 {
     char topic[MAXIMUM_SIZE_MQTT_TOPIC]; 
@@ -164,9 +148,27 @@ void m_mqtt_publish_directly(char *data, uint32_t length)
     {
         if (axk_mqtt_client_publish(client, topic, msg_encrypted, len_msg_encrypted, 0, 0) < 0)
         {
-            os_trace("\tmqtt_client: publish message fail\r\n");
+            os_trace("\t%smqtt_client: publish message fail\r\n", __func__);
         }
     }
+}
+
+void m_mqtt_publish(char *data, uint32_t length)
+{
+    m_mqtt_publish_directly(data,length);
+    return;
+    char *topic = s_mqtt_obj.mqtt_info.topic_pub;
+
+    m_mqtt_msg_t message;
+    memset(&message, 0, sizeof(message));
+    // memcpy(message.topic_pub, topic, strlen(topic));
+    memcpy(message.msg_pub, data, length);
+    message.length = length;
+
+    // if (xQueueSend(mqtt_tx_queue, &message, pdMS_TO_TICKS(0)) != pdPASS)
+    // {
+    //     os_trace("Push to queue tx fail\r\n");
+    // }
 }
 
 void m_mqtt_task_loop(void)
@@ -188,36 +190,37 @@ void m_mqtt_task_loop(void)
         request_send_command_online = 0;
     }
 
-    m_mqtt_msg_t mqtt_msg_pub;
-    char msg_encrypted[MAXIMUM_SIZE_MESSAGE];
-    uint32_t len_msg_encrypted = MAXIMUM_SIZE_MESSAGE;
+    // m_mqtt_msg_t mqtt_msg_pub;
+    // char msg_encrypted[MAXIMUM_SIZE_MESSAGE];
+    // uint32_t len_msg_encrypted = MAXIMUM_SIZE_MESSAGE;
 
-    /* send message during activity */
-    memset(&mqtt_msg_pub, 0, sizeof(mqtt_msg_pub));
-    len_msg_encrypted = MAXIMUM_SIZE_MESSAGE;
-    if (xQueueReceive(mqtt_tx_queue, &mqtt_msg_pub, 1) == pdPASS)
-    {
-        memset(msg_encrypted, 0, sizeof(msg_encrypted));
-        aes_cbc128_init((uint8_t *)key, (uint8_t *)iv);
-        uint32_t aes_encrypt_result = aes_cbc128_encrypt((uint8_t *)mqtt_msg_pub.msg_pub,
-                                                         mqtt_msg_pub.length,
-                                                         (uint8_t *)msg_encrypted,
-                                                         (size_t *)&len_msg_encrypted);
-        if (aes_encrypt_result != AES_SUCCESS)
-        {
-            os_trace("Encode fail,error-code: %ld\r\n", aes_encrypt_result);
-            return;
-        }
+    // send message during activity */
+    // memset(&mqtt_msg_pub, 0, sizeof(mqtt_msg_pub));
+    // len_msg_encrypted = MAXIMUM_SIZE_MESSAGE;
+    // if (xQueueReceive(mqtt_tx_queue, &mqtt_msg_pub, 1) == pdPASS)
+    // {
+    //     memset(msg_encrypted, 0, sizeof(msg_encrypted));
+    //     aes_cbc128_init((uint8_t *)key, (uint8_t *)iv);
+    //     uint32_t aes_encrypt_result = aes_cbc128_encrypt((uint8_t *)mqtt_msg_pub.msg_pub,
+    //                                                      mqtt_msg_pub.length,
+    //                                                      (uint8_t *)msg_encrypted,
+    //                                                      (size_t *)&len_msg_encrypted);
+    //     if (aes_encrypt_result != AES_SUCCESS)
+    //     {
+    //         os_trace("Encode fail,error-code: %ld\r\n", aes_encrypt_result);
+    //         return;
+    //     }
 
-        /* call platform mqtt-publish api */
-        if (client != NULL)
-        {
-            if (axk_mqtt_client_publish(client, s_mqtt_obj.mqtt_info.topic_pub, msg_encrypted, len_msg_encrypted, 0, 0) < 0)
-            {
-                os_trace("\tmqtt_client: publish message fail\r\n");
-            }
-        }
-    }
+    //     // call platform mqtt-publish api
+    //     if (client != NULL)
+    //     {
+    //         // if (axk_mqtt_client_publish(client, s_mqtt_obj.mqtt_info.topic_pub, msg_encrypted, len_msg_encrypted, 0, 0) < 0)
+    //         // {
+    //         //     os_trace("\t%smqtt_client: publish message fail\r\n", __func__);
+    //         // }
+    //     }
+    // }
+    
 }
 
 void m_mqtt_start(void)
