@@ -113,11 +113,11 @@ void my_ble_start_advertise(void)
     err = bt_le_adv_start(&param, adv_data, ARRAY_SIZE(adv_data),NULL,0);//rsp_data, ARRAY_SIZE(rsp_data));
     if(err)
     {
-       printf("Failed to start advertising (err %d)", err);
+       printf("Failed to start advertising (err %d)\r\n", err);
     }
     else
     {
-        printf("Advertising started");
+        printf("Advertising started\r\n");
     }
 }
 

@@ -467,7 +467,7 @@ void LG_setInfo(const uint32_t new_code, const decode_type_t protocol, state_ir_
   ir_state->model = getModel();
   _temp = 15;  // Ensure there is a "sane" previous temp.
   _temp = getTemp();
-  os_trace("LG model: %u\r\n", getModel());
+  // os_trace("LG model: %u\r\n", getModel());
 }
 
 void checksum(void);

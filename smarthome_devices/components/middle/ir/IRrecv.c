@@ -7,7 +7,6 @@
 #include "IRsend.h"
 #include "bl602_glb.h"
 #include <bl_os_hal.h>
-#include <bl_wdt.h>
 #include "axk_attr.h"
 #include "IRutils.h"
 
@@ -829,7 +828,7 @@ bool decode(decode_results *results, irparams_t *save,
     if (params.rcvstate != kStopState)
         return false;
 #endif
-    os_trace("%s %u\r\n", __func__, params.rawlen);
+    os_trace("\t%s %u\r\n", __func__, params.rawlen);
 
     if (!params.overflow)
         params.rawbuf[params.rawlen] = 0;
@@ -1317,7 +1316,7 @@ void m_ir_task(void)
                 learnIR(&capture);
                 old_time_learn_ir = 0;
             }
-            else if(old_time_learn_ir_auto) 
+            else if(old_time_learn_ir_auto && capture.decode_type != UNKNOWN) 
             {
                 char str[128];
                 memset(str, 0, 128);
@@ -1330,7 +1329,7 @@ void m_ir_task(void)
 
                 old_time_learn_ir_auto = 0;
             }
-            else
+            else if (capture.decode_type != UNKNOWN)
             {
                 char str[325];
                 memset(str, 0, 325);
@@ -1364,7 +1363,6 @@ void m_ir_task(void)
 
 void m_ir_init(void)
 {
-    // bl_wdt_init(60000);
     bl_gpio_enable_output(IRpin, 0, 0);
     IRsend_init(IRpin, false, true);
     IRrecv_init(IR_RX, 1024, 50, false);

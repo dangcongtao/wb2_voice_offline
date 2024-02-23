@@ -40,10 +40,10 @@ void main_loop(void)
         old += 1;
         if (old > 20) {
             old = 0;
-            os_trace("Free memory: %d\r\n", xPortGetFreeHeapSize());
+            // os_trace("Free memory: %d\r\n", xPortGetFreeHeapSize());
         }
 
-        // bl_wdt_feed();
+        bl_wdt_feed();
 
         vTaskDelay(pdMS_TO_TICKS(delay_ms));
     }
@@ -64,6 +64,7 @@ void main(void)
     bl_sys_logall_disable();
     #endif
     bl_sys_init(); // if use ble ,must init
+    bl_wdt_init(20000);
     // hw_switch_cfg(0);
 
     easyflash_init();
