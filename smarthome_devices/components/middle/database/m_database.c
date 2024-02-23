@@ -54,31 +54,7 @@ void m_db_read_device_id(void)
     os_trace("max_number_channel: %ld\r\n", max_number_channel);
 
     /* get device type */
-    if (strstr(s_device_id, gs_dev_type[WSWITCH]) != NULL)
-    {
-        device_type = WSWITCH;
-    }
-    else if (strstr(s_device_id, gs_dev_type[LHSWITCH]) != NULL)
-    {
-        device_type = LHSWITCH;
-    }
-    else if (strstr(s_device_id, gs_dev_type[SWMINI]) != NULL)
-    {
-        device_type = SWMINI;
-    }
-    else if (strstr(s_device_id, gs_dev_type[SSWITCH]) != NULL)
-    {
-        device_type = SSWITCH;
-    }
-    else if (strstr(s_device_id, gs_dev_type[SWSHOCK_HUN]) != NULL)
-    {
-        device_type = SWSHOCK_HUN;
-    }
-    else if (strstr(s_device_id, gs_dev_type[SWSHOCK]) != NULL)
-    {
-        device_type = SWSHOCK;
-    }
-    else if (strstr(s_device_id, gs_dev_type[IRWIFI]) != NULL)
+    if (strstr(s_device_id, gs_dev_type[IRWIFI]) != NULL)
     {
         device_type = IRWIFI;
     }
