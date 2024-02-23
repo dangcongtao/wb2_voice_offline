@@ -110,6 +110,12 @@ m_state_transmit_t dev_mqtt_connecting_to_disconnect_wifi = {
     .next_state = M_WIFI_CONNECTING,
     .signal_handler_cb = device_disconnect_wifi_handler
 };
+m_state_transmit_t dev_get_mqtt_info_to_disconnect_wifi = {
+    .context = M_WIFI_CONN_MQTT,
+    .signal = SIG_WIFI_DISCONNECT,
+    .next_state = M_WIFI_CONNECTING,
+    .signal_handler_cb = device_disconnect_wifi_handler
+};
 
 /* device actived -> smart config */
 void dev_actived_to_smart_cfg_handler(void *arg)

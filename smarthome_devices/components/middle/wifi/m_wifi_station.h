@@ -30,6 +30,9 @@
 #include <wifi_mgmr_ext.h>
 #include "m_http_server.h"
 
+#define GOOGLE_DNS_1 "8.8.8.8"
+#define GOOGLE_DNS_2 "8.8.4.4"
+
 #define WIFI_RECONN_INTERVAL_SEC 2
 #define WIFI_RECONN_REPEAT_TIMES 0
 
