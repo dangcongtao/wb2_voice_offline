@@ -254,12 +254,12 @@ void blink_switch_config_loop(void)
         }
         else if (3 == m_get_step_go_cfg(i))
         {
-            if (2 == m_get_num_click_go_cfg(i))
-            {
-                reset_data_blink_config(i);
-                signal_post(SIG_SMART_CFG);
-                return;
-            }
+            // if (2 == m_get_num_click_go_cfg(i))
+            // {
+            //     reset_data_blink_config(i);
+            //     signal_post(SIG_SMART_CFG);
+            //     return;
+            // }
             reset_data_blink_config(i);
         }
         else if (0 == m_get_step_go_cfg(i))
@@ -288,6 +288,11 @@ void increate_step(int index)
     }
     m_set_tick_go_cfg(index, DEFAULT_TICK);
     m_set_num_click_go_cfg(index, m_get_num_click_go_cfg(index) + 1);
+
+    if (3 == m_get_step_go_cfg(index) && m_get_tick_go_cfg(index) > 0) {
+        reset_data_blink_config(index);
+        signal_post(SIG_SMART_CFG);
+    }
 }
 
 /* use for Button or Press-Release action */
