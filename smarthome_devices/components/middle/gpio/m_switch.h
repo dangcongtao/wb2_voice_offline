@@ -51,6 +51,7 @@ typedef enum {
 
 typedef struct {
 	bool send_ble;
+	bool send_self;
 	bool need_create_new_id;
 	uint8_t mac_source[6];
 } m_ble_send_t;

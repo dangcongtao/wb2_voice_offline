@@ -20,7 +20,8 @@ typedef enum
 {
     DEVICE_TYPE_CTLK = 1,
     DEVICE_TYPE_CBCT,
-    DEVICE_NEW
+    DEVICE_NEW,
+    DEVICE_SELF
 } device_stair_type_t;
 
 typedef enum

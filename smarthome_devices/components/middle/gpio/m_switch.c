@@ -108,6 +108,24 @@ static uint8_t m_control_switch(uint32_t action, uint32_t act_id, uint32_t uid, 
         }
     }
 
+    if (send_ble.send_self) {
+        m_ble_info_t *obj_ble;
+        obj_ble = m_ble_get_info_reference();
+        
+        for (uint8_t i = 0; i < obj_ble->num_devices_link; i++) {
+            if (obj_ble->list_child[i].type == DEVICE_SELF && ((obj_ble->list_child[i].my_act - 1) / 2) == channel_index) {
+                m_ble_send_t send_self;
+                send_self.send_self = false;
+                send_self.send_ble = send_ble.send_ble;
+                send_self.need_create_new_id = send_ble.need_create_new_id;
+
+                uint8_t next_channel_index = (obj_ble->list_child[i].opp_act - 1) / 2;
+                uint32_t next_action = (next_channel_index + 1) * 2 - state;
+                m_control_switch(next_action, SRC_ACTION_LINK_STAIR, uid, true, true, send_self);
+            }
+        }
+    }
+
     if (is_support_link_stair(device_type) && send_ble.send_ble){
         m_ble_set_state_change(channel_index, state, send_ble);
         // os_trace("%s: %02X:%02X\r\n", __func__, send_ble.mac_source[0], send_ble.mac_source[1]);
@@ -243,6 +261,7 @@ void blink_switch_config_loop(void)
                 m_ble_send_t ble_send;
                 ble_send.send_ble = false;
                 ble_send.need_create_new_id = false;
+                ble_send.send_self = true;
                 m_control_switch(m_get_step_go_cfg(i) + i * 2, 0, 0, 0, 0, ble_send);
                 m_set_step_go_cfg(i, m_get_step_go_cfg(i) + 1);
                 return;
@@ -305,6 +324,7 @@ static uint8_t m_toggle_switch(uint32_t index, uint32_t act_id, bool respond, bo
     m_ble_send_t ble_send;
     ble_send.send_ble = true;
     ble_send.need_create_new_id = true;
+    ble_send.send_self = true;
 
     /* control switch one */
     if (index == APP_SWITCH_ONE)

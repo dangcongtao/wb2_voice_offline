@@ -25,6 +25,7 @@ void start_cylcic_timer(switch_action_t action, uint32_t time_act1, uint32_t tim
     m_ble_send_t ble_send;
     ble_send.send_ble = true;
     ble_send.need_create_new_id = true;
+    ble_send.send_self = true;
     m_switch_get_instance()._control_switch_cb(action, 2, 0, true, false, ble_send);
     previous_cyclic_timer_active[channel_index] = sys_get_tick_ms();
 
@@ -71,6 +72,7 @@ void m_switch_cyclic_timer_loop(void)
             m_ble_send_t ble_send;
             ble_send.send_ble = true;
             ble_send.need_create_new_id = true;
+            ble_send.send_self = true;
             switch (step_toggle[i])
             {
             case 0:

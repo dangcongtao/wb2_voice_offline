@@ -83,7 +83,7 @@ typedef enum
     SRC_ACTION_USER = 0,
     SRC_ACTION_ALARM = 2,
     SRC_ACTION_LEADK_CURR = 7,
-    SRC_ACTION_LINK_BLE = 8
+    SRC_ACTION_LINK_STAIR = 8
 } src_action_t;
 
 typedef enum
