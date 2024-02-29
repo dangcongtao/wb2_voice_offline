@@ -30,6 +30,7 @@
 #define CJSON_KEY_MODE          "mode"
 #define CJSON_KEY_ACT1          "act1"
 #define CJSON_KEY_ACT2          "act2"
+#define CJSON_KEY_MINI_MODE_STAIR          "stair"
 /* JSON KEY USE FOR CONFIGURATION PROCESSING */
 #define CJSON_KEY_SERVER        "server"
 #define CJSON_KEY_S_PORT        "port"

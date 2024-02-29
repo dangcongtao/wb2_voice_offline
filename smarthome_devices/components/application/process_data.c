@@ -45,6 +45,7 @@ static void app_backup_db(cJSON *jsRoot);
 static void app_link_device(cJSON *jsRoot);
 static void app_get_list_link_device(cJSON *jsRoot);
 static void app_remove_link_device(cJSON *jsRoot);
+static void app_swmini_set_use_mode_stair(cJSON *jsRoot);
 
 #if PROJECT_SHOCK
 static void app_get_leakage(cJSON *jsRoot);
@@ -76,6 +77,7 @@ wswitch_handler_t array_handler[] = {
     {app_link_device, 400},
     {app_get_list_link_device, 401},
     {app_remove_link_device, 402},
+    {app_swmini_set_use_mode_stair, 410},
 
     {ble_config_step1, 1}, 
     {ble_config_step2, 3}, 
@@ -183,6 +185,12 @@ static void app_startup_message(void)
     }
     buffer_seek--; /* remove last comma */
     buffer_seek += sprintf(&respond[buffer_seek], "]}");
+
+    if (device_type == SWMINI) {
+        buffer_seek--; /* remove last } */
+        extern uint8_t m_stair_get(void);
+        buffer_seek += sprintf(&respond[buffer_seek], ",\"%s\":%u}", CJSON_KEY_MINI_MODE_STAIR, m_stair_get());
+    }
 
     m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
 }
@@ -323,6 +331,11 @@ static void app_get_info(cJSON *jsRoot)
     }
     buffer_seek--; /* remove last comma */
     buffer_seek += sprintf(&respond[buffer_seek], "]}");
+    if (device_type == SWMINI) {
+        buffer_seek--; /* remove last } */
+        extern uint8_t m_stair_get(void);
+        buffer_seek += sprintf(&respond[buffer_seek], ",\"%s\":%u}", CJSON_KEY_MINI_MODE_STAIR, m_stair_get());
+    }
 
     app_send_data(respond, strlen(respond));
 }
@@ -423,6 +436,48 @@ RESPONSE:
     sprintf(respond,
             "{\"%s\":%ld,\"u\":%ld,\"index\":%ld,\"lock\":%ld, \"result\": %d}",
             gs_dev_type[device_type], type, uid, index, lock, result);
+    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
+}
+
+/* {"TYPE":133, "index": i, "lock": lock,"u":uid} */
+static void app_swmini_set_use_mode_stair(cJSON *jsRoot)
+{
+    uint8_t result = 0;
+    cJSON *jsType, *jsU, *jsStair;
+    uint32_t type = 0, uid = 0, is_stair = 0;
+
+    jsType = cJSON_GetObjectItem(jsRoot, gs_dev_type[device_type]);
+    if (jsType == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    type = jsType->valueint;
+
+    jsU = cJSON_GetObjectItem(jsRoot, CJSON_KEY_USER_ID);
+    if (jsU == NULL)
+    {
+        os_trace("Get JSON uid mqtt message fail\n");
+        goto RESPONSE;
+    }
+    uid = jsU->valueint;
+
+    jsStair = cJSON_GetObjectItem(jsRoot, CJSON_KEY_MINI_MODE_STAIR);
+    if (jsStair == NULL)
+    {
+        os_trace("Get JSON lock mqtt message fail\n");
+        goto RESPONSE;
+    }
+    is_stair = jsStair->valueint;
+    extern uint8_t m_stair_edit(uint8_t enable);
+    result = m_stair_edit(is_stair);
+
+RESPONSE:
+    /* respond server here */
+    memset(respond, 0, sizeof(respond));
+    sprintf(respond,
+            "{\"%s\":%ld,\"u\":%ld,\"%s\":%ld,\"result\":%d}",
+            gs_dev_type[device_type], type, uid, CJSON_KEY_MINI_MODE_STAIR, is_stair, result);
     m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
 }
 

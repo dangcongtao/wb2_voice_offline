@@ -374,6 +374,41 @@ static uint8_t ble_db_add_child_new(uint8_t* mac, uint8_t type, uint8_t my_act, 
     return 1;
 }
 
+uint8_t m_stair_get(void)
+{
+    if (device_type != SWMINI) {
+        return 0;
+    }
+    for (uint8_t i = 0; i < obj_ble.num_devices_link; i++)
+    {
+        if (obj_ble.list_child[i].type == DEVICE_SELF) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+uint8_t m_stair_edit(uint8_t enable)
+{
+    if (device_type != SWMINI) {
+        return 0;
+    }
+    bt_addr_le_t adv_addr;
+    bt_get_local_public_address(&adv_addr);
+    if (enable) {
+        ble_db_add_child_new(adv_addr.a.val, DEVICE_SELF, CH1_ON, CH2_ON);
+        return 1;
+    } else {
+        for (uint8_t i = 0; i < obj_ble.num_devices_link; i++)
+        {
+            if (obj_ble.list_child[i].type == DEVICE_SELF) {
+                db_remove_child(i);
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
 
 uint8_t m_ble_switch_request_linking(uint8_t *mac, uint8_t act1, uint8_t act2)
 {
