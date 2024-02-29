@@ -235,6 +235,7 @@ static void app_control_pin(cJSON *jsRoot)
     m_ble_send_t ble_send;
     ble_send.send_ble = true;
     ble_send.need_create_new_id = true;
+    ble_send.send_self = true;
     result = m_switch_get_instance()._control_switch_cb(action, act_id, uid,
                                                         true, true, ble_send);
 

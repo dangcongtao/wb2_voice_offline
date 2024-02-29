@@ -688,6 +688,7 @@ void m_ble_sync_state(void)
                     m_ble_send_t ble_send;
                     ble_send.send_ble = true;
                     ble_send.need_create_new_id = false;
+                    ble_send.send_self = true;
                     memcpy(ble_send.mac_source, s_ble_obj.check_mac_source, 6);
 
                     if (temp == 1) {

@@ -113,15 +113,21 @@ static uint8_t m_control_switch(uint32_t action, uint32_t act_id, uint32_t uid, 
         obj_ble = m_ble_get_info_reference();
         
         for (uint8_t i = 0; i < obj_ble->num_devices_link; i++) {
-            if (obj_ble->list_child[i].type == DEVICE_SELF && ((obj_ble->list_child[i].my_act - 1) / 2) == channel_index) {
+            if (obj_ble->list_child[i].type == DEVICE_SELF) {
                 m_ble_send_t send_self;
                 send_self.send_self = false;
                 send_self.send_ble = send_ble.send_ble;
                 send_self.need_create_new_id = send_ble.need_create_new_id;
 
-                uint8_t next_channel_index = (obj_ble->list_child[i].opp_act - 1) / 2;
-                uint32_t next_action = (next_channel_index + 1) * 2 - state;
-                m_control_switch(next_action, SRC_ACTION_LINK_STAIR, uid, true, true, send_self);
+                if (((obj_ble->list_child[i].my_act - 1) / 2) == channel_index) {
+                    uint8_t next_channel_index = (obj_ble->list_child[i].opp_act - 1) / 2;
+                    uint32_t next_action = (next_channel_index + 1) * 2 - state;
+                    m_control_switch(next_action, SRC_ACTION_LINK_STAIR, uid, true, true, send_self);
+                } else if ( ((obj_ble->list_child[i].opp_act - 1) / 2) == channel_index) {
+                    uint8_t next_channel_index = (obj_ble->list_child[i].my_act - 1) / 2;
+                    uint32_t next_action = (next_channel_index + 1) * 2 - state;
+                    m_control_switch(next_action, SRC_ACTION_LINK_STAIR, uid, true, true, send_self);
+                }
             }
         }
     }
