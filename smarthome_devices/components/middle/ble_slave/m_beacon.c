@@ -336,6 +336,11 @@ uint8_t ble_db_remove_child(uint8_t id)
         return 0;
     }
 
+    if (obj_ble.list_child[id].type == DEVICE_SELF) {
+        db_remove_child(id);
+        return 1;
+    }
+
     s_ble_obj.step = STEP_SWITCH_REMOVE_LINK;
     s_ble_obj.id_remove = id;
     
