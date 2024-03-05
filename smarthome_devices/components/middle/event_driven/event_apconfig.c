@@ -68,7 +68,9 @@ void ap_config_done_handler(void *arg)
     // wifi sta start
     char *ssid = m_wifi_get_instance()._wifi_info._ssid;
     char *pass = m_wifi_get_instance()._wifi_info._passwd;
-    m_wifi_get_instance().wifi_sta_start_cb(ssid, pass);
+    if (m_db_get_instance()->_get_dev_pair_state()) {
+        m_wifi_get_instance().wifi_sta_start_cb(ssid, pass);
+    }
 }
 m_state_transmit_t ap_config_done = {
     .context = M_WIFI_APCONFIG,

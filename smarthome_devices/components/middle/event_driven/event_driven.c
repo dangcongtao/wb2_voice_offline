@@ -141,6 +141,8 @@ void m_event_init(void)
     }
     else
     {
+        m_db_get_instance()->_reset_db_cb();
+        vTaskDelay(2000);
         signal = SIG_SMART_CFG;
     }
 }
