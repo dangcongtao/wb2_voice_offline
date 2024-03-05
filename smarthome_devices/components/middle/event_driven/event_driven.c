@@ -139,6 +139,10 @@ void m_event_init(void)
         m_wifi_get_instance().wifi_sta_start_cb(ssid, pass);
         current_state = M_WIFI_CONNECTING;
     }
+    else
+    {
+        signal = SIG_SMART_CFG;
+    }
 }
 
 static m_signal_t old_signal;
