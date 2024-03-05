@@ -29,13 +29,6 @@ static void vTimerCallback(TimerHandle_t xTimer)
 
         /* turn led off */
         s_led_stt_obj._set_led_stt_off_cb();
-
-        /* set time */
-        timeline_status[0] = 5000;
-        timeline_status[1] = 200;
-        s_led_stt_obj._led_handle_count = 0;
-        s_led_stt_obj._max_number_handle = TWO_PULSE_COUNT;
-        s_led_stt_obj._led_stt_type = LED_STYLE_NOT_CONFIGURED;
     }
     else
     {
