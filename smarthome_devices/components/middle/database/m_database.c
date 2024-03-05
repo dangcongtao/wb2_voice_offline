@@ -127,6 +127,13 @@ static void m_db_backup_database(void)
 
     memcpy(s_m_database._m_device._wifi_info, &s_m_wifi_info_backup, sizeof(m_wifi_info_t));
     memcpy(s_m_database._m_device._mqtt_info, &s_m_mqtt_info_backup, sizeof(m_mqtt_info_t));
+
+    memset(s_m_switch_info_backup.current_state, 0, sizeof(s_m_database._m_device._switch_info->current_state));
+    memcpy(s_m_switch_info_backup.current_state, s_m_database._m_device._switch_info->current_state, sizeof(s_m_database._m_device._switch_info->current_state));
+
+    memset(s_m_switch_info_backup.default_state, 0, sizeof(s_m_database._m_device._switch_info->default_state));
+    memcpy(s_m_switch_info_backup.default_state, s_m_database._m_device._switch_info->default_state, sizeof(s_m_database._m_device._switch_info->default_state));
+
     memcpy(s_m_database._m_device._switch_info, &s_m_switch_info_backup, sizeof(m_switch_info_t));
     s_m_database._m_device._device_is_paired = s_m_pair_state_backup;
 
