@@ -37,7 +37,7 @@ void Irrecv_pause(void)
 
 DRAM_ATTR uint32_t  start = 0;
 /// Interrupt handler for changes on the GPIO pin handling incoming IR messages.
-IRAM_ATTR void gpio_intr_neg(void)
+IRAM_ATTR void gpio_intr_neg(void *param)
 {
     uint32_t now = bl_timer_now_us();
 
@@ -90,7 +90,7 @@ IRAM_ATTR void gpio_intr_neg(void)
     //   os_timer_arm(&timer, params.timeout, ONCE);
     // #endif  // ESP8266
 }
-IRAM_ATTR void gpio_intr_pos(void)
+IRAM_ATTR void gpio_intr_pos(void *param)
 {
     uint32_t now = bl_timer_now_us();
     
@@ -686,7 +686,9 @@ uint16_t _matchGenericLimit(volatile uint16_t *data_ptr,
                                           tolerance,
                                           excess, MSBfirst, kexpectspace);
         if (!result.success)
+        {
             return 0;
+        }
         *result_bits_ptr = result.data;
         offset += result.used;
     }
@@ -700,7 +702,10 @@ uint16_t _matchGenericLimit(volatile uint16_t *data_ptr,
                                         tolerance,
                                         excess, MSBfirst, kexpectspace);
         if (!data_used)
+        {
+            blog_error("%s: matchBytesLimit fail ", __func__);
             return 0;
+        }
         offset += data_used;
     }
     // Footer
@@ -1023,6 +1028,67 @@ if (1){
     if (decodeSharpAc(results, offset, kSharpAcBits, true)) return true;
 #endif
 
+#if DECODE_HITACHI_AC424
+    // HitachiAc424 should be checked before HitachiAC, HitachiAC2,
+    // & HitachiAC184
+    if (decodeHitachiAC424(results, offset, kHitachiAc424Bits, true)) 
+    {
+        blog_info("decode hitachi ac424 success ");
+        return true;
+    }
+#endif  // DECODE_HITACHI_AC424
+
+#if DECODE_HITACHI_AC344
+    // HitachiAC344 should be checked before HitachiAC
+    if (decodeHitachiAC(results, offset, kHitachiAc344Bits, true, false))
+    {
+        blog_info("decode hitachi ac344 1 success ");
+        return true;
+    }
+#endif  // DECODE_HITACHI_AC344
+
+#if DECODE_HITACHI_AC
+    if (decodeHitachiAC(results, offset, kHitachiAc1Bits, true, true))
+    {
+        blog_info("decode hitachi ac1 success ");
+        return true;
+    }
+    else
+    {
+        // blog_error("decode hitachi fail ");
+    }
+
+    if (decodeHitachiAC(results, offset, kHitachiAcBits, true, true))
+    {
+        blog_info("decode hitachi ac success ");
+        return true;
+    }
+    else
+    {
+        // blog_error("decode hitachi fail ");
+    }
+
+    if (decodeHitachiAC(results, offset, kHitachiAc2Bits, true, true))
+    {
+        blog_info("decode hitachi ac2 success ");
+        return true;
+    }
+    else
+    {
+        // blog_error("decode hitachi fail ");
+    }
+
+    if (decodeHitachiAC(results, offset, kHitachiAc344Bits, true, true))
+    {
+        blog_info("decode hitachi ac344 2 success ");
+        return true;
+    }
+    else
+    {
+        // blog_error("decode hitachi fail ");
+    }
+#endif
+
     }
 
 #if DECODE_HASH
@@ -1203,7 +1269,7 @@ static void learnIR(decode_results *results)
     m_mqtt_get_instance()._mqtt_publish(str, strlen(str));
 }
 
-void m_ir_task(void)
+void m_ir_task(void *param)
 {
     os_trace("%s init\r\n", __func__);
     while (1)
@@ -1346,6 +1412,18 @@ void m_ir_task(void)
                 m_mqtt_get_instance()._mqtt_publish(str, strlen(str));
 
                 old_time_learn_ir_auto = 0;
+            }
+            else if (HITACHI_AC1 == capture.decode_type)
+            {
+                HitachiAC1_setRaw(capture.state, kHitachiAc1StateLength, &ir_state);
+            }
+            else if (HITACHI_AC344 == capture.decode_type)
+            {
+                HitachiAC344_setRaw(capture.state, kHitachiAc344StateLength, &ir_state);
+            }
+            else if (HITACHI_AC424 == capture.decode_type)
+            {
+                HitachiAC424_setRaw(capture.state, kHitachiAc424StateLength, &ir_state);
             }
             else if (capture.decode_type != UNKNOWN)
             {

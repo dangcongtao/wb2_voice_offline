@@ -206,6 +206,22 @@ typedef enum {
 #define kSharpAcBits  (kSharpAcStateLength * 8)  // 104
 #define kSharpAcDefaultRepeat  kNoRepeat
 
+/* hitachi */
+#define kHitachiAcStateLength     28
+#define kHitachiAcBits            kHitachiAcStateLength*8
+#define kHitachiAcDefaultRepeat   kNoRepeat
+#define kHitachiAc1StateLength    13
+#define kHitachiAc1Bits           kHitachiAc1StateLength*8
+#define kHitachiAc2StateLength    53
+#define kHitachiAc2Bits           kHitachiAc2StateLength*8
+#define kHitachiAc3StateLength    27
+#define kHitachiAc3Bits           kHitachiAc3StateLength*8
+#define kHitachiAc3MinStateLength 15
+#define kHitachiAc3MinBits        kHitachiAc3MinStateLength*8
+#define kHitachiAc344StateLength  43
+#define kHitachiAc344Bits         kHitachiAc344StateLength*8
+#define kHitachiAc424StateLength  53
+#define kHitachiAc424Bits         kHitachiAc424StateLength*8
 
 
 #endif

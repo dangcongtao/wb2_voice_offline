@@ -36,6 +36,11 @@ typedef enum {
   A903 = 3,  // 820 too
 } sharp_ac_remote_model_t;
 
+/// HITACHI_AC1 A/C model numbers
+typedef enum {
+  R_LT0541_HTA_A = 1,  // (1) R-LT0541-HTA Remote in "A" setting. (Default)
+  R_LT0541_HTA_B,      // (2) R-LT0541-HTA Remote in "B" setting.
+} hitachi_ac1_remote_model_t;
 
 
 typedef enum {
@@ -178,5 +183,12 @@ void Daikin152_send(state_ir_t state_ir);
 void Daikin160_send(state_ir_t state_ir);
 void Daikin216_send(state_ir_t state_ir);
 void Daikin128_send(state_ir_t state_ir);
+void Hitachi_AC_send(state_ir_t state_ir);
+void Hitachi_AC1_send(state_ir_t state_ir);
+
+/* porting */ 
+void Hitachi_AC424_send(state_ir_t state_ir);
+void Hitachi_AC344_send(state_ir_t state_ir);
+/* end */
 
 #endif

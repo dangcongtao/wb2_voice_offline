@@ -57,6 +57,10 @@
 #define DECODE_TCL112AC   1
 #define DECODE_MIDEA    1
 #define DECODE_SHARP    1
+#define DECODE_HITACHI_AC 1
+#define DECODE_HITACHI_AC424 1
+
+#define DECODE_HITACHI_AC344 1 
 
 #define IR_RX 1
 #define DECODE_AC 1
@@ -254,6 +258,16 @@ bool decodeMidea24(decode_results *results, uint16_t offset,
 bool decodeSharpAc(decode_results *results, uint16_t offset,
                            const uint16_t nbits, const bool strict);
 #endif
+#if DECODE_HITACHI_AC
+bool decodeHitachiAC(decode_results *results, uint16_t offset,
+                             const uint16_t nbits, const bool strict,
+                             const bool MSBfirst);
+#endif
+#if DECODE_HITACHI_AC424
+bool decodeHitachiAC424(decode_results *results, uint16_t offset,
+                                const uint16_t nbits,
+                                const bool strict);
+#endif
 
 bool matchSpace(uint32_t measured, uint32_t desired, uint8_t tolerance,
                         int16_t excess);
@@ -358,6 +372,11 @@ void Tcl112_setRaw(const uint8_t* newState, const decode_type_t protocol, state_
 void Midea_setRaw(const uint64_t new_code, const decode_type_t protocol, state_ir_t *ir_state);
 
 void SharpAc_setRaw(const uint8_t* newState, const decode_type_t protocol, state_ir_t *ir_state);
+/* Hitachi */
+void HitachiAC1_setRaw(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
+
+void HitachiAC344_setRaw(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
+void HitachiAC424_setRaw(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
 
 /*------------SET_INFO----------------*/
 void LG_setInfo(const uint32_t new_code, const decode_type_t protocol, state_ir_t *ir_state);
