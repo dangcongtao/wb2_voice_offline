@@ -101,6 +101,48 @@ void AQUA_setRaw(const uint8_t* new_code, const decode_type_t protocol, state_ir
     // _.data.raw = new_code;
 }
 
+void AQUA_setInfo(const uint8_t* new_code, const decode_type_t protocol, state_ir_t* state_ir)
+{
+    memcpy(_.data.raw, new_code, kAquaAcStateLength);
+    AQUA_toCommon(new_code, state_ir);
+    
+    switch ((uint8_t)state_ir->mode)
+    {
+    case opmode_kCool:
+        state_ir->mode = 2;
+        break;
+    
+    case opmode_kDry:
+        state_ir->mode = 4;
+        break;
+    
+    default:
+        break;
+    }
+
+    switch ((uint8_t)state_ir->fanspeed)
+    {
+    case fanspeed_kMin:
+        state_ir->fanspeed = 6;
+        break;
+    
+    case fanspeed_kMedium:
+        state_ir->fanspeed = 4;
+        break;
+    
+    case fanspeed_kMax:
+        state_ir->fanspeed = 2;
+        break;
+    
+    case fanspeed_kAuto:
+        state_ir->fanspeed = 10;
+        break;
+    
+    default:
+        break;
+    }
+}
+
 void aqua_getString(void)
 {
     // char mode_str[20], fan_str[20];

@@ -350,6 +350,44 @@ static void Casper_toCommon(const uint8_t* new_code, state_ir_t *ir_state)
     ir_state->degrees = get_temp_casper(new_code);
 }
 
+void Casper_setInfo(const uint8_t* new_code, state_ir_t *ir_state)
+{
+    ir_state->mode = get_mode_casper(new_code);
+    ir_state->fanspeed = get_fan_casper(new_code);
+    ir_state->power = is_power_on(new_code);
+    ir_state->degrees = get_temp_casper(new_code);
+
+    switch ((uint8_t)ir_state->mode)
+    {
+    case opmode_kFan:
+        ir_state->mode = 2;
+        break;
+    
+    case opmode_kCool:
+        ir_state->mode = 4;
+        break;
+    
+    case opmode_kDry:
+        ir_state->mode = 12;
+        break;
+    
+    case opmode_kHeat:
+        ir_state->mode = 0;
+        break;
+    
+    default:
+        break;
+    }
+
+
+    if (ir_state->fanspeed == fanspeed_kAuto)
+    {
+        ir_state->fanspeed = 6;
+    }
+
+    // os_trace("power: %u\r\n", ir_state.power);
+}
+
 void Casper_setRaw(const uint8_t* new_code, const decode_type_t protocol, state_ir_t *ir_state) 
 {
     // memcpy(_.data.raw, new_code, kFunikiAcStateLength);

@@ -158,7 +158,7 @@ void Gree_setRaw(const uint8_t* newState, const decode_type_t protocol, state_ir
 
     memcpy(_.remote_state, newState, kGreeStateLength);
 
-    ir_state->protocol = TOSHIBA_AC;
+    ir_state->protocol = GREE;
   // We can only detect the difference between models when the power is on.
     if (_.Power) {
         if (_.ModelA)
@@ -173,6 +173,32 @@ void Gree_setRaw(const uint8_t* newState, const decode_type_t protocol, state_ir
     ir_state->celsius = !_.UseFahrenheit;
     ir_state->degrees = getTemp(_);
     ir_state->fanspeed = toCommonFanSpeed(_.Fan);
+
+
+    // Toshiba_toCommon(_, ir_state);
+}
+
+void Gree_setInfo(const uint8_t* newState, const decode_type_t protocol, state_ir_t *ir_state) 
+{
+    GreeProtocol _;
+
+    memcpy(_.remote_state, newState, kGreeStateLength);
+
+    ir_state->protocol = GREE;
+  // We can only detect the difference between models when the power is on.
+    if (_.Power) {
+        if (_.ModelA)
+        ir_state->model = YAW1F;
+        else
+        ir_state->model = YBOFB;
+    }
+    if (_.Mode == kGreeEcono) ir_state->model = YX1FSF;
+
+    ir_state->power = _.Power;
+    ir_state->mode = _.Mode;
+    ir_state->celsius = !_.UseFahrenheit;
+    ir_state->degrees = getTemp(_);
+    ir_state->fanspeed = _.Fan;
 
 
     // Toshiba_toCommon(_, ir_state);

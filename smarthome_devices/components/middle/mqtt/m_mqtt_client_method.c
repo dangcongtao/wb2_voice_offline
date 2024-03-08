@@ -78,7 +78,7 @@ static axk_err_t mqtt_event_handler_cb(axk_mqtt_event_handle_t event)
         os_trace("TOPIC=%.*s\r\n", event->topic_len, event->topic);
         // os_trace("MQTT Data[%u]: [%s]\r\n", event->data_len, event->data);
         // mqtt_on_message(event->data, event->data_len);
-        os_trace("%s lendata: %lu\r\n", __func__, event->data_len);
+        // os_trace("%s lendata: %lu\r\n", __func__, event->data_len);
 
         if (event->data_len < DATA_MAX_LEN)
         {

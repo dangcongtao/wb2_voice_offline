@@ -79,21 +79,21 @@ static void AC_Midea_Callback(cJSON *jsRoot);
 static void AC_Sharp_Callback(cJSON *jsRoot);
 
 wswitch_handler_t array_handler[] = {
-    {app_control_pin, 0},        
-    {app_start_cyclic_timer, 64},
-    {app_stop_cyclic_timer, 65}, 
+    // {app_control_pin, 0},        
+    // {app_start_cyclic_timer, 64},
+    // {app_stop_cyclic_timer, 65}, 
 
 #if PROJECT_SHOCK
     {app_get_leakage, 71}, 
     {app_fake_leakage, 72},
 #endif
     {app_get_info, 105},
-    {app_set_power_on, 121},     
+    // {app_set_power_on, 121},     
     {app_remove_device, 123},
     {app_set_wifi, 128},
     {app_request_ota, 129},
-    {app_set_time_release, 130}, 
-    {app_get_time_release, 131},
+    // {app_set_time_release, 130}, 
+    // {app_get_time_release, 131},
     {app_set_static_ip, 132},    
     {app_set_lock, 133},
     {app_backup_db, 151},

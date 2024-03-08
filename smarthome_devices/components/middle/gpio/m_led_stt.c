@@ -23,7 +23,7 @@ static uint8_t is_power_up = 1;
 
 static void vTimerCallback(TimerHandle_t xTimer)
 {
-    if (is_power_up && (device_type == LHSWITCH))
+    if (is_power_up && (device_type == LHSWITCH || device_type == IRWIFI))
     {
         is_power_up = 0;
 
@@ -148,7 +148,7 @@ static void set_led_stt_not_config(void)
             /* Stop timer */
             m_stop_timer();
 
-            if (is_power_up && (device_type == LHSWITCH))
+            if (is_power_up && (device_type == LHSWITCH || device_type == IRWIFI))
             {
                 /* turn led on */
                 s_led_stt_obj._set_led_stt_on_cb();
@@ -181,7 +181,7 @@ static void set_led_stt_not_config(void)
 
 static void set_led_stt_disconnect_mqtt(void)
 {
-    if (device_type == WSWITCH || device_type == LHSWITCH || device_type == SSWITCH || device_type == SWMINI || is_shock_device(device_type))
+    if (device_type == WSWITCH || device_type == LHSWITCH || device_type == IRWIFI || device_type == SSWITCH || device_type == SWMINI || is_shock_device(device_type))
     {
         if (s_led_stt_obj._led_stt_type != LED_STYLE_MQTT_DISCONN)
         {

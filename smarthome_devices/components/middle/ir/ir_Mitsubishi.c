@@ -217,6 +217,24 @@ void Mitsubishi112_setRaw(const uint8_t* newState, const decode_type_t protocol,
     // Toshiba_toCommon(_, ir_state);
 }
 
+void Mitsubishi112_setInfo(const uint8_t* newState, const decode_type_t protocol, state_ir_t *ir_state) 
+{
+    Mitsubishi112Protocol _;
+
+    memcpy(_.raw, newState, kMitsubishi112StateLength);
+
+    ir_state->protocol = MITSUBISHI112;
+  // We can only detect the difference between models when the power is on.
+
+    ir_state->power = _.Power;
+
+    ir_state->mode = _.Mode;
+    ir_state->degrees = kMitsubishiAcMaxTemp - _.Temp;
+    ir_state->fanspeed = _.Fan;
+
+    // Toshiba_toCommon(_, ir_state);
+}
+
 static void IRMitsubishi112stateReset(Mitsubishi112Protocol *_) {
   const uint8_t kReset[kMitsubishi112StateLength] = {
       0x23, 0xCB, 0x26, 0x01, 0x00, 0x24, 0x03, 0x0B, 0x10, 0x00, 0x00, 0x00, 0x30};
@@ -247,11 +265,11 @@ void Mitsubishi112_send(state_ir_t state_ir)
 
   IRMitsubishi112checksum(&_);
 
-  os_trace("MITSUBISHI112_SEND: 0x ");
-  for(uint8_t i = 0; i < 14; i++) {
-      os_trace("%02X-", _.raw[i]);
-  }
-  os_trace("\r\n");
+  // os_trace("MITSUBISHI112_SEND: 0x ");
+  // for(uint8_t i = 0; i < 14; i++) {
+  //     os_trace("%02X-", _.raw[i]);
+  // }
+  // os_trace("\r\n");
 
   sendMitsubishi112(_.raw, kMitsubishi112StateLength, kNoRepeat);
 }

@@ -42,7 +42,7 @@ void m_db_read_device_id(void)
     uint32_t len_device_id = sizeof(s_device_id);
     memset(s_device_id, 0, sizeof(s_device_id));
 
-    // sprintf(s_device_id, "HUN1701846195irwifi1");
+    // sprintf(s_device_id, "HUN170968934545irwifiv2N1");
     // flash_write_device_id((void *)(&s_device_id), len_device_id);
 
     flash_read_device_id((void *)(&s_device_id), len_device_id);

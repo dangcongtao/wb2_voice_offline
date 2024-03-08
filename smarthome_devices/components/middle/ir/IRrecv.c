@@ -1219,19 +1219,24 @@ void m_ir_task(void)
                 LG_setInfo(capture.value, capture.decode_type, &ir_state_recv);
             } else if (capture.decode_type == AQUA){
                 AQUA_setRaw(capture.state, capture.decode_type, &ir_state);
+                AQUA_setInfo(capture.state, capture.decode_type, &ir_state_recv);
             } else if (capture.decode_type == FUNIKI){
                 Funiki_setRaw((uint8_t*)&capture.value, capture.decode_type, &ir_state);
+                Funiki_setInfo((uint8_t*)&capture.value, capture.decode_type, &ir_state_recv);
             } else if (capture.decode_type == CASPER){
                 Casper_setRaw((uint8_t*)&capture.value, capture.decode_type, &ir_state);
+                Casper_setInfo((uint8_t*)&capture.value, &ir_state_recv);
             } else if (capture.decode_type == SAMSUNG_AC){
                 switch (capture.bits)
                 {
                 case kSamsungAcBits:
                     Samsung_setRaw((uint8_t*)&capture.value, kSamsungAcStateLength, capture.decode_type, &ir_state);
+                    Samsung_setInfo((uint8_t*)&capture.value, kSamsungAcStateLength, capture.decode_type, &ir_state_recv);
                     break;
                 
                 case kSamsungAcExtendedBits:
                     Samsung_setRaw((uint8_t*)&capture.value, kSamsungAcExtendedStateLength, capture.decode_type, &ir_state);
+                    Samsung_setInfo((uint8_t*)&capture.value, kSamsungAcExtendedStateLength, capture.decode_type, &ir_state_recv);
                     break;
                 
                 default:
@@ -1243,6 +1248,7 @@ void m_ir_task(void)
                 {
                 case kToshibaACBits:
                     Toshiba_setRaw((uint8_t*)capture.state, kToshibaACStateLength, capture.decode_type, &ir_state);
+                    Toshiba_setInfo((uint8_t*)capture.state, kToshibaACStateLength, capture.decode_type, &ir_state_recv);
                     break;
                 
                 case kToshibaACBitsShort:
@@ -1259,57 +1265,69 @@ void m_ir_task(void)
             } 
             else if (capture.decode_type == DAIKIN){
                 Daikin_setRaw((uint8_t*)capture.state, kDaikinStateLength, capture.decode_type, &ir_state);
+                Daikin_setInfo((uint8_t*)capture.state, kDaikinStateLength, capture.decode_type, &ir_state_recv);
             }
             else if (capture.decode_type == DAIKIN2){
                 Daikin2_setRaw((uint8_t*)capture.state, kDaikin2StateLength, capture.decode_type, &ir_state);
+                Daikin2_setInfo((uint8_t*)capture.state, kDaikin2StateLength, capture.decode_type, &ir_state_recv);
             }
             else if (capture.decode_type == DAIKIN64){
                 Daikin64_setRaw(capture.value, capture.decode_type, &ir_state);
+                // Daikin64_setInfo(capture.value, capture.decode_type, &ir_state_recv);
             }
             else if (capture.decode_type == DAIKIN152){
                 Daikin152_setRaw((uint8_t*)capture.state, kDaikin152StateLength, capture.decode_type, &ir_state);
+                Daikin152_setInfo((uint8_t*)capture.state, kDaikin152StateLength, capture.decode_type, &ir_state_recv);
             }
             else if (capture.decode_type == DAIKIN160){
                 Daikin160_setRaw((uint8_t*)capture.state, kDaikin160StateLength, capture.decode_type, &ir_state);
+                Daikin160_setInfo((uint8_t*)capture.state, kDaikin160StateLength, capture.decode_type, &ir_state_recv);
             }
             else if (capture.decode_type == DAIKIN216){
                 Daikin216_setRaw((uint8_t*)capture.state, kDaikin216StateLength, capture.decode_type, &ir_state);
+                Daikin216_setInfo((uint8_t*)capture.state, kDaikin216StateLength, capture.decode_type, &ir_state_recv);
             }
             else if (capture.decode_type == DAIKIN128){
                 Daikin128_setRaw((uint8_t*)capture.state, kDaikin128StateLength, capture.decode_type, &ir_state);
+                Daikin128_setInfo((uint8_t*)capture.state, kDaikin128StateLength, capture.decode_type, &ir_state_recv);
             }
             else if (capture.decode_type == GREE){
                 Gree_setRaw((uint8_t*)capture.state, capture.decode_type, &ir_state);
+                Gree_setInfo((uint8_t*)capture.state, capture.decode_type, &ir_state_recv);
             }
             else if (capture.decode_type == MITSUBISHI112){
-                os_trace("MITSUBISHI112: 0x ");
-                for(uint8_t i = 0; i < 14; i++) {
-                    os_trace("%02X-", capture.state[i]);
-                }
-                os_trace("\r\n");
+                // os_trace("MITSUBISHI112: 0x ");
+                // for(uint8_t i = 0; i < 14; i++) {
+                //     os_trace("%02X-", capture.state[i]);
+                // }
+                // os_trace("\r\n");
                 Mitsubishi112_setRaw((uint8_t*)capture.state, capture.decode_type, &ir_state);
+                Mitsubishi112_setInfo((uint8_t*)capture.state, capture.decode_type, &ir_state_recv);
             }
             else if (capture.decode_type == NAGAKAWA){
-                os_trace("NAGAKAWA: 0x ");
-                for(uint8_t i = 0; i < 14; i++) {
-                    os_trace("%02X-", capture.state[i]);
-                }
-                os_trace("\r\n");
+                // os_trace("NAGAKAWA: 0x ");
+                // for(uint8_t i = 0; i < 14; i++) {
+                //     os_trace("%02X-", capture.state[i]);
+                // }
+                // os_trace("\r\n");
                 Nagakawa_setRaw((uint8_t*)capture.state, capture.decode_type, &ir_state);
             }
             else if (capture.decode_type == TCL112AC){
-                os_trace("TCL: 0x ");
-                for(uint8_t i = 0; i < 14; i++) {
-                    os_trace("%02X-", capture.state[i]);
-                }
-                os_trace("\r\n");
+                // os_trace("TCL: 0x ");
+                // for(uint8_t i = 0; i < 14; i++) {
+                //     os_trace("%02X-", capture.state[i]);
+                // }
+                // os_trace("\r\n");
                 Tcl112_setRaw((uint8_t*)capture.state, capture.decode_type, &ir_state);
+                Tcl112_setInfo((uint8_t*)capture.state, capture.decode_type, &ir_state_recv);
+                
             }
             else if (capture.decode_type == MIDEA){
                 Midea_setRaw(capture.value, capture.decode_type, &ir_state);
             }
             else if (capture.decode_type == SHARP_AC){
                 SharpAc_setRaw((uint8_t*)capture.state, capture.decode_type, &ir_state);
+                SharpAc_setInfo((uint8_t*)capture.state, capture.decode_type, &ir_state_recv);
             }
 
             if (old_time_learn_ir) {

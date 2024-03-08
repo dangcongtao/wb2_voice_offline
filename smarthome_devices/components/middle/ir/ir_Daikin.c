@@ -275,6 +275,35 @@ void Daikin_setRaw(const uint8_t* newState, const uint16_t length, const decode_
   Daikin_toCommon(_, ir_state);
 }
 
+void Daikin_setInfo(const uint8_t* newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state) 
+{
+  DaikinProtocol _;
+
+  uint8_t offset = 0;
+  if (length == kDaikinStateLengthShort) {  // Handle the "short" length case.
+    offset = kDaikinStateLength - kDaikinStateLengthShort;
+    IRDaikinstateReset(&_);
+  }
+  for (uint8_t i = 0; i < length && i < kDaikinStateLength; i++)
+    _.raw[i + offset] = newState[i];
+
+  ir_state->power = _.Power;
+  ir_state->degrees = _.Temp / 2.0f;
+
+  ir_state->mode = _.Mode;
+
+  uint8_t fan = _.Fan;
+  if (fan != kDaikinFanQuiet && fan != kDaikinFanAuto) fan -= 2;
+  ir_state->fanspeed = fan;
+
+  ir_state->quiet = _.Quiet;
+  ir_state->turbo = _.Powerful;
+  ir_state->clean = _.Mold;
+  ir_state->econo = _.Econo;
+  ir_state->swingv = _.SwingV ? swingv_kAuto : swingv_kOff;
+  ir_state->swingh = _.SwingH ? swingh_kAuto : swingh_kOff;
+}
+
 void Daikin_send(state_ir_t state_ir)
 {
     os_trace("%s\r\n", __func__);
@@ -386,6 +415,74 @@ void Daikin2_setRaw(const uint8_t* newState, const uint16_t length, const decode
   ir_state->econo = _.Econo;
   ir_state->filter = _.Purify;
   ir_state->beep = (_.Beep != 3);
+}
+
+void Daikin2_setInfo(const uint8_t* newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state) 
+{
+  
+  Daikin2Protocol _;
+  memcpy(_.raw, newState, kDaikin2StateLength);
+
+  ir_state->protocol = DAIKIN2;
+  ir_state->power = (_.Power && !_.Power2);
+  ir_state->mode = _.Mode;
+  ir_state->fanspeed = _.Fan;
+  ir_state->degrees = _.Temp;
+  ir_state->quiet = _.Quiet;
+  ir_state->light = _.Light != 3;
+  ir_state->turbo = _.Powerful;
+  ir_state->clean = _.Mold;
+  ir_state->econo = _.Econo;
+  ir_state->filter = _.Purify;
+  ir_state->beep = (_.Beep != 3);
+
+  switch ((uint8_t)ir_state->mode)
+    {
+    case kDaikinAuto:
+      ir_state->mode = 10;
+      break;
+    
+    case kDaikinDry:
+      ir_state->mode = 1;
+      break;
+    
+    case kDaikinCool:
+      ir_state->mode = 2;
+      break;
+    
+    case kDaikinFan:
+      ir_state->mode = 4;
+      break;
+    
+    case kDaikinHeat:
+      ir_state->mode = 8;
+      break;
+    
+    default:
+      break;
+    }
+
+    switch ((uint8_t)ir_state->fanspeed)
+    {
+    case kDaikinFanAuto:
+      ir_state->fanspeed = 1;
+      break;
+    
+    case kDaikinFanMin:
+      ir_state->fanspeed = 4;
+      break;
+    
+    case kDaikinFanMed:
+      ir_state->fanspeed = 3;
+      break;
+    
+    case kDaikinFanMax:
+      ir_state->fanspeed = 2;
+      break;
+    
+    default:
+      break;
+    }
 }
 
 void sendDaikin2(const unsigned char data[], const uint16_t nbytes,
@@ -704,6 +801,74 @@ void Daikin152_setRaw(const uint8_t* newState, const uint16_t length, const deco
   ir_state->econo = _.Econo;
 }
 
+void Daikin152_setInfo(const uint8_t* newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state) 
+{
+  
+  Daikin152Protocol _;
+  memcpy(_.raw, newState, kDaikin152StateLength);
+
+  ir_state->protocol = DAIKIN152;
+  ir_state->power = _.Power;
+
+  ir_state->mode = _.Mode;
+  ir_state->fanspeed = IRDaikin152getFan(_);
+
+  ir_state->swingv = _.SwingV ? swingv_kAuto : swingv_kOff;
+
+  ir_state->degrees = _.Temp;
+  ir_state->quiet = _.Quiet;
+  ir_state->turbo = _.Powerful;
+  ir_state->econo = _.Econo;
+
+  switch ((uint8_t)ir_state->mode)
+    {
+    case kDaikinAuto:
+      ir_state->mode = 10;
+      break;
+    
+    case kDaikinDry:
+      ir_state->mode = 1;
+      break;
+    
+    case kDaikinCool:
+      ir_state->mode = 2;
+      break;
+    
+    case kDaikinFan:
+      ir_state->mode = 4;
+      break;
+    
+    case kDaikinHeat:
+      ir_state->mode = 8;
+      break;
+    
+    default:
+      break;
+    }
+
+    switch ((uint8_t)ir_state->fanspeed)
+    {
+    case kDaikinFanAuto:
+      ir_state->fanspeed = 1;
+      break;
+    
+    case kDaikinFanMin:
+      ir_state->fanspeed = 4;
+      break;
+    
+    case kDaikinFanMed:
+      ir_state->fanspeed = 3;
+      break;
+    
+    case kDaikinFanMax:
+      ir_state->fanspeed = 2;
+      break;
+    
+    default:
+      break;
+    }
+}
+
 static void IRDaikin152stateReset(Daikin152Protocol *_) {
   for (uint8_t i = 3; i < kDaikin152StateLength; i++) _->raw[i] = 0x00;
   _->raw[0] =  0x11;
@@ -944,6 +1109,71 @@ void Daikin160_setRaw(const uint8_t* newState, const uint16_t length, const deco
 
 }
 
+void Daikin160_setInfo(const uint8_t* newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state) 
+{
+  
+  Daikin160Protocol _;
+  memcpy(_.raw, newState, kDaikin160StateLength);
+
+  ir_state->protocol = DAIKIN160;
+  ir_state->power = _.Power;
+
+  ir_state->mode = _.Mode;
+  ir_state->fanspeed = IRDaikin160getFan(_);
+
+  ir_state->swingv = IRDaikin160toCommonSwingV(_.SwingV);
+
+  ir_state->degrees = _.Temp + 10;
+
+  switch ((uint8_t)ir_state->mode)
+    {
+    case kDaikinAuto:
+      ir_state->mode = 10;
+      break;
+    
+    case kDaikinDry:
+      ir_state->mode = 1;
+      break;
+    
+    case kDaikinCool:
+      ir_state->mode = 2;
+      break;
+    
+    case kDaikinFan:
+      ir_state->mode = 4;
+      break;
+    
+    case kDaikinHeat:
+      ir_state->mode = 8;
+      break;
+    
+    default:
+      break;
+    }
+
+    switch ((uint8_t)ir_state->fanspeed)
+    {
+    case kDaikinFanAuto:
+      ir_state->fanspeed = 1;
+      break;
+    
+    case kDaikinFanMin:
+      ir_state->fanspeed = 4;
+      break;
+    
+    case kDaikinFanMed:
+      ir_state->fanspeed = 3;
+      break;
+    
+    case kDaikinFanMax:
+      ir_state->fanspeed = 2;
+      break;
+    
+    default:
+      break;
+    }
+}
+
 static void sendDaikin160(const unsigned char data[], const uint16_t nbytes,
                            const uint16_t repeat) {
   if (nbytes < kDaikin160Section1Length)
@@ -1180,6 +1410,75 @@ void Daikin216_setRaw(const uint8_t* newState, const uint16_t length, const deco
   ir_state->swingh = _.SwingH ? swingh_kAuto : swingh_kOff;
 
   ir_state->turbo = _.Powerful;
+
+}
+
+void Daikin216_setInfo(const uint8_t* newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state) 
+{
+  
+  Daikin216Protocol _;
+  memcpy(_.raw, newState, kDaikin216StateLength);
+
+  ir_state->protocol = DAIKIN216;
+  ir_state->power = _.Power;
+
+  ir_state->mode = _.Mode;
+  ir_state->fanspeed = IRDaikin216getFan(_);
+
+  ir_state->degrees = _.Temp;
+
+  ir_state->swingv = _.SwingV ? swingv_kAuto : swingv_kOff;
+  ir_state->swingh = _.SwingH ? swingh_kAuto : swingh_kOff;
+
+  ir_state->turbo = _.Powerful;
+
+  switch ((uint8_t)ir_state->mode)
+    {
+    case kDaikinAuto:
+      ir_state->mode = 10;
+      break;
+    
+    case kDaikinDry:
+      ir_state->mode = 1;
+      break;
+    
+    case kDaikinCool:
+      ir_state->mode = 2;
+      break;
+    
+    case kDaikinFan:
+      ir_state->mode = 4;
+      break;
+    
+    case kDaikinHeat:
+      ir_state->mode = 8;
+      break;
+    
+    default:
+      break;
+    }
+
+    switch ((uint8_t)ir_state->fanspeed)
+    {
+    case kDaikinFanAuto:
+      ir_state->fanspeed = 1;
+      break;
+    
+    case kDaikinFanMin:
+      ir_state->fanspeed = 4;
+      break;
+    
+    case kDaikinFanMed:
+      ir_state->fanspeed = 3;
+      break;
+    
+    case kDaikinFanMax:
+      ir_state->fanspeed = 2;
+      break;
+    
+    default:
+      break;
+    }
 
 }
 
@@ -1449,6 +1748,24 @@ void Daikin128_setRaw(const uint8_t* newState, const uint16_t length, const deco
 
 }
 
+void Daikin128_setInfo(const uint8_t* newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state) 
+{
+  
+  Daikin128Protocol _;
+  memcpy(_.raw, newState, kDaikin128StateLength);
+
+  ir_state->protocol = DAIKIN128;
+  ir_state->power ^= _.Power;
+
+  ir_state->mode = _.Mode;
+  ir_state->fanspeed = _.Fan;
+
+  ir_state->degrees = IRDaikin128getTemp(_);
+
+  ir_state->swingv = _.SwingV ? swingv_kAuto : swingv_kOff;
+
+}
+
 static void IRDaikin128stateReset(Daikin128Protocol *_) {
   for (uint8_t i = 0; i < kDaikin128StateLength; i++) _->raw[i] = 0x00;
   _->raw[0] = 0x16;
@@ -1637,6 +1954,20 @@ static fanspeed_t IRDaikin64toCommonFanSpeed(const uint8_t speed) {
 static uint8_t IRDaikin64getTemp(Daikin64Protocol _){ return bcdToUint8(_.Temp); }
 
 void Daikin64_setRaw(const uint64_t new_state, const decode_type_t protocol, state_ir_t *ir_state) 
+{
+  os_trace("%s\r\n", __func__);
+  Daikin64Protocol _;
+  _.raw = new_state;
+
+  ir_state->protocol = DAIKIN64;
+  ir_state->power ^= _.Power;
+  ir_state->mode = IRDaikin64toCommonMode(_.Mode);
+  ir_state->fanspeed = IRDaikin64toCommonFanSpeed(_.Fan);
+
+  ir_state->degrees = IRDaikin64getTemp(_);
+  ir_state->swingv = _.SwingV ? swingv_kAuto : swingv_kOff;
+}
+void Daikin64_setInfo(const uint64_t new_state, const decode_type_t protocol, state_ir_t *ir_state) 
 {
   os_trace("%s\r\n", __func__);
   Daikin64Protocol _;

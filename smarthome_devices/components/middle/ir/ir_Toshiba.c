@@ -158,6 +158,23 @@ void Toshiba_setRaw(const uint8_t* newState, const uint16_t length, const decode
     Toshiba_toCommon(_, ir_state);
 }
 
+void Toshiba_setInfo(const uint8_t* newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state) 
+{
+    ToshibaProtocol _;
+    memset(&_, 0, sizeof(ToshibaProtocol));
+    memcpy(_.raw, newState, length);
+
+    ir_state->protocol = TOSHIBA_AC;
+    ir_state->model = -1;
+
+    ir_state->power = getPower(_);
+    ir_state->mode = _.Mode;
+    ir_state->degrees = getTemp(_);
+    ir_state->fanspeed = _.Fan;
+    ir_state->turbo = getTurbo(_);
+    ir_state->econo = getEcono(_);
+}
+
 static void setTemp(ToshibaProtocol *_, const uint8_t degrees) {
   uint8_t temp = max(kToshibaAcMinTemp, degrees);
   temp = min(kToshibaAcMaxTemp, temp);

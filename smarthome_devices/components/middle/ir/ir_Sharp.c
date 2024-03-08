@@ -143,6 +143,19 @@ void SharpAc_setRaw(const uint8_t* newState, const decode_type_t protocol, state
     ir_state->fanspeed = IRSharpActoCommonFanSpeed(_.Fan, (sharp_ac_remote_model_t)ir_state->model);
 }
 
+void SharpAc_setInfo(const uint8_t* newState, const decode_type_t protocol, state_ir_t *ir_state) 
+{
+    SharpProtocol _;
+    memcpy(_.raw, newState, kSharpAcStateLength);
+
+    ir_state->protocol = SHARP_AC;
+    ir_state->model = IRSharpAcgetModel(_);
+    ir_state->power = IRSharpAcgetPower(_);
+    ir_state->mode = _.Mode;
+    ir_state->degrees = _.Temp + kSharpAcMinTemp;
+    ir_state->fanspeed = _.Fan;
+}
+
 static void IRSharpAcsetPowerSpecial(SharpProtocol *_, const uint8_t value) {
   _->PowerSpecial = value;
 }

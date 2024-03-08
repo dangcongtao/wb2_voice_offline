@@ -53,6 +53,23 @@ void Tcl112_setRaw(const uint8_t* newState, const decode_type_t protocol, state_
 
     // Toshiba_toCommon(_, ir_state);
 }
+void Tcl112_setInfo(const uint8_t* newState, const decode_type_t protocol, state_ir_t *ir_state) 
+{
+    Tcl112Protocol _;
+
+    memcpy(_.raw, newState, kTcl112AcStateLength);
+
+    ir_state->protocol = MITSUBISHI112;
+  // We can only detect the difference between models when the power is on.
+
+    ir_state->power = _.Power;
+
+    ir_state->mode = _.Mode;
+    ir_state->degrees = IRTcl112AcgetTemp(_);
+    ir_state->fanspeed = _.Fan;
+
+    // Toshiba_toCommon(_, ir_state);
+}
 
 static void sendTcl112Ac(const unsigned char data[], const uint16_t nbytes,
                           const uint16_t repeat) {

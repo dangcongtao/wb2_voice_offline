@@ -361,6 +361,23 @@ void SharpAc_setRaw(const uint8_t* newState, const decode_type_t protocol, state
 
 /*------------SET_INFO----------------*/
 void LG_setInfo(const uint32_t new_code, const decode_type_t protocol, state_ir_t *ir_state);
+void Casper_setInfo(const uint8_t* new_code, state_ir_t *ir_state);
+void AQUA_setInfo(const uint8_t* new_code, const decode_type_t protocol, state_ir_t* state_ir);
+void Funiki_setInfo(const uint8_t* new_code, const decode_type_t protocol, state_ir_t *ir_state);
+void Samsung_setInfo(const uint8_t* new_code, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state);
+void Daikin_setInfo(const uint8_t* newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state);
+void Daikin2_setInfo(const uint8_t* newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state);
+void Daikin152_setInfo(const uint8_t* newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state);
+void Daikin160_setInfo(const uint8_t* newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state);
+void Daikin128_setInfo(const uint8_t* newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state);
+void Daikin64_setInfo(const uint64_t new_state, const decode_type_t protocol, state_ir_t *ir_state);
+void Daikin216_setInfo(const uint8_t* newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state);
+void Tcl112_setInfo(const uint8_t* newState, const decode_type_t protocol, state_ir_t *ir_state);
+void Mitsubishi112_setInfo(const uint8_t* newState, const decode_type_t protocol, state_ir_t *ir_state);
+void Toshiba_setInfo(const uint8_t* newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state);
+void Gree_setInfo(const uint8_t* newState, const decode_type_t protocol, state_ir_t *ir_state);
+void SharpAc_setInfo(const uint8_t* newState, const decode_type_t protocol, state_ir_t *ir_state);
+
 
 // void enableIRIn(const bool pullup);
 void ir_loop(void);

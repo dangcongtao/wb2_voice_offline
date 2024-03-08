@@ -4,38 +4,38 @@
 typedef enum {
   UNKNOWN = -1,
   UNUSED = 0,
-  RC5,
-  RC6,
+  DAIKIN2,
+  DAIKIN216,
   NEC,
-  SONY,
-  PANASONIC,  // (5)
-  JVC,
+  DAIKIN160,
+  DAIKIN128,  // (5) // power toggle
+  DAIKIN152,
   SAMSUNG,
   WHYNTER,
   AIWA_RC_T501,
   LG,  // (10)
   SANYO,
-  MITSUBISHI,
+  FUNIKI, // MIDEA - COMFEE 
   DISH,
-  SHARP,
-  COOLIX,  // (15)
   DAIKIN,
+  COOLIX,  // (15)
+  SHARP,
   DENON,
   KELVINATOR,
-  SHERWOOD,
+  GREE,
   MITSUBISHI_AC,  // (20)
   RCMM,
   SANYO_LC7461,
-  RC5X,
-  GREE,
+  LG2,
+  SHERWOOD,
   PRONTO,  // Technically not a protocol, but an encoding. (25)
   NEC_LIKE,
   ARGO,
-  TROTEC,
-  NIKAI,
+  SHARP_AC,
+  TCL112AC,
   RAW,  // Technically not a protocol, but an encoding. (30)
-  GLOBALCACHE,  // Technically not a protocol, but an encoding.
   TOSHIBA_AC,
+  GLOBALCACHE,  // Technically not a protocol, but an encoding.
   FUJITSU_AC,
   MIDEA,
   MAGIQUEST,  // (35)
@@ -54,26 +54,25 @@ typedef enum {
   ELECTRA_AC,
   PANASONIC_AC,
   PIONEER,  // (50)
-  LG2,
   MWM,
-  DAIKIN2,
+  RC5,
   VESTEL_AC,
   TECO,  // (55)
   SAMSUNG36,
-  TCL112AC,
+  TROTEC,
   LEGOPF,
   MITSUBISHI_HEAVY_88,
   MITSUBISHI_HEAVY_152,  // 60
-  DAIKIN216,
-  SHARP_AC,
+  RC6,
+  NIKAI,
   GOODWEATHER,
   INAX,
-  DAIKIN160,  // 65
+  SONY,  // 65
   NEOCLIMA,
   DAIKIN176,
-  DAIKIN128,
+  PANASONIC,
   AMCOR,
-  DAIKIN152,  // 70
+  JVC,  // 70
   MITSUBISHI136,
   MITSUBISHI112,
   HITACHI_AC424,
@@ -105,6 +104,7 @@ typedef enum {
   XMP,
   TRUMA,  // 100
   HAIER_AC176,
+  AQUA,
   CASPER,
   KELON,
   TROTEC_3550,
@@ -130,8 +130,7 @@ typedef enum {
   WOWWEE,
   CARRIER_AC84,  // 125
   YORK,
-  FUNIKI,
-  AQUA,
+  MITSUBISHI,
   NAGAKAWA,
   TEKNOPOINT,
   // Add new entries before this one, and update it to point to the last entry.

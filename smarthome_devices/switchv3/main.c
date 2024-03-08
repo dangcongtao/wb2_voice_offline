@@ -37,11 +37,11 @@ void main_loop(void)
     {
         m_event_loop(delay_ms);
 
-        old += 1;
-        if (old > 20) {
-            old = 0;
+        // old += 1;
+        // if (old > 20) {
+        //     old = 0;
             // os_trace("Free memory: %d\r\n", xPortGetFreeHeapSize());
-        }
+        // }
 
         bl_wdt_feed();
 

@@ -467,3 +467,32 @@ void Samsung_setRaw(const uint8_t* new_code, const uint16_t length, const decode
     // os_trace("fan: %u\r\n", _.data.fan);
     // _.data.raw = new_code;
 }
+
+void Samsung_setInfo(const uint8_t* new_code, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state) 
+{
+    // memcpy(_.data.raw, new_code, kFunikiAcStateLength);
+    SamsungProtocol _;
+    memset(&_, 0, sizeof(SamsungProtocol));
+    memcpy(_.raw, new_code, min(length, kSamsungAcExtendedStateLength));
+    
+    if (length > kSamsungAcStateLength) {
+      // _OnTimerEnable = _.OnTimerEnable;
+      // _OffTimerEnable = _.OffTimerEnable;
+      // _Sleep = _.Sleep5 && _.Sleep12;
+      // _OnTimer = _getOnTimer();
+      // _OffTimer = _getOffTimer();
+      for (uint8_t i = kSamsungAcStateLength; i < length; i++)
+        _.raw[i - kSamsungAcSectionLength] = _.raw[i];
+    }
+
+    ir_state->protocol = SAMSUNG_AC;
+    ir_state->model = -1;
+    ir_state->mode = _.Mode;
+    ir_state->fanspeed = _.Fan;
+    ir_state->power = getPower(_);
+    ir_state->degrees = getTemp(_);
+
+    // memcpy(&_.data.raw, new_code, 12);
+    // os_trace("fan: %u\r\n", _.data.fan);
+    // _.data.raw = new_code;
+}
