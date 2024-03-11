@@ -148,8 +148,8 @@ bool decodeHitachiAC(decode_results *results, uint16_t offset,
                     kHitachiAcMinGap-300, kHitachiAcMinGap+300,
                     true, k_tolerance, kMarkExcess, MSBfirst))
     {
-        blog_error("%s: Header data footer fail ", __func__);
-        os_trace("%s: Header data footer fail ", __func__);
+        // blog_error("%s: Header data footer fail ", __func__);
+        // os_trace("%s: Header data footer fail ", __func__);
         return false;
     }
 
@@ -613,6 +613,70 @@ void HitachiAC1_setRaw(const uint8_t new_code[], const uint16_t length, state_ir
 
     memset(&temp, 0, sizeof(temp));
     *ir_state = HitachiAC1_toCommon();
+}
+
+void HitachiAC1_setInfo(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state)
+{
+    state_ir_t temp;
+    memcpy(hitachi1_protocol.raw, new_code, min(length, kHitachiAc1StateLength));
+    ir_state->power = true;
+    ir_state->degrees = (float)HitachiAC1_getTemp();
+    ir_state->mode = HitachiAC1_getMode();
+    switch ((uint8_t)ir_state->mode)
+    {
+    case kHitachiAc1Dry:
+        ir_state->mode = 2;
+        break;
+    
+    case kHitachiAc1Heat:
+        ir_state->mode = 3;
+        break;
+    
+    case kHitachiAc1Cool:
+        ir_state->mode = 1;
+        break;
+    
+    case kHitachiAc1Fan:
+        ir_state->mode = 4;
+        break;
+    
+    case kHitachiAc1Auto:
+        ir_state->mode = 0;
+        break;
+    
+    default:
+        break;
+    }
+    ir_state->fanspeed = HitachiAC1_getFan();
+    switch ((uint8_t)ir_state->fanspeed)
+    {
+    case kHitachiAc1FanLow:
+        ir_state->fanspeed = 1;
+        break;
+    
+    case kHitachiAc1FanMed:
+        ir_state->fanspeed = 2;
+        break;
+    
+    case kHitachiAc1FanHigh:
+        ir_state->fanspeed = 3;
+        break;
+    
+    case kHitachiAc1FanAuto:
+        ir_state->fanspeed = 0;
+        break;
+    
+    default:
+        break;
+    }
+
+
+    os_trace("power: %d \r\n", HitachiAC1_getPower());    
+    os_trace("temp: %d \r\n", HitachiAC1_getTemp());
+    os_trace("mode: %d \r\n", HitachiAC1_getMode());
+    os_trace("fan: %d \r\n", HitachiAC1_getFan());
+
+    os_trace("model: %d \r\n", HitachiAC1_getModel());
 }
 
 #if SEND_HITACHI_AC
@@ -1079,6 +1143,62 @@ void HitachiAC424_setRaw(const uint8_t new_code[], const uint16_t length, state_
     *ir_state = HitachiAC424_toCommon();
 }
 
+bool HitachiAC424_getPower(void);
+
+void HitachiAC424_setInfo(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state)
+{
+    memcpy(hitachi424_protocol.raw, new_code, min(length, kHitachiAc424StateLength));
+    ir_state->protocol = HITACHI_AC424;
+    ir_state->model = -1;  // No models used.
+    ir_state->power = HitachiAC424_getPower();
+    ir_state->mode = hitachi424_protocol.Mode;
+    switch ((uint8_t)ir_state->mode)
+    {
+    case kHitachiAc424Fan:
+        ir_state->mode = 4;
+        break;
+    
+    case kHitachiAc424Cool:
+        ir_state->mode = 1;
+        break;
+    
+    case kHitachiAc424Dry:
+        ir_state->mode = 2;
+        break;
+    
+    case kHitachiAc424Heat:
+        ir_state->mode = 3;
+        break;
+    
+    default:
+        break;
+    }
+    
+    ir_state->degrees = hitachi424_protocol.Temp;
+    ir_state->fanspeed = hitachi424_protocol.Fan;
+    switch ((uint8_t)ir_state->fanspeed)
+    {
+    case kHitachiAc424FanMin:
+        ir_state->fanspeed = 1;
+        break;
+    
+    case kHitachiAc424FanMedium:
+        ir_state->fanspeed = 2;
+        break;
+    
+    case kHitachiAc424FanMax:
+        ir_state->fanspeed = 3;
+        break;
+    
+    case kHitachiAc424FanAuto:
+        ir_state->fanspeed = 0;
+        break;
+    
+    default:
+        break;
+    }
+}
+
 #if SEND_HITACHI_AC424
 /// Send the current internal state as an IR message.
 /// @param[in] repeat Nr. of times the message will be repeated.
@@ -1418,6 +1538,66 @@ void HitachiAC344_setRaw(const uint8_t new_code[], const uint16_t length, state_
     *ir_state = HitachiAC344_toCommon();
 }
 
+void HitachiAC344_setInfo(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state)
+{
+    HitachiAC344_stateReset();
+    memcpy(hitachi344_protocol.raw, new_code, min(length, kHitachiAc344StateLength));
+
+    ir_state->degrees = (float)HitachiAC344_getTemp();
+    ir_state->mode = HitachiAC344_getMode();
+    switch ((uint8_t)ir_state->mode)
+    {
+    case kHitachiAc344Fan:
+        ir_state->mode = 4;
+        break;
+    
+    case kHitachiAc344Cool:
+        ir_state->mode = 1;
+        break;
+    
+    case kHitachiAc344Dry:
+        ir_state->mode = 2;
+        break;
+    
+    case kHitachiAc344Heat:
+        ir_state->mode = 3;
+        break;
+    
+    default:
+        break;
+    }
+    ir_state->fanspeed = HitachiAC344_getFan();
+    switch ((uint8_t)ir_state->fanspeed)
+    {
+    case kHitachiAc344FanMin:
+        ir_state->fanspeed = 1;
+        break;
+    
+    case kHitachiAc344FanMedium:
+        ir_state->fanspeed = 2;
+        break;
+    
+    case kHitachiAc344FanMax:
+        ir_state->fanspeed = 3;
+        break;
+    
+    case kHitachiAc344FanAuto:
+        ir_state->fanspeed = 0;
+        break;
+    
+    default:
+        break;
+    }
+    ir_state->power = HitachiAC344_getPower();
+
+    /* check data */
+    // os_trace("temp: %d \r\n", HitachiAC344_getTemp());
+    // os_trace("mode: %d \r\n", HitachiAC344_getMode());
+    // os_trace("fan: %d \r\n", HitachiAC344_getFan());
+    // os_trace("power: %d \r\n", HitachiAC344_getPower());
+    // *ir_state = HitachiAC344_toCommon();
+}
+
 static bool HitachiAC344_getPower(void) 
 {
     return hitachi344_protocol.Power == kHitachiAc424PowerOn;
@@ -1750,7 +1930,7 @@ void Hitachi_AC_send(state_ir_t state_ir)
     HitachiAC_setTemp(state_ir.degrees);
     HitachiAC_setMode(state_ir.mode);
     HitachiAC_setFan(state_ir.fanspeed);
-    
+    HitachiAC_calcChecksum(HitachiAC_getRaw(), kHitachiAcStateLength);
     /* send */
     sendHitachiAC(HitachiAC_getRaw(), kHitachiAcStateLength, kHitachiAcDefaultRepeat);
 }
@@ -1758,11 +1938,55 @@ void Hitachi_AC_send(state_ir_t state_ir)
 /* send AC1 */
 void Hitachi_AC1_send(state_ir_t state_ir)
 {
+    switch ((uint8_t)state_ir.mode)
+    {
+    case 4:
+        state_ir.mode = kHitachiAc1Fan;
+        break;
+    
+    case 1:
+        state_ir.mode = kHitachiAc1Cool;
+        break;
+    
+    case 2:
+        state_ir.mode = kHitachiAc1Dry;
+        break;
+    
+    case 3:
+        state_ir.mode = kHitachiAc1Heat;
+        break;
+    
+    default:
+        break;
+    }
+    switch ((uint8_t)state_ir.fanspeed)
+    {
+    case 1:
+        state_ir.fanspeed = kHitachiAc1FanLow;
+        break;
+    
+    case 2:
+        state_ir.fanspeed = kHitachiAc1FanMed;
+        break;
+    
+    case 3:
+        state_ir.fanspeed = kHitachiAc1FanHigh;
+        break;
+    
+    case 0:
+        state_ir.fanspeed = kHitachiAc1FanAuto;
+        break;
+    
+    default:
+        break;
+    }
     /* set ir_state */
     HitachiAC1_setPower(state_ir.power);
     HitachiAC1_setTemp(state_ir.degrees);
     HitachiAC1_setMode(state_ir.mode);
     HitachiAC1_setFan(state_ir.fanspeed);
+
+    HitachiAC1_calcChecksum(HitachiAC1_getRaw(), kHitachiAc1StateLength);
 
     /* send */
     sendHitachiAC1(HitachiAC1_getRaw(), kHitachiAc1StateLength, kHitachiAcDefaultRepeat);
@@ -1771,6 +1995,49 @@ void Hitachi_AC1_send(state_ir_t state_ir)
 /* send AC424 */
 void Hitachi_AC424_send(state_ir_t state_ir)
 {
+    switch ((uint8_t)state_ir.mode)
+    {
+    case 4:
+        state_ir.mode = kHitachiAc424Fan;
+        break;
+    
+    case 1:
+        state_ir.mode = kHitachiAc424Cool;
+        break;
+    
+    case 2:
+        state_ir.mode = kHitachiAc424Dry;
+        break;
+    
+    case 3:
+        state_ir.mode = kHitachiAc424Heat;
+        break;
+    
+    default:
+        break;
+    }
+    switch ((uint8_t)state_ir.fanspeed)
+    {
+    case 1:
+        state_ir.fanspeed = kHitachiAc424FanMin;
+        break;
+    
+    case 2:
+        state_ir.fanspeed = kHitachiAc424FanMedium;
+        break;
+    
+    case 3:
+        state_ir.fanspeed = kHitachiAc424FanMax;
+        break;
+    
+    case 0:
+        state_ir.fanspeed = kHitachiAc424FanAuto;
+        break;
+    
+    default:
+        break;
+    }
+
     /* set ir_state */
     HitachiAC424_setPower(state_ir.power);
     HitachiAC424_setTemp(state_ir.degrees, true);
@@ -1778,12 +2045,54 @@ void Hitachi_AC424_send(state_ir_t state_ir)
     HitachiAC424_setFan(state_ir.fanspeed);
 
     /* send */
-    sendHitachiAc424(HitachiAC424_getRaw, kHitachiAc424StateLength, kHitachiAcDefaultRepeat);
+    sendHitachiAc424(HitachiAC424_getRaw(), kHitachiAc424StateLength, kHitachiAcDefaultRepeat);
 }
 
 /* send AC344 */
 void Hitachi_AC344_send(state_ir_t state_ir)
 {
+    switch ((uint8_t)state_ir.mode)
+    {
+    case 4:
+        state_ir.mode = kHitachiAc344Fan;
+        break;
+    
+    case 1:
+        state_ir.mode = kHitachiAc344Cool;
+        break;
+    
+    case 2:
+        state_ir.mode = kHitachiAc344Dry;
+        break;
+    
+    case 3:
+        state_ir.mode = kHitachiAc344Heat;
+        break;
+    
+    default:
+        break;
+    }
+    switch ((uint8_t)state_ir.fanspeed)
+    {
+    case 1:
+        state_ir.fanspeed = kHitachiAc344FanMin;
+        break;
+    
+    case 2:
+        state_ir.fanspeed = kHitachiAc344FanMedium;
+        break;
+    
+    case 3:
+        state_ir.fanspeed = kHitachiAc344FanMax;
+        break;
+    
+    case 0:
+        state_ir.fanspeed = kHitachiAc344FanAuto;
+        break;
+    
+    default:
+        break;
+    }
     /* set ir_state */
     HitachiAC344_setPower(state_ir.power);
     HitachiAC344_setTemp(state_ir.degrees, true);

@@ -396,6 +396,9 @@ void Mitsubishi112_setInfo(const uint8_t* newState, const decode_type_t protocol
 void Toshiba_setInfo(const uint8_t* newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state);
 void Gree_setInfo(const uint8_t* newState, const decode_type_t protocol, state_ir_t *ir_state);
 void SharpAc_setInfo(const uint8_t* newState, const decode_type_t protocol, state_ir_t *ir_state);
+void HitachiAC1_setInfo(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
+void HitachiAC344_setInfo(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
+void HitachiAC424_setInfo(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
 
 
 // void enableIRIn(const bool pullup);

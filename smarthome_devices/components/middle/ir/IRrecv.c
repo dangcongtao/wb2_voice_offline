@@ -1395,7 +1395,23 @@ void m_ir_task(void *param)
                 SharpAc_setRaw((uint8_t*)capture.state, capture.decode_type, &ir_state);
                 SharpAc_setInfo((uint8_t*)capture.state, capture.decode_type, &ir_state_recv);
             }
+            else if (HITACHI_AC1 == capture.decode_type)
+            {
+                HitachiAC1_setRaw(capture.state, kHitachiAc1StateLength, &ir_state);
+                HitachiAC1_setInfo(capture.state, kHitachiAc1StateLength, &ir_state_recv);
+            }
+            else if (HITACHI_AC344 == capture.decode_type)
+            {
+                HitachiAC344_setRaw(capture.state, kHitachiAc344StateLength, &ir_state);
+                HitachiAC344_setInfo(capture.state, kHitachiAc344StateLength, &ir_state_recv);
+            }
+            else if (HITACHI_AC424 == capture.decode_type)
+            {
+                HitachiAC424_setRaw(capture.state, kHitachiAc424StateLength, &ir_state);
+                HitachiAC424_setInfo(capture.state, kHitachiAc424StateLength, &ir_state_recv);
+            }
 
+            /***************************************************************************************/
             if (old_time_learn_ir) {
                 learnIR(&capture);
                 old_time_learn_ir = 0;
@@ -1412,18 +1428,6 @@ void m_ir_task(void *param)
                 m_mqtt_get_instance()._mqtt_publish(str, strlen(str));
 
                 old_time_learn_ir_auto = 0;
-            }
-            else if (HITACHI_AC1 == capture.decode_type)
-            {
-                HitachiAC1_setRaw(capture.state, kHitachiAc1StateLength, &ir_state);
-            }
-            else if (HITACHI_AC344 == capture.decode_type)
-            {
-                HitachiAC344_setRaw(capture.state, kHitachiAc344StateLength, &ir_state);
-            }
-            else if (HITACHI_AC424 == capture.decode_type)
-            {
-                HitachiAC424_setRaw(capture.state, kHitachiAc424StateLength, &ir_state);
             }
             else if (capture.decode_type != UNKNOWN)
             {
