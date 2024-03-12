@@ -203,6 +203,10 @@ void Hitachi_AC344_send(state_ir_t state_ir);
 // panasonic
 void PanasonicAC_send(state_ir_t state_ir);
 void PanasonicAc32_send(state_ir_t state_ir);
+
+void ElectraAc_send(state_ir_t state_ir);
+
+
 /* end */
 
 #endif

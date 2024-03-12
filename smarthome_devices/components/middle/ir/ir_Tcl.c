@@ -3,6 +3,7 @@
 #include "system_typedef.h"
 #include "IRsend.h"
 #include "ir_Mitsubishi.h"
+#include "ir_Nagakawa.h"
 
 static void Tcl112StateReset(Tcl112Protocol *_) {
     const uint8_t reset[kTcl112AcStateLength] = {
@@ -38,6 +39,7 @@ static float IRTcl112AcgetTemp(Tcl112Protocol _) {
 
 void Tcl112_setRaw(const uint8_t* newState, const decode_type_t protocol, state_ir_t *ir_state) 
 {
+    // Tcl112Protocol _;
     Tcl112Protocol _;
 
     memcpy(_.raw, newState, kTcl112AcStateLength);
@@ -55,11 +57,12 @@ void Tcl112_setRaw(const uint8_t* newState, const decode_type_t protocol, state_
 }
 void Tcl112_setInfo(const uint8_t* newState, const decode_type_t protocol, state_ir_t *ir_state) 
 {
+    os_trace("%s\r\n", __func__);
     Tcl112Protocol _;
 
     memcpy(_.raw, newState, kTcl112AcStateLength);
 
-    ir_state->protocol = MITSUBISHI112;
+    ir_state->protocol = TCL112AC;
   // We can only detect the difference between models when the power is on.
 
     ir_state->power = _.Power;

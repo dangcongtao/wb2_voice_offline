@@ -19,7 +19,7 @@ typedef enum {
   DISH,
   DAIKIN,
   COOLIX,  // (15)
-  SHARP,
+  ELECTRA_AC,
   DENON,
   KELVINATOR,
   GREE,
@@ -51,7 +51,7 @@ typedef enum {
   WHIRLPOOL_AC,  // (45)
   SAMSUNG_AC,
   LUTRON,
-  ELECTRA_AC,
+  SHARP,
   NEC_LIKE,
   PIONEER,  // (50)
   MWM,
@@ -214,6 +214,11 @@ typedef enum {
 #define kPanasonicAcDefaultRepeat  kNoRepeat
 #define kPanasonicAc32Bits (32)
 #define kPanasonicAc32DefaultRepeat  kNoRepeat
+
+/*Electra*/
+#define kElectraAcStateLength 13
+#define kElectraAcBits (kElectraAcStateLength * 8)
+#define kElectraAcMinRepeat kNoRepeat
 
 
 #endif

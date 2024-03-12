@@ -1100,6 +1100,12 @@ if (1){
 
 #endif
 
+#if DECODE_ELECTRA_AC
+    os_trace("Attempting decodeElectraAC decode\r\n");        
+    if (decodeElectraAC(results, offset, kElectraAcBits, true)) return true;
+
+#endif
+
     } // END for
 
 #if DECODE_HASH
@@ -1390,11 +1396,11 @@ void m_ir_task(void *param)
                 Nagakawa_setRaw((uint8_t*)capture.state, capture.decode_type, &ir_state);
             }
             else if (capture.decode_type == TCL112AC){
-                // os_trace("TCL: 0x ");
-                // for(uint8_t i = 0; i < 14; i++) {
-                //     os_trace("%02X-", capture.state[i]);
-                // }
-                // os_trace("\r\n");
+                os_trace("TCL: 0x ");
+                for(uint8_t i = 0; i < 14; i++) {
+                    os_trace("%02X-", capture.state[i]);
+                }
+                os_trace("\r\n");
                 Tcl112_setRaw((uint8_t*)capture.state, capture.decode_type, &ir_state);
                 Tcl112_setInfo((uint8_t*)capture.state, capture.decode_type, &ir_state_recv);
                 
@@ -1428,6 +1434,10 @@ void m_ir_task(void *param)
             else if (PANASONIC_AC32 == capture.decode_type)
             {
                 IRPanasonicAc32_setInfo(capture.value, &ir_state_recv);
+            }
+            else if (ELECTRA_AC == capture.decode_type)
+            {
+                ElectraAc_setInfo(capture.state, kElectraAcStateLength, &ir_state_recv);
             }
 
             /***************************************************************************************/

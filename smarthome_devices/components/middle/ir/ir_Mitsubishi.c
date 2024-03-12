@@ -161,7 +161,7 @@ bool decodeMitsubishi112(decode_results *results, uint16_t offset,
   // Success
   results->decode_type = typeguess;
   results->bits = nbits;
-  os_trace("%s success %u\r\n", __func__, typeguess);
+  os_trace("%s success, typeguess: %u\r\n", __func__, typeguess);
   // No need to record the state as we stored it as we decoded it.
   // As we use result->state, we don't record value, address, or command as it
   // is a union data type.

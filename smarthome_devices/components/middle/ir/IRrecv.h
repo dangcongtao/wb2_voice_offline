@@ -63,6 +63,7 @@
 #define DECODE_HITACHI_AC344 1 
 #define DECODE_PANASONIC_AC 1
 #define DECODE_PANASONIC_AC32 1
+#define DECODE_ELECTRA_AC 1
 
 
 #define IR_RX 1
@@ -282,6 +283,12 @@ bool decodePanasonicAC32(decode_results *results, uint16_t offset,
                                  const uint16_t nbits, const bool strict);
 #endif
 
+#if DECODE_ELECTRA_AC
+bool decodeElectraAC(decode_results *results, uint16_t offset,
+                             const uint16_t nbits,
+                             const bool strict);
+#endif
+
 bool matchSpace(uint32_t measured, uint32_t desired, uint8_t tolerance,
                         int16_t excess);
 
@@ -417,6 +424,7 @@ void HitachiAC424_setInfo(const uint8_t new_code[], const uint16_t length, state
 // Panasonic
 void PanasonicAC_setInfo(const uint8_t* newState, state_ir_t *ir_state);
 void IRPanasonicAc32_setInfo(const uint32_t state,  state_ir_t *ir_state);
+void ElectraAc_setInfo(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
 
 
 // void enableIRIn(const bool pullup);
