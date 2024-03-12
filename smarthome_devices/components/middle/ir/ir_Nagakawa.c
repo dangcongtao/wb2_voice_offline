@@ -80,6 +80,27 @@ void Nagakawa_setRaw(const uint8_t *newState, const decode_type_t protocol, stat
   // Toshiba_toCommon(_, ir_state);
 }
 
+void Nagakawa_setInfo(const uint8_t *newState, const decode_type_t protocol, state_ir_t *ir_state)
+{
+  Mitsubishi112Protocol _;
+
+  memcpy(_.raw, newState, kMitsubishi112StateLength);
+
+  ir_state->protocol = NAGAKAWA;
+  // We can only detect the difference between models when the power is on.
+
+  ir_state->power = _.Power;
+
+  ir_state->mode = _.Mode;
+  // os_trace("%s %u\r\n", __func__, _.SwingV);
+  // os_trace("%s temp: %u\r\n", __func__, _.Temp);
+  // os_trace("%s fan: %u\r\n", __func__, _.Fan);
+  ir_state->degrees = kMitsubishiAcMaxTemp - _.Temp;
+  ir_state->fanspeed = _.Fan;
+
+  // Toshiba_toCommon(_, ir_state);
+}
+
 static void NagakawasetTemp(NagakawaProtocol *_, const float celsius)
 {
   // Make sure we have desired temp in the correct range.

@@ -421,6 +421,7 @@ void SharpAc_setInfo(const uint8_t* newState, const decode_type_t protocol, stat
 void HitachiAC1_setInfo(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
 void HitachiAC344_setInfo(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
 void HitachiAC424_setInfo(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
+void Nagakawa_setInfo(const uint8_t *newState, const decode_type_t protocol, state_ir_t *ir_state);
 // Panasonic
 void PanasonicAC_setInfo(const uint8_t* newState, state_ir_t *ir_state);
 void IRPanasonicAc32_setInfo(const uint32_t state,  state_ir_t *ir_state);

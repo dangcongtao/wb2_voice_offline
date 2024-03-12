@@ -75,7 +75,7 @@ typedef struct
 #define kNagakawaDry   2
 #define kNagakawaCool  3
 #define kNagakawaFan   7
-#define kNagakawaAuto  8
+#define kNagakawaAuto  0
 
 #define kNagakawaFanAuto  0b000
 #define kNagakawaFanMin   0b010  // Aka. "Night"

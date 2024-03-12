@@ -107,7 +107,7 @@ typedef enum {
   AQUA,
   UNKNOWN_493,
   CASPER,
-  FUNIKI,
+  FUNIKI, // midea
   NAGAKAWA,  // 105
   PANASONIC_AC,
   PANASONIC_AC32, // power toggle

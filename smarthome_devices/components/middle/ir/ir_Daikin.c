@@ -1730,6 +1730,7 @@ static fanspeed_t IRDaikin128toCommonFanSpeed(const uint8_t speed) {
 
 static uint8_t IRDaikin128getTemp(Daikin128Protocol _){ return bcdToUint8(_.Temp); }
 
+static bool daikin128_prev_power = true;
 void Daikin128_setRaw(const uint8_t* newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state) 
 {
   
@@ -1737,7 +1738,10 @@ void Daikin128_setRaw(const uint8_t* newState, const uint16_t length, const deco
   memcpy(_.raw, newState, kDaikin128StateLength);
 
   ir_state->protocol = DAIKIN128;
-  ir_state->power ^= _.Power;
+  if (_.Power) {
+    daikin128_prev_power = !daikin128_prev_power;
+  }
+  ir_state->power ^= daikin128_prev_power;
 
   ir_state->mode = IRDaikin128toCommonMode(_.Mode);
   ir_state->fanspeed = IRDaikin128toCommonFanSpeed(_.Fan);
@@ -1755,7 +1759,10 @@ void Daikin128_setInfo(const uint8_t* newState, const uint16_t length, const dec
   memcpy(_.raw, newState, kDaikin128StateLength);
 
   ir_state->protocol = DAIKIN128;
-  ir_state->power ^= _.Power;
+  if (_.Power) {
+    daikin128_prev_power = !daikin128_prev_power;
+  }
+  ir_state->power ^= daikin128_prev_power;
 
   ir_state->mode = _.Mode;
   ir_state->fanspeed = _.Fan;

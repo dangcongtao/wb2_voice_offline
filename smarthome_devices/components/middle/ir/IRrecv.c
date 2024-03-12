@@ -1394,6 +1394,7 @@ void m_ir_task(void *param)
                 // }
                 // os_trace("\r\n");
                 Nagakawa_setRaw((uint8_t*)capture.state, capture.decode_type, &ir_state);
+                Nagakawa_setInfo((uint8_t*)capture.state, capture.decode_type, &ir_state_recv);
             }
             else if (capture.decode_type == TCL112AC){
                 os_trace("TCL: 0x ");

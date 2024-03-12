@@ -285,53 +285,53 @@ void Funiki_setInfo(const uint8_t* new_code, const decode_type_t protocol, state
     // memcpy(&_.data.raw, new_code, 12);
     // os_trace("fan: %u\r\n", _.data.fan);
 
-    switch ((uint8_t)ir_state->mode)
-    {
-    case opmode_kDry:
-        ir_state->mode = 1;
-        break;
+    // switch ((uint8_t)ir_state->mode)
+    // {
+    // case opmode_kDry:
+    //     ir_state->mode = 1;
+    //     break;
     
-    case opmode_kCool:
-        ir_state->mode = 0;
-        break;
+    // case opmode_kCool:
+    //     ir_state->mode = 0;
+    //     break;
     
-    case opmode_kAuto:
-        ir_state->mode = 2;
-        break;
+    // case opmode_kAuto:
+    //     ir_state->mode = 2;
+    //     break;
     
-    case opmode_kHeat:
-        ir_state->mode = 3;
-        break;
+    // case opmode_kHeat:
+    //     ir_state->mode = 3;
+    //     break;
     
-    case opmode_kFan:
-        ir_state->mode = 4;
-        break;
+    // case opmode_kFan:
+    //     ir_state->mode = 4;
+    //     break;
     
-    default:
-        break;
-    }
+    // default:
+    //     break;
+    // }
 
-    switch (ir_state->fanspeed)
-    {
-    case fanspeed_kAuto:
-        ir_state->fanspeed = 5;
-        break;
+    // switch (ir_state->fanspeed)
+    // {
+    // case fanspeed_kAuto:
+    //     ir_state->fanspeed = 5;
+    //     break;
     
-    case fanspeed_kMin:
-        ir_state->fanspeed = 4;
-        break;
+    // case fanspeed_kMin:
+    //     ir_state->fanspeed = 4;
+    //     break;
     
-    case fanspeed_kMedium:
-        ir_state->fanspeed = 2;
-        break;
+    // case fanspeed_kMedium:
+    //     ir_state->fanspeed = 2;
+    //     break;
     
-    case fanspeed_kMax:
-        ir_state->fanspeed = 1;
-        break;
+    // case fanspeed_kMax:
+    //     ir_state->fanspeed = 1;
+    //     break;
     
-    default:
-        break;
-    }
+    // default:
+    //     break;
+    // }
 }
 
 static void hash_code(FunikiProtocol* data, state_ir_t state_ir)
@@ -471,53 +471,53 @@ static void hash_code(FunikiProtocol* data, state_ir_t state_ir)
 void Funiki_send(state_ir_t state_ir)
 {
 
-    switch ((uint8_t)state_ir.mode)
-    {
-    case 1:
-        state_ir.mode = opmode_kDry;
-        break;
+    // switch ((uint8_t)state_ir.mode)
+    // {
+    // case 1:
+    //     state_ir.mode = opmode_kDry;
+    //     break;
     
-    case 0:
-        state_ir.mode = opmode_kCool;
-        break;
+    // case 0:
+    //     state_ir.mode = opmode_kCool;
+    //     break;
     
-    case 2:
-        state_ir.mode = opmode_kAuto;
-        break;
+    // case 2:
+    //     state_ir.mode = opmode_kAuto;
+    //     break;
     
-    case 3:
-        state_ir.mode = opmode_kHeat;
-        break;
+    // case 3:
+    //     state_ir.mode = opmode_kHeat;
+    //     break;
     
-    case 4:
-        state_ir.mode = opmode_kFan;
-        break;
+    // case 4:
+    //     state_ir.mode = opmode_kFan;
+    //     break;
     
-    default:
-        break;
-    }
+    // default:
+    //     break;
+    // }
 
-    switch (state_ir.fanspeed)
-    {
-    case 5:
-        state_ir.fanspeed = fanspeed_kAuto;
-        break;
+    // switch (state_ir.fanspeed)
+    // {
+    // case 5:
+    //     state_ir.fanspeed = fanspeed_kAuto;
+    //     break;
     
-    case 4:
-        state_ir.fanspeed = fanspeed_kMin;
-        break;
+    // case 4:
+    //     state_ir.fanspeed = fanspeed_kMin;
+    //     break;
     
-    case 2:
-        state_ir.fanspeed = fanspeed_kMedium;
-        break;
+    // case 2:
+    //     state_ir.fanspeed = fanspeed_kMedium;
+    //     break;
     
-    case 1:
-        state_ir.fanspeed = fanspeed_kMax;
-        break;
+    // case 1:
+    //     state_ir.fanspeed = fanspeed_kMax;
+    //     break;
     
-    default:
-        break;
-    }
+    // default:
+    //     break;
+    // }
 
     FunikiProtocol _;
     hash_code(&_, state_ir);
