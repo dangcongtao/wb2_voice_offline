@@ -61,6 +61,9 @@
 #define DECODE_HITACHI_AC424 1
 
 #define DECODE_HITACHI_AC344 1 
+#define DECODE_PANASONIC_AC 1
+#define DECODE_PANASONIC_AC32 1
+
 
 #define IR_RX 1
 #define DECODE_AC 1
@@ -269,6 +272,16 @@ bool decodeHitachiAC424(decode_results *results, uint16_t offset,
                                 const bool strict);
 #endif
 
+#if DECODE_PANASONIC_AC
+bool decodePanasonicAC(decode_results *results, uint16_t offset,
+                               const uint16_t nbits, const bool strict);
+#endif
+
+#if DECODE_PANASONIC_AC32
+bool decodePanasonicAC32(decode_results *results, uint16_t offset,
+                                 const uint16_t nbits, const bool strict);
+#endif
+
 bool matchSpace(uint32_t measured, uint32_t desired, uint8_t tolerance,
                         int16_t excess);
 
@@ -378,6 +391,8 @@ void HitachiAC1_setRaw(const uint8_t new_code[], const uint16_t length, state_ir
 void HitachiAC344_setRaw(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
 void HitachiAC424_setRaw(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
 
+
+
 /*------------SET_INFO----------------*/
 void LG_setInfo(const uint32_t new_code, const decode_type_t protocol, state_ir_t *ir_state);
 void Casper_setInfo(const uint8_t* new_code, state_ir_t *ir_state);
@@ -399,6 +414,9 @@ void SharpAc_setInfo(const uint8_t* newState, const decode_type_t protocol, stat
 void HitachiAC1_setInfo(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
 void HitachiAC344_setInfo(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
 void HitachiAC424_setInfo(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
+// Panasonic
+void PanasonicAC_setInfo(const uint8_t* newState, state_ir_t *ir_state);
+void IRPanasonicAc32_setInfo(const uint32_t state,  state_ir_t *ir_state);
 
 
 // void enableIRIn(const bool pullup);

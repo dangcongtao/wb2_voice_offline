@@ -11,6 +11,11 @@
 #define kHighNibble  4
 #define kModeBitsSize  3
 
+#define GETBIT8(a, b) ((a) & ((uint8_t)1 << (b)))
+#define GETBIT16(a, b) ((a) & ((uint16_t)1 << (b)))
+#define GETBIT32(a, b) ((a) & ((uint32_t)1 << (b)))
+#define GETBIT64(a, b) ((a) & ((uint64_t)1 << (b)))
+
 #define GETBITS8(data, offset, size) \
     (((data) & (((uint8_t)UINT8_MAX >> (8 - (size))) << (offset))) >> (offset))
 #define GETBITS16(data, offset, size) \
@@ -55,4 +60,17 @@ uint8_t uint8ToBcd(const uint8_t integer);
 uint16_t getCorrectedRawLength(const decode_results * const results);
 void resultToRawArray(const decode_results * const decode, uint16_t* result);
 
+  void setBitU8(uint8_t * const data, const uint8_t position,
+              const bool on);
+  void setBitU32(uint32_t * const data, const uint8_t position,
+              const bool on);
+  void setBitU64(uint64_t * const data, const uint8_t position,
+              const bool on);
+
+  void setBitsU8(uint8_t * const dst, const uint8_t offset, const uint8_t nbits,
+               const uint8_t data);
+  void setBitsU32(uint32_t * const dst, const uint8_t offset, const uint8_t nbits,
+               const uint32_t data);
+  void setBitsU64(uint64_t * const dst, const uint8_t offset, const uint8_t nbits,
+               const uint64_t data);
 #endif

@@ -1089,7 +1089,18 @@ if (1){
     }
 #endif
 
-    }
+#if DECODE_PANASONIC_AC
+    os_trace("Attempting decodePanasonicAC AC decode\r\n");        
+    if (decodePanasonicAC(results, offset, kPanasonicAcBits, true)) return true;
+
+#endif
+#if DECODE_PANASONIC_AC32
+    os_trace("Attempting decodePanasonicAC32 AC decode\r\n");        
+    if (decodePanasonicAC32(results, offset, kPanasonicAc32Bits, true)) return true;
+
+#endif
+
+    } // END for
 
 #if DECODE_HASH
     // decodeHash returns a hash on any input.
@@ -1409,6 +1420,14 @@ void m_ir_task(void *param)
             {
                 HitachiAC424_setRaw(capture.state, kHitachiAc424StateLength, &ir_state);
                 HitachiAC424_setInfo(capture.state, kHitachiAc424StateLength, &ir_state_recv);
+            }
+            else if (PANASONIC_AC == capture.decode_type)
+            {
+                PanasonicAC_setInfo(capture.state, &ir_state_recv);
+            }
+            else if (PANASONIC_AC32 == capture.decode_type)
+            {
+                IRPanasonicAc32_setInfo(capture.value, &ir_state_recv);
             }
 
             /***************************************************************************************/

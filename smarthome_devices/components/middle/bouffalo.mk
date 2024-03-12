@@ -84,6 +84,7 @@ COMPONENT_SRCS := database/m_database.c \
 				  ir/ir_Midea.c \
 				  ir/ir_Sharp.c \
 				  ir/ir_Hitachi.c \
+				  ir/ir_Panasonic.c \
 				  
 COMPONENT_OBJS := $(patsubst %.c,%.o, $(COMPONENT_SRCS))
 

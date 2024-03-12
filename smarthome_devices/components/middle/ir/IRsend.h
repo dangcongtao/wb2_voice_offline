@@ -42,6 +42,16 @@ typedef enum {
   R_LT0541_HTA_B,      // (2) R-LT0541-HTA Remote in "B" setting.
 } hitachi_ac1_remote_model_t;
 
+typedef enum {
+  kPanasonicUnknown = 0,
+  kPanasonicLke = 1,
+  kPanasonicNke = 2,
+  kPanasonicDke = 3,  // PKR too.
+  kPanasonicJke = 4,
+  kPanasonicCkp = 5,
+  kPanasonicRkr = 6,
+} panasonic_ac_remote_model_t;
+
 
 typedef enum {
   kControlCommand = 0,
@@ -189,6 +199,10 @@ void Hitachi_AC1_send(state_ir_t state_ir);
 /* porting */ 
 void Hitachi_AC424_send(state_ir_t state_ir);
 void Hitachi_AC344_send(state_ir_t state_ir);
+
+// panasonic
+void PanasonicAC_send(state_ir_t state_ir);
+void PanasonicAc32_send(state_ir_t state_ir);
 /* end */
 
 #endif

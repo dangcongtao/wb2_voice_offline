@@ -15,7 +15,7 @@ typedef enum {
   AIWA_RC_T501,
   LG,  // (10)
   SANYO,
-  FUNIKI, // MIDEA - COMFEE 
+  UNKNOWN_946, // MIDEA - COMFEE 
   DISH,
   DAIKIN,
   COOLIX,  // (15)
@@ -29,12 +29,12 @@ typedef enum {
   LG2,
   SHERWOOD,
   PRONTO,  // Technically not a protocol, but an encoding. (25)
-  NEC_LIKE,
+  UNKNOWN_4235,
   ARGO,
   SHARP_AC,
   TCL112AC,
   RAW,  // Technically not a protocol, but an encoding. (30)
-  TOSHIBA_AC,
+  UNKONW_435,
   GLOBALCACHE,  // Technically not a protocol, but an encoding.
   FUJITSU_AC,
   MIDEA,
@@ -52,7 +52,7 @@ typedef enum {
   SAMSUNG_AC,
   LUTRON,
   ELECTRA_AC,
-  PANASONIC_AC,
+  NEC_LIKE,
   PIONEER,  // (50)
   MWM,
   RC5,
@@ -70,7 +70,7 @@ typedef enum {
   SONY,  // 65
   NEOCLIMA,
   DAIKIN176,
-  PANASONIC,
+  UNKNOWN_12,
   AMCOR,
   JVC,  // 70
   MITSUBISHI136,
@@ -91,50 +91,29 @@ typedef enum {
   CORONA_AC,
   MIDEA24,
   ZEPEAL,
-  SANYO_AC,
   VOLTAS,  // 90
+  ARRIS,
   METZ,
   TRANSCOLD,
   HITACHI_AC1,
   HITACHI_AC424,
   HITACHI_AC344,  // 95
-  PANASONIC_AC32,
+  SANYO_AC,
   MILESTAG2,
   ECOCLIM,
   XMP,
   TRUMA,  // 100
   HAIER_AC176,
   AQUA,
+  UNKNOWN_493,
   CASPER,
-  KELON,
-  TROTEC_3550,
-  SANYO_AC88,  // 105
-  BOSE,
-  ARRIS,
-  RHOSS,
-  AIRTON,
-  COOLIX48,  // 110
-  HITACHI_AC264,
-  KELON168,
-  HITACHI_AC296,
-  DAIKIN200,
-  HAIER_AC160,  // 115
-  CARRIER_AC128,
-  TOTO,
-  CLIMABUTLER,
-  TCL96AC,
-  BOSCH144,  // 120
-  SANYO_AC152,
-  DAIKIN312,
-  GORENJE,
-  WOWWEE,
-  CARRIER_AC84,  // 125
-  YORK,
-  MITSUBISHI,
-  NAGAKAWA,
-  TEKNOPOINT,
+  FUNIKI,
+  NAGAKAWA,  // 105
+  PANASONIC_AC,
+  PANASONIC_AC32, // power toggle
+  TOSHIBA_AC,
   // Add new entries before this one, and update it to point to the last entry.
-  kLastDecodeType = TEKNOPOINT,
+  kLastDecodeType = TOSHIBA_AC,
 } decode_type_t;
 
 #define kSingleRepeat 1
@@ -222,6 +201,19 @@ typedef enum {
 #define kHitachiAc344Bits         kHitachiAc344StateLength*8
 #define kHitachiAc424StateLength  53
 #define kHitachiAc424Bits         kHitachiAc424StateLength*8
+
+/* Panasonic*/
+#define kPanasonicBits  (48)
+#define kPanasonicManufacturer (0x4004)
+#define kPanasonic40Manufacturer (0x34)
+#define kPanasonic40Bits (40)
+#define kPanasonicAcStateLength (27)
+#define kPanasonicAcStateShortLength (16)
+#define kPanasonicAcBits (kPanasonicAcStateLength * 8)
+#define kPanasonicAcShortBits (kPanasonicAcStateShortLength * 8)
+#define kPanasonicAcDefaultRepeat  kNoRepeat
+#define kPanasonicAc32Bits (32)
+#define kPanasonicAc32DefaultRepeat  kNoRepeat
 
 
 #endif
