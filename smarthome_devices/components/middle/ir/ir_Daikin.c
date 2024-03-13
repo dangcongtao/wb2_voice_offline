@@ -735,7 +735,7 @@ bool decodeDaikin152(decode_results *results, uint16_t offset,
                       kDaikin152BitMark-363, kDaikin152BitMark+367, kDaikin152Gap - 500, kDaikin152Gap + 500,  // Footer gap
                       false, 45, kMarkExcess, false);
   if (used == 0 || leader != 0) {
-    os_trace("%s matchGenericData failed\r\n", __func__);
+    // os_trace("%s matchGenericData failed\r\n", __func__);
     return false;
   }
   offset += used;
@@ -749,7 +749,7 @@ bool decodeDaikin152(decode_results *results, uint16_t offset,
                       kDaikin152BitMark-363, kDaikin152BitMark+367, kDaikin152Gap - 500, kDaikin152Gap + 500,
                       true, 45, kMarkExcess, false);
   if (used == 0) {
-    os_trace("%s matchGenericState failed\r\n", __func__);
+    // os_trace("%s matchGenericState failed\r\n", __func__);
     return false;
   }
 
