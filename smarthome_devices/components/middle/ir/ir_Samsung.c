@@ -154,11 +154,11 @@ bool decodeSamsungAC(decode_results *results, uint16_t offset,
   }
 
   // Message Header
-  if (!matchMark(results->rawbuf[offset++], kSamsungAcBitMark, kUseDefTol, kMarkExcess)){
+  if (!matchLimit(results->rawbuf[offset++], kSamsungAcBitMark-460, kSamsungAcBitMark+440)){
     // os_trace("match mark failed\r\n");
     return false;
   }
-  if (!matchSpace(results->rawbuf[offset++], kSamsungAcHdrSpace, kUseDefTol, kMarkExcess)){
+  if (!matchLimit(results->rawbuf[offset++], kSamsungAcHdrSpace-800, kSamsungAcHdrSpace+800)){
     // os_trace("match space failed\r\n");
     return false;
   }
@@ -167,12 +167,12 @@ bool decodeSamsungAC(decode_results *results, uint16_t offset,
        pos += kSamsungAcSectionLength) {
     uint16_t used;
     // Section Header + Section Data (7 bytes) + Section Footer
-    used = matchGeneric(results->rawbuf + offset, results->state + pos,
+    used = matchGenericDataLimit(results->rawbuf + offset, results->state + pos,
                         results->rawlen - offset, kSamsungAcSectionLength * 8,
-                        kSamsungAcSectionMark, kSamsungAcSectionSpace,
-                        kSamsungAcBitMark, kSamsungAcOneSpace,
-                        kSamsungAcBitMark, kSamsungAcZeroSpace,
-                        kSamsungAcBitMark, kSamsungAcSectionGap,
+                        kSamsungAcSectionMark-400,kSamsungAcSectionMark+400, kSamsungAcSectionSpace-500,kSamsungAcSectionSpace+500,
+                        kSamsungAcBitMark-400,kSamsungAcBitMark+340, kSamsungAcOneSpace-400,kSamsungAcOneSpace+400,
+                        kSamsungAcBitMark-400,kSamsungAcBitMark+340, kSamsungAcZeroSpace-336,kSamsungAcZeroSpace+444,
+                        kSamsungAcBitMark-400,kSamsungAcBitMark+340, kSamsungAcSectionGap-400,kSamsungAcSectionGap+400,
                         pos + kSamsungAcSectionLength >= nbits / 8,
                         40, 0, false);
     if (used == 0){
@@ -372,7 +372,6 @@ void Samsung_send(state_ir_t state_ir)
       break;
     }
   }
-  
   _.Power1 = _.Power2 = (state_ir.power ? 0b11 : 0b00);
 
   checksum(&_);

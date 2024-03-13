@@ -14,6 +14,7 @@ DRAM_ATTR irparams_t params;
 irparams_t *params_save;
 DRAM_ATTR hosal_gpio_irq_trigger_t trigger_type = HOSAL_IRQ_TRIG_NEG_PULSE;
 
+static TaskHandle_t xHandle = NULL;
 uint8_t _tolerance;
 
 hosal_gpio_dev_t touch_gpio_pos;
@@ -1413,6 +1414,12 @@ static void enableIRIn(const bool pullup)
 #endif // UNIT_TEST
 }
 
+static void disableIRin(void)
+{
+    hosal_gpio_finalize(&touch_gpio_neg);
+    hosal_gpio_finalize(&touch_gpio_pos);
+}
+
 void IRrecv_init(const uint32_t recvpin, const uint16_t bufsize,
                  const uint8_t timeout, const bool save_buffer)
 {
@@ -1755,10 +1762,23 @@ void m_ir_init(void)
 
     enableIRIn(1);
 
+    if (xHandle != NULL)
+        return;
+
     xTaskCreate(m_ir_task,   /* Function that implements the task. */
                 "m_ir_task", /* Text name for the task. */
                 1024*3,        /* Stack size in words, not bytes. */
                 NULL,        /* Parameter passed into the task. */
                 1,           /* Priority at which the task is created. */
-                NULL);
+                &xHandle);
+}
+
+void m_ir_deinit(void)
+{
+    os_trace("%s\r\n", __func__);
+    disableIRin();
+    
+    vTaskDelete(xHandle);
+    xHandle = NULL;
+
 }

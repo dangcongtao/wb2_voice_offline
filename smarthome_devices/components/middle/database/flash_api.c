@@ -132,7 +132,7 @@ void flash_write_device_id(void *device_id, uint32_t size)
 void flash_set_rs_reason(uint8_t is_set)
 {
     ef_set_bytes(REASON_RS, &is_set, sizeof(is_set));
-    m_db_get_instance()->_request_sync_db();
+    // m_db_get_instance()->_request_sync_db();
 }
 
 uint8_t flash_read_rs_reason(void)

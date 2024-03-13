@@ -15,6 +15,7 @@
 #include "m_wifi.h"
 #include "m_database.h"
 #include "event_driven.h"
+#include "bl_sys.h"
 
 #define TIME_OUT_RESET_TS04_WITHOUT_PRESS   2400
 
@@ -227,10 +228,16 @@ static void button_scan_task(void *param)
         if (!dev_is_doing_config()) {
             if (is_ota == STATE_OTA_PROCESS) {
                 if (tick_ota_led % 500 == 0) {
-                    tick_ota_led = 0;
+                    // tick_ota_led = 0;
                     m_led_stt_get_instance()._toggle_led_stt_cb();
                 }
                 tick_ota_led += 50;
+                if (tick_ota_led >= 180000) {
+                    tick_ota_led = 0;
+                    os_trace("ota timeout\r\n");
+                    vTaskDelay(pdMS_TO_TICKS(2000));
+                    bl_sys_reset_por();
+                }
             } 
             else if (is_ota == STATE_OTA_SUCCESS)
             {
@@ -240,6 +247,7 @@ static void button_scan_task(void *param)
                 }
                 tick_ota_led += 50;
             }
+            
         }
 
         vTaskDelay(pdMS_TO_TICKS(50));

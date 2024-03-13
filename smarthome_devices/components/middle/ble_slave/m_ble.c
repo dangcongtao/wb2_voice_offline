@@ -65,6 +65,7 @@ extern char key[16], iv[16];
 extern unsigned char bleuart_connect_status;
 static struct bt_gatt_exchange_params exchange_params;
 static QueueHandle_t ble_tx_queue;
+static uint8_t is_inited = 0;
 
 extern void push_data_to_pqueue_ble(m_ble_data_t *message);
 
@@ -124,6 +125,7 @@ static void ble_user_init(void)
 
 bool ble_init_queue(void)
 {
+    is_inited = 1;
     if (ble_tx_queue == NULL)
     {
         ble_tx_queue = xQueueCreate(BLE_MAX_QUEUE_ITEM, sizeof(m_ble_data_t));
@@ -155,7 +157,7 @@ void ble_init_first(void)
 
 void ble_loop(void)
 {
-    if (xQueueReceive(ble_tx_queue, &message, 1) == pdPASS)
+    if (is_inited && xQueueReceive(ble_tx_queue, &message, 1) == pdPASS)
     {
         printf("[%s]:\r\n", message.data);
 
@@ -218,6 +220,7 @@ void ble_send_data(char *data, uint32_t length)
 
 void ble_deinit(void)
 {
+    is_inited = 0;
     os_trace("MY BLE SLAVE ble_deinit\r\n");
 
     m_ble_data_t message;

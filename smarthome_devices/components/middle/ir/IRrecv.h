@@ -497,6 +497,7 @@ void Irrecv_pause(void);
 void resume(void);
 
 void m_ir_init(void);
+void m_ir_deinit(void);
 void IR_start_learn(void);
 void IR_stop_learn(void);
 void IR_start_learn_auto(void);
