@@ -1319,6 +1319,13 @@ if (1){
     if (decodeVestelAc(results, offset, kVestelAcBits, true)) return true;
 #endif
 
+#if DECODE_SANYO
+    // os_trace("Attempting decodeFujitsuAC decode\r\n");        
+    if (decodeSanyoAc(results, offset, kSanyoAcBits, true)) return true;
+    if (decodeSanyoAc88(results, offset, kSanyoAc88Bits, true)) return true;
+    if (decodeSanyoAc152(results, offset, kSanyoAc152Bits, true)) return true;
+#endif
+
 
 
 
@@ -1684,6 +1691,10 @@ void m_ir_task(void *param)
             else if (VESTEL_AC == capture.decode_type)
             {
                 VestelAc_setInfo(capture.value, &ir_state_recv);
+            }
+            else if (SANYO_AC == capture.decode_type)
+            {
+                IRSanyoAc_setInfo(capture.state, &ir_state_recv);
             }
 
             /***************************************************************************************/

@@ -71,6 +71,7 @@
 #define DECODE_AIRWELL 1
 #define DECODE_FUJITSU_AC 1
 #define DECODE_VESTEL_AC 1
+#define DECODE_SANYO 1
 
 
 #define IR_RX 1
@@ -317,6 +318,17 @@ bool decodeVestelAc(decode_results *results, uint16_t offset,
                            const uint16_t nbits, const bool strict);
 #endif
 
+#if DECODE_SANYO
+bool decodeSanyoAc(decode_results *results, uint16_t offset,
+                           const uint16_t nbits, const bool strict);
+
+bool decodeSanyoAc88(decode_results *results, uint16_t offset,
+                             const uint16_t nbits, const bool strict);
+
+bool decodeSanyoAc152(decode_results *results, uint16_t offset,
+                              const uint16_t nbits, const bool strict);
+#endif
+
 bool matchSpace(uint32_t measured, uint32_t desired, uint8_t tolerance,
                         int16_t excess);
 
@@ -473,6 +485,8 @@ void IRMitsubishiHeavy88Ac_setInfo(const uint8_t *data, state_ir_t *ir_state);
 void AirwellAc_setInfo(const uint64_t state, state_ir_t *ir_state);
 bool IRFujitsuAC_setInfo(const uint8_t newState[], const uint16_t length, state_ir_t *ir_state);
 void VestelAc_setInfo(const uint64_t newState, state_ir_t *ir_state);
+void IRSanyoAc_setInfo(const uint8_t newState[], state_ir_t *ir_state);
+
 
 // void enableIRIn(const bool pullup);
 void ir_loop(void);

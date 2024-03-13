@@ -15,7 +15,7 @@ typedef enum {
   AIWA_RC_T501,
   LG,  // (10)
   SANYO,
-  UNKNOWN_946, // MIDEA - COMFEE 
+  SANYO_AC152, // MIDEA - COMFEE 
   DISH,
   DAIKIN,
   COOLIX,  // (15)
@@ -29,7 +29,7 @@ typedef enum {
   LG2,
   SHERWOOD,
   PRONTO,  // Technically not a protocol, but an encoding. (25)
-  UNKNOWN_4235,
+  SANYO_AC88,
   ARGO,
   SHARP_AC,
   TCL112AC,
@@ -81,7 +81,7 @@ typedef enum {
   SYMPHONY,
   HITACHI_AC3,
   DAIKIN64,
-  SANYO_AC,
+  UNKNOWN_4934,
   DELONGHI_AC,  // 80
   DOSHISHA,
   MULTIBRACKETS,
@@ -112,8 +112,9 @@ typedef enum {
   PANASONIC_AC,
   PANASONIC_AC32, // power toggle
   TOSHIBA_AC,
+  SANYO_AC,
   // Add new entries before this one, and update it to point to the last entry.
-  kLastDecodeType = TOSHIBA_AC,
+  kLastDecodeType = SANYO_AC,
 } decode_type_t;
 
 #define kSingleRepeat 1
@@ -239,4 +240,16 @@ typedef enum {
 
 #define  kVestelAcBits  56
 
+#define kSanyoAcStateLength  9
+#define kSanyoAcBits (kSanyoAcStateLength * 8)
+#define kSanyoAc88StateLength  11
+#define kSanyoAc88Bits (kSanyoAc88StateLength * 8)
+#define kSanyoAc88MinRepeat  2
+#define kSanyoAc152StateLength  19
+#define kSanyoAc152Bits (kSanyoAc152StateLength * 8)
+#define kSanyoAc152MinRepeat kNoRepeat
+#define kSanyoSA8650BBits  12
+#define kSanyoLC7461AddressBits  13
+#define kSanyoLC7461CommandBits  8
+#define kSanyoLC7461Bits ((kSanyoLC7461AddressBits + kSanyoLC7461CommandBits) * 2)
 #endif

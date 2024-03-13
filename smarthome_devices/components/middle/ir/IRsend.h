@@ -220,6 +220,7 @@ void PanasonicAc32_send(state_ir_t state_ir);
 void ElectraAc_send(state_ir_t state_ir);
 void FujitsuAC_send(state_ir_t state_ir);
 void VestelAc_send(state_ir_t state_ir);
+void SanyoAc_send(state_ir_t state_ir);
 
 
 /* end */
