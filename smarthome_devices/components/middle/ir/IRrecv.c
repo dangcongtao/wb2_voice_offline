@@ -801,6 +801,207 @@ uint16_t matchGenericStateLimit(volatile uint16_t *data_ptr,
                          tolerance, excess, MSBfirst);
 }
 
+uint16_t matchManchesterData(volatile const uint16_t *data_ptr,
+                                     uint64_t *result_ptr,
+                                     const uint16_t remaining,
+                                     const uint16_t nbits,
+                                     const uint16_t half_period,
+                                     const uint16_t starting_balance,
+                                     const uint8_t tolerance,
+                                     const int16_t excess,
+                                     const bool MSBfirst,
+                                     const bool GEThomas) {
+  os_trace_rcv("DEBUG: Entered matchManchesterData\r\n");
+  uint16_t offset = 0;
+  uint64_t data = 0;
+  uint16_t nr_half_periods = 0;
+  const uint16_t expected_half_periods = nbits * 2;
+  // Flip the bit if we have a starting balance. ie. Carry over from the header.
+  bool currentBit = starting_balance ? !GEThomas : GEThomas;
+  const uint16_t raw_half_period = half_period / kRawTick;
+
+  // Calculate how much remaining buffer is required.
+  // Shortest case is nbits. Longest case is 2 * nbits.
+  uint16_t min_remaining = nbits;
+
+  // Check if there is enough capture buffer to possibly have the message.
+  if (remaining < min_remaining) {
+    os_trace_rcv("DEBUG: Ran out of capture buffer!\r\n");
+    return 0;  // Nope, so abort.
+  }
+
+  // Convert to ticks. Optimisation: Saves on math/extra instructions later.
+  uint16_t bank = starting_balance / kRawTick;
+
+  // Data
+  // Loop through the buffer till we run out of buffer, or nr of half periods.
+  // Possible patterns are:
+  // short + short = 1 bit (Add the value of the previous bit again)
+  // short + long + short = 2 bits (Add the previous bit again, then flip & add)
+  // short + long + long + short = 3 bits (add prev, flip & add, flip & add)
+  // We can't start with a long.
+  //
+  // The general approach is thus:
+  //   Check we have a short interval, next or in the bank.
+  //   If the next timing value is long, act according and reset the bank to
+  //     a short balance.
+  //   or
+  //   If it is short, act accordingly and declare the bank empty.
+  //   Repeat.
+  while ((offset < remaining || bank) &&
+         nr_half_periods < expected_half_periods) {
+    // Get the next entry if we haven't anything existing to process.
+    os_trace_rcv("DEBUG: Offset = %u\r\n", offset);
+    if (!bank) bank = *(data_ptr + offset++);
+    os_trace_rcv("DEBUG: Bank = %u\r\n", bank * kRawTick);
+    // Check if we don't have a short interval.
+    os_trace_rcv("DEBUG: Checking for short interval\r\n");
+    if (!match(bank, half_period, tolerance, excess)) {
+      os_trace_rcv("DEBUG: It is. Exiting\r\n");
+      return 0;  // Not valid.
+    }
+    // We've succeeded in matching half a period, so count it.
+    nr_half_periods++;
+    os_trace_rcv("DEBUG: Half Periods = %u\r\n", nr_half_periods);
+    // We've now used up our bank, so refill it with the next item, unless we
+    // are at the end of the capture buffer.
+    // If we are assume a single half period of "space".
+    if (offset < remaining) {
+      os_trace_rcv("DEBUG: Offset = %u\r\n", offset);
+      bank = *(data_ptr + offset++);
+    } else if (offset == remaining) {
+      bank = raw_half_period;
+    } else {
+      return 0;  // We are out of buffer, so abort!
+    }
+    os_trace_rcv("DEBUG: Bank = %u\r\n", bank * kRawTick);
+
+    // Shift the data along and add our new bit.
+    os_trace_rcv("DEBUG: Adding bit: %s\r\n", (currentBit ? "1" : "0"));
+    data <<= 1;
+    data |= currentBit;
+
+    // Check if we have a long interval.
+    if (match(bank, half_period * 2, tolerance, excess)) {
+      // It is, so flip the bit we need to append, and remove a half_period of
+      // time from the bank.
+      os_trace_rcv("DEBUG: long interval detected\r\n");
+      currentBit = !currentBit;
+      bank -= raw_half_period;
+    } else if (match(bank, half_period, tolerance, excess)) {
+      // It is a short interval, so eat up all the time and move on.
+      os_trace_rcv("DEBUG: short interval detected\r\n");
+      bank = 0;
+    } else if (nr_half_periods == expected_half_periods - 1 &&
+               matchAtLeast(bank, half_period, tolerance, excess)) {
+      // We are at the end of the data & it is a short interval, so eat up all
+      // the time and move on.
+      bank = 0;
+      // Reduce the offset as we are at the end of the data doing a
+      // matchAtLeast() because  we could be processing part of a footer.
+      offset--;
+    } else {
+      // The length isn't what we expected (neither long or short), so bail.
+      return 0;
+    }
+    nr_half_periods++;
+  }
+
+  // Clean up and process the data.
+  if (!MSBfirst) data = reverseBits(data, nbits);
+  // Trim the data to size.
+  *result_ptr = GETBITS64(data, 0, nbits);
+  return offset;
+}
+
+uint16_t matchManchester(volatile const uint16_t *data_ptr,
+                                 uint64_t *result_ptr,
+                                 const uint16_t remaining,
+                                 const uint16_t nbits,
+                                 const uint16_t hdrmark,
+                                 const uint32_t hdrspace,
+                                 const uint16_t half_period,
+                                 const uint16_t footermark,
+                                 const uint32_t footerspace,
+                                 const bool atleast,
+                                 const uint8_t tolerance,
+                                 const int16_t excess,
+                                 const bool MSBfirst,
+                                 const bool GEThomas) {
+  uint16_t offset = 0;
+  uint16_t bank = 0;
+  uint16_t entry = 0;
+
+  // Calculate how much remaining buffer is required.
+  // Shortest case is nbits. Longest case is 2 * nbits.
+  uint16_t min_remaining = nbits;
+
+  if (hdrmark) min_remaining++;
+  if (hdrspace) min_remaining++;
+  if (footermark) min_remaining++;
+  // Don't need to extend for footerspace because it could be the end of message
+
+  // Check if there is enough capture buffer to possibly have the message.
+  if (remaining < min_remaining) return 0;  // Nope, so abort.
+
+  // Header
+  if (hdrmark) {
+    entry = *(data_ptr + offset++);
+    if (!hdrspace) {  // If we have no Header Space ...
+      // Do we have a data 'mark' half period merged with the header mark?
+      if (matchMark(entry, hdrmark + half_period,
+                    tolerance, excess)) {
+        // Looks like we do.
+        bank = entry * kRawTick - hdrmark;
+      } else if (!matchMark(entry, hdrmark, tolerance, excess)) {
+        return 0;  // It's not a normal header mark, so fail.
+      }
+    } else if (!matchMark(entry, hdrmark, tolerance, excess)) {
+      return 0;  // It's not a normal header mark, so fail.
+    }
+  }
+  if (hdrspace) {
+    entry = *(data_ptr + offset++);
+    // Check to see if the header space has merged with a data space half period
+    if (matchSpace(entry, hdrspace + half_period, tolerance, excess)) {
+      // Looks like we do.
+      bank = entry * kRawTick - hdrspace;
+    } else if (!matchSpace(entry, hdrspace, tolerance, excess)) {
+      return 0;  // It's not a normal header space, so fail.
+    }
+  }
+
+  if (!match(bank / kRawTick, half_period, tolerance, excess)) bank = 0;
+  // Data
+  uint16_t used = matchManchesterData(data_ptr + offset, result_ptr,
+                                      remaining - offset, nbits, half_period,
+                                      bank, tolerance, excess, MSBfirst,
+                                      GEThomas);
+  if (!used) return 0;  // Data did match.
+  offset += used;
+  // Footer
+  if (footermark &&
+      !(matchMark(*(data_ptr + offset), footermark + half_period,
+                  tolerance, excess) ||
+        matchMark(*(data_ptr + offset), footermark, tolerance, excess)))
+    return 0;
+  offset++;
+  // If we have something still to match & haven't reached the end of the buffer
+  if (footerspace && offset < remaining) {
+    if (atleast) {
+      if (!matchAtLeast(*(data_ptr + offset), footerspace, tolerance, excess))
+        return 0;
+    } else {
+      if (!matchSpace(*(data_ptr + offset), footerspace, tolerance, excess) &&
+          !matchSpace(*(data_ptr + offset), footerspace + half_period,
+                      tolerance, excess))
+        return 0;
+    }
+    offset++;
+  }
+  return offset;
+}
+
 void copyIrParams(volatile irparams_t *src, irparams_t *dst)
 {
     // Typecast src and dst addresses to (char *)
@@ -910,58 +1111,49 @@ if (1){
          offset += 2)
     {
 #if DECODE_LG
-        os_trace("Attempting LG (28-bit) decode\r\n");
+       // os_trace("Attempting LG (28-bit) decode\r\n");
         if (decodeLG(results, offset, kLgBits, false))
         {
             os_trace("decode LG 28-bit success\r\n");
             return true;
         }
-        os_trace("Attempting LG (32-bit) decode\r\n");
+       // os_trace("Attempting LG (32-bit) decode\r\n");
         if (decodeLG(results, offset, kLg32Bits, true))
         {
-            os_trace("decode LG 32-bit success\r\n");
-            return true;
-        }
-#endif
-
-#if DECODE_NEC
-        os_trace("Attempting NEC decode\r\n");
-        if (decodeNEC(results, offset, kNECBits, true))
-        {
-            os_trace("decode NEC success\r\n");
+            //os_trace("decode LG 32-bit success\r\n");
             return true;
         }
 #endif
 
 #if DECODE_SAMSUNG_AC
-    os_trace("Attempting Samsung AC (extended) decode\r\n");
+    //os_trace("Attempting Samsung AC (extended) decode\r\n");
     // Check the extended size first, as it should fail fast due to longer
     // length.
     if (decodeSamsungAC(results, offset, kSamsungAcExtendedBits, true)) return true;
     // Now check for the more common length.
-    os_trace("Attempting Samsung AC decode\r\n");
+    //os_trace("Attempting Samsung AC decode\r\n");
     if (decodeSamsungAC(results, offset, kSamsungAcBits, true)) return true;
 #endif
 
 
 #if DECODE_FUNIKI
-    os_trace("Attempting Funiki AC\r\n");
+    //os_trace("Attempting Funiki AC\r\n");
     if (decodeFunikiAC(results, offset, kFunikiAcBits, true)) return true;
     if (decodeFunikiAC(results, offset, kFunikiAcExtendedBits, true)) return true;
 #endif
 
 #if DECODE_AQUA
-    os_trace("Attempting Aqua AC\r\n");
+    //os_trace("Attempting Aqua AC\r\n");
     if (decodeAquaAC(results, offset, kAquaAcBits, true)) return true;
 #endif
 
 #if DECODE_CASPER
-    os_trace("Attempting Casper AC\r\n");
+    //os_trace("Attempting Casper AC\r\n");
     if (decodeCasperAC(results, offset, kCasperAcBits, true)) return true;
 #endif
 
 #if DECODE_TOSHIBA
-    os_trace("Attempting Toshiba AC 72bit decode\r\n");
+    //os_trace("Attempting Toshiba AC 72bit decode\r\n");
     if (decodeToshibaAC(results, offset, kToshibaACBits, true)) return true;
     // os_trace("Attempting Toshiba AC 80bit decode\r\n");
     // if (decodeToshibaAC(results, offset, kToshibaACBitsLong, true)) return true;
@@ -970,54 +1162,60 @@ if (1){
 #endif
 
 #if DECODE_DAIKIN
-    os_trace("Attempting Daikin AC decode\r\n");
+    //os_trace("Attempting Daikin AC decode\r\n");
     if (decodeDaikin(results, offset, kDaikinBits, true)) return true;
 #endif
 
 #if DECODE_DAIKIN2
-    os_trace("Attempting Daikin 2 AC decode\r\n");
+    //os_trace("Attempting Daikin 2 AC decode\r\n");
     if (decodeDaikin2(results, offset, kDaikin2Bits, true)) return true;
 #endif
 
 #if DECODE_DAIKIN152
-    os_trace("Attempting Daikin 152 bit AC decode\r\n");
+    //os_trace("Attempting Daikin 152 bit AC decode\r\n");
     if (decodeDaikin152(results, offset, kDaikin152Bits, true)) return true;
 #endif
 
 #if DECODE_DAIKIN160
-    os_trace("Attempting Daikin 160 bit AC decode\r\n");
+    //os_trace("Attempting Daikin 160 bit AC decode\r\n");
     if (decodeDaikin160(results, offset, kDaikin160Bits, true)) return true;
 #endif
 
 #if DECODE_DAIKIN216
-    os_trace("Attempting Daikin 216 bit AC decode\r\n");
+    //os_trace("Attempting Daikin 216 bit AC decode\r\n");
     if (decodeDaikin216(results, offset, kDaikin216Bits, true)) return true;
 #endif
 
 #if DECODE_DAIKIN128
-    os_trace("Attempting Daikin 128 bit AC decode\r\n");
+    //os_trace("Attempting Daikin 128 bit AC decode\r\n");
     if (decodeDaikin128(results, offset, kDaikin128Bits, true)) return true;
 #endif
 
 #if DECODE_DAIKIN64
-    os_trace("Attempting Daikin 64 bit AC decode\r\n");
+    //os_trace("Attempting Daikin 64 bit AC decode\r\n");
     if (decodeDaikin64(results, offset, kDaikin64Bits, true)) return true;
 #endif
 
 
 
 #if DECODE_GREE
-    os_trace("Attempting Gree AC decode\r\n");
+    //os_trace("Attempting Gree AC decode\r\n");
     if (decodeGree(results, offset, kGreeBits, true)) return true;
 #endif
 
 #if (DECODE_MITSUBISHI112 || DECODE_NAGAKAWA || DECODE_TCL112AC)
-    os_trace("Attempting decodeMitsubishi, Tcl, Nagakawa 112bit AC decode\r\n");
+    //os_trace("Attempting decodeMitsubishi, Tcl, Nagakawa 112bit AC decode\r\n");
     if (decodeMitsubishi112(results, offset, kMitsubishi112Bits, true)) return true;
 #endif
 
+#if (DECODE_MITSUBISHIHEAVY)
+    //os_trace("Attempting decodeMitsubishiHeavyAC decode\r\n");
+    if (decodeMitsubishiHeavy(results, offset, kMitsubishiHeavy88Bits, true)) return true;
+    if (decodeMitsubishiHeavy(results, offset, kMitsubishiHeavy152Bits, true)) return true;
+#endif
+
 #if DECODE_MIDEA
-    os_trace("Attempting decodeMidea AC decode\r\n");        
+    //os_trace("Attempting decodeMidea AC decode\r\n");        
     if (decodeMidea(results, offset, kMideaBits, true)) return true;
 
     // os_trace("Attempting decodeMidea 24bit AC decode\r\n");        
@@ -1033,7 +1231,7 @@ if (1){
     // & HitachiAC184
     if (decodeHitachiAC424(results, offset, kHitachiAc424Bits, true)) 
     {
-        blog_info("decode hitachi ac424 success ");
+        //blog_info("decode hitachi ac424 success ");
         return true;
     }
 #endif  // DECODE_HITACHI_AC424
@@ -1042,7 +1240,7 @@ if (1){
     // HitachiAC344 should be checked before HitachiAC
     if (decodeHitachiAC(results, offset, kHitachiAc344Bits, true, false))
     {
-        blog_info("decode hitachi ac344 1 success ");
+        //blog_info("decode hitachi ac344 1 success ");
         return true;
     }
 #endif  // DECODE_HITACHI_AC344
@@ -1050,7 +1248,7 @@ if (1){
 #if DECODE_HITACHI_AC
     if (decodeHitachiAC(results, offset, kHitachiAc1Bits, true, true))
     {
-        blog_info("decode hitachi ac1 success ");
+        //blog_info("decode hitachi ac1 success ");
         return true;
     }
     else
@@ -1060,7 +1258,7 @@ if (1){
 
     if (decodeHitachiAC(results, offset, kHitachiAcBits, true, true))
     {
-        blog_info("decode hitachi ac success ");
+        //blog_info("decode hitachi ac success ");
         return true;
     }
     else
@@ -1070,7 +1268,7 @@ if (1){
 
     if (decodeHitachiAC(results, offset, kHitachiAc2Bits, true, true))
     {
-        blog_info("decode hitachi ac2 success ");
+        //blog_info("decode hitachi ac2 success ");
         return true;
     }
     else
@@ -1080,7 +1278,7 @@ if (1){
 
     if (decodeHitachiAC(results, offset, kHitachiAc344Bits, true, true))
     {
-        blog_info("decode hitachi ac344 2 success ");
+        //blog_info("decode hitachi ac344 2 success ");
         return true;
     }
     else
@@ -1090,20 +1288,47 @@ if (1){
 #endif
 
 #if DECODE_PANASONIC_AC
-    os_trace("Attempting decodePanasonicAC AC decode\r\n");        
+    // os_trace("Attempting decodePanasonicAC AC decode\r\n");        
     if (decodePanasonicAC(results, offset, kPanasonicAcBits, true)) return true;
 
 #endif
 #if DECODE_PANASONIC_AC32
-    os_trace("Attempting decodePanasonicAC32 AC decode\r\n");        
+    // os_trace("Attempting decodePanasonicAC32 AC decode\r\n");        
     if (decodePanasonicAC32(results, offset, kPanasonicAc32Bits, true)) return true;
 
 #endif
 
 #if DECODE_ELECTRA_AC
-    os_trace("Attempting decodeElectraAC decode\r\n");        
+    // os_trace("Attempting decodeElectraAC decode\r\n");        
     if (decodeElectraAC(results, offset, kElectraAcBits, true)) return true;
 
+#endif
+
+#if DECODE_AIRWELL
+    // os_trace("Attempting decodeAirwell decode\r\n");        
+    if (decodeAirwell(results, offset, kAirwellBits, true)) return true;
+#endif
+
+#if DECODE_FUJITSU_AC
+    // os_trace("Attempting decodeFujitsuAC decode\r\n");        
+    if (decodeFujitsuAC(results, offset, kFujitsuAcBits, true)) return true;
+#endif
+
+#if DECODE_VESTEL_AC
+    // os_trace("Attempting decodeFujitsuAC decode\r\n");        
+    if (decodeVestelAc(results, offset, kVestelAcBits, true)) return true;
+#endif
+
+
+
+
+#if DECODE_NEC
+       // os_trace("Attempting NEC decode\r\n");
+        if (decodeNEC(results, offset, kNECBits, true))
+        {
+            os_trace("decode NEC success\r\n");
+            return true;
+        }
 #endif
 
     } // END for
@@ -1439,6 +1664,26 @@ void m_ir_task(void *param)
             else if (ELECTRA_AC == capture.decode_type)
             {
                 ElectraAc_setInfo(capture.state, kElectraAcStateLength, &ir_state_recv);
+            }
+            else if (AIRWELL == capture.decode_type)
+            {
+                AirwellAc_setInfo(capture.value, &ir_state_recv);
+            }
+            else if (MITSUBISHI_HEAVY_88 == capture.decode_type)
+            {
+                IRMitsubishiHeavy88Ac_setInfo(capture.state, &ir_state_recv);
+            }
+            else if (FUJITSU_AC == capture.decode_type)
+            {
+                if (capture.bits == kFujitsuAcBits) {
+                    IRFujitsuAC_setInfo(capture.state, kFujitsuAcStateLength, &ir_state_recv);
+                } else if (capture.bits >= kFujitsuAcMinBits) {
+                    IRFujitsuAC_setInfo(capture.state, (uint16_t)capture.bits / 8, &ir_state_recv);
+                }
+            }
+            else if (VESTEL_AC == capture.decode_type)
+            {
+                VestelAc_setInfo(capture.value, &ir_state_recv);
             }
 
             /***************************************************************************************/

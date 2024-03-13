@@ -20,7 +20,7 @@ typedef enum {
   DAIKIN,
   COOLIX,  // (15)
   ELECTRA_AC,
-  DENON,
+  FUJITSU_AC,
   KELVINATOR,
   GREE,
   MITSUBISHI_AC,  // (20)
@@ -36,7 +36,7 @@ typedef enum {
   RAW,  // Technically not a protocol, but an encoding. (30)
   UNKONW_435,
   GLOBALCACHE,  // Technically not a protocol, but an encoding.
-  FUJITSU_AC,
+  VESTEL_AC,
   MIDEA,
   MAGIQUEST,  // (35)
   LASERTAG,
@@ -56,13 +56,13 @@ typedef enum {
   PIONEER,  // (50)
   MWM,
   RC5,
-  VESTEL_AC,
+  DENON,
   TECO,  // (55)
   SAMSUNG36,
   TROTEC,
   LEGOPF,
-  MITSUBISHI_HEAVY_88,
-  MITSUBISHI_HEAVY_152,  // 60
+  VOLTAS,
+  ZEPEAL,  // 60
   RC6,
   NIKAI,
   GOODWEATHER,
@@ -81,7 +81,7 @@ typedef enum {
   SYMPHONY,
   HITACHI_AC3,
   DAIKIN64,
-  AIRWELL,
+  SANYO_AC,
   DELONGHI_AC,  // 80
   DOSHISHA,
   MULTIBRACKETS,
@@ -90,15 +90,15 @@ typedef enum {
   ELITESCREENS,  // 85
   CORONA_AC,
   MIDEA24,
-  ZEPEAL,
-  VOLTAS,  // 90
+  MITSUBISHI_HEAVY_152,
+  MITSUBISHI_HEAVY_88,  // 90
   ARRIS,
   METZ,
   TRANSCOLD,
   HITACHI_AC1,
   HITACHI_AC424,
   HITACHI_AC344,  // 95
-  SANYO_AC,
+  AIRWELL,
   MILESTAG2,
   ECOCLIM,
   XMP,
@@ -167,6 +167,14 @@ typedef enum {
 #define kMitsubishi112Bits  (kMitsubishi112StateLength * 8)
 #define kMitsubishi112MinRepeat kNoRepeat
 
+#define kMitsubishiHeavy88StateLength  11
+#define kMitsubishiHeavy88Bits (kMitsubishiHeavy88StateLength * 8)
+#define kMitsubishiHeavy88MinRepeat kNoRepeat
+
+#define kMitsubishiHeavy152StateLength 19
+#define kMitsubishiHeavy152Bits (kMitsubishiHeavy152StateLength * 8)
+#define kMitsubishiHeavy152MinRepeat kNoRepeat
+
 #define kNagakawaStateLength  14
 
 #define kTcl112AcStateLength  14
@@ -220,5 +228,15 @@ typedef enum {
 #define kElectraAcBits (kElectraAcStateLength * 8)
 #define kElectraAcMinRepeat kNoRepeat
 
+#define kAirwellBits  34
+#define kAirwellMinRepeats  2
+
+#define kFujitsuAcMinRepeat kNoRepeat
+#define kFujitsuAcStateLength  16
+#define kFujitsuAcStateLengthShort 7
+#define kFujitsuAcBits (kFujitsuAcStateLength * 8)
+#define kFujitsuAcMinBits ((kFujitsuAcStateLengthShort - 1) * 8)
+
+#define  kVestelAcBits  56
 
 #endif

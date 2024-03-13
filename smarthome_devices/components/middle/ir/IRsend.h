@@ -51,6 +51,19 @@ typedef enum {
   kPanasonicCkp = 5,
   kPanasonicRkr = 6,
 } panasonic_ac_remote_model_t;
+typedef enum {
+  ARRAH2E = 1,  ///< (1) AR-RAH2E, AR-RAC1E, AR-RAE1E, AR-RCE1E, AR-RAH2U,
+                ///<     AR-REG1U (Default)
+                ///< Warning: Use on incorrect models can cause the A/C to lock
+                ///< up, requring the A/C to be physically powered off to fix.
+                ///< e.g. AR-RAH1U may lock up with a Swing command.
+  ARDB1,        ///< (2) AR-DB1, AR-DL10 (AR-DL10 swing doesn't work)
+  ARREB1E,      ///< (3) AR-REB1E, AR-RAH1U (Similar to ARRAH2E but no horiz
+                ///<     control)
+  ARJW2,        ///< (4) AR-JW2  (Same as ARDB1 but with horiz control)
+  ARRY4,        ///< (5) AR-RY4 (Same as AR-RAH2E but with clean & filter)
+  ARREW4E,      ///< (6) Similar to ARRAH2E, but with different temp config.
+} fujitsu_ac_remote_model_t;
 
 
 typedef enum {
@@ -205,6 +218,8 @@ void PanasonicAC_send(state_ir_t state_ir);
 void PanasonicAc32_send(state_ir_t state_ir);
 
 void ElectraAc_send(state_ir_t state_ir);
+void FujitsuAC_send(state_ir_t state_ir);
+void VestelAc_send(state_ir_t state_ir);
 
 
 /* end */

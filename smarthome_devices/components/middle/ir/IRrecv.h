@@ -9,6 +9,9 @@
 #include "ir_Samsung.h"
 #include "IRsend.h"
 
+#define DEBUG_IR_RCV_ENABLE    1
+#define os_trace_rcv if (DEBUG_IR_RCV_ENABLE == 1) printf
+
 #define MS_TO_USEC(x) ((x) * 1000U)  // Convert milli-Seconds to micro-Seconds.
 
 
@@ -53,6 +56,7 @@
 #define DECODE_DAIKIN64  1
 #define DECODE_GREE   1
 #define DECODE_MITSUBISHI112  1
+#define DECODE_MITSUBISHIHEAVY  1
 #define DECODE_NAGAKAWA   1
 #define DECODE_TCL112AC   1
 #define DECODE_MIDEA    1
@@ -64,6 +68,9 @@
 #define DECODE_PANASONIC_AC 1
 #define DECODE_PANASONIC_AC32 1
 #define DECODE_ELECTRA_AC 1
+#define DECODE_AIRWELL 1
+#define DECODE_FUJITSU_AC 1
+#define DECODE_VESTEL_AC 1
 
 
 #define IR_RX 1
@@ -251,6 +258,11 @@ bool decodeMitsubishi112(decode_results *results, uint16_t offset,
                                  const uint16_t nbits, const bool strict);
 #endif
 
+#if DECODE_MITSUBISHIHEAVY
+bool decodeMitsubishiHeavy(decode_results* results, uint16_t offset,
+                                   const uint16_t nbits, const bool strict);
+#endif
+
 #if DECODE_MIDEA
 bool decodeMidea(decode_results *results, uint16_t offset,
                          const uint16_t nbits, const bool strict);
@@ -287,6 +299,22 @@ bool decodePanasonicAC32(decode_results *results, uint16_t offset,
 bool decodeElectraAC(decode_results *results, uint16_t offset,
                              const uint16_t nbits,
                              const bool strict);
+#endif
+
+#if DECODE_FUJITSU_AC
+bool decodeFujitsuAC(decode_results* results, uint16_t offset,
+                             const uint16_t nbits,
+                             const bool strict);
+#endif
+
+#if DECODE_AIRWELL
+bool decodeAirwell(decode_results *results, uint16_t offset,
+                           const uint16_t nbits, const bool strict);
+#endif
+
+#if DECODE_VESTEL_AC
+bool decodeVestelAc(decode_results *results, uint16_t offset,
+                           const uint16_t nbits, const bool strict);
 #endif
 
 bool matchSpace(uint32_t measured, uint32_t desired, uint8_t tolerance,
@@ -358,6 +386,21 @@ uint16_t matchGenericStateLimit(volatile uint16_t *data_ptr,
                         const int16_t excess,
                         const bool MSBfirst );
 
+  uint16_t matchManchester(volatile const uint16_t *data_ptr,
+                           uint64_t *result_ptr,
+                           const uint16_t remaining,
+                           const uint16_t nbits,
+                           const uint16_t hdrmark,
+                           const uint32_t hdrspace,
+                           const uint16_t clock_period,
+                           const uint16_t footermark,
+                           const uint32_t footerspace,
+                           const bool atleast,
+                           const uint8_t tolerance,
+                           const int16_t excess,
+                           const bool MSBfirst,
+                           const bool GEThomas);
+
 void LG_setRaw(const uint32_t new_code, const decode_type_t protocol, state_ir_t *ir_state);
 bool isValidLgAc(void);
 
@@ -399,7 +442,6 @@ void HitachiAC344_setRaw(const uint8_t new_code[], const uint16_t length, state_
 void HitachiAC424_setRaw(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
 
 
-
 /*------------SET_INFO----------------*/
 void LG_setInfo(const uint32_t new_code, const decode_type_t protocol, state_ir_t *ir_state);
 void Casper_setInfo(const uint8_t* new_code, state_ir_t *ir_state);
@@ -427,6 +469,10 @@ void PanasonicAC_setInfo(const uint8_t* newState, state_ir_t *ir_state);
 void IRPanasonicAc32_setInfo(const uint32_t state,  state_ir_t *ir_state);
 void ElectraAc_setInfo(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
 
+void IRMitsubishiHeavy88Ac_setInfo(const uint8_t *data, state_ir_t *ir_state);
+void AirwellAc_setInfo(const uint64_t state, state_ir_t *ir_state);
+bool IRFujitsuAC_setInfo(const uint8_t newState[], const uint16_t length, state_ir_t *ir_state);
+void VestelAc_setInfo(const uint64_t newState, state_ir_t *ir_state);
 
 // void enableIRIn(const bool pullup);
 void ir_loop(void);
