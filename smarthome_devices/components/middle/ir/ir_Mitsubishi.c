@@ -5,6 +5,50 @@
 #include "ir_Nagakawa.h"
 #include "ir_Tcl.h"
 
+
+// Constants
+// Mitsubishi TV
+// period time is 1/33000Hz = 30.303 uSeconds (T)
+const uint16_t kMitsubishiTick = 30;
+const uint16_t kMitsubishiBitMarkTicks = 10;
+const uint16_t kMitsubishiBitMark = kMitsubishiBitMarkTicks * kMitsubishiTick;
+const uint16_t kMitsubishiOneSpaceTicks = 70;
+const uint16_t kMitsubishiOneSpace = kMitsubishiOneSpaceTicks * kMitsubishiTick;
+const uint16_t kMitsubishiZeroSpaceTicks = 30;
+const uint16_t kMitsubishiZeroSpace =
+    kMitsubishiZeroSpaceTicks * kMitsubishiTick;
+const uint16_t kMitsubishiMinCommandLengthTicks = 1786;
+const uint16_t kMitsubishiMinCommandLength =
+    kMitsubishiMinCommandLengthTicks * kMitsubishiTick;
+const uint16_t kMitsubishiMinGapTicks = 936;
+const uint16_t kMitsubishiMinGap = kMitsubishiMinGapTicks * kMitsubishiTick;
+
+// Mitsubishi Projector (HC3000)
+const uint16_t kMitsubishi2HdrMark = 8400;
+const uint16_t kMitsubishi2HdrSpace = kMitsubishi2HdrMark / 2;
+const uint16_t kMitsubishi2BitMark = 560;
+const uint16_t kMitsubishi2ZeroSpace = 520;
+const uint16_t kMitsubishi2OneSpace = kMitsubishi2ZeroSpace * 3;
+const uint16_t kMitsubishi2MinGap = 28500;
+
+// Mitsubishi A/C
+const uint16_t kMitsubishiAcHdrMark = 3400;
+const uint16_t kMitsubishiAcHdrSpace = 1750;
+const uint16_t kMitsubishiAcBitMark = 450;
+const uint16_t kMitsubishiAcOneSpace = 1300;
+const uint16_t kMitsubishiAcZeroSpace = 420;
+const uint16_t kMitsubishiAcRptMark = 440;
+const uint16_t kMitsubishiAcRptSpace = 15500;
+const uint8_t  kMitsubishiAcExtraTolerance = 5;
+
+// Mitsubishi 136 bit A/C
+const uint16_t kMitsubishi136HdrMark = 3324;
+const uint16_t kMitsubishi136HdrSpace = 1474;
+const uint16_t kMitsubishi136BitMark = 467;
+const uint16_t kMitsubishi136OneSpace = 1137;
+const uint16_t kMitsubishi136ZeroSpace = 351;
+const uint32_t kMitsubishi136Gap = kDefaultMessageGap;
+
 // Mitsubishi 112 bit A/C
 const uint16_t kMitsubishi112HdrMark = 3450;
 const uint16_t kMitsubishi112HdrSpace = 1696;
@@ -272,4 +316,248 @@ void Mitsubishi112_send(state_ir_t state_ir)
   // os_trace("\r\n");
 
   sendMitsubishi112(_.raw, kMitsubishi112StateLength, kNoRepeat);
+}
+
+static uint8_t IRMitsubishiAC_calculateChecksum(const uint8_t *data) {
+  return sumBytesState(data, kMitsubishiACStateLength - 1, 0);
+}
+
+static bool IRMitsubishiAC_validChecksum(const uint8_t *data) {
+  return (IRMitsubishiAC_calculateChecksum(data) == data[kMitsubishiACStateLength - 1]);
+}
+
+bool decodeMitsubishiAC(decode_results *results, uint16_t offset,
+                                const uint16_t nbits,
+                                const bool strict) {
+  // Compliance
+  if (strict && nbits != kMitsubishiACBits) return false;  // Out of spec.
+  // Do we need to look for a repeat?
+  const uint16_t expected_repeats = strict ? kMitsubishiACMinRepeat : kNoRepeat;
+  // Enough data?
+  if (results->rawlen <= (nbits * 2 + kHeader + kFooter) *
+                         (expected_repeats + 1) + offset - 1) return false;
+  uint16_t save[kStateSizeMax];
+  // Handle repeats if we need too.
+  for (uint16_t r = 0; r <= expected_repeats; r++) {
+    // Header + Data + Footer
+    uint16_t used = matchGenericStateLimit(results->rawbuf + offset, results->state,
+                                 results->rawlen - offset, nbits,
+                                 kMitsubishiAcHdrMark-400, kMitsubishiAcHdrMark+400, kMitsubishiAcHdrSpace-350, kMitsubishiAcHdrSpace+350,
+                                 kMitsubishiAcBitMark-350, kMitsubishiAcBitMark+350, kMitsubishiAcOneSpace-400, kMitsubishiAcOneSpace+400,
+                                 kMitsubishiAcBitMark-350, kMitsubishiAcBitMark+350, kMitsubishiAcZeroSpace-320, kMitsubishiAcZeroSpace+380,
+                                 kMitsubishiAcRptMark-340, kMitsubishiAcRptMark+360, kMitsubishiAcRptSpace-3000, kMitsubishiAcRptSpace+3000,
+                                 r < expected_repeats,  // At least?
+                                 _tolerance + kMitsubishiAcExtraTolerance,
+                                 0, false);
+    if (!used) return false;  // No match.
+    offset += used;
+    if (r) {  // Is this a repeat?
+      // Repeats are expected to be exactly the same.
+      if (memcmp(save, results->state, nbits / 8) != 0) return false;
+    } else {  // It is the first message.
+      // Compliance
+      if (strict) {
+        // Data signature check.
+        static const uint8_t signature[5] = {0x23, 0xCB, 0x26, 0x01, 0x00};
+        if (memcmp(results->state, signature, 5) != 0) {
+          os_trace("%s Data signature check invalid!\r\n", __func__);
+          return false;
+        }
+        // Checksum verification.
+        if (!IRMitsubishiAC_validChecksum(results->state)) {
+          os_trace("%s Checksum verification invalid!\r\n", __func__);
+          return false;
+        }
+      }
+      // Save a copy of the state to compare with.
+      memcpy(save, results->state, nbits / 8);
+    }
+  }
+  os_trace("%s success\r\n", __func__);
+  // Success.
+  results->decode_type = MITSUBISHI_AC;
+  results->bits = nbits;
+  return true;
+}
+
+void IRMitsubishiAC_setInfo(const uint8_t *data, state_ir_t *ir_state) {
+  Mitsubishi144Protocol _;
+  memset(&_, 0, sizeof(Mitsubishi144Protocol));
+  memcpy(_.raw, data, kMitsubishiACStateLength);
+
+  ir_state->power = _.Power;
+  ir_state->mode = _.Mode;
+
+  uint8_t fan = _.Fan;
+  if (fan == kMitsubishiAcFanMax)
+    fan = kMitsubishiAcFanSilent;
+  ir_state->fanspeed = fan;
+
+  ir_state->degrees = _.Temp + kMitsubishiAcMinTemp + (_.HalfDegree ? 0.5 : 0);
+}
+
+static void sendMitsubishiAC(const unsigned char data[], const uint16_t nbytes,
+                              const uint16_t repeat) {
+  if (nbytes < kMitsubishiACStateLength)
+    return;  // Not enough bytes to send a proper message.
+  vTaskEnterCritical();
+  sendGenericBytes(kMitsubishiAcHdrMark, kMitsubishiAcHdrSpace, kMitsubishiAcBitMark,
+              kMitsubishiAcOneSpace, kMitsubishiAcBitMark,
+              kMitsubishiAcZeroSpace, kMitsubishiAcRptMark,
+              kMitsubishiAcRptSpace, data, nbytes, 38, false, repeat, 50);
+  vTaskExitCritical();
+}
+
+void MitsubishiAC_send(state_ir_t state_ir)
+{
+  Mitsubishi144Protocol _;
+  uint8_t kReset[kMitsubishiACStateLength] = {
+      0x23, 0xCB, 0x26, 0x01, 0x00, 0x20, 0x08, 0x06, 0x30, 0x45, 0x67};
+
+  memset(&_, 0, sizeof(Mitsubishi144Protocol));
+  memcpy(_.raw, kReset, kMitsubishiACStateLength);
+
+  _.Power = state_ir.power;
+
+  switch ((uint8_t)state_ir.mode) {
+    case kMitsubishiAcAuto: _.raw[8] = 0b00110000; break;
+    case kMitsubishiAcCool: _.raw[8] = 0b00110110; break;
+    case kMitsubishiAcDry:  _.raw[8] = 0b00110010; break;
+    case kMitsubishiAcHeat: _.raw[8] = 0b00110000; break;
+    case kMitsubishiAcFan:  _.raw[8] = 0b00110111; break;
+    default:
+      _.raw[8] = 0b00110000;
+      _.Mode = kMitsubishiAcAuto;
+      return;
+  }
+  _.Mode = state_ir.mode;
+  // iSave10C can only be on in Heat mode.
+  if (state_ir.mode != kMitsubishiAcHeat) {
+      _.iSave10C = false;
+  }
+
+  uint8_t fan = state_ir.fanspeed;
+  // Bounds check
+  if (fan > kMitsubishiAcFanSilent)
+    fan = kMitsubishiAcFanMax;        // Set the fan to maximum if out of range.
+  // Auto has a special bit.
+  _.FanAuto = (fan == kMitsubishiAcFanAuto);
+  if (fan >= kMitsubishiAcFanMax)
+    fan--;  // There is no spoon^H^H^Heed 5 (max), pretend it doesn't exist.
+  _.Fan = fan;
+
+  float celsius = max(state_ir.degrees, kMitsubishiAcMinTemp);
+  celsius = min(celsius, kMitsubishiAcMaxTemp);
+  // Convert to integer nr. of half degrees.
+  uint8_t nrHalfDegrees = celsius * 2;
+  // Do we have a half degree celsius?
+  _.HalfDegree = nrHalfDegrees & 1;
+  _.Temp = (uint8_t)(nrHalfDegrees / 2 - kMitsubishiAcMinTemp);
+
+  _.Sum = IRMitsubishiAC_calculateChecksum(_.raw);
+
+  sendMitsubishiAC(_.raw, kMitsubishiACStateLength, kMitsubishiACMinRepeat);
+}
+
+static bool IRMitsubishi136_validChecksum(const uint8_t *data, const uint16_t len) {
+  if (len < kMitsubishi136StateLength) return false;
+  const uint16_t half = (len - kMitsubishi136PowerByte) / 2;
+  for (uint8_t i = 0; i < half; i++) {
+    // This variable is needed to avoid the warning: (known compiler issue)
+    // warning: comparison of promoted ~unsigned with unsigned [-Wsign-compare]
+    const uint8_t inverted = ~data[kMitsubishi136PowerByte + half + i];
+    if (data[kMitsubishi136PowerByte + i] != inverted) return false;
+  }
+  return true;
+}
+
+bool decodeMitsubishi136(decode_results *results, uint16_t offset,
+                                 const uint16_t nbits,
+                                 const bool strict) {
+  if (nbits % 8 != 0) return false;  // Not a multiple of an 8 bit byte.
+  if (strict) {  // Do checks to see if it matches the spec.
+    if (nbits != kMitsubishi136Bits) return false;
+  }
+  uint16_t used = matchGenericStateLimit(results->rawbuf + offset, results->state,
+                               results->rawlen - offset, nbits,
+                               kMitsubishi136HdrMark-500, kMitsubishi136HdrMark+500, kMitsubishi136HdrSpace-474, kMitsubishi136HdrSpace+476,
+                               kMitsubishi136BitMark-367, kMitsubishi136BitMark+373, kMitsubishi136OneSpace-437, kMitsubishi136OneSpace+433,
+                               kMitsubishi136BitMark-367, kMitsubishi136BitMark+373, kMitsubishi136ZeroSpace-251, kMitsubishi136ZeroSpace+351,
+                               kMitsubishi136BitMark-367, kMitsubishi136BitMark+373, kMitsubishi136Gap-2000, kMitsubishi136Gap+2000,
+                               true, _tolerance, 0, false);
+  if (!used) return false;
+  if (strict) {
+    // Header validation: Codes start with 0x23CB26
+    if (results->state[0] != 0x23 || results->state[1] != 0xCB ||
+        results->state[2] != 0x26) return false;
+    if (!IRMitsubishi136_validChecksum(results->state, nbits / 8)) {
+       os_trace("%s invalid checksum\r\n", __func__);
+      return false;
+    }
+  }
+  os_trace("%s success\r\n", __func__);
+  results->decode_type = MITSUBISHI136;
+  results->bits = nbits;
+  return true;
+}
+
+void IRMitsubishi136_setInfo(const uint8_t *data, state_ir_t *ir_state) {
+  Mitsubishi136Protocol _;
+  memset(&_, 0, sizeof(Mitsubishi136Protocol));
+  memcpy(_.raw, data, kMitsubishi136StateLength);
+
+  ir_state->power = _.Power;
+  ir_state->mode = _.Mode;
+  ir_state->fanspeed = _.Fan;
+  ir_state->degrees = _.Temp + kMitsubishiAcMinTemp;
+}
+
+void sendMitsubishi136(const unsigned char data[],
+                               const uint16_t nbytes,
+                               const uint16_t repeat) {
+  if (nbytes < kMitsubishi136StateLength)
+    return;  // Not enough bytes to send a proper message.
+  vTaskEnterCritical();  
+  sendGenericBytes(kMitsubishi136HdrMark, kMitsubishi136HdrSpace,
+              kMitsubishi136BitMark, kMitsubishi136OneSpace,
+              kMitsubishi136BitMark, kMitsubishi136ZeroSpace,
+              kMitsubishi136BitMark, kMitsubishi136Gap,
+              data, nbytes, 38, false, repeat, 50);
+  vTaskExitCritical();
+}
+
+void Mitsubishi136_send(state_ir_t state_ir)
+{
+  Mitsubishi136Protocol _;
+  memset(&_, 0, sizeof(Mitsubishi136Protocol));
+
+  uint8_t kReset[kMitsubishi136StateLength] = {
+      0x23, 0xCB, 0x26, 0x21, 0x00, 0x40, 0xC2, 0xC7, 0x04};
+  memcpy(_.raw, kReset, kMitsubishi136StateLength);
+
+  _.Power = state_ir.power;
+
+  switch ((uint8_t)state_ir.mode) {
+    case kMitsubishi136Fan:
+    case kMitsubishi136Cool:
+    case kMitsubishi136Heat:
+    case kMitsubishi136Auto:
+    case kMitsubishi136Dry:
+      _.Mode = state_ir.mode;
+      break;
+    default:
+      _.Mode = kMitsubishi136Auto;
+  }
+
+  _.Fan = min((uint8_t)state_ir.fanspeed, kMitsubishi136FanMax);
+
+  uint8_t temp = max((uint8_t)kMitsubishi136MinTemp, (uint8_t)state_ir.degrees);
+  temp = min((uint8_t)kMitsubishi136MaxTemp, temp);
+  _.Temp = temp - kMitsubishiAcMinTemp;
+
+  // checksum
+  for (uint8_t i = 0; i < 6; i++)
+    _.raw[kMitsubishi136PowerByte + 6 + i] = ~_.raw[kMitsubishi136PowerByte + i];
+  
+  sendMitsubishi136(_.raw, kMitsubishi136StateLength, kMitsubishi136MinRepeat);
 }

@@ -185,12 +185,12 @@ bool match(uint32_t measured, uint32_t desired, uint8_t tolerance,
 {
     measured *= kRawTick; // Convert to uSecs.
 #if DEBUG_LOG_RX
-    os_trace("Matching: ");
-    os_trace("%lu", ticksLow(desired, tolerance, delta));
-    os_trace(" <= ");
-    os_trace("%lu", measured);
-    os_trace(" <= ");
-    os_trace("%lu\r\n", ticksHigh(desired, tolerance, delta));
+    os_trace_rcv("Matching: ");
+    os_trace_rcv("%lu", ticksLow(desired, tolerance, delta));
+    os_trace_rcv(" <= ");
+    os_trace_rcv("%lu", measured);
+    os_trace_rcv(" <= ");
+    os_trace_rcv("%lu\r\n", ticksHigh(desired, tolerance, delta));
 #endif
 #ifdef UNIT_TEST
     // Sanity checks that we don't have values that cause integer over/underflow.
@@ -211,13 +211,13 @@ bool matchMark(uint32_t measured, uint32_t desired, uint8_t tolerance,
                int16_t excess)
 {
 #if DEBUG_LOG_RX
-    os_trace("Matching MARK ");
-    os_trace("%lu", (measured * kRawTick));
-    os_trace(" vs ");
-    os_trace("%lu", desired);
-    os_trace(" + ");
-    os_trace("%lu", excess);
-    os_trace(". \r\n");
+    os_trace_rcv("Matching MARK ");
+    os_trace_rcv("%lu", (measured * kRawTick));
+    os_trace_rcv(" vs ");
+    os_trace_rcv("%lu", desired);
+    os_trace_rcv(" + ");
+    os_trace_rcv("%lu", excess);
+    os_trace_rcv(". \r\n");
 #endif
     return match(measured, desired + excess, tolerance, 0);
 }
@@ -226,13 +226,13 @@ bool matchSpace(uint32_t measured, uint32_t desired, uint8_t tolerance,
                 int16_t excess)
 {
 #if DEBUG_LOG_RX
-    os_trace("Matching SPACE ");
-    os_trace("%lu", measured * kRawTick);
-    os_trace(" vs ");
-    os_trace("%lu", desired);
-    os_trace(" - ");
-    os_trace("%lu", excess);
-    os_trace(". \r\n");
+    os_trace_rcv("Matching SPACE ");
+    os_trace_rcv("%lu", measured * kRawTick);
+    os_trace_rcv(" vs ");
+    os_trace_rcv("%lu", desired);
+    os_trace_rcv(" - ");
+    os_trace_rcv("%lu", excess);
+    os_trace_rcv(". \r\n");
 #endif
     return match(measured, desired - excess, tolerance, 0);
 }
@@ -257,7 +257,7 @@ match_result_t matchData(
             {
                 result.data = (result.data << 1) | 1;
                 #if DEBUG_LOG_RX
-                os_trace("\r\n%u======>1\r\n", result.used);
+                os_trace_rcv("\r\n%u======>1\r\n", result.used);
                 #endif
             }
             else if (matchMark(*data_ptr, zeromark, tolerance, excess) &&
@@ -265,7 +265,7 @@ match_result_t matchData(
             {
                 result.data <<= 1; // The bit is a '0'.
                 #if DEBUG_LOG_RX
-                os_trace("\r\n%u======>0\r\n", result.used);
+                os_trace_rcv("\r\n%u======>0\r\n", result.used);
                 #endif
             }
             else
@@ -323,7 +323,7 @@ uint16_t matchBytes(volatile uint16_t *data_ptr, uint8_t *result_ptr,
         
         result_ptr[byte_pos] = (uint8_t)result.data;
         #if DEBUG_LOG_RX
-        os_trace("result_ptr[%u]: %u\r\n", byte_pos, result_ptr[byte_pos]);
+        os_trace_rcv("result_ptr[%u]: %u\r\n", byte_pos, result_ptr[byte_pos]);
         #endif
         offset += result.used;
     }
@@ -335,20 +335,20 @@ bool matchAtLeast(uint32_t measured, uint32_t desired,
 {
     measured *= kRawTick; // Convert to uSecs.
 #if DEBUG_LOG_RX
-    os_trace("Matching ATLEAST ");
-    os_trace("%lu", measured);
-    os_trace(" vs ");
-    os_trace("%lu", desired);
-    os_trace(". Matching: ");
-    os_trace("%lu", measured);
-    os_trace(" >= ");
-    os_trace("%lu", ticksLow(min(desired, (uint32_t)MS_TO_USEC(params.timeout)),
+    os_trace_rcv("Matching ATLEAST ");
+    os_trace_rcv("%lu", measured);
+    os_trace_rcv(" vs ");
+    os_trace_rcv("%lu", desired);
+    os_trace_rcv(". Matching: ");
+    os_trace_rcv("%lu", measured);
+    os_trace_rcv(" >= ");
+    os_trace_rcv("%lu", ticksLow(min(desired, (uint32_t)MS_TO_USEC(params.timeout)),
                              tolerance, delta));
-    os_trace(" [min(");
-    os_trace("%lu", ticksLow(desired, tolerance, delta));
-    os_trace(", ");
-    os_trace("%lu", ticksLow(MS_TO_USEC(params.timeout), tolerance, delta));
-    os_trace(")]\r\n");
+    os_trace_rcv(" [min(");
+    os_trace_rcv("%lu", ticksLow(desired, tolerance, delta));
+    os_trace_rcv(", ");
+    os_trace_rcv("%lu", ticksLow(MS_TO_USEC(params.timeout), tolerance, delta));
+    os_trace_rcv(")]\r\n");
 #endif
 #ifdef UNIT_TEST
     // Sanity checks that we don't have values that cause integer over/underflow.
@@ -509,7 +509,7 @@ uint16_t matchGenericState(volatile uint16_t *data_ptr,
 bool matchLimit(uint32_t measured, uint32_t lower_limit, uint32_t upper_limit)
 {
 #if DEBUG_LOG_RX
-    os_trace("%s measured: %lu, lower_limit: %lu, upper_limit: %lu\r\n", __func__, measured, lower_limit, upper_limit);
+    os_trace_rcv("%s measured: %lu, lower_limit: %lu, upper_limit: %lu\r\n", __func__, measured, lower_limit, upper_limit);
 #endif
     return measured * 2 >= lower_limit && measured * 2 <= upper_limit;
 }
@@ -541,7 +541,7 @@ match_result_t matchDataLimit(
             {
                 result.data = (result.data << 1) | 1;
                 #if DEBUG_LOG_RX
-                os_trace("\r\n%u======>1\r\n", result.used);
+                os_trace_rcv("\r\n%u======>1\r\n", result.used);
                 #endif
             }
             else if (matchLimit(*data_ptr, zeromarkLower, zeromarkUpper) &&
@@ -549,14 +549,14 @@ match_result_t matchDataLimit(
             {
                 result.data <<= 1; // The bit is a '0'.
                 #if DEBUG_LOG_RX
-                os_trace("\r\n%u======>0\r\n", result.used);
+                os_trace_rcv("\r\n%u======>0\r\n", result.used);
                 #endif
             }
             else
             {
                 if (!MSBfirst) {
-                    os_trace("%s !MSBfirst one mark data: %lu, %lu %lu, space %lu, %lu %lu\r\n", __func__, *data_ptr * 2, onemarkLower, onemarkUpper,*(data_ptr + 1) * 2, onespaceLower, onespaceUpper);
-                    os_trace("%s !MSBfirst zero mark data: %lu, %lu %lu, space %lu, %lu %lu\r\n", __func__, *data_ptr * 2, zeromarkLower, zeromarkUpper,(*(data_ptr + 1)) * 2, zerospaceLower, zerospaceUpper);
+                    os_trace_rcv("%s !MSBfirst one mark data: %lu, %lu %lu, space %lu, %lu %lu\r\n", __func__, *data_ptr * 2, onemarkLower, onemarkUpper,*(data_ptr + 1) * 2, onespaceLower, onespaceUpper);
+                    os_trace_rcv("%s !MSBfirst zero mark data: %lu, %lu %lu, space %lu, %lu %lu\r\n", __func__, *data_ptr * 2, zeromarkLower, zeromarkUpper,(*(data_ptr + 1)) * 2, zerospaceLower, zerospaceUpper);
                     result.data = reverseBits(result.data, result.used / 2);
                 }
                 return result; // It's neither, so fail.
@@ -577,7 +577,7 @@ match_result_t matchDataLimit(
             else if (matchLimit(*(data_ptr + result.used), zeromarkLower, zeromarkUpper))
                 result.data <<= 1; // The bit is a '0'.
             else {
-                os_trace("%s data: %u, %u %u %u %u\r\n", __func__, *(data_ptr + result.used), onemarkLower, onemarkUpper, zeromarkLower, zeromarkUpper);
+                os_trace_rcv("%s data: %u, %u %u %u %u\r\n", __func__, *(data_ptr + result.used), onemarkLower, onemarkUpper, zeromarkLower, zeromarkUpper);
                 result.success = false;
             }
             if (result.success)
@@ -617,7 +617,7 @@ uint16_t matchBytesLimit(volatile uint16_t *data_ptr, uint8_t *result_ptr,
         
         result_ptr[byte_pos] = (uint8_t)result.data;
         #if DEBUG_LOG_RX
-        os_trace("result_ptr[%u]: %u\r\n", byte_pos, result_ptr[byte_pos]);
+        os_trace_rcv("result_ptr[%u]: %u\r\n", byte_pos, result_ptr[byte_pos]);
         #endif
         offset += result.used;
     }
@@ -704,14 +704,14 @@ uint16_t _matchGenericLimit(volatile uint16_t *data_ptr,
                                         excess, MSBfirst, kexpectspace);
         if (!data_used)
         {
-            blog_error("%s: matchBytesLimit fail ", __func__);
+            os_trace_rcv("%s: matchBytesLimit fail ", __func__);
             return 0;
         }
         offset += data_used;
     }
     // Footer
     if (footermarkLower && !matchLimit(*(data_ptr + offset++), footermarkLower, footermarkUpper)) {
-        os_trace("%s footer, mark: %lu, %lu %lu\r\n", __func__, *(data_ptr + offset - 1) * 2, footermarkLower, footermarkUpper);
+        os_trace_rcv("%s footer, mark: %lu, %lu %lu\r\n", __func__, *(data_ptr + offset - 1) * 2, footermarkLower, footermarkUpper);
         return 0;
     }
     // If we have something still to match & haven't reached the end of the buffer
@@ -720,14 +720,14 @@ uint16_t _matchGenericLimit(volatile uint16_t *data_ptr,
         if (atleast)
         {
             if (!matchLimit(*(data_ptr + offset), footerspaceLower, footerspaceUpper)) {
-                os_trace("%s atleast 1, offset:%u, space: %lu, %lu %lu, space %lu, %lu %lu\r\n", __func__, offset, *(data_ptr + offset) * 2, footerspaceLower, footerspaceUpper);
+                os_trace_rcv("%s atleast 1, offset:%u, space: %lu, %lu %lu, space %lu, %lu %lu\r\n", __func__, offset, *(data_ptr + offset) * 2, footerspaceLower, footerspaceUpper);
                 return 0;
             }
         }
         else
         {
             if (!matchLimit(*(data_ptr + offset), footerspaceLower, footerspaceUpper)) {
-                os_trace("%s atleast 0, offset:%u, space: %lu, %lu %lu, space %lu, %lu %lu\r\n", __func__, offset, *(data_ptr + offset) * 2, footerspaceLower, footerspaceUpper);
+                os_trace_rcv("%s atleast 0, offset:%u, space: %lu, %lu %lu, space %lu, %lu %lu\r\n", __func__, offset, *(data_ptr + offset) * 2, footerspaceLower, footerspaceUpper);
                 return 0;
             }
         }
@@ -1083,7 +1083,7 @@ bool decode(decode_results *results, irparams_t *save,
     }
 
     
-if (1){
+if (DEBUG_IR_RCV_ENABLE){
     os_trace("BUFF_LEN[%d]: ", results->rawlen);
     char str_res[300];
     int seek = 0;
@@ -1115,7 +1115,7 @@ if (1){
        // os_trace("Attempting LG (28-bit) decode\r\n");
         if (decodeLG(results, offset, kLgBits, false))
         {
-            os_trace("decode LG 28-bit success\r\n");
+            // os_trace("decode LG 28-bit success\r\n");
             return true;
         }
        // os_trace("Attempting LG (32-bit) decode\r\n");
@@ -1213,6 +1213,16 @@ if (1){
     //os_trace("Attempting decodeMitsubishiHeavyAC decode\r\n");
     if (decodeMitsubishiHeavy(results, offset, kMitsubishiHeavy88Bits, true)) return true;
     if (decodeMitsubishiHeavy(results, offset, kMitsubishiHeavy152Bits, true)) return true;
+#endif
+
+#if (DECODE_MITSUBISHI_AC)
+    //os_trace("Attempting decodeMitsubishiHeavyAC decode\r\n");
+    if (decodeMitsubishiAC(results, offset, kMitsubishiACBits, true)) return true;
+#endif
+
+#if (DECODE_MITSUBISHI136)
+    //os_trace("Attempting decodeMitsubishiHeavyAC decode\r\n");
+    if (decodeMitsubishi136(results, offset, kMitsubishi136Bits, true)) return true;
 #endif
 
 #if DECODE_MIDEA
@@ -1706,6 +1716,14 @@ void m_ir_task(void *param)
             else if (SANYO_AC == capture.decode_type)
             {
                 IRSanyoAc_setInfo(capture.state, &ir_state_recv);
+            }
+            else if (MITSUBISHI_AC == capture.decode_type)
+            {
+                IRMitsubishiAC_setInfo(capture.state, &ir_state_recv);
+            }
+            else if (MITSUBISHI136 == capture.decode_type)
+            {
+                IRMitsubishi136_setInfo(capture.state, &ir_state_recv);
             }
 
             /***************************************************************************************/

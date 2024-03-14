@@ -9,7 +9,7 @@
 #include "ir_Samsung.h"
 #include "IRsend.h"
 
-#define DEBUG_IR_RCV_ENABLE    1
+#define DEBUG_IR_RCV_ENABLE    0
 #define os_trace_rcv if (DEBUG_IR_RCV_ENABLE == 1) printf
 
 #define MS_TO_USEC(x) ((x) * 1000U)  // Convert milli-Seconds to micro-Seconds.
@@ -72,6 +72,8 @@
 #define DECODE_FUJITSU_AC 1
 #define DECODE_VESTEL_AC 1
 #define DECODE_SANYO 1
+#define DECODE_MITSUBISHI136 1
+#define DECODE_MITSUBISHI_AC 1
 
 
 #define IR_RX 1
@@ -318,6 +320,16 @@ bool decodeVestelAc(decode_results *results, uint16_t offset,
                            const uint16_t nbits, const bool strict);
 #endif
 
+#if DECODE_MITSUBISHI_AC
+bool decodeMitsubishiAC(decode_results *results, uint16_t offset,
+                           const uint16_t nbits, const bool strict);
+#endif
+
+#if DECODE_MITSUBISHI136
+bool decodeMitsubishi136(decode_results *results, uint16_t offset,
+                           const uint16_t nbits, const bool strict);
+#endif
+
 #if DECODE_SANYO
 bool decodeSanyoAc(decode_results *results, uint16_t offset,
                            const uint16_t nbits, const bool strict);
@@ -488,6 +500,8 @@ bool IRFujitsuAC_setInfo(const uint8_t newState[], const uint16_t length, state_
 void VestelAc_setInfo(const uint64_t newState, state_ir_t *ir_state);
 void IRSanyoAc_setInfo(const uint8_t newState[], state_ir_t *ir_state);
 
+void IRMitsubishiAC_setInfo(const uint8_t *data, state_ir_t *ir_state);
+void IRMitsubishi136_setInfo(const uint8_t *data, state_ir_t *ir_state);
 
 // void enableIRIn(const bool pullup);
 void ir_loop(void);

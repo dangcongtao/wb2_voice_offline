@@ -223,6 +223,8 @@ void VestelAc_send(state_ir_t state_ir);
 void SanyoAc_send(state_ir_t state_ir);
 void MitsubishiHeavy88Ac_send(state_ir_t state_ir);
 void MitsubishiHeavy152Ac_send(state_ir_t state_ir);
+void MitsubishiAC_send(state_ir_t state_ir);
+void Mitsubishi136_send(state_ir_t state_ir);
 
 
 /* end */

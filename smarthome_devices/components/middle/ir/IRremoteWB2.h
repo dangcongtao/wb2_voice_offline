@@ -23,7 +23,7 @@ typedef enum {
   FUJITSU_AC,
   KELVINATOR,
   GREE,
-  MITSUBISHI_AC,  // (20)
+  UNKNOWN_94385,  // (20)
   RCMM,
   SANYO_LC7461,
   LG2,
@@ -115,8 +115,9 @@ typedef enum {
   SANYO_AC,
   MITSUBISHI_HEAVY_152,
   MITSUBISHI_HEAVY_88,
+  MITSUBISHI_AC,
   // Add new entries before this one, and update it to point to the last entry.
-  kLastDecodeType = MITSUBISHI_HEAVY_88,
+  kLastDecodeType = MITSUBISHI_AC,
 } decode_type_t;
 
 #define kSingleRepeat 1
@@ -166,6 +167,13 @@ typedef enum {
 #define kGreeBits  (kGreeStateLength * 8)
 #define kGreeDefaultRepeat  kNoRepeat
 
+#define kMitsubishiMinRepeat kSingleRepeat
+#define kMitsubishiACStateLength  18
+#define kMitsubishiACBits  (kMitsubishiACStateLength * 8)
+#define kMitsubishiACMinRepeat kSingleRepeat
+#define kMitsubishi136StateLength  17
+#define kMitsubishi136Bits (kMitsubishi136StateLength * 8)
+#define kMitsubishi136MinRepeat  kNoRepeat
 #define kMitsubishi112StateLength  14
 #define kMitsubishi112Bits  (kMitsubishi112StateLength * 8)
 #define kMitsubishi112MinRepeat kNoRepeat
