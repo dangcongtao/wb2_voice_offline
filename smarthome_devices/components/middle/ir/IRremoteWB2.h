@@ -90,8 +90,8 @@ typedef enum {
   ELITESCREENS,  // 85
   CORONA_AC,
   MIDEA24,
-  MITSUBISHI_HEAVY_152,
-  MITSUBISHI_HEAVY_88,  // 90
+  UNKNOWN_985,
+  UNKNOWN_9543245,  // 90
   ARRIS,
   METZ,
   TRANSCOLD,
@@ -113,8 +113,10 @@ typedef enum {
   PANASONIC_AC32, // power toggle
   TOSHIBA_AC,
   SANYO_AC,
+  MITSUBISHI_HEAVY_152,
+  MITSUBISHI_HEAVY_88,
   // Add new entries before this one, and update it to point to the last entry.
-  kLastDecodeType = SANYO_AC,
+  kLastDecodeType = MITSUBISHI_HEAVY_88,
 } decode_type_t;
 
 #define kSingleRepeat 1

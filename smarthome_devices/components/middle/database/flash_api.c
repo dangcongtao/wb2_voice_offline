@@ -52,15 +52,15 @@ void flash_write_database(m_device_t object_data)
         ef_set_bytes(MQTT_INFO, (uint8_t *)object_data._mqtt_info, size);
     }
 
-    if (object_data._switch_info == NULL)
-    {
-        os_trace("object_data._switch_info NULL\r\n");
-    }
-    else
-    {
-        size = sizeof(m_switch_info_t);
-        ef_set_bytes(SWITCH_INFO, (uint8_t *)object_data._switch_info, size);
-    }
+    // if (object_data._switch_info == NULL)
+    // {
+    //     os_trace("object_data._switch_info NULL\r\n");
+    // }
+    // else
+    // {
+    //     size = sizeof(m_switch_info_t);
+    //     ef_set_bytes(SWITCH_INFO, (uint8_t *)object_data._switch_info, size);
+    // }
 
     /* write state pair */
     ef_set_u32(PAIR_STATE, object_data._device_is_paired);
@@ -96,16 +96,16 @@ void flash_read_database(m_device_t *object_data)
         ef_get_bytes(MQTT_INFO, (uint8_t *)object_data->_mqtt_info, size);
     }
 
-    if (object_data->_switch_info == NULL)
-    {
-        os_trace("object_data->_switch_info NULL\r\n");
-    }
-    else
-    {
-        /* read wifi info */
-        size = sizeof(m_switch_info_t);
-        ef_get_bytes(SWITCH_INFO, (uint8_t *)object_data->_switch_info, size);
-    }
+    // if (object_data->_switch_info == NULL)
+    // {
+    //     os_trace("object_data->_switch_info NULL\r\n");
+    // }
+    // else
+    // {
+    //     /* read wifi info */
+    //     size = sizeof(m_switch_info_t);
+    //     ef_get_bytes(SWITCH_INFO, (uint8_t *)object_data->_switch_info, size);
+    // }
 
     /* read state pair */
     if ((ef_get_u32(PAIR_STATE, &(object_data->_device_is_paired)) == false) || (object_data->_device_is_paired == 0))

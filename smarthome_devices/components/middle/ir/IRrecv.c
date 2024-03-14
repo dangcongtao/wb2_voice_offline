@@ -1687,6 +1687,10 @@ void m_ir_task(void *param)
             {
                 IRMitsubishiHeavy88Ac_setInfo(capture.state, &ir_state_recv);
             }
+            else if (MITSUBISHI_HEAVY_152 == capture.decode_type)
+            {
+                IRMitsubishiHeavy152Ac_setInfo(capture.state, &ir_state_recv);
+            }
             else if (FUJITSU_AC == capture.decode_type)
             {
                 if (capture.bits == kFujitsuAcBits) {

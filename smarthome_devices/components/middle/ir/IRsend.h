@@ -221,6 +221,8 @@ void ElectraAc_send(state_ir_t state_ir);
 void FujitsuAC_send(state_ir_t state_ir);
 void VestelAc_send(state_ir_t state_ir);
 void SanyoAc_send(state_ir_t state_ir);
+void MitsubishiHeavy88Ac_send(state_ir_t state_ir);
+void MitsubishiHeavy152Ac_send(state_ir_t state_ir);
 
 
 /* end */

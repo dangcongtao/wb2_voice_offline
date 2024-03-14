@@ -9,6 +9,80 @@ typedef struct
 {
     union
     {
+        uint8_t raw[kMitsubishiHeavy152StateLength];  ///< State in code form
+        struct {
+            // Byte 0~4
+            uint8_t Sig[5];
+            // Byte 5
+            uint8_t Mode  :3;
+            uint8_t Power :1;
+            uint8_t       :1;
+            uint8_t Clean :1;
+            uint8_t Filter:1;
+            uint8_t       :1;
+            // Byte 6
+            uint8_t       :8;
+            // Byte 7
+            uint8_t Temp  :4;
+            uint8_t       :4;
+            // Byte 8
+            uint8_t       :8;
+            // Byte 9
+            uint8_t Fan   :4;
+            uint8_t       :4;
+            // Byte 10
+            uint8_t       :8;
+            // Byte 11
+            uint8_t         :1;
+            uint8_t Three   :1;
+            uint8_t         :2;
+            uint8_t D       :1;  // binding with "Three"
+            uint8_t SwingV  :3;
+            // Byte 12
+            uint8_t         :8;
+            // Byte 13
+            uint8_t SwingH  :4;
+            uint8_t         :4;
+            // Byte 14
+            uint8_t         :8;
+            // Byte 15
+            uint8_t         :6;
+            uint8_t Night   :1;
+            uint8_t Silent  :1;
+        };
+    };
+} Mitsubishi152Protocol;
+
+const uint8_t kMitsubishiHeavy152FanAuto =  0x0;  // 0b0000
+const uint8_t kMitsubishiHeavy152FanLow =   0x1;  // 0b0001
+const uint8_t kMitsubishiHeavy152FanMed =   0x2;  // 0b0010
+const uint8_t kMitsubishiHeavy152FanHigh =  0x3;  // 0b0011
+const uint8_t kMitsubishiHeavy152FanMax =   0x4;  // 0b0100
+const uint8_t kMitsubishiHeavy152FanEcono = 0x6;  // 0b0110
+const uint8_t kMitsubishiHeavy152FanTurbo = 0x8;  // 0b1000
+
+const uint8_t kMitsubishiHeavy152SwingVAuto =    0;  // 0b000
+const uint8_t kMitsubishiHeavy152SwingVHighest = 1;  // 0b001
+const uint8_t kMitsubishiHeavy152SwingVHigh =    2;  // 0b010
+const uint8_t kMitsubishiHeavy152SwingVMiddle =  3;  // 0b011
+const uint8_t kMitsubishiHeavy152SwingVLow =     4;  // 0b100
+const uint8_t kMitsubishiHeavy152SwingVLowest =  5;  // 0b101
+const uint8_t kMitsubishiHeavy152SwingVOff =     6;  // 0b110
+
+const uint8_t kMitsubishiHeavy152SwingHAuto =      0;  // 0b0000
+const uint8_t kMitsubishiHeavy152SwingHLeftMax =   1;  // 0b0001
+const uint8_t kMitsubishiHeavy152SwingHLeft =      2;  // 0b0010
+const uint8_t kMitsubishiHeavy152SwingHMiddle =    3;  // 0b0011
+const uint8_t kMitsubishiHeavy152SwingHRight =     4;  // 0b0100
+const uint8_t kMitsubishiHeavy152SwingHRightMax =  5;  // 0b0101
+const uint8_t kMitsubishiHeavy152SwingHRightLeft = 6;  // 0b0110
+const uint8_t kMitsubishiHeavy152SwingHLeftRight = 7;  // 0b0111
+const uint8_t kMitsubishiHeavy152SwingHOff =       8;  // 0b1000
+
+typedef struct
+{
+    union
+    {
         uint8_t raw[kMitsubishiHeavy88StateLength];  ///< State in code form
         struct {
             // Byte 0~4

@@ -482,6 +482,7 @@ void IRPanasonicAc32_setInfo(const uint32_t state,  state_ir_t *ir_state);
 void ElectraAc_setInfo(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
 
 void IRMitsubishiHeavy88Ac_setInfo(const uint8_t *data, state_ir_t *ir_state);
+void IRMitsubishiHeavy152Ac_setInfo(const uint8_t *data, state_ir_t *ir_state);
 void AirwellAc_setInfo(const uint64_t state, state_ir_t *ir_state);
 bool IRFujitsuAC_setInfo(const uint8_t newState[], const uint16_t length, state_ir_t *ir_state);
 void VestelAc_setInfo(const uint64_t newState, state_ir_t *ir_state);

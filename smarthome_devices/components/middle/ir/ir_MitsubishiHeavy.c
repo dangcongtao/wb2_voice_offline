@@ -92,3 +92,132 @@ void IRMitsubishiHeavy88Ac_setInfo(const uint8_t *data, state_ir_t *ir_state)
     ir_state->fanspeed = _.Fan;
     ir_state->degrees = _.Temp + kMitsubishiHeavyMinTemp;
 }
+
+static void IRMitsubishiHeavy88Ac_checksum(Mitsubishi88Protocol *_) {
+  const uint8_t kOffset = kMitsubishiHeavySigLength - 2;
+  invertBytePairs(_->raw + kOffset, kMitsubishiHeavy88StateLength - kOffset);
+}
+
+static void sendMitsubishiHeavy88(const unsigned char data[],
+                                   const uint16_t nbytes,
+                                   const uint16_t repeat) {
+  if (nbytes < kMitsubishiHeavy88StateLength)
+    return;  // Not enough bytes to send a proper message.
+    vTaskEnterCritical();
+  sendGenericBytes(kMitsubishiHeavyHdrMark, kMitsubishiHeavyHdrSpace,
+              kMitsubishiHeavyBitMark, kMitsubishiHeavyOneSpace,
+              kMitsubishiHeavyBitMark, kMitsubishiHeavyZeroSpace,
+              kMitsubishiHeavyBitMark, kMitsubishiHeavyGap,
+              data, nbytes, 38000, false, repeat, kDutyDefault);
+  vTaskExitCritical();
+}
+
+void MitsubishiHeavy88Ac_send(state_ir_t state_ir)
+{
+  Mitsubishi88Protocol _;
+
+  memcpy(_.raw, kMitsubishiHeavyZjsSig, kMitsubishiHeavySigLength);
+  for (uint8_t i = kMitsubishiHeavySigLength; i < kMitsubishiHeavy88StateLength;
+       i++) _.raw[i] = 0;
+
+  _.Power = state_ir.power;
+
+  switch ((uint8_t)state_ir.mode) {
+    case kMitsubishiHeavyCool:
+    case kMitsubishiHeavyDry:
+    case kMitsubishiHeavyFan:
+    case kMitsubishiHeavyHeat:
+    _.Mode = state_ir.mode;
+      break;
+    default:
+      _.Mode = kMitsubishiHeavyAuto;
+  }
+
+  switch ((uint8_t)state_ir.fanspeed) {
+    case kMitsubishiHeavy88FanLow:
+    case kMitsubishiHeavy88FanMed:
+    case kMitsubishiHeavy88FanHigh:
+    case kMitsubishiHeavy88FanTurbo:
+    case kMitsubishiHeavy88FanEcono: 
+        _.Fan = state_ir.fanspeed;
+    break;
+    default: _.Fan = kMitsubishiHeavy88FanAuto;
+  }
+
+  uint8_t newtemp = state_ir.degrees;
+  newtemp = min((uint8_t)newtemp, kMitsubishiHeavyMaxTemp);
+  newtemp = max(newtemp, kMitsubishiHeavyMinTemp);
+  _.Temp = newtemp - kMitsubishiHeavyMinTemp;
+
+  IRMitsubishiHeavy88Ac_checksum(&_);
+  sendMitsubishiHeavy88(_.raw, kMitsubishiHeavy88StateLength,
+                                kMitsubishiHeavy88MinRepeat);
+}
+
+void IRMitsubishiHeavy152Ac_setInfo(const uint8_t *data, state_ir_t *ir_state) {
+  Mitsubishi152Protocol _;
+  memset(&_, 0, sizeof(Mitsubishi152Protocol));
+  memcpy(_.raw, data, kMitsubishiHeavy152StateLength);
+
+  ir_state->power = _.Power;
+  ir_state->mode = _.Mode;
+  ir_state->fanspeed = _.Fan;
+  ir_state->degrees = _.Temp + kMitsubishiHeavyMinTemp;
+}
+
+static void IRMitsubishiHeavy152Ac_checksum(Mitsubishi152Protocol *_) {
+  const uint8_t kOffset = kMitsubishiHeavySigLength - 2;
+  invertBytePairs(_->raw + kOffset, kMitsubishiHeavy152StateLength - kOffset);
+}
+
+static void sendMitsubishiHeavy152(const unsigned char data[],
+                                    const uint16_t nbytes,
+                                    const uint16_t repeat) {
+  if (nbytes < kMitsubishiHeavy152StateLength)
+    return;  // Not enough bytes to send a proper message.
+  sendMitsubishiHeavy88(data, nbytes, repeat);
+}
+
+void MitsubishiHeavy152Ac_send(state_ir_t state_ir)
+{
+  Mitsubishi152Protocol _;
+  memset(&_, 0, sizeof(Mitsubishi152Protocol));
+  memcpy(_.raw, kMitsubishiHeavyZmsSig, kMitsubishiHeavySigLength);
+  for (uint8_t i = kMitsubishiHeavySigLength;
+       i < kMitsubishiHeavy152StateLength - 3; i += 2) _.raw[i] = 0;
+  _.raw[17] = 0x80;
+
+  _.Power = state_ir.power;
+
+  switch ((uint8_t)state_ir.mode) {
+    case kMitsubishiHeavyCool:
+    case kMitsubishiHeavyDry:
+    case kMitsubishiHeavyFan:
+    case kMitsubishiHeavyHeat:
+      _.Mode = state_ir.mode;
+      break;
+    default:
+      _.Mode = kMitsubishiHeavyAuto;
+  }
+
+  switch ((uint8_t)state_ir.fanspeed) {
+    case kMitsubishiHeavy152FanLow:
+    case kMitsubishiHeavy152FanMed:
+    case kMitsubishiHeavy152FanHigh:
+    case kMitsubishiHeavy152FanMax:
+    case kMitsubishiHeavy152FanEcono:
+    case kMitsubishiHeavy152FanTurbo: 
+      _.Fan = state_ir.fanspeed;
+    break;
+    default: _.Fan = kMitsubishiHeavy152FanAuto;
+  }
+
+  uint8_t newtemp = (uint8_t)state_ir.degrees;
+  newtemp = min(newtemp, kMitsubishiHeavyMaxTemp);
+  newtemp = max(newtemp, kMitsubishiHeavyMinTemp);
+  _.Temp = newtemp - kMitsubishiHeavyMinTemp;
+
+  IRMitsubishiHeavy152Ac_checksum(&_);
+  sendMitsubishiHeavy152(_.raw, kMitsubishiHeavy152StateLength,
+                                 kMitsubishiHeavy152MinRepeat);
+}
