@@ -11,6 +11,9 @@
 #include "IRutils.h"
 #include "event_driven.h"
 
+#include "base64.h"
+#include "m_mqtt.h"
+
 DRAM_ATTR irparams_t params;
 irparams_t *params_save;
 DRAM_ATTR hosal_gpio_irq_trigger_t trigger_type = HOSAL_IRQ_TRIG_NEG_PULSE;
@@ -22,6 +25,14 @@ hosal_gpio_dev_t touch_gpio_pos;
 hosal_gpio_dev_t touch_gpio_neg;
 
 struct timer_adpt *timer3;
+
+
+static decode_results capture;
+static uint32_t lastIrReceivedTime = 0;
+static uint32_t irRecvCounter = 0;
+static uint32_t old_time_learn_ir = 0;
+static uint32_t old_time_learn_ir_auto = 0;
+
 
 static void timer3_cb(void *data)
 {
@@ -1386,6 +1397,10 @@ if (DEBUG_IR_RCV_ENABLE){
 
     } // END for
 
+    if (old_time_learn_ir) {
+        return true;
+    }
+
 #if DECODE_HASH
     // decodeHash returns a hash on any input.
     // Thus, it needs to be last in the list.
@@ -1503,16 +1518,6 @@ void IRrecv_init(const uint32_t recvpin, const uint16_t bufsize,
 #endif // DECODE_HASH
     _tolerance = kTolerance;
 }
-
-#include "base64.h"
-#include "m_mqtt.h"
-
-static decode_results capture;
-static uint32_t lastIrReceivedTime = 0;
-static uint32_t irRecvCounter = 0;
-static uint32_t old_time_learn_ir = 0;
-static uint32_t old_time_learn_ir_auto = 0;
-
 
 
 void IR_start_learn(void)
