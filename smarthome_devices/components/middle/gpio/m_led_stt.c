@@ -23,7 +23,7 @@ static uint8_t is_power_up = 1;
 
 static void vTimerCallback(TimerHandle_t xTimer)
 {
-    if (is_power_up && (device_type == LHSWITCH || device_type == IRWIFI))
+    if (is_power_up && (device_type == LHSWITCH))
     {
         is_power_up = 0;
 

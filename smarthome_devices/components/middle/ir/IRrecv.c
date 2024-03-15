@@ -1802,8 +1802,8 @@ void m_ir_task(void *param)
                 gs_dev_type[device_type], capture.decode_type, ir_state_recv.model, ir_state_recv.power, ir_state_recv.mode, ir_state_recv.degrees, ir_state_recv.fanspeed);
                 os_trace("datarcv[%u]:", strlen(str));
                 os_trace("'%s'\r\n", str);
-                if (dev_is_online())
-                m_mqtt_get_instance()._mqtt_publish(str, strlen(str));
+                if (m_mqtt_get_instance()._mqtt_state >= MQTT_INTIALIZED)
+                    m_mqtt_get_instance()._mqtt_publish(str, strlen(str));
             }
             
             IR_logCommon(ir_state);
