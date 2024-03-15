@@ -7,6 +7,7 @@
 #include "m_http_server.h"
 #include "m_http_client.h"
 #include "m_mqtt.h"
+#include "IRrecv.h"
 
 extern uint32_t app_btn_on_hold_time_fire_event_ms;
 
@@ -70,6 +71,7 @@ void device_active_handler(void *arg)
     // ble_init();
 
     // app_btn_on_hold_time_fire_event_ms = APP_BTN_HOLD_EVENT_15S;
+    m_ir_init();
 }
 m_state_transmit_t dev_actived = {
     .context = M_WIFI_MQTT_CONNECTING,

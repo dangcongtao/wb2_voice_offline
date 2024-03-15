@@ -91,6 +91,8 @@ COMPONENT_SRCS := database/m_database.c \
 				  ir/ir_Fujitsu.c \
 				  ir/ir_Vestel.c \
 				  ir/ir_Sanyo.c \
+				  ir/ir_Coolix.c \
+				  ir/ir_Kelvinator.c \
 				  
 COMPONENT_OBJS := $(patsubst %.c,%.o, $(COMPONENT_SRCS))
 

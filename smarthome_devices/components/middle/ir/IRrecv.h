@@ -9,7 +9,7 @@
 #include "ir_Samsung.h"
 #include "IRsend.h"
 
-#define DEBUG_IR_RCV_ENABLE    0
+#define DEBUG_IR_RCV_ENABLE    1
 #define os_trace_rcv if (DEBUG_IR_RCV_ENABLE == 1) printf
 
 #define MS_TO_USEC(x) ((x) * 1000U)  // Convert milli-Seconds to micro-Seconds.
@@ -74,6 +74,7 @@
 #define DECODE_SANYO 1
 #define DECODE_MITSUBISHI136 1
 #define DECODE_MITSUBISHI_AC 1
+#define DECODE_KELVINATOR 1
 
 
 #define IR_RX 1
@@ -249,6 +250,11 @@ bool decodeDaikin128(decode_results *results, uint16_t offset,
 #if DECODE_DAIKIN64
 bool decodeDaikin64(decode_results *results, uint16_t offset,
                             const uint16_t nbits, const bool strict);
+#endif
+
+#if DECODE_KELVINATOR
+bool decodeKelvinator(decode_results *results, uint16_t offset,
+                              const uint16_t nbits, const bool strict);
 #endif
 
 #if DECODE_GREE
@@ -483,6 +489,7 @@ void Tcl112_setInfo(const uint8_t* newState, const decode_type_t protocol, state
 void Mitsubishi112_setInfo(const uint8_t* newState, const decode_type_t protocol, state_ir_t *ir_state);
 void Toshiba_setInfo(const uint8_t* newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state);
 void Gree_setInfo(const uint8_t* newState, const decode_type_t protocol, state_ir_t *ir_state);
+void IRKelvinatorAC_setInfo(const uint8_t new_code[], state_ir_t *ir_state);
 void SharpAc_setInfo(const uint8_t* newState, const decode_type_t protocol, state_ir_t *ir_state);
 void HitachiAC1_setInfo(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
 void HitachiAC344_setInfo(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);

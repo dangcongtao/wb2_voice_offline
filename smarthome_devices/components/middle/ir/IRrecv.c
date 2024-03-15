@@ -514,6 +514,15 @@ bool matchLimit(uint32_t measured, uint32_t lower_limit, uint32_t upper_limit)
     return measured * 2 >= lower_limit && measured * 2 <= upper_limit;
 }
 
+bool matchAtLeastLimit(uint32_t measured, uint32_t lower_limit)
+{
+    if (measured == 0) return true;
+#if DEBUG_LOG_RX
+    os_trace_rcv("%s measured: %lu, lower_limit: %lu\r\n", __func__, measured, lower_limit);
+#endif
+    return measured * 2 >= lower_limit;
+}
+
 match_result_t matchDataLimit(
     volatile uint16_t *data_ptr, const uint16_t nbits, 
                     const uint16_t onemarkLower,
@@ -719,15 +728,15 @@ uint16_t _matchGenericLimit(volatile uint16_t *data_ptr,
     {
         if (atleast)
         {
-            if (!matchLimit(*(data_ptr + offset), footerspaceLower, footerspaceUpper)) {
-                os_trace_rcv("%s atleast 1, offset:%u, space: %lu, %lu %lu, space %lu, %lu %lu\r\n", __func__, offset, *(data_ptr + offset) * 2, footerspaceLower, footerspaceUpper);
+            if (!matchAtLeastLimit(*(data_ptr + offset), footerspaceLower)) {
+                os_trace_rcv("%s atleast true, offset:%u, value: %lu, footer_space:%lu\r\n", __func__, offset, *(data_ptr + offset) * 2, footerspaceLower);
                 return 0;
             }
         }
         else
         {
             if (!matchLimit(*(data_ptr + offset), footerspaceLower, footerspaceUpper)) {
-                os_trace_rcv("%s atleast 0, offset:%u, space: %lu, %lu %lu, space %lu, %lu %lu\r\n", __func__, offset, *(data_ptr + offset) * 2, footerspaceLower, footerspaceUpper);
+                os_trace_rcv("%s matchLimit, atleast false, offset:%u, space: %lu, %lu %lu\r\n", __func__, offset, (*(data_ptr + offset) * 2), footerspaceLower, footerspaceUpper);
                 return 0;
             }
         }
@@ -1199,8 +1208,13 @@ if (DEBUG_IR_RCV_ENABLE){
 
 
 
+#if DECODE_KELVINATOR
+    os_trace("Attempting Kelvinator AC decode\r\n");
+    if (decodeKelvinator(results, offset, kKelvinatorBits, true)) return true;
+#endif
+
 #if DECODE_GREE
-    //os_trace("Attempting Gree AC decode\r\n");
+    os_trace("Attempting Gree AC decode\r\n");
     if (decodeGree(results, offset, kGreeBits, true)) return true;
 #endif
 
@@ -1298,6 +1312,11 @@ if (DEBUG_IR_RCV_ENABLE){
     }
 #endif
 
+#if DECODE_FUJITSU_AC
+    // os_trace("Attempting decodeFujitsuAC decode\r\n");        
+    if (decodeFujitsuAC(results, offset, kFujitsuAcBits, true)) return true;
+#endif
+
 #if DECODE_PANASONIC_AC
     // os_trace("Attempting decodePanasonicAC AC decode\r\n");        
     if (decodePanasonicAC(results, offset, kPanasonicAcBits, true)) return true;
@@ -1318,11 +1337,6 @@ if (DEBUG_IR_RCV_ENABLE){
 #if DECODE_AIRWELL
     // os_trace("Attempting decodeAirwell decode\r\n");        
     if (decodeAirwell(results, offset, kAirwellBits, true)) return true;
-#endif
-
-#if DECODE_FUJITSU_AC
-    // os_trace("Attempting decodeFujitsuAC decode\r\n");        
-    if (decodeFujitsuAC(results, offset, kFujitsuAcBits, true)) return true;
 #endif
 
 #if DECODE_VESTEL_AC
@@ -1627,6 +1641,9 @@ void m_ir_task(void *param)
                 Gree_setRaw((uint8_t*)capture.state, capture.decode_type, &ir_state);
                 Gree_setInfo((uint8_t*)capture.state, capture.decode_type, &ir_state_recv);
             }
+            else if (capture.decode_type == KELVINATOR){
+                IRKelvinatorAC_setInfo((uint8_t*)capture.state, &ir_state_recv);
+            }
             else if (capture.decode_type == MITSUBISHI112){
                 // os_trace("MITSUBISHI112: 0x ");
                 // for(uint8_t i = 0; i < 14; i++) {
@@ -1775,9 +1792,14 @@ void m_ir_task(void *param)
         vTaskDelay(pdMS_TO_TICKS(50));
     }
 }
-
+static uint8_t is_init = 0;
 void m_ir_init(void)
 {
+    if (is_init) {
+        os_trace("ir is inited\r\n");
+        return;
+    }
+    is_init = 1;
     bl_gpio_enable_output(IRpin, 0, 0);
     IRsend_init(IRpin, false, true);
     IRrecv_init(IR_RX, 1024, 50, false);

@@ -24,10 +24,7 @@
 #include "m_ble.h"
 #include "event_driven.h"
 
-#include "IRrecv.h"
-
 #include <bl_wdt.h>
-#include "IRsend.h"
 
 void main_loop(void)
 {
@@ -37,11 +34,11 @@ void main_loop(void)
     {
         m_event_loop(delay_ms);
 
-        old += 1;
-        if (old > 20) {
-            old = 0;
-            os_trace("Free memory: %d\r\n", xPortGetFreeHeapSize());
-        }
+        // old += 1;
+        // if (old > 20) {
+        //     old = 0;
+        //     os_trace("Free memory: %d\r\n", xPortGetFreeHeapSize());
+        // }
 
         bl_wdt_feed();
 
@@ -85,7 +82,6 @@ void main(void)
     process_data_init();
     // ble_init();
     // ble_init_first();
-    m_ir_init();
     m_event_init();
     
     /* start stack */

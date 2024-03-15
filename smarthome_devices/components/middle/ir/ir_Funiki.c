@@ -44,9 +44,9 @@ bool decodeFunikiAC(decode_results *results, uint16_t offset, const uint16_t nbi
         used = matchGenericStateLimit(results->rawbuf + offset, (uint8_t*)(&results->state[pos]),
                             results->rawlen - offset, kFunikiAcSectionLength * 8,
                             4000, 4800, 4000, 4800,
-                            150, 800, 900, 2000,
-                            150, 800, 150, 800,
-                            150, 800, 4800, 5800,
+                            100, 900, 900, 2000,
+                            100, 900, 100, 899,
+                            100, 900, 4800, 5800,
                             pos + kFunikiAcSectionLength >= nbits / 8,
                             50, 0, false);
 

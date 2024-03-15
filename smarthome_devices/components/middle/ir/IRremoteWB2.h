@@ -21,11 +21,11 @@ typedef enum {
   COOLIX,  // (15)
   ELECTRA_AC,
   FUJITSU_AC,
-  KELVINATOR,
+  SANYO_LC7461,
   GREE,
   UNKNOWN_94385,  // (20)
   RCMM,
-  SANYO_LC7461,
+  KELVINATOR,
   LG2,
   SHERWOOD,
   PRONTO,  // Technically not a protocol, but an encoding. (25)
@@ -262,4 +262,9 @@ typedef enum {
 #define kSanyoLC7461AddressBits  13
 #define kSanyoLC7461CommandBits  8
 #define kSanyoLC7461Bits ((kSanyoLC7461AddressBits + kSanyoLC7461CommandBits) * 2)
+
+#define kKelvinatorStateLength  16
+#define kKelvinatorBits (kKelvinatorStateLength * 8)
+#define kKelvinatorDefaultRepeat kNoRepeat
+
 #endif

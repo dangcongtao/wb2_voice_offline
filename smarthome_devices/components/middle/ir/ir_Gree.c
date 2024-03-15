@@ -2,6 +2,7 @@
 #include "IRutils.h"
 #include "system_typedef.h"
 #include "IRsend.h"
+#include "ir_Kelvinator.h"
 
 const uint16_t kGreeHdrMark = 9000;
 const uint16_t kGreeHdrSpace = 4500;  ///< See #684 & real example in unit tests
@@ -11,8 +12,6 @@ const uint16_t kGreeZeroSpace = 560;
 const uint16_t kGreeMsgSpace = 19980;  ///< See #1508, #386, & Kelvinator
 const uint8_t kGreeBlockFooter = 0b010;
 const uint8_t kGreeBlockFooterBits = 3;
-
-const uint8_t kKelvinatorChecksumStart = 10;
 
 static void sendGree(const uint8_t data[], const uint16_t nbytes,
                       const uint16_t repeat) {
@@ -40,18 +39,6 @@ static void sendGree(const uint8_t data[], const uint16_t nbytes,
   vTaskExitCritical();
 }
 
-uint8_t IRKelvinatorAC_calcBlockChecksum(const uint8_t *block,
-                                          const uint16_t length) {
-  uint8_t sum = kKelvinatorChecksumStart;
-  // Sum the lower half of the first 4 bytes of this block.
-  for (uint8_t i = 0; i < 4 && i < length - 1; i++, block++)
-    sum += (*block & 0b1111);
-  // then sum the upper half of the next 3 bytes.
-  for (uint8_t i = 4; i < length - 1; i++, block++) sum += (*block >> 4);
-  // Trim it down to fit into the 4 bits allowed. i.e. Mod 16.
-  return sum & 0b1111;
-}
-
 static bool validChecksum(const uint8_t state[], const uint16_t length) {
   // Top 4 bits of the last byte in the state is the state's checksum.
   return GETBITS8(state[length - 1], kHighNibble, kNibbleSize) ==
@@ -71,12 +58,12 @@ bool decodeGree(decode_results* results, uint16_t offset,
 
   uint16_t used;
   // Header + Data Block #1 (32 bits)
-  used = matchGenericState(results->rawbuf + offset, results->state,
+  used = matchGenericStateLimit(results->rawbuf + offset, results->state,
                       results->rawlen - offset, nbits / 2,
-                      kGreeHdrMark, kGreeHdrSpace,
-                      kGreeBitMark, kGreeOneSpace,
-                      kGreeBitMark, kGreeZeroSpace,
-                      0, 0, false,
+                      kGreeHdrMark-800, kGreeHdrMark+800, kGreeHdrSpace-500, kGreeHdrSpace+500,
+                      kGreeBitMark-440, kGreeBitMark+400, kGreeOneSpace-600, kGreeOneSpace+500,
+                      kGreeBitMark-440, kGreeBitMark+400, kGreeZeroSpace-460, kGreeZeroSpace+440,
+                      0, 0, 0, 0, false,
                       45, kMarkExcess, false);
   if (used == 0) {
     // os_trace("%s matchGenericState 1 failed\r\n", __func__);
@@ -86,20 +73,20 @@ bool decodeGree(decode_results* results, uint16_t offset,
 
   // Block #1 footer (3 bits, B010)
   match_result_t data_result;
-  data_result = matchData(&(results->rawbuf[offset]), kGreeBlockFooterBits,
-                          kGreeBitMark, kGreeOneSpace, kGreeBitMark,
-                          kGreeZeroSpace, _tolerance, kMarkExcess, false, true);
+  data_result = matchDataLimit(&(results->rawbuf[offset]), kGreeBlockFooterBits,
+                          kGreeBitMark-440, kGreeBitMark+440, kGreeOneSpace-500, kGreeOneSpace+500, kGreeBitMark-440, kGreeBitMark+440,
+                          kGreeZeroSpace-460, kGreeZeroSpace+440, _tolerance, kMarkExcess, false, true);
   if (data_result.success == false) return false;
   if (data_result.data != kGreeBlockFooter) return false;
   offset += data_result.used;
 
   // Inter-block gap + Data Block #2 (32 bits) + Footer
-  if (!matchGenericState(results->rawbuf + offset, results->state + 4,
+  if (!matchGenericStateLimit(results->rawbuf + offset, results->state + 4,
                     results->rawlen - offset, nbits / 2,
-                    kGreeBitMark, kGreeMsgSpace,
-                    kGreeBitMark, kGreeOneSpace,
-                    kGreeBitMark, kGreeZeroSpace,
-                    kGreeBitMark, kGreeMsgSpace, true,
+                    kGreeBitMark-440, kGreeBitMark+400, kGreeMsgSpace-3000, kGreeMsgSpace+3000,
+                    kGreeBitMark-440, kGreeBitMark+400, kGreeOneSpace-600, kGreeOneSpace+500,
+                    kGreeBitMark-440, kGreeBitMark+400, kGreeZeroSpace-460, kGreeZeroSpace+440,
+                    kGreeBitMark-440, kGreeBitMark+400, kGreeMsgSpace-5000, kGreeMsgSpace+3000, true,
                     45, kMarkExcess, false)) {
                         os_trace("%s matchGenericState 2 failed\r\n", __func__);
                         return false;
@@ -108,7 +95,10 @@ bool decodeGree(decode_results* results, uint16_t offset,
   // Compliance
   if (strict) {
     // Verify the message's checksum is correct.
-    if (!validChecksum(results->state, kGreeStateLength)) return false;
+    if (!validChecksum(results->state, kGreeStateLength)){
+      os_trace("%s verify checksum is incorrect\r\n", __func__);
+      return false;
+    }
   }
 
   // Success
