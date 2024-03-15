@@ -11,5 +11,6 @@ void sync_led_stt_when_reset_ts04(void);
 uint8_t dev_is_doing_config(void);
 void set_timeout_reset(void);
 void clear_timeout_reset(void);
+uint8_t dev_is_online(void);
 
 #endif /* _M_SMART_CONFIG_H_ */

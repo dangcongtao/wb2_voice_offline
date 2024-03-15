@@ -44,9 +44,10 @@ bool decodeMitsubishiHeavy(decode_results* results, uint16_t offset,
   }
 
   uint16_t used;
+
   used = matchGenericStateLimit(results->rawbuf + offset, results->state,
                       results->rawlen - offset, nbits,
-                      kMitsubishiHeavyHdrMark - 400, kMitsubishiHeavyHdrMark+400, kMitsubishiHeavyHdrSpace+400,kMitsubishiHeavyHdrSpace-400,
+                      kMitsubishiHeavyHdrMark - 400, kMitsubishiHeavyHdrMark+400, kMitsubishiHeavyHdrSpace-400,kMitsubishiHeavyHdrSpace+400,
                       kMitsubishiHeavyBitMark-270,kMitsubishiHeavyBitMark+330, kMitsubishiHeavyOneSpace-320,kMitsubishiHeavyOneSpace+380,
                       kMitsubishiHeavyBitMark-270,kMitsubishiHeavyBitMark+330, kMitsubishiHeavyZeroSpace-320, kMitsubishiHeavyZeroSpace+380,
                       kMitsubishiHeavyBitMark-270,kMitsubishiHeavyBitMark+330, kMitsubishiHeavyGap-2000, kMitsubishiHeavyGap+2000, true,
@@ -58,13 +59,19 @@ bool decodeMitsubishiHeavy(decode_results* results, uint16_t offset,
     case kMitsubishiHeavy88Bits:
       if (strict && !(IRMitsubishiHeavy88Ac_checkZjsSig(results->state) &&
                       IRMitsubishiHeavy152Ac_validChecksum(results->state, kMitsubishiHeavy88StateLength)))
+                      {
+                        os_trace("%s checksum 88 failed", __func__);
         return false;
+                      }
       results->decode_type = MITSUBISHI_HEAVY_88;
       break;
     case kMitsubishiHeavy152Bits:
       if (strict && !(IRMitsubishiHeavy152Ac_checkZmsSig(results->state) &&
                       IRMitsubishiHeavy152Ac_validChecksum(results->state, kMitsubishiHeavy152StateLength)))
+        {
+          os_trace("%s checksum 152 failed", __func__);
         return false;
+        }
       results->decode_type = MITSUBISHI_HEAVY_152;
       break;
     default:

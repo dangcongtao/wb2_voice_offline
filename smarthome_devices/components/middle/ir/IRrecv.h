@@ -9,7 +9,7 @@
 #include "ir_Samsung.h"
 #include "IRsend.h"
 
-#define DEBUG_IR_RCV_ENABLE    1
+#define DEBUG_IR_RCV_ENABLE    0
 #define os_trace_rcv if (DEBUG_IR_RCV_ENABLE == 1) printf
 
 #define MS_TO_USEC(x) ((x) * 1000U)  // Convert milli-Seconds to micro-Seconds.

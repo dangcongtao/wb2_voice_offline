@@ -9,6 +9,7 @@
 #include <bl_os_hal.h>
 #include "axk_attr.h"
 #include "IRutils.h"
+#include "event_driven.h"
 
 DRAM_ATTR irparams_t params;
 irparams_t *params_save;
@@ -802,6 +803,26 @@ uint16_t matchGenericStateLimit(volatile uint16_t *data_ptr,
                         const int16_t excess,
                         const bool MSBfirst )
 {
+    if (hdrmarkLower > hdrmarkUpper) {
+        os_trace("------%s hdrmark error\r\n", __func__);
+    } else if (hdrspaceLower > hdrspaceUpper) {
+        os_trace("------%s hdrspace error\r\n", __func__);
+    } else if (onemarkLower > onemarkUpper) {
+        os_trace("------%s onemark error\r\n", __func__);
+    } else if (onespaceLower > onespaceUpper) {
+        os_trace("------%s onespace error\r\n", __func__);
+    } else if (zeromarkLower > zeromarkUpper) {
+        os_trace("------%s zeromark error\r\n", __func__);
+    } else if (zerospaceLower > zerospaceUpper) {
+        os_trace("------%s zerospace error\r\n", __func__);
+    } else if (footermarkLower > footermarkUpper) {
+        os_trace("------%s footermark error\r\n", __func__);
+    } else if (footerspaceLower > footerspaceUpper) {
+        os_trace("------%s footerspace error\r\n", __func__);
+    }
+
+
+
     return _matchGenericLimit(data_ptr, NULL, result_ptr, false, remaining, nbits,
                          hdrmarkLower,hdrmarkUpper, hdrspaceLower, hdrspaceUpper,
                          onemarkLower, onemarkUpper, onespaceLower, onespaceUpper,
@@ -1209,12 +1230,12 @@ if (DEBUG_IR_RCV_ENABLE){
 
 
 #if DECODE_KELVINATOR
-    os_trace("Attempting Kelvinator AC decode\r\n");
+    // os_trace("Attempting Kelvinator AC decode\r\n");
     if (decodeKelvinator(results, offset, kKelvinatorBits, true)) return true;
 #endif
 
 #if DECODE_GREE
-    os_trace("Attempting Gree AC decode\r\n");
+    // os_trace("Attempting Gree AC decode\r\n");
     if (decodeGree(results, offset, kGreeBits, true)) return true;
 #endif
 
@@ -1224,18 +1245,18 @@ if (DEBUG_IR_RCV_ENABLE){
 #endif
 
 #if (DECODE_MITSUBISHIHEAVY)
-    //os_trace("Attempting decodeMitsubishiHeavyAC decode\r\n");
+    // os_trace("Attempting decodeMitsubishiHeavyAC decode\r\n");
     if (decodeMitsubishiHeavy(results, offset, kMitsubishiHeavy88Bits, true)) return true;
     if (decodeMitsubishiHeavy(results, offset, kMitsubishiHeavy152Bits, true)) return true;
 #endif
 
 #if (DECODE_MITSUBISHI_AC)
-    //os_trace("Attempting decodeMitsubishiHeavyAC decode\r\n");
-    if (decodeMitsubishiAC(results, offset, kMitsubishiACBits, true)) return true;
+    // os_trace("Attempting DECODE_MITSUBISHI_AC decode\r\n");
+    if (decodeMitsubishiAC(results, offset, kMitsubishiACBits, false)) return true;
 #endif
 
 #if (DECODE_MITSUBISHI136)
-    //os_trace("Attempting decodeMitsubishiHeavyAC decode\r\n");
+    // os_trace("Attempting decodeMitsubishi136 decode\r\n");
     if (decodeMitsubishi136(results, offset, kMitsubishi136Bits, true)) return true;
 #endif
 
@@ -1314,7 +1335,7 @@ if (DEBUG_IR_RCV_ENABLE){
 
 #if DECODE_FUJITSU_AC
     // os_trace("Attempting decodeFujitsuAC decode\r\n");        
-    if (decodeFujitsuAC(results, offset, kFujitsuAcBits, true)) return true;
+    if (decodeFujitsuAC(results, offset, kFujitsuAcBits, false)) return true;
 #endif
 
 #if DECODE_PANASONIC_AC
@@ -1546,7 +1567,8 @@ static void learnIR(decode_results *results)
     sprintf(str, "{\"%s\":3,\"data\":\"%s\"}", gs_dev_type[device_type], buffDataIR);
     // os_trace("datasend[%u]:", strlen(str));
     // os_trace("'%s'\r\n", str);
-    m_mqtt_get_instance()._mqtt_publish(str, strlen(str));
+    if (dev_is_online())
+        m_mqtt_get_instance()._mqtt_publish(str, strlen(str));
 }
 
 void m_ir_task(void *param)
@@ -1563,6 +1585,10 @@ void m_ir_task(void *param)
             if (capture.decode_type == LG2) {
                 LG_setRaw(capture.value, capture.decode_type, &ir_state);
                 LG_setInfo(capture.value, capture.decode_type, &ir_state_recv);
+            } else if (capture.decode_type == LG){
+                LG_setRaw(capture.value, capture.decode_type, &ir_state);
+                LG_setInfo(capture.value, capture.decode_type, &ir_state_recv);
+            } else if (capture.decode_type == FUNIKI){
             } else if (capture.decode_type == AQUA){
                 AQUA_setRaw(capture.state, capture.decode_type, &ir_state);
                 AQUA_setInfo(capture.state, capture.decode_type, &ir_state_recv);
@@ -1757,7 +1783,8 @@ void m_ir_task(void *param)
                 gs_dev_type[device_type], capture.decode_type, ir_state_recv.model);
                 os_trace("learn_auto_datasend[%u]:", strlen(str));
                 os_trace("'%s'\r\n", str);
-                m_mqtt_get_instance()._mqtt_publish(str, strlen(str));
+                if (dev_is_online())
+                    m_mqtt_get_instance()._mqtt_publish(str, strlen(str));
 
                 old_time_learn_ir_auto = 0;
             }
@@ -1770,6 +1797,7 @@ void m_ir_task(void *param)
                 gs_dev_type[device_type], capture.decode_type, ir_state_recv.model, ir_state_recv.power, ir_state_recv.mode, ir_state_recv.degrees, ir_state_recv.fanspeed);
                 os_trace("datarcv[%u]:", strlen(str));
                 os_trace("'%s'\r\n", str);
+                if (dev_is_online())
                 m_mqtt_get_instance()._mqtt_publish(str, strlen(str));
             }
             

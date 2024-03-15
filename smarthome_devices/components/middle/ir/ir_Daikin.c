@@ -94,7 +94,7 @@ bool decodeDaikin(decode_results *results, uint16_t offset,
                           kDaikinTolerance, kDaikinMarkExcess, false, true);
   offset += data_result.used;
   if (data_result.success == false) {
-    os_trace("%s Fail\r\n", __func__);
+    // os_trace("%s Fail\r\n", __func__);
     return false;  // Fail
   }
   if (data_result.data) {

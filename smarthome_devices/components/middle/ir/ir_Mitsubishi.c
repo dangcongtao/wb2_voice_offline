@@ -345,15 +345,21 @@ bool decodeMitsubishiAC(decode_results *results, uint16_t offset,
                                  kMitsubishiAcHdrMark-400, kMitsubishiAcHdrMark+400, kMitsubishiAcHdrSpace-350, kMitsubishiAcHdrSpace+350,
                                  kMitsubishiAcBitMark-350, kMitsubishiAcBitMark+350, kMitsubishiAcOneSpace-400, kMitsubishiAcOneSpace+400,
                                  kMitsubishiAcBitMark-350, kMitsubishiAcBitMark+350, kMitsubishiAcZeroSpace-320, kMitsubishiAcZeroSpace+380,
-                                 kMitsubishiAcRptMark-340, kMitsubishiAcRptMark+360, kMitsubishiAcRptSpace-3000, kMitsubishiAcRptSpace+3000,
+                                 kMitsubishiAcRptMark-340, kMitsubishiAcRptMark+360, kMitsubishiAcRptSpace-4000, kMitsubishiAcRptSpace+4000,
                                  r < expected_repeats,  // At least?
                                  _tolerance + kMitsubishiAcExtraTolerance,
                                  0, false);
-    if (!used) return false;  // No match.
+    if (!used){
+      os_trace("%s not match\r\n", __func__);
+      return false;  // No match.
+    }
     offset += used;
     if (r) {  // Is this a repeat?
       // Repeats are expected to be exactly the same.
-      if (memcmp(save, results->state, nbits / 8) != 0) return false;
+      if (memcmp(save, results->state, nbits / 8) != 0){
+        os_trace("%s Repeats are expected to be exactly the same\r\n", __func__);
+        return false;
+      }
     } else {  // It is the first message.
       // Compliance
       if (strict) {

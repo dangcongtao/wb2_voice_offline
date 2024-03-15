@@ -128,7 +128,7 @@ bool decodeLG(decode_results *results, uint16_t offset,
   results->value = data;
   results->command = command;
   results->address = data >> 20;  // The bits before the command.
-  os_trace("%s success\r\n", __func__);
+  os_trace("%s success %u\r\n", __func__, results->decode_type);
   return true;
 }
 
@@ -162,6 +162,7 @@ void sendLG(uint64_t data, uint16_t nbits, uint16_t repeat) {
 }
 
 void sendLG2(uint64_t data, uint16_t nbits, uint16_t repeat) {
+  
   if (nbits >= kLg32Bits) {
     // Let the original routine handle it.
     vTaskEnterCritical();
@@ -287,25 +288,29 @@ static void setMode(const uint8_t mode) {
   }
 }
 
-static void setFan(const uint8_t speed) {
+static void setFan(lg_ac_remote_model_t model, const uint8_t speed) {
   uint8_t _speed = speed;
   // Only model AKB74955603 has these speeds, so convert if we have to.
-  switch (speed) {
-    case kLgAcFanLowAlt:
-      _.data.Fan = kLgAcFanLow;
-      return;
-    case kLgAcFanHigh:
-      _.data.Fan = kLgAcFanMax;
-      return;
+  if (model != AKB74955603) {
+    switch (speed) {
+      case kLgAcFanLowAlt:
+        _.data.Fan = kLgAcFanLow;
+        return;
+      case kLgAcFanHigh:
+        _.data.Fan = kLgAcFanMax;
+        return;
+    }
   }
 
   switch (speed) {
     case kLgAcFanLow:
     case kLgAcFanLowAlt:
-      _speed = kLgAcFanLow;
+      _speed = (model != AKB74955603)
+          ? kLgAcFanLow : kLgAcFanLowAlt;
       break;
     case kLgAcFanHigh:
-      _speed = kLgAcFanMax;
+      _speed = (model != AKB74955603)
+          ? kLgAcFanMax : speed;
       break;
     case kLgAcFanAuto:
     case kLgAcFanLowest:
@@ -471,7 +476,7 @@ void LG_setInfo(const uint32_t new_code, const decode_type_t protocol, state_ir_
 }
 
 void checksum(void);
-static void send(const uint16_t repeat) {
+static void send2(const uint16_t repeat) {
   if (getPower()) {
     checksum();
     os_trace("%s raw_data: %llx\r\n", __func__, (uint64_t)_.data.raw);
@@ -483,6 +488,20 @@ static void send(const uint16_t repeat) {
     os_trace("%s send off cmd\r\n", __func__);
     _.data.raw = kLgAcOffCommand;
     sendLG2(_.data.raw, kLgBits, repeat);
+  }
+}
+static void send(const uint16_t repeat) {
+  if (getPower()) {
+    checksum();
+    os_trace("%s raw_data: %llx\r\n", __func__, (uint64_t)_.data.raw);
+    sendLG(_.data.raw, kLgBits, repeat);
+    state_ir_t ir_state;
+    LG_setRaw(_.data.raw, LG, &ir_state);
+    IR_logCommon(ir_state);
+  } else {
+    os_trace("%s send off cmd\r\n", __func__);
+    _.data.raw = kLgAcOffCommand;
+    sendLG(_.data.raw, kLgBits, repeat);
   }
 }
 
@@ -499,6 +518,24 @@ void stateReset(void) {
 
 void LG_send(state_ir_t state_ir)
 {
+  IRsend_begin();
+  state_ir_t state_ir_new;
+  LG_setRaw(kLgAcOffCommand, LG, &state_ir_new);
+  setModel(GE6711AR2853M);
+
+  os_trace("degress: %u, mode: %u, fanspeed: %u, power: %u\r\n", (uint8_t)state_ir.degrees, (uint8_t)state_ir.mode, (uint8_t)state_ir.fanspeed, (uint8_t)state_ir.power);
+
+  setTemp((uint8_t)state_ir.degrees);
+
+  setMode((uint8_t)state_ir.mode);
+  setFan(GE6711AR2853M, (uint8_t)state_ir.fanspeed);
+  setPower((state_ir.power ? 1 : 0));
+  
+  send(kNoRepeat);
+}
+
+void LG2_send(state_ir_t state_ir)
+{
   os_trace("%s \r\n", __func__);
   IRsend_begin();
   state_ir_t state_ir_new;
@@ -510,10 +547,10 @@ void LG_send(state_ir_t state_ir)
   setTemp((uint8_t)state_ir.degrees);
 
   setMode((uint8_t)state_ir.mode);
-  setFan((uint8_t)state_ir.fanspeed);
+  setFan(AKB75215403, (uint8_t)state_ir.fanspeed);
   setPower((state_ir.power ? 1 : 0));
   
-  send(kNoRepeat);
+  send2(kNoRepeat);
 }
 
 uint8_t calcChecksum(const uint32_t state) {

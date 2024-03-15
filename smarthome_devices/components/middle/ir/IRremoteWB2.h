@@ -13,7 +13,7 @@ typedef enum {
   SAMSUNG,
   WHYNTER,
   AIWA_RC_T501,
-  LG,  // (10)
+  UNKNOWN_8954,  // (10)
   SANYO,
   SANYO_AC152, // MIDEA - COMFEE 
   DISH,
@@ -73,7 +73,7 @@ typedef enum {
   UNKNOWN_12,
   AMCOR,
   JVC,  // 70
-  MITSUBISHI136,
+  UNKNOWN_8545,
   MITSUBISHI112,
   MIRAGE,
   SONY_38K,
@@ -116,8 +116,10 @@ typedef enum {
   MITSUBISHI_HEAVY_152,
   MITSUBISHI_HEAVY_88,
   MITSUBISHI_AC,
+  MITSUBISHI136,
+  LG,
   // Add new entries before this one, and update it to point to the last entry.
-  kLastDecodeType = MITSUBISHI_AC,
+  kLastDecodeType = LG,
 } decode_type_t;
 
 #define kSingleRepeat 1
