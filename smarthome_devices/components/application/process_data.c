@@ -421,6 +421,12 @@ static void ir_control(cJSON *jsRoot)
     } else if (typesend == 2) {
         // send by time
         ir_send_data(jsRoot);
+        memset(respond, 0, sizeof(respond));
+        sprintf(
+            respond,
+            "{\"%s\":%ld,\"type\":2,\"result\": 1}",
+            gs_dev_type[device_type], type);
+        app_send_data(respond, strlen(respond));
     }
 
 RESPONSE:

@@ -1178,12 +1178,6 @@ if (DEBUG_IR_RCV_ENABLE){
 #endif
 
 
-#if DECODE_FUNIKI
-    //os_trace("Attempting Funiki AC\r\n");
-    if (decodeFunikiAC(results, offset, kFunikiAcBits, true)) return true;
-    if (decodeFunikiAC(results, offset, kFunikiAcExtendedBits, true)) return true;
-#endif
-
 #if DECODE_AQUA
     //os_trace("Attempting Aqua AC\r\n");
     if (decodeAquaAC(results, offset, kAquaAcBits, true)) return true;
@@ -1374,6 +1368,12 @@ if (DEBUG_IR_RCV_ENABLE){
 #if DECODE_VESTEL_AC
     // os_trace("Attempting decodeFujitsuAC decode\r\n");        
     if (decodeVestelAc(results, offset, kVestelAcBits, true)) return true;
+#endif
+
+#if DECODE_FUNIKI
+    //os_trace("Attempting Funiki AC\r\n");
+    if (decodeFunikiAC(results, offset, kFunikiAcBits, true)) return true;
+    if (decodeFunikiAC(results, offset, kFunikiAcExtendedBits, true)) return true;
 #endif
 
 #if DECODE_SANYO
@@ -1593,7 +1593,6 @@ void m_ir_task(void *param)
             } else if (capture.decode_type == LG){
                 LG_setRaw(capture.value, capture.decode_type, &ir_state);
                 LG_setInfo(capture.value, capture.decode_type, &ir_state_recv);
-            } else if (capture.decode_type == FUNIKI){
             } else if (capture.decode_type == AQUA){
                 AQUA_setRaw(capture.state, capture.decode_type, &ir_state);
                 AQUA_setInfo(capture.state, capture.decode_type, &ir_state_recv);
