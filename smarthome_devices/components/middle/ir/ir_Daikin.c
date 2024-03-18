@@ -370,7 +370,7 @@ bool decodeDaikin2(decode_results *results, uint16_t offset,
                         40, kDaikinMarkExcess,
                         false);
     if (used == 0) {
-      os_trace("%s matchGenericState failed %u\r\n", __func__, section);
+      // os_trace("%s matchGenericState failed %u\r\n", __func__, section);
       return false;
     }
     offset += used;
@@ -1047,7 +1047,7 @@ bool decodeDaikin160(decode_results *results, uint16_t offset,
                         section >= kDaikin160Sections - 1,
                         45, kDaikinMarkExcess, false);
     if (used == 0) {
-      os_trace("%s matchGenericState failed\r\n", __func__);
+      // os_trace("%s matchGenericState failed\r\n", __func__);
       return false;
     }
     offset += used;
@@ -1359,7 +1359,7 @@ bool decodeDaikin216(decode_results *results, uint16_t offset,
                         section >= kDaikin216Sections - 1,
                         45, kDaikinMarkExcess, false);
     if (used == 0) {
-      os_trace("%s matchGenericState failed\r\n", __func__);
+      // os_trace("%s matchGenericState failed\r\n", __func__);
       return false;
     }
     offset += used;
@@ -1683,7 +1683,7 @@ bool decodeDaikin128(decode_results *results, uint16_t offset,
                         section > 0,
                         kDaikinTolerance, kDaikinMarkExcess, false);
     if (used == 0) {
-      os_trace("%s matchGenericState failed\r\n", __func__);
+      // os_trace("%s matchGenericState failed\r\n", __func__);
       return false;
     }
     offset += used;

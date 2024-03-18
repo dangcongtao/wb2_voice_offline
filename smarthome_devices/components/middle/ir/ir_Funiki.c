@@ -51,7 +51,7 @@ bool decodeFunikiAC(decode_results *results, uint16_t offset, const uint16_t nbi
                             50, 0, false);
 
         if (used == 0){
-            os_trace("%s step 2 not used failed\r\n", __func__);
+            os_trace_rcv("%s step 2 not used failed\r\n", __func__);
             return false;
         }
         offset += used;

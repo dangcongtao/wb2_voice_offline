@@ -88,7 +88,7 @@ bool decodeGree(decode_results* results, uint16_t offset,
                     kGreeBitMark-440, kGreeBitMark+400, kGreeZeroSpace-460, kGreeZeroSpace+440,
                     kGreeBitMark-440, kGreeBitMark+400, kGreeMsgSpace-5000, kGreeMsgSpace+3000, true,
                     45, kMarkExcess, false)) {
-                        os_trace("%s matchGenericState 2 failed\r\n", __func__);
+                        // os_trace("%s matchGenericState 2 failed\r\n", __func__);
                         return false;
                     }
 

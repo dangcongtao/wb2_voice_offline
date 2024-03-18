@@ -178,17 +178,22 @@ bool decodeHitachiAC(decode_results *results, uint16_t offset,
     switch (nbits) {
     case kHitachiAc1Bits:
         results->decode_type = HITACHI_AC1;
+        os_trace("%s success decode_type: HITACHI_AC1\r\n", __func__);
         break;
     case kHitachiAc2Bits:
         results->decode_type = HITACHI_AC2;
+        os_trace("%s success decode_type: HITACHI_AC2\r\n", __func__);
         break;
     case kHitachiAc344Bits:
         results->decode_type = HITACHI_AC344;
+        os_trace("%s success decode_type: HITACHI_AC344\r\n", __func__);
         break;
     case kHitachiAcBits:
     default:
         results->decode_type = HITACHI_AC;
+        os_trace("%s success decode_type: HITACHI_AC\r\n", __func__);
     }
+
     results->bits = nbits;
     // No need to record the state as we stored it as we decoded it.
     // As we use result->state, we don't record value, address, or command as it
@@ -604,12 +609,12 @@ void HitachiAC1_setRaw(const uint8_t new_code[], const uint16_t length, state_ir
     state_ir_t temp;
     memcpy(hitachi1_protocol.raw, new_code, min(length, kHitachiAc1StateLength));
 
-    os_trace("power: %d \r\n", HitachiAC1_getPower());    
-    os_trace("temp: %d \r\n", HitachiAC1_getTemp());
-    os_trace("mode: %d \r\n", HitachiAC1_getMode());
-    os_trace("fan: %d \r\n", HitachiAC1_getFan());
+    // os_trace("power: %d \r\n", HitachiAC1_getPower());    
+    // os_trace("temp: %d \r\n", HitachiAC1_getTemp());
+    // os_trace("mode: %d \r\n", HitachiAC1_getMode());
+    // os_trace("fan: %d \r\n", HitachiAC1_getFan());
 
-    os_trace("model: %d \r\n", HitachiAC1_getModel());
+    // os_trace("model: %d \r\n", HitachiAC1_getModel());
 
     memset(&temp, 0, sizeof(temp));
     *ir_state = HitachiAC1_toCommon();
@@ -671,12 +676,12 @@ void HitachiAC1_setInfo(const uint8_t new_code[], const uint16_t length, state_i
     }
 
 
-    os_trace("power: %d \r\n", HitachiAC1_getPower());    
-    os_trace("temp: %d \r\n", HitachiAC1_getTemp());
-    os_trace("mode: %d \r\n", HitachiAC1_getMode());
-    os_trace("fan: %d \r\n", HitachiAC1_getFan());
+    // os_trace("power: %d \r\n", HitachiAC1_getPower());    
+    // os_trace("temp: %d \r\n", HitachiAC1_getTemp());
+    // os_trace("mode: %d \r\n", HitachiAC1_getMode());
+    // os_trace("fan: %d \r\n", HitachiAC1_getFan());
 
-    os_trace("model: %d \r\n", HitachiAC1_getModel());
+    // os_trace("model: %d \r\n", HitachiAC1_getModel());
 }
 
 #if SEND_HITACHI_AC
@@ -1075,7 +1080,7 @@ bool decodeHitachiAC424(decode_results *results, uint16_t offset,
         blog_error("%s: match fail\r\n", __func__);
         return false;  // We failed to find any data.
     }
-
+    os_trace("%s success\r\n", __func__);
     // Success
     results->decode_type = HITACHI_AC424;
     results->bits = nbits;
@@ -1531,10 +1536,10 @@ void HitachiAC344_setRaw(const uint8_t new_code[], const uint16_t length, state_
     memcpy(hitachi344_protocol.raw, new_code, min(length, kHitachiAc344StateLength));
 
     /* check data */
-    os_trace("temp: %d \r\n", HitachiAC344_getTemp());
-    os_trace("mode: %d \r\n", HitachiAC344_getMode());
-    os_trace("fan: %d \r\n", HitachiAC344_getFan());
-    os_trace("power: %d \r\n", HitachiAC344_getPower());
+    // os_trace("temp: %d \r\n", HitachiAC344_getTemp());
+    // os_trace("mode: %d \r\n", HitachiAC344_getMode());
+    // os_trace("fan: %d \r\n", HitachiAC344_getFan());
+    // os_trace("power: %d \r\n", HitachiAC344_getPower());
     *ir_state = HitachiAC344_toCommon();
 }
 

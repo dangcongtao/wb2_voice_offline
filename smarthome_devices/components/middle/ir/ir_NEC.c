@@ -4,11 +4,11 @@
 bool decodeNEC(decode_results *results, uint16_t offset,
                        const uint16_t nbits, const bool strict) {
   if (results->rawlen < kNecRptLength + offset - 1){
-    os_trace("Can't possibly be a valid NEC message.\r\n");
+    // os_trace("Can't possibly be a valid NEC message.\r\n");
     return false;  // Can't possibly be a valid NEC message.
   }
   if (strict && nbits != kNECBits){
-    os_trace("Not strictly an NEC message.\r\n");
+    // os_trace("Not strictly an NEC message.\r\n");
     return false;  // Not strictly an NEC message.
   }
 
@@ -16,7 +16,7 @@ bool decodeNEC(decode_results *results, uint16_t offset,
 
   // Header - All NEC messages have this Header Mark.
   if (!matchMark(results->rawbuf[offset++], kNecHdrMark, kUseDefTol, kMarkExcess)){
-    os_trace("NEC not match mark 1\r\n");
+    // os_trace("NEC not match mark 1\r\n");
     return false;
   }
   // Check if it is a repeat code.
@@ -30,7 +30,7 @@ bool decodeNEC(decode_results *results, uint16_t offset,
     results->address = 0;
     results->command = 0;
     results->repeat = true;
-    os_trace("NEC it is a repeat code\r\n");
+    // os_trace("NEC it is a repeat code\r\n");
     return true;
   }
 
@@ -41,7 +41,7 @@ bool decodeNEC(decode_results *results, uint16_t offset,
                     kNecBitMark, kNecOneSpace,
                     kNecBitMark, kNecZeroSpace,
                     kNecBitMark, kNecMinGap, true, kUseDefTol, kMarkExcess, true)){
-                        os_trace("NEC not Match Header\r\n");
+                        // os_trace("NEC not Match Header\r\n");
                         return false;
                     }
   // Compliance

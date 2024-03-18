@@ -40,7 +40,7 @@
 
 
 #define DECODE_LG   1
-#define DECODE_NEC  1
+#define DECODE_NEC  0
 #define DECODE_SAMSUNG 1
 #define DECODE_SAMSUNG_AC 1
 #define DECODE_FUNIKI 1

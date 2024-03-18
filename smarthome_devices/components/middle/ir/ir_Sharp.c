@@ -48,7 +48,7 @@ bool decodeSharpAc(decode_results *results, uint16_t offset,
                       kSharpAcBitMark - 320, kSharpAcBitMark + 430, kSharpAcGap - 100, kSharpAcGap + 100, true,
                       45, kMarkExcess, false);
   if (used == 0) {
-    os_trace("%s used failed\r\n", __func__);
+    // os_trace("%s used failed\r\n", __func__);
     return false;
   }
   offset += used;

@@ -350,7 +350,7 @@ bool decodeMitsubishiAC(decode_results *results, uint16_t offset,
                                  _tolerance + kMitsubishiAcExtraTolerance,
                                  0, false);
     if (!used){
-      os_trace("%s not match\r\n", __func__);
+      // os_trace("%s not match\r\n", __func__);
       return false;  // No match.
     }
     offset += used;
