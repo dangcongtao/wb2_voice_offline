@@ -75,6 +75,7 @@
 #define DECODE_MITSUBISHI136 1
 #define DECODE_MITSUBISHI_AC 1
 #define DECODE_KELVINATOR 1
+#define DECODE_CARRIER_AC64 1
 
 
 #define IR_RX 1
@@ -347,6 +348,11 @@ bool decodeSanyoAc152(decode_results *results, uint16_t offset,
                               const uint16_t nbits, const bool strict);
 #endif
 
+#if DECODE_CARRIER_AC64
+bool decodeCarrierAC64(decode_results *results, uint16_t offset,
+                           const uint16_t nbits, const bool strict);
+#endif
+
 bool matchSpace(uint32_t measured, uint32_t desired, uint8_t tolerance,
                         int16_t excess);
 
@@ -509,6 +515,7 @@ void IRSanyoAc_setInfo(const uint8_t newState[], state_ir_t *ir_state);
 
 void IRMitsubishiAC_setInfo(const uint8_t *data, state_ir_t *ir_state);
 void IRMitsubishi136_setInfo(const uint8_t *data, state_ir_t *ir_state);
+void IRCarrierAc64_setInfo(const uint64_t state, state_ir_t *ir_state);
 
 // void enableIRIn(const bool pullup);
 void ir_loop(void);

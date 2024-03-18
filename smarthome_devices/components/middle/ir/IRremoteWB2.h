@@ -14,7 +14,7 @@ typedef enum {
   WHYNTER,
   AIWA_RC_T501,
   UNKNOWN_8954,  // (10)
-  SANYO,
+  CARRIER_AC64,
   SANYO_AC152, // MIDEA - COMFEE 
   DISH,
   DAIKIN,
@@ -85,8 +85,8 @@ typedef enum {
   DELONGHI_AC,  // 80
   DOSHISHA,
   MULTIBRACKETS,
-  CARRIER_AC40,
-  CARRIER_AC64,
+  UNKNOWN_48532,
+  UNKNOWN_9432,
   ELITESCREENS,  // 85
   CORONA_AC,
   MIDEA24,
@@ -205,6 +205,9 @@ typedef enum {
 #define kSharpAcStateLength  13
 #define kSharpAcBits  (kSharpAcStateLength * 8)  // 104
 #define kSharpAcDefaultRepeat  kNoRepeat
+
+#define kCarrierAc64Bits  64
+#define kCarrierAc64MinRepeat  kNoRepeat
 
 /* hitachi */
 #define kHitachiAcStateLength     28

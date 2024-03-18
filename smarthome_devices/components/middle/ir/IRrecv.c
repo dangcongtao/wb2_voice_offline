@@ -1188,6 +1188,11 @@ if (DEBUG_IR_RCV_ENABLE){
     if (decodeCasperAC(results, offset, kCasperAcBits, true)) return true;
 #endif
 
+#if DECODE_CARRIER_AC64
+    //os_trace("Attempting CarrierAC64 AC\r\n");
+    if (decodeCarrierAC64(results, offset, kCarrierAc64Bits, true)) return true;
+#endif
+
 #if DECODE_TOSHIBA
     //os_trace("Attempting Toshiba AC 72bit decode\r\n");
     if (decodeToshibaAC(results, offset, kToshibaACBits, true)) return true;
@@ -1771,6 +1776,10 @@ void m_ir_task(void *param)
             else if (MITSUBISHI136 == capture.decode_type)
             {
                 IRMitsubishi136_setInfo(capture.state, &ir_state_recv);
+            }
+            else if (CARRIER_AC64 == capture.decode_type)
+            {
+                IRCarrierAc64_setInfo(capture.value, &ir_state_recv);
             }
 
             /***************************************************************************************/
