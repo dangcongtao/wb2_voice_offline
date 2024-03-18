@@ -75,7 +75,7 @@ bool decodeSanyoAc(decode_results *results, uint16_t offset,
                     kSanyoAcHdrMark-500, kSanyoAcHdrMark+500, kSanyoAcHdrSpace-400,kSanyoAcHdrSpace+400,
                     kSanyoAcBitMark-400,kSanyoAcBitMark+350, kSanyoAcOneSpace-500,kSanyoAcOneSpace+500,
                     kSanyoAcBitMark-400,kSanyoAcBitMark+350, kSanyoAcZeroSpace-400, kSanyoAcZeroSpace+400,
-                    kSanyoAcBitMark-400,kSanyoAcBitMark+350, kSanyoAcGap-1000, kSanyoAcGap+1000,
+                    kSanyoAcBitMark-400,kSanyoAcBitMark+350, kSanyoAcGap-25000, kSanyoAcGap+25000,
                     true, kUseDefTol, kMarkExcess, false)) return false;
   // Compliance
   if (strict)
@@ -164,9 +164,9 @@ bool decodeSanyoAc88(decode_results *results, uint16_t offset,
                         kSanyoAc88BitMark-350,kSanyoAc88BitMark+350, kSanyoAc88ZeroSpace-350, kSanyoAc88ZeroSpace+350,
                         kSanyoAc88BitMark-350,kSanyoAc88BitMark+350,
                         // Expect an inter-message gap, or just the end of msg?
-                        (r < expected_repeats) ? kSanyoAc88Gap
-                                               : (kDefaultMessageGap-1000), (r < expected_repeats) ? kSanyoAc88Gap
-                                               : (kDefaultMessageGap+1000),
+                        (r < expected_repeats) ? (kSanyoAc88Gap - 1000)
+                                               : (kDefaultMessageGap-25000), (r < expected_repeats) ? (kSanyoAc88Gap + 1000)
+                                               : (kDefaultMessageGap+25000),
                         r == expected_repeats,
                         _tolerance + kSanyoAc88ExtraTolerance,
                         kMarkExcess, false);
@@ -198,7 +198,7 @@ bool decodeSanyoAc152(decode_results *results, uint16_t offset,
                     kSanyoAc152BitMark-340, kSanyoAc152BitMark+360, kSanyoAc152OneSpace-390, kSanyoAc152OneSpace+410,
                     kSanyoAc152BitMark-340, kSanyoAc152BitMark+360, kSanyoAc152ZeroSpace-305, kSanyoAc152ZeroSpace+305,
                     kSanyoAc152BitMark-340, kSanyoAc152BitMark+360,
-                    kDefaultMessageGap-1000, kDefaultMessageGap+1000,  // Just a guess.
+                    kDefaultMessageGap-25000, kDefaultMessageGap+25000,  // Just a guess.
                     false, _tolerance + kSanyoAc152ExtraTolerance,
                     kMarkExcess, false))
     return false;  // No match!

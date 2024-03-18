@@ -37,7 +37,7 @@ bool decodeElectraAC(decode_results *results, uint16_t offset,
                     kElectraAcHdrMark-2000, kElectraAcHdrMark+2000, kElectraAcHdrSpace-1000, kElectraAcHdrSpace+1000,
                     kElectraAcBitMark-500,kElectraAcBitMark+400, kElectraAcOneSpace-400,kElectraAcOneSpace+400,
                     kElectraAcBitMark-500,kElectraAcBitMark+400, kElectraAcZeroSpace-400,kElectraAcZeroSpace+400,
-                    kElectraAcBitMark-500,kElectraAcBitMark+400, kElectraAcMessageGap-2000,kElectraAcMessageGap+2000, true,
+                    kElectraAcBitMark-500,kElectraAcBitMark+400, kElectraAcMessageGap-25000,kElectraAcMessageGap+25000, true,
                     _tolerance, 0, false)) return false;
 
   // Compliance

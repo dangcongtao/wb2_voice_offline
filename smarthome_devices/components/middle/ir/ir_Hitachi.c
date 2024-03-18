@@ -145,7 +145,7 @@ bool decodeHitachiAC(decode_results *results, uint16_t offset,
                     kHitachiAcBitMark-300, kHitachiAcBitMark+300,
                     kHitachiAcZeroSpace-300, kHitachiAcZeroSpace+300,
                     kHitachiAcBitMark-300, kHitachiAcBitMark+300,
-                    kHitachiAcMinGap-300, kHitachiAcMinGap+300,
+                    kHitachiAcMinGap-25000, kHitachiAcMinGap+25000,
                     true, k_tolerance, kMarkExcess, MSBfirst))
     {
         // blog_error("%s: Header data footer fail ", __func__);
@@ -1073,7 +1073,7 @@ bool decodeHitachiAC424(decode_results *results, uint16_t offset,
                         kHitachiAc424BitMark-363, kHitachiAc424BitMark+300, 
                         kHitachiAc424ZeroSpace-300, kHitachiAc424ZeroSpace+428,
                         kHitachiAc424BitMark-300, kHitachiAc424BitMark+300,
-                        kHitachiAcMinGap-300, kHitachiAcMinGap+300,
+                        kHitachiAcMinGap-25000, kHitachiAcMinGap+25000,
                         true, kUseDefTol, 0, false);
     if (used == 0) 
     {

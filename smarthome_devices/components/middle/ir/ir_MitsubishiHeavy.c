@@ -50,7 +50,7 @@ bool decodeMitsubishiHeavy(decode_results* results, uint16_t offset,
                       kMitsubishiHeavyHdrMark - 400, kMitsubishiHeavyHdrMark+400, kMitsubishiHeavyHdrSpace-400,kMitsubishiHeavyHdrSpace+400,
                       kMitsubishiHeavyBitMark-270,kMitsubishiHeavyBitMark+330, kMitsubishiHeavyOneSpace-320,kMitsubishiHeavyOneSpace+380,
                       kMitsubishiHeavyBitMark-270,kMitsubishiHeavyBitMark+330, kMitsubishiHeavyZeroSpace-320, kMitsubishiHeavyZeroSpace+380,
-                      kMitsubishiHeavyBitMark-270,kMitsubishiHeavyBitMark+330, kMitsubishiHeavyGap-2000, kMitsubishiHeavyGap+2000, true,
+                      kMitsubishiHeavyBitMark-270,kMitsubishiHeavyBitMark+330, kMitsubishiHeavyGap-25000, kMitsubishiHeavyGap+25000, true,
                       _tolerance, 0, false);
   if (used == 0) return false;
   offset += used;

@@ -17,7 +17,7 @@
 #include "system_typedef.h"
 
 m_mqtt_t s_mqtt_obj;
-QueueHandle_t mqtt_tx_queue;
+// QueueHandle_t mqtt_tx_queue;
 bool request_send_command_online;
 
 extern void m_mqtt_stop(void);
@@ -88,13 +88,13 @@ void set_mqtt_topic_pub(char* data, uint32_t len)
 
 bool mqtt_init_queue(void)
 {
-    if (mqtt_tx_queue == NULL) {
-        mqtt_tx_queue = xQueueCreate(MAXIMUM_QUEUE_ITEM, sizeof(m_mqtt_msg_t));
-        if(mqtt_tx_queue == NULL){
-            os_trace("%s fail\r\n", __func__);
-            return false;
-        }
-    }
+    // if (mqtt_tx_queue == NULL) {
+    //     mqtt_tx_queue = xQueueCreate(MAXIMUM_QUEUE_ITEM, sizeof(m_mqtt_msg_t));
+    //     if(mqtt_tx_queue == NULL){
+    //         os_trace("%s fail\r\n", __func__);
+    //         return false;
+    //     }
+    // }
 
     return true;
 }

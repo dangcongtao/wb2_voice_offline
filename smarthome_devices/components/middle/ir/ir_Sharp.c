@@ -45,7 +45,7 @@ bool decodeSharpAc(decode_results *results, uint16_t offset,
                       kSharpAcHdrMark - 200, kSharpAcHdrMark + 200, kSharpAcHdrSpace - 200, kSharpAcHdrSpace + 200,
                       kSharpAcBitMark - 320, kSharpAcBitMark + 430, kSharpAcOneSpace - 400, kSharpAcOneSpace + 300,
                       kSharpAcBitMark - 320, kSharpAcBitMark + 430, kSharpAcZeroSpace - 350, kSharpAcZeroSpace + 350,
-                      kSharpAcBitMark - 320, kSharpAcBitMark + 430, kSharpAcGap - 100, kSharpAcGap + 100, true,
+                      kSharpAcBitMark - 320, kSharpAcBitMark + 430, kSharpAcGap - 25000, kSharpAcGap + 25000, true,
                       45, kMarkExcess, false);
   if (used == 0) {
     // os_trace("%s used failed\r\n", __func__);

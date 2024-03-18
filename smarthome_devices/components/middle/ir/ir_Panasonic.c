@@ -51,7 +51,7 @@ bool decodePanasonicAC(decode_results *results, uint16_t offset,
                       kPanasonicHdrMark - 456, kPanasonicHdrMark + 456, kPanasonicHdrSpace - 400, kPanasonicHdrSpace + 400,
                       kPanasonicBitMark - 332, kPanasonicBitMark + 368, kPanasonicOneSpace - 496, kPanasonicOneSpace + 504,
                       kPanasonicBitMark - 332, kPanasonicBitMark + 368, kPanasonicZeroSpace - 332, kPanasonicZeroSpace + 368,
-                      kPanasonicBitMark - 332, kPanasonicBitMark + 368, kPanasonicAcSectionGap - 1000, kPanasonicAcSectionGap + 1000, false,
+                      kPanasonicBitMark - 332, kPanasonicBitMark + 368, kPanasonicAcSectionGap - 2500, kPanasonicAcSectionGap + 2500, false,
                       kPanasonicAcTolerance, kPanasonicAcExcess, false);
   if (!used) return false;
   offset += used;
@@ -64,7 +64,7 @@ bool decodePanasonicAC(decode_results *results, uint16_t offset,
                     kPanasonicHdrMark - 456, kPanasonicHdrMark + 456, kPanasonicHdrSpace - 400, kPanasonicHdrSpace + 400,
                     kPanasonicBitMark - 332, kPanasonicBitMark + 368, kPanasonicOneSpace - 496, kPanasonicOneSpace + 504,
                     kPanasonicBitMark - 332, kPanasonicBitMark + 368, kPanasonicZeroSpace - 332, kPanasonicZeroSpace + 368,
-                    kPanasonicBitMark - 332, kPanasonicBitMark + 368, kPanasonicAcSectionGap - 1000, kPanasonicAcSectionGap + 1000, true,
+                    kPanasonicBitMark - 332, kPanasonicBitMark + 368, kPanasonicAcSectionGap - 2500, kPanasonicAcSectionGap + 2500, true,
                     kPanasonicAcTolerance, kPanasonicAcExcess, false))
     return false;
   // Compliance
@@ -309,7 +309,7 @@ bool decodePanasonicAC32(decode_results *results, uint16_t offset,
                             0, 0, 0, 0,
                             0, 0, 0, 0,
                             // Footer
-                            kPanasonicAc32BitMark - 500, kPanasonicAc32BitMark+500, kPanasonicAc32SectionGap-2000, kPanasonicAc32SectionGap+2000,
+                            kPanasonicAc32BitMark - 500, kPanasonicAc32BitMark+500, kPanasonicAc32SectionGap-3500, kPanasonicAc32SectionGap+3500,
                             true, kUseDefTol, kMarkExcess, true);
         if (!used) return false;
         offset += used;

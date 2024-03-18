@@ -186,7 +186,7 @@ bool decodeMitsubishi112(decode_results *results, uint16_t offset,
                                results->rawlen - offset, nbits,
                                0,  0,// Skip the header as we matched it earlier.
                                hdrspace_lower, hdrspace_upper, bitmark_lower, bitmark_upper, onespace_lower, onespace_upper, bitmark_lower, bitmark_upper, zerospace_lower, zerospace_upper,
-                               bitmark_lower, bitmark_upper, gap - 100, gap + 100,
+                               bitmark_lower, bitmark_upper, gap - 25000, gap + 25000,
                                true, tolerance, 0, false);
   if (!used) {
     // os_trace("%s matchGenericState failed\r\n", __func__);
@@ -489,7 +489,7 @@ bool decodeMitsubishi136(decode_results *results, uint16_t offset,
                                kMitsubishi136HdrMark-500, kMitsubishi136HdrMark+500, kMitsubishi136HdrSpace-474, kMitsubishi136HdrSpace+476,
                                kMitsubishi136BitMark-367, kMitsubishi136BitMark+373, kMitsubishi136OneSpace-437, kMitsubishi136OneSpace+433,
                                kMitsubishi136BitMark-367, kMitsubishi136BitMark+373, kMitsubishi136ZeroSpace-251, kMitsubishi136ZeroSpace+351,
-                               kMitsubishi136BitMark-367, kMitsubishi136BitMark+373, kMitsubishi136Gap-2000, kMitsubishi136Gap+2000,
+                               kMitsubishi136BitMark-367, kMitsubishi136BitMark+373, kMitsubishi136Gap-25000, kMitsubishi136Gap+25000,
                                true, _tolerance, 0, false);
   if (!used) return false;
   if (strict) {

@@ -365,7 +365,7 @@ bool decodeDaikin2(decode_results *results, uint16_t offset,
                         kDaikin2HdrMark - 300, kDaikin2HdrMark + 300, kDaikin2HdrSpace - 300, kDaikin2HdrSpace + 300,
                         kDaikin2BitMark-360, kDaikin2BitMark+340, kDaikin2OneSpace-370, kDaikin2OneSpace + 430,
                         kDaikin2BitMark-360, kDaikin2BitMark+340, kDaikin2ZeroSpace -320, kDaikin2ZeroSpace+380,
-                        kDaikin2BitMark-360, kDaikin2BitMark+340, kDaikin2Gap-4000, kDaikin2Gap+3000,
+                        kDaikin2BitMark-360, kDaikin2BitMark+340, kDaikin2Gap-8750, kDaikin2Gap+8750,
                         section >= kDaikin2Sections - 1,
                         40, kDaikinMarkExcess,
                         false);
@@ -732,7 +732,7 @@ bool decodeDaikin152(decode_results *results, uint16_t offset,
                       0, 0, 0, 0,  // No Header
                      kDaikin152BitMark-363, kDaikin152BitMark+367, kDaikin152OneSpace-500, kDaikin152OneSpace+400,
                       kDaikin152BitMark-363, kDaikin152BitMark+367, kDaikin152ZeroSpace-363, kDaikin152ZeroSpace+367,
-                      kDaikin152BitMark-363, kDaikin152BitMark+367, kDaikin152Gap - 500, kDaikin152Gap + 500,  // Footer gap
+                      kDaikin152BitMark-363, kDaikin152BitMark+367, kDaikin152Gap - 6250, kDaikin152Gap + 6250,  // Footer gap
                       false, 45, kMarkExcess, false);
   if (used == 0 || leader != 0) {
     // os_trace("%s matchGenericData failed\r\n", __func__);
@@ -746,7 +746,7 @@ bool decodeDaikin152(decode_results *results, uint16_t offset,
                       kDaikin152HdrMark-300, kDaikin152HdrMark+300, kDaikin152HdrSpace-300, kDaikin152HdrSpace+300,
                       kDaikin152BitMark-363, kDaikin152BitMark+367, kDaikin152OneSpace-500, kDaikin152OneSpace+400,
                       kDaikin152BitMark-363, kDaikin152BitMark+367, kDaikin152ZeroSpace-363, kDaikin152ZeroSpace+367,
-                      kDaikin152BitMark-363, kDaikin152BitMark+367, kDaikin152Gap - 500, kDaikin152Gap + 500,
+                      kDaikin152BitMark-363, kDaikin152BitMark+367, kDaikin152Gap - 6500, kDaikin152Gap + 6500,
                       true, 45, kMarkExcess, false);
   if (used == 0) {
     // os_trace("%s matchGenericState failed\r\n", __func__);
@@ -1043,7 +1043,7 @@ bool decodeDaikin160(decode_results *results, uint16_t offset,
                         kDaikin160HdrMark-400,kDaikin160HdrMark+400, kDaikin160HdrSpace-300, kDaikin160HdrSpace+300,
                         kDaikin160BitMark-262, kDaikin160BitMark+458, kDaikin160OneSpace-500, kDaikin160OneSpace+400,
                         kDaikin160BitMark-262, kDaikin160BitMark+458, kDaikin160ZeroSpace-300, kDaikin160ZeroSpace+400,
-                        kDaikin160BitMark-262, kDaikin160BitMark+458, kDaikin160Gap-3000, kDaikin160Gap+3000,
+                        kDaikin160BitMark-262, kDaikin160BitMark+458, kDaikin160Gap-7500, kDaikin160Gap+7500,
                         section >= kDaikin160Sections - 1,
                         45, kDaikinMarkExcess, false);
     if (used == 0) {
@@ -1355,7 +1355,7 @@ bool decodeDaikin216(decode_results *results, uint16_t offset,
                         kDaikin216HdrMark-400,kDaikin216HdrMark+400, kDaikin216HdrSpace-300,kDaikin216HdrSpace+400,
                         kDaikin216BitMark-340,kDaikin216BitMark+380, kDaikin216OneSpace-400,kDaikin216OneSpace+400,
                         kDaikin216BitMark-340,kDaikin216BitMark+380, kDaikin216ZeroSpace-370,kDaikin216ZeroSpace+400,
-                        kDaikin216BitMark-340,kDaikin216BitMark+380, kDaikin216Gap-2000,kDaikin216Gap+2000,
+                        kDaikin216BitMark-340,kDaikin216BitMark+380, kDaikin216Gap-7500,kDaikin216Gap+7500,
                         section >= kDaikin216Sections - 1,
                         45, kDaikinMarkExcess, false);
     if (used == 0) {
@@ -1678,8 +1678,8 @@ bool decodeDaikin128(decode_results *results, uint16_t offset,
                         section == 0 ? kDaikin128HdrSpace - 400 : 0, section == 0 ? kDaikin128HdrSpace + 400 : 0,
                         kDaikin128BitMark - 270, kDaikin128BitMark + 250, kDaikin128OneSpace-254, kDaikin128OneSpace + 246,
                         kDaikin128BitMark - 270, kDaikin128BitMark + 250, kDaikin128ZeroSpace - 302, kDaikin128ZeroSpace + 318,
-                        section > 0 ? kDaikin128FooterMark - 500 : kDaikin128BitMark - 270, section > 0 ? kDaikin128FooterMark + 400 : kDaikin128BitMark + 250,
-                        kDaikin128Gap - 1000, kDaikin128Gap + 1000,
+                        section > 0 ? kDaikin128FooterMark - 500 : kDaikin128BitMark - 270, section > 0 ? kDaikin128FooterMark + 1150 : kDaikin128BitMark + 1150,
+                        kDaikin128Gap - 5000, kDaikin128Gap + 5000,
                         section > 0,
                         kDaikinTolerance, kDaikinMarkExcess, false);
     if (used == 0) {

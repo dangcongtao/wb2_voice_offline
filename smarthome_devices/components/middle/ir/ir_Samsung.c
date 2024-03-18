@@ -172,7 +172,7 @@ bool decodeSamsungAC(decode_results *results, uint16_t offset,
                         kSamsungAcSectionMark-400,kSamsungAcSectionMark+400, kSamsungAcSectionSpace-500,kSamsungAcSectionSpace+500,
                         kSamsungAcBitMark-400,kSamsungAcBitMark+340, kSamsungAcOneSpace-400,kSamsungAcOneSpace+400,
                         kSamsungAcBitMark-400,kSamsungAcBitMark+340, kSamsungAcZeroSpace-336,kSamsungAcZeroSpace+444,
-                        kSamsungAcBitMark-400,kSamsungAcBitMark+340, kSamsungAcSectionGap-400,kSamsungAcSectionGap+400,
+                        kSamsungAcBitMark-400,kSamsungAcBitMark+340, kSamsungAcSectionGap-725,kSamsungAcSectionGap+725,
                         pos + kSamsungAcSectionLength >= nbits / 8,
                         40, 0, false);
     if (used == 0){
