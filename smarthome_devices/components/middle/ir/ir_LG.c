@@ -67,11 +67,11 @@ bool decodeLG(decode_results *results, uint16_t offset,
 
   // Header (Mark)
   uint32_t kHdrSpace;
-  if (matchMark(results->rawbuf[offset], kLgHdrMark, kUseDefTol, kMarkExcess))
+  if (matchLimit(results->rawbuf[offset], kLgHdrMark-2125, kLgHdrMark+2125))
     kHdrSpace = kLgHdrSpace;
-  else if (matchMark(results->rawbuf[offset], kLg2HdrMark, kUseDefTol, kMarkExcess))
+  else if (matchLimit(results->rawbuf[offset], kLg2HdrMark-800, kLg2HdrMark+800))
     kHdrSpace = kLg2HdrSpace;
-  else if (matchMark(results->rawbuf[offset], kLg32HdrMark, kUseDefTol, kMarkExcess))
+  else if (matchLimit(results->rawbuf[offset], kLg32HdrMark-1125, kLg32HdrMark+1125))
     kHdrSpace = kLg32HdrSpace;
   else {
     // os_trace("kHdrSpace invalid\r\n");
@@ -84,12 +84,12 @@ bool decodeLG(decode_results *results, uint16_t offset,
                                                         : kLgBitMark;
   // Header Space + Data + Footer
   uint64_t data = 0;
-  uint16_t used = matchGeneric(results->rawbuf + offset, &data,
+  uint16_t used = matchGenericDataLimit(results->rawbuf + offset, &data,
                                results->rawlen - offset, nbits,
-                               0,  // Already matched the Header mark.
-                               kHdrSpace,
-                               kBitmark, kLgOneSpace, kBitmark, kLgZeroSpace,
-                               kBitmark, kLgMinGap, true, kUseDefTol, 0, true);
+                               0, 0,  // Already matched the Header mark.
+                               kHdrSpace-1500, kHdrSpace+1500,
+                               kBitmark-300, kBitmark+300, kLgOneSpace-600, kLgOneSpace+600, kBitmark-300, kBitmark+300, kLgZeroSpace-300, kLgZeroSpace+300,
+                               kBitmark-300, kBitmark+300, kLgMinGap-10000, kLgMinGap+10000, true, kUseDefTol, 0, true);
   if (!used){ 
     // os_trace("%s used not match generic\r\n", __func__);
     return false;
@@ -101,11 +101,11 @@ bool decodeLG(decode_results *results, uint16_t offset,
     // If we are expecting the LG 32-bit protocol, there is always
     // a repeat message. So, check for it.
     uint64_t unused;
-    if (!matchGeneric(results->rawbuf + offset, &unused,
+    if (!matchGenericDataLimit(results->rawbuf + offset, &unused,
                       results->rawlen - offset, 0,  // No Data bits to match.
-                      kLg32RptHdrMark, kLgRptSpace,
-                      kBitmark, kLgOneSpace, kBitmark, kLgZeroSpace,
-                      kBitmark, kLgMinGap, true, kUseDefTol, kMarkExcess, true)){
+                      kLg32RptHdrMark-2000, kLg32RptHdrMark+ 2000, kLgRptSpace - 600, kLgRptSpace + 600,
+                      kBitmark-300, kBitmark+300, kLgOneSpace-600, kLgOneSpace+600, kBitmark-300, kBitmark+300, kLgZeroSpace-300, kLgZeroSpace+300,
+                      kBitmark-300, kBitmark+300, kLgMinGap-10000, kLgMinGap+10000, true, kUseDefTol, kMarkExcess, true)){
                         os_trace("not match generic LG 3\r\n");
                         return false;
                       }

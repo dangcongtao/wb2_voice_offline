@@ -161,12 +161,12 @@ bool decodeAquaAC(decode_results *results, uint16_t offset, const uint16_t nbits
         return false;
     }
 
-    if (!matchMark(results->rawbuf[offset++], kAquaHdrMark, kUseDefTol, kMarkExcess)) {
+    if (!matchLimit(results->rawbuf[offset++], kAquaHdrMark-775, kAquaHdrMark+775)) {
         // os_trace("%s mark 1 failed\r\n", __func__);
         return false;
     }
 
-    if (!matchSpace(results->rawbuf[offset++], kAquaSpaceMark, kUseDefTol, kMarkExcess)) {
+    if (!matchLimit(results->rawbuf[offset++], kAquaSpaceMark-775, kAquaSpaceMark+775)) {
         // os_trace("%s space 2 failed\r\n", __func__);
         return false;
     }
@@ -175,12 +175,12 @@ bool decodeAquaAC(decode_results *results, uint16_t offset, const uint16_t nbits
 
     uint16_t used;
     // Section Header + Section Data (7 bytes) + Section Footer
-    used = matchGenericState(results->rawbuf + offset, (uint8_t*)&(results->state[0]),
+    used = matchGenericStateLimit(results->rawbuf + offset, (uint8_t*)&(results->state[0]),
                         results->rawlen - offset, nbits,
-                        kAquaHdrMark, kAquaHdrSpace,
-                        kAquaBitOneMark, 2200,
-                        kAquaBitZeroMark, kAquaZeroSpace,
-                        500, 0,
+                        kAquaHdrMark-775,kAquaHdrMark+775, kAquaHdrSpace-1125, kAquaHdrSpace+1125,
+                        kAquaBitOneMark-450, kAquaBitOneMark+450, 1700-500, 1700+500,
+                        kAquaBitZeroMark-450, kAquaBitZeroMark+450, kAquaZeroSpace-400, kAquaZeroSpace+400,
+                        500-350, 500+350, 0, 0,
                         true,
                         50, 0, false);
 

@@ -1068,86 +1068,9 @@ void copyIrParams(volatile irparams_t *src, irparams_t *dst)
         dst->rawbuf[i] = src->rawbuf[i];
 }
 
-bool decode(decode_results *results, irparams_t *save,
-            uint8_t max_skip, uint16_t noise_floor)
+bool decode_for(decode_results *results, uint8_t max_skip)
 {
-    // Proceed only if an IR message been received.
-#ifndef UNIT_TEST
-    if (params.rcvstate != kStopState)
-        return false;
-#endif
-    os_trace("\t%s %u\r\n", __func__, params.rawlen);
-
-    if (!params.overflow)
-        params.rawbuf[params.rawlen] = 0;
-
-    bool resumed = false; // Flag indicating if we have resumed.
-
-    // If we were requested to use a save buffer previously, do so.
-    if (save == NULL)
-        save = params_save;
-
-    if (save == NULL)
-    {
-        // We haven't been asked to copy it so use the existing memory.
-#ifndef UNIT_TEST
-        results->rawbuf = params.rawbuf;
-        results->rawlen = params.rawlen;
-        results->overflow = params.overflow;
-#endif
-    }
-    else
-    {
-        copyIrParams(&params, save); // Duplicate the interrupt's memory.
-        resume();                    // It's now safe to rearm. The IR message won't be overridden.
-        resumed = true;
-        // Point the results at the saved copy.
-        results->rawbuf = save->rawbuf;
-        results->rawlen = save->rawlen;
-        results->overflow = save->overflow;
-    }
-
-    // Reset any previously partially processed results.
-    results->decode_type = UNKNOWN;
-    results->bits = 0;
-    results->value = 0;
-    results->address = 0;
-    results->command = 0;
-    results->repeat = false;
-
-    if (results->rawlen <= 10) {
-        // trigger_type = HOSAL_IRQ_TRIG_NEG_PULSE;
-        // bl_set_gpio_intmod(params.recvpin, GLB_GPIO_INT_CONTROL_ASYNC, trigger_type);
-        if (!resumed) // Check if we have already resumed.
-            resume();
-        return false;
-    }
-
-    
-if (DEBUG_IR_RCV_ENABLE){
-    os_trace("BUFF_LEN[%d]: ", results->rawlen);
-    char str_res[300];
-    int seek = 0;
-    memset(str_res, 0, sizeof(str_res));
-    for (uint32_t h = 0; h < results->rawlen; h++)
-    {
-        seek += sprintf(&str_res[seek], "%u-", results->rawbuf[h]);
-        if (seek >= 128)
-        {
-            seek = 0;
-            os_trace(str_res);
-            memset(str_res, 0, sizeof(str_res));
-        }
-    }
-    sprintf(&str_res[seek], "\r\n");
-    os_trace(str_res);
-}
-
-#if ENABLE_NOISE_FILTER_OPTION
-    crudeNoiseFilter(results, noise_floor);
-#endif // ENABLE_NOISE_FILTER_OPTION
-    // Keep looking for protocols until we've run out of entries to skip or we
-    // find a valid protocol message.
+        
     for (uint16_t offset = kStartOffset;
          offset <= (max_skip * 2) + kStartOffset;
          offset += 2)
@@ -1184,7 +1107,7 @@ if (DEBUG_IR_RCV_ENABLE){
 #endif
 
 #if DECODE_CASPER
-    //os_trace("Attempting Casper AC\r\n");
+    // os_trace("Attempting Casper AC\r\n");
     if (decodeCasperAC(results, offset, kCasperAcBits, true)) return true;
 #endif
 
@@ -1401,6 +1324,95 @@ if (DEBUG_IR_RCV_ENABLE){
 #endif
 
     } // END for
+
+    return false;
+}
+
+bool decode(decode_results *results, irparams_t *save,
+            uint8_t max_skip, uint16_t noise_floor)
+{
+    // Proceed only if an IR message been received.
+#ifndef UNIT_TEST
+    if (params.rcvstate != kStopState)
+        return false;
+#endif
+    os_trace("\t%s %u\r\n", __func__, params.rawlen);
+
+    if (!params.overflow)
+        params.rawbuf[params.rawlen] = 0;
+
+    bool resumed = false; // Flag indicating if we have resumed.
+
+    // If we were requested to use a save buffer previously, do so.
+    if (save == NULL)
+        save = params_save;
+
+    if (save == NULL)
+    {
+        // We haven't been asked to copy it so use the existing memory.
+#ifndef UNIT_TEST
+        results->rawbuf = params.rawbuf;
+        results->rawlen = params.rawlen;
+        results->overflow = params.overflow;
+#endif
+    }
+    else
+    {
+        copyIrParams(&params, save); // Duplicate the interrupt's memory.
+        resume();                    // It's now safe to rearm. The IR message won't be overridden.
+        resumed = true;
+        // Point the results at the saved copy.
+        results->rawbuf = save->rawbuf;
+        results->rawlen = save->rawlen;
+        results->overflow = save->overflow;
+    }
+
+    // Reset any previously partially processed results.
+    results->decode_type = UNKNOWN;
+    results->bits = 0;
+    results->value = 0;
+    results->address = 0;
+    results->command = 0;
+    results->repeat = false;
+
+    if (results->rawlen <= 10) {
+        // trigger_type = HOSAL_IRQ_TRIG_NEG_PULSE;
+        // bl_set_gpio_intmod(params.recvpin, GLB_GPIO_INT_CONTROL_ASYNC, trigger_type);
+        if (!resumed) // Check if we have already resumed.
+            resume();
+        return false;
+    }
+
+    
+if (DEBUG_IR_RCV_ENABLE){
+    os_trace("BUFF_LEN[%d]: [", results->rawlen);
+    char str_res[300];
+    int seek = 0;
+    memset(str_res, 0, sizeof(str_res));
+    for (uint32_t h = 0; h < results->rawlen; h++)
+    {
+        seek += sprintf(&str_res[seek], "%u,", results->rawbuf[h]);
+        if (seek >= 128)
+        {
+            seek = 0;
+            os_trace(str_res);
+            memset(str_res, 0, sizeof(str_res));
+        }
+    }
+    seek--;
+    sprintf(&str_res[seek], "]\r\n");
+    os_trace(str_res);
+}
+
+#if ENABLE_NOISE_FILTER_OPTION
+    crudeNoiseFilter(results, noise_floor);
+#endif // ENABLE_NOISE_FILTER_OPTION
+    // Keep looking for protocols until we've run out of entries to skip or we
+    // find a valid protocol message.
+    if (decode_for(results, max_skip))
+    {
+        return true;
+    }
 
     if (old_time_learn_ir) {
         return true;

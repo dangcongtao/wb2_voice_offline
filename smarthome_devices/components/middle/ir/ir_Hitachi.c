@@ -35,6 +35,7 @@
 
 union HitachiProtocol hitachi_protocol;
 union Hitachi1Protocol hitachi1_protocol;
+static bool prev_hitachi1_power = true;
 union Hitachi424Protocol hitachi424_protocol;
 union Hitachi424Protocol hitachi344_protocol;
 static uint8_t _previoustemp = 0; 
@@ -623,8 +624,12 @@ void HitachiAC1_setRaw(const uint8_t new_code[], const uint16_t length, state_ir
 void HitachiAC1_setInfo(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state)
 {
     state_ir_t temp;
+    memset(&hitachi1_protocol, 0, sizeof(hitachi1_protocol));
     memcpy(hitachi1_protocol.raw, new_code, min(length, kHitachiAc1StateLength));
-    ir_state->power = true;
+    if (hitachi1_protocol.PowerToggle) {
+        prev_hitachi1_power = !prev_hitachi1_power;
+    }
+    ir_state->power = prev_hitachi1_power;
     ir_state->degrees = (float)HitachiAC1_getTemp();
     ir_state->mode = HitachiAC1_getMode();
     switch ((uint8_t)ir_state->mode)

@@ -94,6 +94,7 @@ COMPONENT_SRCS := database/m_database.c \
 				  ir/ir_Coolix.c \
 				  ir/ir_Kelvinator.c \
 				  ir/ir_Carrier.c \
+				  ir/IRrecv_test.c \
 				  
 COMPONENT_OBJS := $(patsubst %.c,%.o, $(COMPONENT_SRCS))
 

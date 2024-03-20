@@ -60,7 +60,7 @@ bool decodeMitsubishiHeavy(decode_results* results, uint16_t offset,
       if (strict && !(IRMitsubishiHeavy88Ac_checkZjsSig(results->state) &&
                       IRMitsubishiHeavy152Ac_validChecksum(results->state, kMitsubishiHeavy88StateLength)))
                       {
-                        os_trace("%s checksum 88 failed", __func__);
+                        os_trace("%s checksum 88 failed\r\n", __func__);
         return false;
                       }
       results->decode_type = MITSUBISHI_HEAVY_88;
@@ -69,7 +69,7 @@ bool decodeMitsubishiHeavy(decode_results* results, uint16_t offset,
       if (strict && !(IRMitsubishiHeavy152Ac_checkZmsSig(results->state) &&
                       IRMitsubishiHeavy152Ac_validChecksum(results->state, kMitsubishiHeavy152StateLength)))
         {
-          os_trace("%s checksum 152 failed", __func__);
+          os_trace("%s checksum 152 failed\r\n", __func__);
         return false;
         }
       results->decode_type = MITSUBISHI_HEAVY_152;

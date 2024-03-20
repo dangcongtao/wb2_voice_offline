@@ -531,5 +531,6 @@ void IR_start_learn(void);
 void IR_stop_learn(void);
 void IR_start_learn_auto(void);
 void IR_stop_learn_auto(void);
+bool decode_for(decode_results *results, uint8_t max_skip);
 
 #endif

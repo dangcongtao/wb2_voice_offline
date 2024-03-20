@@ -20,6 +20,7 @@ static void m_start_timer(uint32_t time_ms);
 static void m_stop_timer(void);
 
 static uint8_t is_power_up = 1;
+extern uint8_t is_ota;
 
 static void vTimerCallback(TimerHandle_t xTimer)
 {
@@ -49,7 +50,7 @@ static void vTimerCallback(TimerHandle_t xTimer)
 
 static void m_start_timer(uint32_t time_ms)
 {
-    if (xTimers != NULL)
+    if (xTimers != NULL && !is_ota)
     {
         xTimerChangePeriod(xTimers, pdMS_TO_TICKS(time_ms), 10);
         xTimerStart(xTimers, 10);

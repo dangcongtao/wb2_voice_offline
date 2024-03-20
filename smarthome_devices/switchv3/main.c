@@ -25,6 +25,7 @@
 #include "event_driven.h"
 
 #include <bl_wdt.h>
+#include "IRrecv_test.h"
 
 void main_loop(void)
 {
@@ -83,6 +84,10 @@ void main(void)
     // ble_init();
     // ble_init_first();
     m_event_init();
+
+#if DEBUG_ENABLE == 1
+    IRrecv_test_run();
+#endif
     
     /* start stack */
     xTaskCreate(main_loop,  /* Function that implements the task. */

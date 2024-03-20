@@ -47,17 +47,19 @@ void sendCasperAc(const uint8_t *data, uint16_t nbytes, uint16_t repeat)
 
 bool decodeCasperAC(decode_results *results, uint16_t offset, const uint16_t nbits, const bool strict) 
 {
-
+    // os_trace("%s begin\r\n", __func__);
     // os_trace("decodeFunikiAC() offset: %d, nbits: %d, kFunikiBits: %d\r\n", offset, nbits, kFunikiBits);
     if (results->rawlen != 344 || nbits != kCasperBits) {
         return false;
     }
 
-    if (!matchMark(results->rawbuf[offset++], 9000, kUseDefTol, kMarkExcess)){
-        // os_trace("%s match mark failed\r\n", __func__);
+    // os_trace("%s step 1\r\n", __func__);
+
+    if (!matchLimit(results->rawbuf[offset++], 9000-2250, 9000+2250)){
+        // os_trace("%s match mark failed, offset %u,  %u\r\n", __func__, offset, results->rawbuf[offset-1]);
         return false;
     }
-    if (!matchSpace(results->rawbuf[offset++], 4500, kUseDefTol, kMarkExcess)){
+    if (!matchLimit(results->rawbuf[offset++], 4500-1125, 4500+1125)){
         // os_trace("%s match space failed\r\n", __func__);
         return false;
     }
@@ -74,12 +76,12 @@ bool decodeCasperAC(decode_results *results, uint16_t offset, const uint16_t nbi
             temp_nbits = 7;
         }
         // Section Header + Section Data (7 bytes) + Section Footer
-        used = matchGenericState(results->rawbuf + offset, (uint8_t*)(&results->state[pos]),
+        used = matchGenericStateLimit(results->rawbuf + offset, (uint8_t*)(&results->state[pos]),
                             results->rawlen - offset, temp_nbits * 8,
-                            0, 0,
-                            502, 1650,
-                            501, 600,
-                            480, 8000,
+                            0, 0, 0, 0,
+                            502-350, 502+350, 1740-550, 1740+550,
+                            502-350, 502+350, 600-450, 600+450,
+                            502-350, 502+350, 8000-2000, 8000+2000,
                             pos + temp_nbits >= nbits / 8,
                             50, 0, false);
 
@@ -357,33 +359,33 @@ void Casper_setInfo(const uint8_t* new_code, state_ir_t *ir_state)
     ir_state->power = is_power_on(new_code);
     ir_state->degrees = get_temp_casper(new_code);
 
-    switch ((uint8_t)ir_state->mode)
-    {
-    case opmode_kFan:
-        ir_state->mode = 2;
-        break;
+    // switch ((uint8_t)ir_state->mode)
+    // {
+    // case opmode_kFan:
+    //     ir_state->mode = 2;
+    //     break;
     
-    case opmode_kCool:
-        ir_state->mode = 4;
-        break;
+    // case opmode_kCool:
+    //     ir_state->mode = 4;
+    //     break;
     
-    case opmode_kDry:
-        ir_state->mode = 12;
-        break;
+    // case opmode_kDry:
+    //     ir_state->mode = 12;
+    //     break;
     
-    case opmode_kHeat:
-        ir_state->mode = 0;
-        break;
+    // case opmode_kHeat:
+    //     ir_state->mode = 0;
+    //     break;
     
-    default:
-        break;
-    }
+    // default:
+    //     break;
+    // }
 
 
-    if (ir_state->fanspeed == fanspeed_kAuto)
-    {
-        ir_state->fanspeed = 6;
-    }
+    // if (ir_state->fanspeed == fanspeed_kAuto)
+    // {
+    //     ir_state->fanspeed = 6;
+    // }
 
     // os_trace("power: %u\r\n", ir_state.power);
 }
