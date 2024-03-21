@@ -328,6 +328,27 @@ void Samsung_send(state_ir_t state_ir)
       0x01, 0x02, 0xAE, 0x71, 0x00, 0x15, 0xF0};
   memcpy(_.raw, kReset, kSamsungAcExtendedStateLength);
 
+  if (state_ir.swingv != swingv_kOff) {
+    bool swingv = state_ir.swingv;
+    if (swingv) {
+      _.Swing = kSamsungAcSwingV;
+    } else {
+      _.Swing = kSamsungAcSwingOff;
+    }
+  }
+
+  if (state_ir.swingh != swingh_kOff) {
+    bool swingh = state_ir.swingh;
+    switch (_.Swing) {
+      case kSamsungAcSwingV:
+      case kSamsungAcSwingBoth:
+        _.Swing = swingh ? kSamsungAcSwingBoth : kSamsungAcSwingV;
+        break;
+      default:
+        _.Swing = swingh ? kSamsungAcSwingH : kSamsungAcSwingOff;
+    }
+  }
+
   // temp
   uint8_t my_temp = (uint8_t)state_ir.degrees;
   uint8_t newtemp = max(kSamsungAcMinTemp, my_temp);
@@ -490,6 +511,8 @@ void Samsung_setInfo(const uint8_t* new_code, const uint16_t length, const decod
     ir_state->fanspeed = _.Fan;
     ir_state->power = getPower(_);
     ir_state->degrees = getTemp(_);
+    ir_state->swingv = (_.Swing == kSamsungAcSwingV || _.Swing == kSamsungAcSwingBoth);
+    ir_state->swingh = (_.Swing == kSamsungAcSwingH || _.Swing == kSamsungAcSwingBoth);
 
     // memcpy(&_.data.raw, new_code, 12);
     // os_trace("fan: %u\r\n", _.data.fan);

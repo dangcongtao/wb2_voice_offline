@@ -300,8 +300,8 @@ void Daikin_setInfo(const uint8_t* newState, const uint16_t length, const decode
   ir_state->turbo = _.Powerful;
   ir_state->clean = _.Mold;
   ir_state->econo = _.Econo;
-  ir_state->swingv = _.SwingV ? swingv_kAuto : swingv_kOff;
-  ir_state->swingh = _.SwingH ? swingh_kAuto : swingh_kOff;
+  ir_state->swingv = _.SwingV;
+  ir_state->swingh = _.SwingH;
 }
 
 void Daikin_send(state_ir_t state_ir)
@@ -434,6 +434,9 @@ void Daikin2_setInfo(const uint8_t* newState, const uint16_t length, const decod
   ir_state->clean = _.Mold;
   ir_state->econo = _.Econo;
   ir_state->filter = _.Purify;
+  ir_state->swingv = _.SwingV;
+  ir_state->swingh = _.SwingH;
+
   ir_state->beep = (_.Beep != 3);
 
   switch ((uint8_t)ir_state->mode)
@@ -813,7 +816,7 @@ void Daikin152_setInfo(const uint8_t* newState, const uint16_t length, const dec
   ir_state->mode = _.Mode;
   ir_state->fanspeed = IRDaikin152getFan(_);
 
-  ir_state->swingv = _.SwingV ? swingv_kAuto : swingv_kOff;
+  ir_state->swingv = _.SwingV;
 
   ir_state->degrees = _.Temp;
   ir_state->quiet = _.Quiet;

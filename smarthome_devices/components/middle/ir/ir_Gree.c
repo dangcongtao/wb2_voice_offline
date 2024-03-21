@@ -168,6 +168,17 @@ void Gree_setRaw(const uint8_t* newState, const decode_type_t protocol, state_ir
     // Toshiba_toCommon(_, ir_state);
 }
 
+static swingv_t IRGreeAC_toCommonSwingV(const uint8_t pos) {
+  switch (pos) {
+    case kGreeSwingUp:         return swingv_kHighest;
+    case kGreeSwingMiddleUp:   return swingv_kHigh;
+    case kGreeSwingMiddle:     return swingv_kMiddle;
+    case kGreeSwingMiddleDown: return swingv_kLow;
+    case kGreeSwingDown:       return swingv_kLowest;
+    default:                   return swingv_kAuto;
+  }
+}
+
 void Gree_setInfo(const uint8_t* newState, const decode_type_t protocol, state_ir_t *ir_state) 
 {
     GreeProtocol _;
@@ -178,9 +189,9 @@ void Gree_setInfo(const uint8_t* newState, const decode_type_t protocol, state_i
   // We can only detect the difference between models when the power is on.
     if (_.Power) {
         if (_.ModelA)
-        ir_state->model = YAW1F;
+          ir_state->model = YAW1F;
         else
-        ir_state->model = YBOFB;
+          ir_state->model = YBOFB;
     }
     if (_.Mode == kGreeEcono) ir_state->model = YX1FSF;
 
@@ -189,6 +200,12 @@ void Gree_setInfo(const uint8_t* newState, const decode_type_t protocol, state_i
     ir_state->celsius = !_.UseFahrenheit;
     ir_state->degrees = getTemp(_);
     ir_state->fanspeed = _.Fan;
+    if (_.SwingAuto)
+      ir_state->swingv = swingv_kAuto;
+    else 
+      ir_state->swingv = IRGreeAC_toCommonSwingV(_.SwingV);
+    
+    ir_state->swingh = _.SwingH;
 
 
     // Toshiba_toCommon(_, ir_state);
@@ -261,6 +278,22 @@ void Gree_send(state_ir_t state_ir)
     setTemp(&_, (uint8_t)state_ir.degrees, false);
 
     setFan(&_, (uint8_t)state_ir.fanspeed);
+
+    if (state_ir.swingh != (uint8_t)swingh_kOff) {
+      if (state_ir.swingh <= kGreeSwingHMaxRight)
+        _.SwingH = state_ir.swingh;
+      else
+        _.SwingH = kGreeSwingHOff;
+    }
+
+    if (state_ir.swingv != (uint8_t)swingv_kOff) {
+      if (state_ir.swingv == swingv_kAuto) {
+        _.SwingAuto = true;
+        _.SwingV = kGreeSwingAuto;
+      } else {
+        _.SwingV = state_ir.swingv;
+      }
+    }
 
     // Power
     _.Power = state_ir.power;

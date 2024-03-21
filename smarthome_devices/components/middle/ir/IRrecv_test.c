@@ -72,7 +72,7 @@ static void Aqua_test(void)
     capture.rawbuf = data1;
     capture.rawlen = sizeof(data1) / sizeof(data1[0]);
     decode_for(&capture, 0);
-    assert(capture.decode_type == AQUA);
+    assert(capture.decode_type == HAIER_AC_YRW02);
 }
 static void Gree_test(void) // electrolux
 {

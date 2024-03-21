@@ -1106,6 +1106,28 @@ bool decode_for(decode_results *results, uint8_t max_skip)
     if (decodeAquaAC(results, offset, kAquaAcBits, true)) return true;
 #endif
 
+#if DECODE_HAIER_AC
+    //os_trace("Attempting Aqua AC\r\n");
+    if (decodeHaierAC(results, offset, kHaierACBits, true)) return true;
+#endif
+
+#if DECODE_HAIER_AC_YRW02
+    //os_trace("Attempting Aqua AC\r\n");
+    if (decodeHaierACYRW02(results, offset, kHaierACYRW02Bits, true)) return true;
+#endif
+
+#if DECODE_HAIER_AC176
+    //os_trace("Attempting Aqua AC\r\n");
+    if (decodeHaierAC176(results, offset, kHaierAC176Bits, true)) return true;
+#endif
+
+#if DECODE_HAIER_AC160
+    //os_trace("Attempting Aqua AC\r\n");
+    if (decodeHaierAC160(results, offset, kHaierAC160Bits, true)) return true;
+#endif
+
+
+
 #if DECODE_CASPER
     // os_trace("Attempting Casper AC\r\n");
     if (decodeCasperAC(results, offset, kCasperAcBits, true)) return true;
@@ -1610,10 +1632,8 @@ void m_ir_task(void *param)
             } else if (capture.decode_type == LG){
                 LG_setRaw(capture.value, capture.decode_type, &ir_state);
                 LG_setInfo(capture.value, capture.decode_type, &ir_state_recv);
-            } else if (capture.decode_type == AQUA){
-                AQUA_setRaw(capture.state, capture.decode_type, &ir_state);
-                AQUA_setInfo(capture.state, capture.decode_type, &ir_state_recv);
-            } else if (capture.decode_type == FUNIKI){
+            } 
+            else if (capture.decode_type == FUNIKI){
                 Funiki_setRaw((uint8_t*)&capture.value, capture.decode_type, &ir_state);
                 Funiki_setInfo((uint8_t*)&capture.value, capture.decode_type, &ir_state_recv);
             } else if (capture.decode_type == CASPER){
@@ -1793,6 +1813,10 @@ void m_ir_task(void *param)
             {
                 IRCarrierAc64_setInfo(capture.value, &ir_state_recv);
             }
+            else if (HAIER_AC_YRW02 == capture.decode_type)
+            {
+                IRHaierACYRW02_setRaw(capture.state, &ir_state_recv);
+            }
 
             /***************************************************************************************/
             if (old_time_learn_ir) {
@@ -1818,8 +1842,9 @@ void m_ir_task(void *param)
                 char str[325];
                 memset(str, 0, 325);
 
-                sprintf(str, "{\"%s\":10,\"type\":1,\"brand\":\"%d\",\"model\":%d,\"power\":%u,\"mode\":%d,\"temp\":%.1f,\"fan\":%d}", 
-                gs_dev_type[device_type], capture.decode_type, ir_state_recv.model, ir_state_recv.power, ir_state_recv.mode, ir_state_recv.degrees, ir_state_recv.fanspeed);
+                sprintf(str, "{\"%s\":10,\"type\":1,\"brand\":\"%d\",\"model\":%d,\"power\":%u,\"mode\":%d,\"temp\":%.1f,\"fan\":%d,\"swingv\":%d,\"swingh\":%d}", 
+                gs_dev_type[device_type], capture.decode_type, ir_state_recv.model, ir_state_recv.power, ir_state_recv.mode, ir_state_recv.degrees, ir_state_recv.fanspeed, ir_state_recv.swingv, ir_state_recv.swingh);
+
                 os_trace("datarcv[%u]:", strlen(str));
                 os_trace("'%s'\r\n", str);
                 if (m_mqtt_get_instance()._mqtt_state >= MQTT_INTIALIZED)

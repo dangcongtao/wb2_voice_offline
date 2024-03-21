@@ -30,7 +30,7 @@ typedef enum {
   SHERWOOD,
   PRONTO,  // Technically not a protocol, but an encoding. (25)
   SANYO_AC88,
-  ARGO,
+  SAMSUNG_AC,
   SHARP_AC,
   TCL112AC,
   RAW,  // Technically not a protocol, but an encoding. (30)
@@ -47,9 +47,9 @@ typedef enum {
   TECHNIBEL_AC,
   HITACHI_AC2,
   GICABLE,
-  HAIER_AC_YRW02,
+  UNKNOWN_4938,
   WHIRLPOOL_AC,  // (45)
-  SAMSUNG_AC,
+  ARGO,
   LUTRON,
   SHARP,
   NEC_LIKE,
@@ -105,7 +105,7 @@ typedef enum {
   TRUMA,  // 100
   HAIER_AC176,
   AQUA,
-  UNKNOWN_493,
+  HAIER_AC160,
   CASPER,
   FUNIKI, // midea
   NAGAKAWA,  // 105
@@ -118,6 +118,7 @@ typedef enum {
   MITSUBISHI_AC,
   MITSUBISHI136,
   LG,
+  HAIER_AC_YRW02, // AQUA
   // Add new entries before this one, and update it to point to the last entry.
   kLastDecodeType = LG,
 } decode_type_t;
@@ -271,5 +272,18 @@ typedef enum {
 #define kKelvinatorStateLength  16
 #define kKelvinatorBits (kKelvinatorStateLength * 8)
 #define kKelvinatorDefaultRepeat kNoRepeat
+
+#define kHaierACStateLength (9)
+#define kHaierACBits (kHaierACStateLength * 8)
+#define kHaierAcDefaultRepeat (kNoRepeat)
+#define kHaierACYRW02StateLength (14)
+#define kHaierACYRW02Bits (kHaierACYRW02StateLength * 8)
+#define kHaierAcYrw02DefaultRepeat (kNoRepeat)
+#define kHaierAC160StateLength (20)
+#define kHaierAC160Bits (kHaierAC160StateLength * 8)
+#define kHaierAc160DefaultRepeat (kNoRepeat)
+#define kHaierAC176StateLength (22)
+#define kHaierAC176Bits (kHaierAC176StateLength * 8)
+#define kHaierAc176DefaultRepeat (kNoRepeat)
 
 #endif

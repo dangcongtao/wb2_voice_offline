@@ -31,9 +31,6 @@
 #define kFunikiAcExtendedStateLength  18
 #define kFunikiAcExtendedBits   (kFunikiAcExtendedStateLength * 8)
 
-#define kAquaAcStateLength  14
-#define kAquaAcBits   (kAquaAcStateLength * 8)
-
 #define kCasperAcStateLength  21
 #define kCasperAcBits   (kCasperAcStateLength * 8)
 
@@ -44,7 +41,6 @@
 #define DECODE_SAMSUNG 1
 #define DECODE_SAMSUNG_AC 1
 #define DECODE_FUNIKI 1
-#define DECODE_AQUA   1
 #define DECODE_CASPER   1
 #define DECODE_TOSHIBA  1
 #define DECODE_DAIKIN   1
@@ -76,6 +72,10 @@
 #define DECODE_MITSUBISHI_AC 1
 #define DECODE_KELVINATOR 1
 #define DECODE_CARRIER_AC64 1
+#define DECODE_HAIER_AC 1
+#define DECODE_HAIER_AC_YRW02 1
+#define DECODE_HAIER_AC176 1
+#define DECODE_HAIER_AC160 1
 
 
 #define IR_RX 1
@@ -207,10 +207,6 @@ bool decodeSamsungAC(decode_results *results, uint16_t offset,
 #if DECODE_FUNIKI
 bool decodeFunikiAC(decode_results *results, uint16_t offset,
                              const uint16_t nbits, const bool strict);
-#endif
-
-#if DECODE_AQUA
-bool decodeAquaAC(decode_results *results, uint16_t offset, const uint16_t nbits, const bool strict) ;
 #endif
 
 #if DECODE_CASPER
@@ -353,6 +349,26 @@ bool decodeCarrierAC64(decode_results *results, uint16_t offset,
                            const uint16_t nbits, const bool strict);
 #endif
 
+#if DECODE_HAIER_AC
+bool decodeHaierAC(decode_results *results, uint16_t offset,
+                           const uint16_t nbits, const bool strict);
+#endif
+
+#if DECODE_HAIER_AC_YRW02
+bool decodeHaierACYRW02(decode_results *results, uint16_t offset,
+                           const uint16_t nbits, const bool strict);
+#endif
+
+#if DECODE_HAIER_AC176
+bool decodeHaierAC176(decode_results *results, uint16_t offset,
+                           const uint16_t nbits, const bool strict);
+#endif
+
+#if DECODE_HAIER_AC160
+bool decodeHaierAC160(decode_results *results, uint16_t offset,
+                           const uint16_t nbits, const bool strict);
+#endif
+
 bool matchSpace(uint32_t measured, uint32_t desired, uint8_t tolerance,
                         int16_t excess);
 
@@ -440,9 +456,6 @@ uint16_t matchGenericStateLimit(volatile uint16_t *data_ptr,
 void LG_setRaw(const uint32_t new_code, const decode_type_t protocol, state_ir_t *ir_state);
 bool isValidLgAc(void);
 
-void AQUA_setRaw(const uint8_t* new_code, const decode_type_t protocol, state_ir_t* state_ir);
-void aqua_getString(void);
-
 void Funiki_setRaw(const uint8_t* new_code, const decode_type_t protocol, state_ir_t *ir_state);
 // void Funiki_getString(void);
 
@@ -481,7 +494,6 @@ void HitachiAC424_setRaw(const uint8_t new_code[], const uint16_t length, state_
 /*------------SET_INFO----------------*/
 void LG_setInfo(const uint32_t new_code, const decode_type_t protocol, state_ir_t *ir_state);
 void Casper_setInfo(const uint8_t* new_code, state_ir_t *ir_state);
-void AQUA_setInfo(const uint8_t* new_code, const decode_type_t protocol, state_ir_t* state_ir);
 void Funiki_setInfo(const uint8_t* new_code, const decode_type_t protocol, state_ir_t *ir_state);
 void Samsung_setInfo(const uint8_t* new_code, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state);
 void Daikin_setInfo(const uint8_t* newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state);
@@ -516,6 +528,9 @@ void IRSanyoAc_setInfo(const uint8_t newState[], state_ir_t *ir_state);
 void IRMitsubishiAC_setInfo(const uint8_t *data, state_ir_t *ir_state);
 void IRMitsubishi136_setInfo(const uint8_t *data, state_ir_t *ir_state);
 void IRCarrierAc64_setInfo(const uint64_t state, state_ir_t *ir_state);
+
+void IRHaierACYRW02_setRaw(const uint8_t new_code[], state_ir_t *ir_state);
+void IRHaierAC_setRaw(const uint8_t new_code[], state_ir_t *ir_state);
 
 // void enableIRIn(const bool pullup);
 void ir_loop(void);

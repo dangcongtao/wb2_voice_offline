@@ -48,6 +48,8 @@
 #define CJSON_KEY_IR_TEMP       "temp"
 #define CJSON_KEY_IR_MODE       "mode"
 #define CJSON_KEY_IR_FAN        "fan"
+#define CJSON_KEY_IR_SWINGV        "swingv"
+#define CJSON_KEY_IR_SWINGH        "swingh"
 #define CJSON_KEY_IR_ACT        "act"
 
 #define DEFAULT_AES_KEY "0000000000000000"

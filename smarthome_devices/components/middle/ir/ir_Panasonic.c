@@ -102,7 +102,7 @@ static uint8_t IRPanasonicAc_getFan(const uint8_t* remote_state) {
       kPanasonicAcFanDelta;
 }
 
-panasonic_ac_remote_model_t IRPanasonicAc_getModel(const uint8_t* remote_state) {
+static panasonic_ac_remote_model_t IRPanasonicAc_getModel(const uint8_t* remote_state) {
   if (remote_state[23] == 0x89) return kPanasonicRkr;
   if (remote_state[17] == 0x00) {
     if ((remote_state[21] & 0x10) && (remote_state[23] & 0x01))
@@ -119,18 +119,26 @@ panasonic_ac_remote_model_t IRPanasonicAc_getModel(const uint8_t* remote_state) 
   return kPanasonicUnknown;  // Default
 }
 
-uint8_t IRPanasonicAc_calcChecksum(const uint8_t *state,
+static uint8_t IRPanasonicAc_getSwingVertical(const uint8_t* remote_state) {
+  return GETBITS8(remote_state[16], kLowNibble, kNibbleSize);
+}
+
+static uint8_t IRPanasonicAc_getSwingHorizontal(const uint8_t* remote_state) {
+  return GETBITS8(remote_state[17], kLowNibble, kNibbleSize);
+}
+
+static uint8_t IRPanasonicAc_calcChecksum(const uint8_t *state,
                                     const uint16_t length) {
   return sumBytesState(state, length - 1, kPanasonicAcChecksumInit);
 }
 
 /// Calculate and set the checksum values for the internal state.
 /// @param[in] length The size/length of the state.
-void IRPanasonicAc_fixChecksum(uint8_t* remote_state, const uint16_t length) {
+static void IRPanasonicAc_fixChecksum(uint8_t* remote_state, const uint16_t length) {
   remote_state[length - 1] = IRPanasonicAc_calcChecksum(remote_state, length);
 }
 
-void IRPanasonicAc_setTemp(uint8_t* remote_state, const uint8_t celsius, const bool remember) {
+static void IRPanasonicAc_setTemp(uint8_t* remote_state, const uint8_t celsius, const bool remember) {
   uint8_t temperature;
   temperature = max(celsius, kPanasonicAcMinTemp);
   temperature = min(temperature, kPanasonicAcMaxTemp);
@@ -149,6 +157,8 @@ void PanasonicAC_setInfo(const uint8_t* newState, state_ir_t *ir_state)
     ir_state->degrees = IRPanasonicAc_getTemp(remote_state);
     ir_state->fanspeed = IRPanasonicAc_getFan(remote_state);
     ir_state->model = IRPanasonicAc_getModel(remote_state);
+    ir_state->swingv = IRPanasonicAc_getSwingVertical(remote_state);
+    ir_state->swingh = IRPanasonicAc_getSwingHorizontal(remote_state);
 }
 
 void sendPanasonicAC(const uint8_t data[], const uint16_t nbytes,
@@ -218,6 +228,45 @@ void PanasonicAC_send(state_ir_t state_ir)
     // set temp
     IRPanasonicAc_setTemp(remote_state, (uint8_t)state_ir.degrees, true);
 
+    // set swing vertical
+    uint8_t elevation = state_ir.swingv;
+    if (elevation != kPanasonicAcSwingVAuto) {
+      if (elevation > kPanasonicAcSwingVLowest || elevation < kPanasonicAcSwingVHighest) {
+        elevation = kPanasonicAcSwingVAuto;
+      }
+    }
+    setBitsU8(&remote_state[16], kLowNibble, kNibbleSize, elevation);
+
+    // set swing horizontal
+    switch ((uint8_t)state_ir.swingh) {
+      case kPanasonicAcSwingHAuto:
+      case kPanasonicAcSwingHMiddle:
+      case kPanasonicAcSwingHFullLeft:
+      case kPanasonicAcSwingHLeft:
+      case kPanasonicAcSwingHRight:
+      case kPanasonicAcSwingHFullRight: 
+        setBitsU8(&remote_state[17], kLowNibble, kNibbleSize, (uint8_t)state_ir.swingh);
+        break;
+      // Ignore anything that isn't valid.
+      default: 
+        setBitsU8(&remote_state[17], kLowNibble, kNibbleSize, (uint8_t)kPanasonicAcSwingHAuto);
+      break;
+    }
+    // uint8_t direction = (uint8_t)state_ir.swingh;
+    // switch (IRPanasonicAc_getModel(remote_state)) {
+    //   case kPanasonicDke:
+    //   case kPanasonicRkr:
+    //     break;
+    //   case kPanasonicNke:
+    //   case kPanasonicLke:
+    //     direction = kPanasonicAcSwingHMiddle;
+    //     break;
+    //   default:  // Ignore everything else.
+    //     return;
+    // }
+    
+
+    // check sum
     IRPanasonicAc_fixChecksum(remote_state, kPanasonicAcStateLength);
     sendPanasonicAC(remote_state, kPanasonicAcStateLength, kPanasonicAcDefaultRepeat);
 }
@@ -340,6 +389,8 @@ void IRPanasonicAc32_setInfo(const uint32_t state,  state_ir_t *ir_state) {
     ir_state->mode = _.Mode;
     ir_state->degrees = _.Temp + (kPanasonicAcMinTemp - 1);
     ir_state->fanspeed = _.Fan;
+    ir_state->swingv = _.SwingV;
+    ir_state->swingh = _.SwingH;
 }
 
 static void sendPanasonicAC32(const uint64_t data, const uint16_t nbits,
@@ -417,15 +468,39 @@ void PanasonicAc32_send(state_ir_t state_ir)
     _.Temp = temp - (kPanasonicAcMinTemp - 1);
     // fanspeed
     switch ((uint8_t)state_ir.fanspeed) {
-    case kPanasonicAc32FanMin:
-    case kPanasonicAc32FanLow:
-    case kPanasonicAc32FanMed:
-    case kPanasonicAc32FanHigh:
-    case kPanasonicAc32FanMax:
-    case kPanasonicAc32FanAuto:
-      _.Fan = state_ir.fanspeed;
-      break;
-    default: _.Fan = kPanasonicAc32FanAuto;
+      case kPanasonicAc32FanMin:
+      case kPanasonicAc32FanLow:
+      case kPanasonicAc32FanMed:
+      case kPanasonicAc32FanHigh:
+      case kPanasonicAc32FanMax:
+      case kPanasonicAc32FanAuto:
+        _.Fan = state_ir.fanspeed;
+        break;
+      default: _.Fan = kPanasonicAc32FanAuto;
+    }
+
+  // swing vertical
+    uint8_t elevation = (uint8_t)state_ir.swingv;
+    if (elevation != kPanasonicAc32SwingVAuto) {
+      if (elevation > kPanasonicAcSwingVLowest || elevation < kPanasonicAcSwingVHighest) {
+        elevation = kPanasonicAc32SwingVAuto;
+      }
+    }
+    _.SwingV = elevation;
+
+  // swing horizontal
+  switch ((uint8_t)state_ir.swingh)
+  {
+  case 0:
+    _.SwingH = false;
+    break;
+  
+  case 1:
+    _.SwingH = true;
+    break;
+  
+  default:
+    break;
   }
 
   sendPanasonicAC32(_.raw, kPanasonicAc32Bits, kPanasonicAc32DefaultRepeat);

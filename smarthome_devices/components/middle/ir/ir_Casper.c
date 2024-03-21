@@ -309,7 +309,7 @@ void Casper_send(state_ir_t ir_state)
 
     os_trace("power: %u\r\n", ir_state.power);
     hash_code(dataa, &ir_state);
-    os_trace("CASPER_HASH: 0x");
+    // os_trace("CASPER_HASH: 0x");
     for (uint8_t i = 0; i < 21; i++) {
         if (i == 6 || i == 14) {
             os_trace("\t|\t");

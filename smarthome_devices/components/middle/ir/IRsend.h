@@ -191,7 +191,6 @@ void Casper_send(state_ir_t ir_state);
 void LG_send(state_ir_t state_ir);
 void LG2_send(state_ir_t state_ir);
 void Funiki_send(state_ir_t state_ir);
-void Aqua_send(state_ir_t state_ir);
 void Samsung_send(state_ir_t state_ir);
 void Samsung_sendExtended(state_ir_t state_ir);
 void Toshiba_send(state_ir_t state_ir);
@@ -227,6 +226,7 @@ void MitsubishiHeavy152Ac_send(state_ir_t state_ir);
 void MitsubishiAC_send(state_ir_t state_ir);
 void Mitsubishi136_send(state_ir_t state_ir);
 void KelvinatorAC_send(state_ir_t state_ir);
+void HaierACYRW02_send(state_ir_t state_ir);
 
 
 /* end */

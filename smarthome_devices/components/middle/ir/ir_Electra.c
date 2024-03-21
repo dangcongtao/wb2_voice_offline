@@ -69,6 +69,8 @@ void ElectraAc_setInfo(const uint8_t new_code[], const uint16_t length, state_ir
     ir_state->turbo = _.Turbo;
     ir_state->clean = _.Clean;
     ir_state->quiet = _.Quiet;
+    ir_state->swingv = !_.SwingV;
+    ir_state->swingh = !_.SwingH;
 }
 
 static void sendElectraAC(const uint8_t data[], const uint16_t nbytes,
@@ -92,6 +94,12 @@ void ElectraAc_send(state_ir_t state_ir)
     _.raw[0] = 0xC3;
     _.LightToggle = kElectraAcLightToggleOff;
 
+    if (state_ir.swingv != swingv_kOff) {
+      _.SwingV = ((state_ir.swingv == 1) ? kElectraAcSwingOn : kElectraAcSwingOff);
+    }
+    if (state_ir.swingh != swingh_kOff) {
+      _.SwingH = ((state_ir.swingh == 1) ? kElectraAcSwingOn : kElectraAcSwingOff);
+    }
     // Power
     _.Power = state_ir.power;
     // Mode

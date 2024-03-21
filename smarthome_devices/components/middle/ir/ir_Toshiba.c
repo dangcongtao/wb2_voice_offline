@@ -173,6 +173,7 @@ void Toshiba_setInfo(const uint8_t* newState, const uint16_t length, const decod
     ir_state->fanspeed = _.Fan;
     ir_state->turbo = getTurbo(_);
     ir_state->econo = getEcono(_);
+    ir_state->swingv = _.Swing;
 }
 
 static void setTemp(ToshibaProtocol *_, const uint8_t degrees) {
