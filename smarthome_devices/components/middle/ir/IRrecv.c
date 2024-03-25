@@ -1215,14 +1215,6 @@ bool decode_for(decode_results *results, uint8_t max_skip)
     if (decodeMitsubishi136(results, offset, kMitsubishi136Bits, true)) return true;
 #endif
 
-#if DECODE_MIDEA
-    //os_trace("Attempting decodeMidea AC decode\r\n");        
-    if (decodeMidea(results, offset, kMideaBits, true)) return true;
-
-    // os_trace("Attempting decodeMidea 24bit AC decode\r\n");        
-    // if (decodeMidea24(results, offset, kMidea24Bits, true)) return true;
-#endif
-
 #if DECODE_SHARP
     if (decodeSharpAc(results, offset, kSharpAcBits, true)) return true;
 #endif
@@ -1296,11 +1288,13 @@ bool decode_for(decode_results *results, uint8_t max_skip)
 #if DECODE_PANASONIC_AC
     // os_trace("Attempting decodePanasonicAC AC decode\r\n");        
     if (decodePanasonicAC(results, offset, kPanasonicAcBits, true)) return true;
+    if (decodePanasonicAC(results, offset, kPanasonicAcShortBits, true)) return true;
 
 #endif
 #if DECODE_PANASONIC_AC32
     // os_trace("Attempting decodePanasonicAC32 AC decode\r\n");        
     if (decodePanasonicAC32(results, offset, kPanasonicAc32Bits, true)) return true;
+    if (decodePanasonicAC32(results, offset, kPanasonicAc32Bits / 2, true)) return true;
 
 #endif
 
@@ -1333,7 +1327,13 @@ bool decode_for(decode_results *results, uint8_t max_skip)
     if (decodeSanyoAc152(results, offset, kSanyoAc152Bits, true)) return true;
 #endif
 
+#if DECODE_MIDEA
+    //os_trace("Attempting decodeMidea AC decode\r\n");        
+    if (decodeMidea(results, offset, kMideaBits, true)) return true;
 
+    // os_trace("Attempting decodeMidea 24bit AC decode\r\n");        
+    // if (decodeMidea24(results, offset, kMidea24Bits, true)) return true;
+#endif
 
 
 #if DECODE_NEC
