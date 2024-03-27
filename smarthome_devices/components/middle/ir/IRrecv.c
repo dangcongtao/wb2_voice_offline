@@ -13,6 +13,7 @@
 
 #include "base64.h"
 #include "m_mqtt.h"
+#include "m_led_stt.h"
 
 DRAM_ATTR irparams_t params;
 irparams_t *params_save;
@@ -1332,7 +1333,7 @@ bool decode_for(decode_results *results, uint8_t max_skip)
     if (decodeMidea(results, offset, kMideaBits, true)) return true;
 
     // os_trace("Attempting decodeMidea 24bit AC decode\r\n");        
-    // if (decodeMidea24(results, offset, kMidea24Bits, true)) return true;
+    if (decodeMidea24(results, offset, kMidea24Bits, true)) return true;
 #endif
 
 
@@ -1563,22 +1564,26 @@ void IR_start_learn(void)
 {
     old_time_learn_ir = sys_get_tick_ms() | 1;
     old_time_learn_ir_auto = 0;
+    m_led_stt_get_instance()._set_led_stt_wifi_not_connect_cb();
 }
 
 void IR_stop_learn(void)
 {
     old_time_learn_ir = 0;
+    m_led_stt_get_instance()._set_led_stt_mqtt_subscribed_cb();
 }
 
 void IR_start_learn_auto(void)
 {
     old_time_learn_ir_auto = sys_get_tick_ms() | 1;
     old_time_learn_ir = 0;
+    m_led_stt_get_instance()._set_led_stt_wifi_not_connect_cb();
 }
 
 void IR_stop_learn_auto(void)
 {
     old_time_learn_ir_auto = 0;
+    m_led_stt_get_instance()._set_led_stt_mqtt_subscribed_cb();
 }
 
 static void learnIR(decode_results *results)
@@ -1634,6 +1639,11 @@ void m_ir_task(void *param)
                 LG_setInfo(capture.value, capture.decode_type, &ir_state_recv);
             } 
             else if (capture.decode_type == FUNIKI){
+                os_trace("FUNIKI: 0x ");
+                for(uint8_t i = 0; i < 12; i++) {
+                    os_trace("%02X-", capture.state[i]);
+                }
+                os_trace("\r\n");
                 Funiki_setRaw((uint8_t*)&capture.value, capture.decode_type, &ir_state);
                 Funiki_setInfo((uint8_t*)&capture.value, capture.decode_type, &ir_state_recv);
             } else if (capture.decode_type == CASPER){
@@ -1821,7 +1831,8 @@ void m_ir_task(void *param)
             /***************************************************************************************/
             if (old_time_learn_ir) {
                 learnIR(&capture);
-                old_time_learn_ir = 0;
+                // old_time_learn_ir = 0;
+                IR_stop_learn();
             }
             else if(old_time_learn_ir_auto && capture.decode_type != UNKNOWN) 
             {
@@ -1835,7 +1846,8 @@ void m_ir_task(void *param)
                 if (dev_is_online())
                     m_mqtt_get_instance()._mqtt_publish(str, strlen(str));
 
-                old_time_learn_ir_auto = 0;
+                // old_time_learn_ir_auto = 0;
+                IR_stop_learn_auto();
             }
             else if (capture.decode_type != UNKNOWN)
             {
@@ -1859,11 +1871,13 @@ void m_ir_task(void *param)
 
         if (old_time_learn_ir) {
             if (sys_get_tick_ms() - old_time_learn_ir >= 120000) {
-                old_time_learn_ir = 0;
+                IR_stop_learn();
+                // old_time_learn_ir = 0;
             }
         } else if (old_time_learn_ir_auto) {
             if (sys_get_tick_ms() - old_time_learn_ir_auto >= 120000) {
-                old_time_learn_ir_auto = 0;
+                IR_stop_learn_auto();
+                // old_time_learn_ir_auto = 0;
             }
         }
 
