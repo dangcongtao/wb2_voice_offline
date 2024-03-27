@@ -279,6 +279,27 @@ void Funiki_setRaw(const uint8_t* new_code, const decode_type_t protocol, state_
 void Funiki_setInfo(const uint8_t* new_code, const decode_type_t protocol, state_ir_t *ir_state) 
 {
     // memcpy(_.data.raw, new_code, kFunikiAcStateLength);
+    uint8_t cmd_turbo[] = {0xAD, 0x52, 0xAF, 0x50, 0x45, 0xBA};
+    if (!memcmp(new_code, cmd_turbo, 6)) {
+        ir_state->degrees = 0;
+        os_trace("%s turbo cmd\r\n", __func__);
+    }
+    uint8_t cmd_swing[] = {0x4D, 0xB2, 0xD6, 0x29, 0x07, 0xF8};
+    if (!memcmp(new_code, cmd_swing, 6)) {
+        ir_state->degrees = 0;
+        os_trace("%s swing cmd\r\n", __func__);
+    }
+    uint8_t cmd_led[] =   {0xAD, 0x52, 0xAF, 0x50, 0xA5, 0x5A};
+    if (!memcmp(new_code, cmd_led, 6)) {
+        ir_state->degrees = 0;
+        os_trace("%s led cmd\r\n", __func__);
+    }
+    uint8_t cmd_clean[] =   {0xAD, 0x52, 0xAF, 0x50, 0x55, 0xAA};
+    if (!memcmp(new_code, cmd_clean, 6)) {
+        ir_state->degrees = 0;
+        os_trace("%s clean cmd\r\n", __func__);
+    }
+
     Funiki_toCommon(new_code, ir_state);
     // FunikiProtocol _;
     // memset(&_, 0, sizeof(FunikiProtocol));

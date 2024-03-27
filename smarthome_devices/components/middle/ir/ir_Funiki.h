@@ -60,5 +60,10 @@ typedef struct
     } data;
 } FunikiProtocol;
 
+#define CMD_TURBO   0xAD52AF5045BA
+#define CMD_SWING   0x4DB2D62907F8
+#define CMD_LED     0xAD52AF50A55A
+
+
 
 #endif
