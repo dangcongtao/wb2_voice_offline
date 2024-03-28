@@ -75,7 +75,7 @@ typedef enum {
   JVC,  // 70
   UNKNOWN_8545,
   MITSUBISHI112,
-  MIRAGE,
+  UNKNOWN_9483,
   SONY_38K,
   EPSON,  // 75
   SYMPHONY,
@@ -120,6 +120,7 @@ typedef enum {
   LG,
   HAIER_AC_YRW02, // AQUA
   TECO,
+  MIRAGE,
   // Add new entries before this one, and update it to point to the last entry.
   kLastDecodeType = LG,
 } decode_type_t;

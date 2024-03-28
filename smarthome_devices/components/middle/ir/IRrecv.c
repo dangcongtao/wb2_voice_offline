@@ -1841,6 +1841,14 @@ void m_ir_task(void *param)
             {
                 IRHaierACYRW02_setRaw(capture.state, &ir_state_recv);
             }
+            else if (TECO == capture.decode_type)
+            {
+                IRTecoAc_setInfo(capture.value, &ir_state_recv);
+            }
+            else if (MIRAGE == capture.decode_type)
+            {
+                IRMirageAc_setInfo(capture.state, &ir_state_recv);
+            }
 
             /***************************************************************************************/
             if (old_time_learn_ir) {
@@ -1908,7 +1916,7 @@ void m_ir_init(void)
     is_init = 1;
     bl_gpio_enable_output(IRpin, 0, 0);
     IRsend_init(IRpin, false, true);
-    IRrecv_init(IR_RX, 1024, 50, false);
+    IRrecv_init(IR_RX, 1024, 100, false);
 
     enableIRIn(1);
 

@@ -51,7 +51,7 @@ bool decodePanasonicAC(decode_results *results, uint16_t offset,
                       kPanasonicHdrMark - 456, kPanasonicHdrMark + 456, kPanasonicHdrSpace - 400, kPanasonicHdrSpace + 400,
                       kPanasonicBitMark - 332, kPanasonicBitMark + 368, kPanasonicOneSpace - 496, kPanasonicOneSpace + 504,
                       kPanasonicBitMark - 332, kPanasonicBitMark + 368, kPanasonicZeroSpace - 332, kPanasonicZeroSpace + 368,
-                      kPanasonicBitMark - 332, kPanasonicBitMark + 368, kPanasonicAcSectionGap - 2500, kPanasonicAcSectionGap + 2500, false,
+                      kPanasonicBitMark - 332, kPanasonicBitMark + 368, kPanasonicAcSectionGap - 2500, kPanasonicAcSectionGap + 2500, true,
                       kPanasonicAcTolerance, kPanasonicAcExcess, false);
   if (!used) return false;
   offset += used;
@@ -64,7 +64,7 @@ bool decodePanasonicAC(decode_results *results, uint16_t offset,
                     kPanasonicHdrMark - 456, kPanasonicHdrMark + 456, kPanasonicHdrSpace - 400, kPanasonicHdrSpace + 400,
                     kPanasonicBitMark - 332, kPanasonicBitMark + 368, kPanasonicOneSpace - 496, kPanasonicOneSpace + 504,
                     kPanasonicBitMark - 332, kPanasonicBitMark + 368, kPanasonicZeroSpace - 332, kPanasonicZeroSpace + 368,
-                    kPanasonicBitMark - 332, kPanasonicBitMark + 368, kPanasonicAcSectionGap - 2500, kPanasonicAcSectionGap + 2500, true,
+                    kPanasonicBitMark - 332, kPanasonicBitMark + 368, kPanasonicAcMessageGap - 25000, kPanasonicAcMessageGap + 25000, true,
                     kPanasonicAcTolerance, kPanasonicAcExcess, false))
     return false;
   // Compliance
@@ -73,7 +73,10 @@ bool decodePanasonicAC(decode_results *results, uint16_t offset,
     if (results->state[0] != 0x02 || results->state[1] != 0x20 ||
         results->state[8] != 0x02 || results->state[9] != 0x20)
       return false;
-    if (!IRPanasonicAc_validChecksum(results->state, nbits / 8)) return false;
+    if (!IRPanasonicAc_validChecksum(results->state, nbits / 8)){
+      os_trace("%s invalid checksum\r\n", __func__);
+      return false;
+    }
   }
 
   os_trace("%s success\r\n", __func__);

@@ -85,5 +85,123 @@ void IRMirageAc_setInfo(const uint8_t *data, state_ir_t *ir_state) {
     ir_state->mode = _.Mode;
     ir_state->fanspeed = _.Fan;
     ir_state->degrees = _.Temp - kMirageAcTempOffset;
+    
+    switch (_model) {
+        case KKG29AC1:
+        ir_state->swingv = (_.SwingV ? kMirageAcSwingVAuto : kMirageAcSwingVOff);
+        default:
+        ir_state->swingv = (_.SwingAndPower - (ir_state->power ? 0 : kMirageAcPowerOff));
+    }
+    switch (_model) {
+    case KKG29AC1: ir_state->swingh = _.SwingH;
+    default: 
+        ir_state->swingh = false;
+        break;
+  }
+}
 
+static void sendMirage(const uint8_t data[], const uint16_t nbytes,
+                        const uint16_t repeat) {
+    vTaskEnterCritical();
+    sendGenericBytes(kMirageHdrMark, kMirageHdrSpace,
+              kMirageBitMark, kMirageOneSpace,
+              kMirageBitMark, kMirageZeroSpace,
+              kMirageBitMark, kMirageGap,
+              data, nbytes, kMirageFreq, false,  // LSB
+              repeat, kDutyDefault);
+    vTaskExitCritical();
+}
+
+void IRMirageAc_send(state_ir_t state_ir)
+{
+    uint8_t kReset[kMirageStateLength] = {
+      0x56, 0x6C, 0x00, 0x00, 0x20, 0x1A, 0x00, 0x00,
+      0x0C, 0x00, 0x0C, 0x00, 0x00, 0x00, 0x42};
+
+    Mirage120Protocol _;
+    memset(&_, 0, sizeof(Mirage120Protocol));
+    memcpy(_.raw, kReset, kMirageStateLength);
+    _model = getModel(_.raw);
+    _model = KKG9AC1;
+
+    switch (_model) {
+        case KKG29AC1:
+        _.Power = state_ir.power ? kMirageAcKKG29AC1PowerOn : kMirageAcKKG29AC1PowerOff;
+        break;
+        default:
+        // In order to change the power setting, it seems must be less than
+        // kMirageAcPowerOff. kMirageAcPowerOff is larger than half of the
+        // possible value stored in the allocated bit space.
+        // Thus if the value is larger than kMirageAcPowerOff the power is off.
+        // Less than, then power is on.
+        // We can't just aribitarily add or subtract the value (which analysis
+        // indicates is how the power status changes. Very weird, I know!) as that
+        // is not an idempotent action, we must check if the addition or
+        // substraction is needed first. e.g. via getPower()
+        // i.e. If we added or subtracted twice, we would cause a wrap of the
+        // integer and not get the desired result.
+        if (state_ir.power)
+            _.SwingAndPower -= (_.SwingAndPower < kMirageAcPowerOff) ? 0 : kMirageAcPowerOff;
+        else
+            _.SwingAndPower += (_.SwingAndPower < kMirageAcPowerOff) ? kMirageAcPowerOff : 0;
+    }
+
+    switch ((uint8_t)state_ir.mode) {
+        case kMirageAcCool:
+        case kMirageAcDry:
+        case kMirageAcHeat:
+        case kMirageAcFan:
+        case kMirageAcRecycle:
+        _.Mode = state_ir.mode;
+        // Reset turbo if we have to.
+        //   setTurbo(getTurbo());
+        break;
+        default:  // Default to cool mode for anything else.
+        _.Mode = kMirageAcCool;
+    }
+
+    _.Fan = ((uint8_t)state_ir.fanspeed <= kMirageAcFanLow) ? (uint8_t)state_ir.fanspeed : kMirageAcFanAuto;
+
+    uint8_t celsius = max((uint8_t)state_ir.degrees, kMirageAcMinTemp);
+    _.Temp = min(celsius, kMirageAcMaxTemp) + kMirageAcTempOffset;
+    // swingv
+    switch ((uint8_t)state_ir.swingv) {
+        case kMirageAcSwingVOff:
+        case kMirageAcSwingVLowest:
+        case kMirageAcSwingVLow:
+        case kMirageAcSwingVMiddle:
+        case kMirageAcSwingVHigh:
+        case kMirageAcSwingVHighest:
+        case kMirageAcSwingVAuto:
+        switch (_model) {
+            case KKG29AC1:
+            _.SwingV = (state_ir.swingv != kMirageAcSwingVOff);
+            break;
+            default:
+            //   const bool power = getPower();
+              _.SwingAndPower = state_ir.swingv;
+            //   // Power needs to be reapplied after overwriting SwingAndPower
+            if (state_ir.power)
+                _.SwingAndPower -= (_.SwingAndPower < kMirageAcPowerOff) ? 0 : kMirageAcPowerOff;
+            else
+                _.SwingAndPower += (_.SwingAndPower < kMirageAcPowerOff) ? kMirageAcPowerOff : 0;
+            //   setPower(power);
+            break;
+        }
+        break;
+        default:  // Default to Auto for anything else.
+        //   setSwingV(kMirageAcSwingVAuto);
+            break;
+    }
+
+    switch (_model) {
+    case KKG29AC1:
+      _.SwingH = state_ir.swingh;
+      break;
+    default:
+      break;
+  }
+
+    _.Sum = IRMirageAc_calculateChecksum(_.raw);
+    sendMirage(_.raw, kMirageStateLength, kMirageMinRepeat);
 }

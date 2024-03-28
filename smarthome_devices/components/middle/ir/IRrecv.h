@@ -386,6 +386,7 @@ bool matchSpace(uint32_t measured, uint32_t desired, uint8_t tolerance,
 
 bool matchAtLeast(uint32_t measured, uint32_t desired,
                           uint8_t tolerance, uint16_t delta);
+bool matchAtLeastLimit(uint32_t measured, uint32_t lower_limit);
 
 bool matchLimit(uint32_t measured, uint32_t lower_limit, uint32_t upper_limit);
 

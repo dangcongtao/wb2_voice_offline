@@ -84,18 +84,18 @@ bool decodeFujitsuAC(decode_results* results, uint16_t offset,
 
   // Footer
   if (offset > results->rawlen ||
-      !matchMark(results->rawbuf[offset++], kFujitsuAcBitMark, kUseDefTol, kMarkExcess))
+      !matchLimit(results->rawbuf[offset++], kFujitsuAcBitMark-348, kFujitsuAcBitMark+342))
     return false;
   // The space is optional if we are out of capture.
   if (offset < results->rawlen &&
-      !matchAtLeast(results->rawbuf[offset], kFujitsuAcMinGap, kUseDefTol, 0))
+      !matchAtLeastLimit(results->rawbuf[offset], kFujitsuAcMinGap-2000))
     return false;
 
   // Compliance
   if (strict) {
     if (dataBitsSoFar != nbits) return false;
   }
-
+  os_trace("%s success\r\n", __func__);
   results->decode_type = FUJITSU_AC;
   results->bits = dataBitsSoFar;
 
@@ -122,12 +122,13 @@ bool decodeFujitsuAC(decode_results* results, uint16_t offset,
       if (results->state[5] != 0xFE) return false;
       break;
     default:
+      os_trace("%s Unexpected size\r\n", __func__);
       return false;  // Unexpected size.
   }
-  if (!IRFujitsuAC_validChecksum(results->state, dataBitsSoFar / 8))
+  if (!IRFujitsuAC_validChecksum(results->state, dataBitsSoFar / 8)) {
+    os_trace("%s invalid\r\n", __func__);
     return false;
-
-    os_trace("%s success\r\n", __func__);
+  }
 
   // Success
   return true;  // All good.
