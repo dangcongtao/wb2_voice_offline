@@ -41,6 +41,10 @@ typedef enum {
   R_LT0541_HTA_A = 1,  // (1) R-LT0541-HTA Remote in "A" setting. (Default)
   R_LT0541_HTA_B,      // (2) R-LT0541-HTA Remote in "B" setting.
 } hitachi_ac1_remote_model_t;
+typedef enum {
+  KKG9AC1 = 1,  // (1) KKG9A-C1 Remote. (Default)
+  KKG29AC1,     // (2) KKG29A-C1 Remote.
+} mirage_ac_remote_model_t;
 
 typedef enum {
   kPanasonicUnknown = 0,
@@ -227,6 +231,7 @@ void MitsubishiAC_send(state_ir_t state_ir);
 void Mitsubishi136_send(state_ir_t state_ir);
 void KelvinatorAC_send(state_ir_t state_ir);
 void HaierACYRW02_send(state_ir_t state_ir);
+void IRTecoAc_send(state_ir_t state_ir);
 
 
 /* end */

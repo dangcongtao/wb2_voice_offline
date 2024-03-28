@@ -76,6 +76,8 @@
 #define DECODE_HAIER_AC_YRW02 1
 #define DECODE_HAIER_AC176 1
 #define DECODE_HAIER_AC160 1
+#define DECODE_TECO 1
+#define DECODE_MIRAGE 1
 
 
 #define IR_RX 1
@@ -369,6 +371,16 @@ bool decodeHaierAC160(decode_results *results, uint16_t offset,
                            const uint16_t nbits, const bool strict);
 #endif
 
+#if DECODE_TECO
+bool decodeTeco(decode_results *results, uint16_t offset,
+                           const uint16_t nbits, const bool strict);
+#endif
+
+#if DECODE_MIRAGE
+bool decodeMirage(decode_results *results, uint16_t offset,
+                           const uint16_t nbits, const bool strict);
+#endif
+
 bool matchSpace(uint32_t measured, uint32_t desired, uint8_t tolerance,
                         int16_t excess);
 
@@ -531,6 +543,9 @@ void IRCarrierAc64_setInfo(const uint64_t state, state_ir_t *ir_state);
 
 void IRHaierACYRW02_setRaw(const uint8_t new_code[], state_ir_t *ir_state);
 void IRHaierAC_setRaw(const uint8_t new_code[], state_ir_t *ir_state);
+void IRHaierAC_setRaw(const uint8_t new_code[], state_ir_t *ir_state);
+void IRTecoAc_setInfo(const uint64_t new_code, state_ir_t *ir_state);
+void IRMirageAc_setInfo(const uint8_t *data, state_ir_t *ir_state);
 
 // void enableIRIn(const bool pullup);
 void ir_loop(void);

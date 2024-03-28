@@ -57,7 +57,7 @@ typedef enum {
   MWM,
   RC5,
   DENON,
-  TECO,  // (55)
+  UNKNOWN_98345,  // (55)
   SAMSUNG36,
   TROTEC,
   LEGOPF,
@@ -119,6 +119,7 @@ typedef enum {
   MITSUBISHI136,
   LG,
   HAIER_AC_YRW02, // AQUA
+  TECO,
   // Add new entries before this one, and update it to point to the last entry.
   kLastDecodeType = LG,
 } decode_type_t;
@@ -285,5 +286,12 @@ typedef enum {
 #define kHaierAC176StateLength (22)
 #define kHaierAC176Bits (kHaierAC176StateLength * 8)
 #define kHaierAc176DefaultRepeat (kNoRepeat)
+
+#define kTecoBits  35
+#define kTecoDefaultRepeat  kNoRepeat
+
+#define kMirageStateLength  15
+#define kMirageBits  (kMirageStateLength * 8)
+#define kMirageMinRepeat  kNoRepeat
 
 #endif

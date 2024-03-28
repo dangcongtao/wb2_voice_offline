@@ -1216,6 +1216,11 @@ bool decode_for(decode_results *results, uint8_t max_skip)
     if (decodeMitsubishi136(results, offset, kMitsubishi136Bits, true)) return true;
 #endif
 
+#if (DECODE_TECO)
+    // os_trace("Attempting decodeMitsubishi136 decode\r\n");
+    if (decodeTeco(results, offset, kTecoBits, false)) return true;
+#endif
+
 #if DECODE_SHARP
     if (decodeSharpAc(results, offset, kSharpAcBits, true)) return true;
 #endif
@@ -1292,6 +1297,15 @@ bool decode_for(decode_results *results, uint8_t max_skip)
     if (decodePanasonicAC(results, offset, kPanasonicAcShortBits, true)) return true;
 
 #endif
+
+#if DECODE_MIRAGE
+    // os_trace("Attempting decodePanasonicAC AC decode\r\n");        
+    if (decodeMirage(results, offset, kMirageBits, true)) return true;
+
+#endif
+
+
+
 #if DECODE_PANASONIC_AC32
     // os_trace("Attempting decodePanasonicAC32 AC decode\r\n");        
     if (decodePanasonicAC32(results, offset, kPanasonicAc32Bits, true)) return true;
