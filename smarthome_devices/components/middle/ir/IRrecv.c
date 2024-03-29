@@ -1360,6 +1360,10 @@ bool decode_for(decode_results *results, uint8_t max_skip)
     if (decodeCoolix48(results, offset, kCoolix48Bits, true)) return true;
 #endif
 
+#if DECODE_YORK
+    if (decodeYork(results, offset, kYorkBits, true)) return true;
+#endif
+
 #if DECODE_NEC
        // os_trace("Attempting NEC decode\r\n");
         if (decodeNEC(results, offset, kNECBits, true))

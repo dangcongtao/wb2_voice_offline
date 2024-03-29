@@ -23,7 +23,7 @@ typedef enum {
   FUJITSU_AC,
   SANYO_LC7461,
   GREE,
-  UNKNOWN_94385,  // (20)
+  YORK,  // (20)
   RCMM,
   KELVINATOR,
   LG2,
@@ -311,6 +311,11 @@ typedef enum {
 #define kNeoclimaStateLength  12
 #define kNeoclimaBits (kNeoclimaStateLength * 8)
 #define kNeoclimaMinRepeat  kNoRepeat
+
+#define kYorkBits  136
+#define kYorkStateLength  17
+
+
 
 
 #endif

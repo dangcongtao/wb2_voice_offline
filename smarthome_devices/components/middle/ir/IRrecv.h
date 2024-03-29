@@ -83,6 +83,7 @@
 #define DECODE_COOLIX48 1
 #define DECODE_WHIRLPOOL_AC 1
 #define DECODE_NEOCLIMA 1
+#define DECODE_YORK 1
 
 
 #define IR_RX 1
@@ -407,6 +408,11 @@ bool decodeWhirlpoolAC(decode_results *results, uint16_t offset,
 
 #if DECODE_NEOCLIMA
 bool decodeNeoclima(decode_results *results, uint16_t offset,
+                           const uint16_t nbits, const bool strict);
+#endif
+
+#if DECODE_YORK
+bool decodeYork(decode_results *results, uint16_t offset,
                            const uint16_t nbits, const bool strict);
 #endif
 
