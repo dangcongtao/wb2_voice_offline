@@ -78,6 +78,11 @@
 #define DECODE_HAIER_AC160 1
 #define DECODE_TECO 1
 #define DECODE_MIRAGE 1
+#define DECODE_AMCOR 1
+#define DECODE_COOLIX 1
+#define DECODE_COOLIX48 1
+#define DECODE_WHIRLPOOL_AC 1
+#define DECODE_NEOCLIMA 1
 
 
 #define IR_RX 1
@@ -381,6 +386,30 @@ bool decodeMirage(decode_results *results, uint16_t offset,
                            const uint16_t nbits, const bool strict);
 #endif
 
+#if DECODE_AMCOR
+bool decodeAmcor(decode_results *results, uint16_t offset,
+                           const uint16_t nbits, const bool strict);
+#endif
+
+#if DECODE_COOLIX
+bool decodeCOOLIX(decode_results *results, uint16_t offset,
+                           const uint16_t nbits, const bool strict);
+#endif
+#if DECODE_COOLIX48
+bool decodeCoolix48(decode_results *results, uint16_t offset,
+                           const uint16_t nbits, const bool strict);
+#endif
+
+#if DECODE_WHIRLPOOL_AC
+bool decodeWhirlpoolAC(decode_results *results, uint16_t offset,
+                           const uint16_t nbits, const bool strict);
+#endif
+
+#if DECODE_NEOCLIMA
+bool decodeNeoclima(decode_results *results, uint16_t offset,
+                           const uint16_t nbits, const bool strict);
+#endif
+
 bool matchSpace(uint32_t measured, uint32_t desired, uint8_t tolerance,
                         int16_t excess);
 
@@ -547,6 +576,11 @@ void IRHaierAC_setRaw(const uint8_t new_code[], state_ir_t *ir_state);
 void IRHaierAC_setRaw(const uint8_t new_code[], state_ir_t *ir_state);
 void IRTecoAc_setInfo(const uint64_t new_code, state_ir_t *ir_state);
 void IRMirageAc_setInfo(const uint8_t *data, state_ir_t *ir_state);
+void IRAmcorAc_setInfo(const uint8_t state[], state_ir_t *ir_state);
+void IRWhirlpoolAc_setRaw(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
+void IRNeoclimaAc_setRaw(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
+void Midea_setInfo(const uint64_t new_code, const decode_type_t protocol, state_ir_t *ir_state);
+
 
 // void enableIRIn(const bool pullup);
 void ir_loop(void);

@@ -12,8 +12,8 @@ typedef enum {
   DAIKIN152,
   SAMSUNG,
   WHYNTER,
-  AIWA_RC_T501,
-  UNKNOWN_8954,  // (10)
+  AMCOR,
+  COOLIX48,  // (10)
   CARRIER_AC64,
   SANYO_AC152, // MIDEA - COMFEE 
   DISH,
@@ -28,16 +28,16 @@ typedef enum {
   KELVINATOR,
   LG2,
   SHERWOOD,
-  PRONTO,  // Technically not a protocol, but an encoding. (25)
+  NEOCLIMA,
   SANYO_AC88,
   SAMSUNG_AC,
   SHARP_AC,
   TCL112AC,
   RAW,  // Technically not a protocol, but an encoding. (30)
-  UNKONW_435,
+  PRONTO,  // Technically not a protocol, but an encoding.
   GLOBALCACHE,  // Technically not a protocol, but an encoding.
   VESTEL_AC,
-  MIDEA,
+  WHIRLPOOL_AC,
   MAGIQUEST,  // (35)
   LASERTAG,
   CARRIER_AC,
@@ -48,7 +48,7 @@ typedef enum {
   HITACHI_AC2,
   GICABLE,
   UNKNOWN_4938,
-  WHIRLPOOL_AC,  // (45)
+  UNKNOWN_98435,  // (45)
   ARGO,
   LUTRON,
   SHARP,
@@ -68,10 +68,10 @@ typedef enum {
   GOODWEATHER,
   INAX,
   SONY,  // 65
-  NEOCLIMA,
+  UNKNOWN_94843,
   DAIKIN176,
   UNKNOWN_12,
-  AMCOR,
+  AIWA_RC_T501,
   JVC,  // 70
   UNKNOWN_8545,
   MITSUBISHI112,
@@ -123,6 +123,7 @@ typedef enum {
   MIRAGE,
   // Add new entries before this one, and update it to point to the last entry.
   kLastDecodeType = LG,
+  MIDEA = 1934,
 } decode_type_t;
 
 #define kSingleRepeat 1
@@ -294,5 +295,22 @@ typedef enum {
 #define kMirageStateLength  15
 #define kMirageBits  (kMirageStateLength * 8)
 #define kMirageMinRepeat  kNoRepeat
+
+#define kAmcorStateLength  8
+#define kAmcorBits  (kAmcorStateLength * 8)
+#define kAmcorDefaultRepeat  kSingleRepeat
+
+#define kCoolixBits  24
+#define kCoolix48Bits (kCoolixBits * 2)
+#define kCoolixDefaultRepeat kSingleRepeat
+
+#define kWhirlpoolAcStateLength  21
+#define kWhirlpoolAcBits (kWhirlpoolAcStateLength * 8)
+#define kWhirlpoolAcDefaultRepeat  kNoRepeat
+
+#define kNeoclimaStateLength  12
+#define kNeoclimaBits (kNeoclimaStateLength * 8)
+#define kNeoclimaMinRepeat  kNoRepeat
+
 
 #endif

@@ -96,6 +96,9 @@ COMPONENT_SRCS := database/m_database.c \
 				  ir/ir_Haier.c \
 				  ir/ir_Teco.c \
 				  ir/ir_Mirage.c \
+				  ir/ir_Amcor.c \
+				  ir/ir_Whirlpool.c \
+				  ir/ir_Neoclima.c \
 				  ir/IRrecv_test.c \
 				  
 COMPONENT_OBJS := $(patsubst %.c,%.o, $(COMPONENT_SRCS))

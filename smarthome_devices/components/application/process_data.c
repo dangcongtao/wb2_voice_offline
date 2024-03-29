@@ -420,6 +420,13 @@ static void ir_control(cJSON *jsRoot)
                 hw_led_stt_off();
                 // resume();
                 break;
+            } else if (arr_size - 1 == i) {
+                memset(respond, 0, sizeof(respond));
+                sprintf(
+                    respond,
+                    "{\"%s\":%ld,\"type\":1,\"result\":0,\"err\":\"not support brand\"}",
+                    gs_dev_type[device_type], type);
+                app_send_data(respond, strlen(respond));
             }
         }
     } else if (typesend == 2) {

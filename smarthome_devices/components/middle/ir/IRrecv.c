@@ -1127,6 +1127,15 @@ bool decode_for(decode_results *results, uint8_t max_skip)
     if (decodeHaierAC160(results, offset, kHaierAC160Bits, true)) return true;
 #endif
 
+#if DECODE_NEOCLIMA
+    //os_trace("Attempting Aqua AC\r\n");
+    if (decodeNeoclima(results, offset, kNeoclimaBits, true)) return true;
+#endif
+
+#if DECODE_WHIRLPOOL_AC
+    // os_trace("Attempting Casper AC\r\n");
+    if (decodeWhirlpoolAC(results, offset, kWhirlpoolAcBits, true)) return true;
+#endif
 
 
 #if DECODE_CASPER
@@ -1299,57 +1308,57 @@ bool decode_for(decode_results *results, uint8_t max_skip)
 #endif
 
 #if DECODE_MIRAGE
-    // os_trace("Attempting decodePanasonicAC AC decode\r\n");        
     if (decodeMirage(results, offset, kMirageBits, true)) return true;
 
 #endif
 
-
+#if DECODE_AMCOR
+    if (decodeAmcor(results, offset, kAmcorBits, true)) return true;
+#endif
 
 #if DECODE_PANASONIC_AC32
-    // os_trace("Attempting decodePanasonicAC32 AC decode\r\n");        
     if (decodePanasonicAC32(results, offset, kPanasonicAc32Bits, true)) return true;
     if (decodePanasonicAC32(results, offset, kPanasonicAc32Bits / 2, true)) return true;
 
 #endif
 
 #if DECODE_ELECTRA_AC
-    // os_trace("Attempting decodeElectraAC decode\r\n");        
     if (decodeElectraAC(results, offset, kElectraAcBits, true)) return true;
 
 #endif
 
 #if DECODE_AIRWELL
-    // os_trace("Attempting decodeAirwell decode\r\n");        
     if (decodeAirwell(results, offset, kAirwellBits, true)) return true;
 #endif
 
 #if DECODE_VESTEL_AC
-    // os_trace("Attempting decodeFujitsuAC decode\r\n");        
     if (decodeVestelAc(results, offset, kVestelAcBits, true)) return true;
 #endif
 
 #if DECODE_FUNIKI
-    //os_trace("Attempting Funiki AC\r\n");
     if (decodeFunikiAC(results, offset, kFunikiAcBits, true)) return true;
     if (decodeFunikiAC(results, offset, kFunikiAcExtendedBits, true)) return true;
 #endif
 
 #if DECODE_SANYO
-    // os_trace("Attempting decodeFujitsuAC decode\r\n");        
     if (decodeSanyoAc(results, offset, kSanyoAcBits, true)) return true;
     if (decodeSanyoAc88(results, offset, kSanyoAc88Bits, true)) return true;
     if (decodeSanyoAc152(results, offset, kSanyoAc152Bits, true)) return true;
 #endif
 
 #if DECODE_MIDEA
-    //os_trace("Attempting decodeMidea AC decode\r\n");        
     if (decodeMidea(results, offset, kMideaBits, true)) return true;
 
-    // os_trace("Attempting decodeMidea 24bit AC decode\r\n");        
     if (decodeMidea24(results, offset, kMidea24Bits, true)) return true;
 #endif
 
+#if DECODE_COOLIX
+    if (decodeCOOLIX(results, offset, kCoolixBits, true)) return true;
+#endif
+
+#if DECODE_COOLIX48
+    if (decodeCoolix48(results, offset, kCoolix48Bits, true)) return true;
+#endif
 
 #if DECODE_NEC
        // os_trace("Attempting NEC decode\r\n");
@@ -1661,6 +1670,13 @@ void m_ir_task(void *param)
                 Funiki_setRaw((uint8_t*)&capture.value, capture.decode_type, &ir_state);
                 Funiki_setInfo((uint8_t*)&capture.value, capture.decode_type, &ir_state_recv);
             } else if (capture.decode_type == CASPER){
+                #if DEBUG_ENABLE == 1
+                os_trace("CASPER: 0x ");
+                for(uint8_t i = 0; i < kWhirlpoolAcStateLength; i++) {
+                    os_trace("%02X-", capture.state[i]);
+                }
+                os_trace("\r\n");
+                #endif
                 Casper_setRaw((uint8_t*)&capture.value, capture.decode_type, &ir_state);
                 Casper_setInfo((uint8_t*)&capture.value, &ir_state_recv);
             } else if (capture.decode_type == SAMSUNG_AC){
@@ -1765,6 +1781,7 @@ void m_ir_task(void *param)
             }
             else if (capture.decode_type == MIDEA){
                 Midea_setRaw(capture.value, capture.decode_type, &ir_state);
+                Midea_setInfo(capture.value, capture.decode_type, &ir_state_recv);
             }
             else if (capture.decode_type == SHARP_AC){
                 SharpAc_setRaw((uint8_t*)capture.state, capture.decode_type, &ir_state);
@@ -1848,6 +1865,29 @@ void m_ir_task(void *param)
             else if (MIRAGE == capture.decode_type)
             {
                 IRMirageAc_setInfo(capture.state, &ir_state_recv);
+            }
+            else if (AMCOR == capture.decode_type)
+            {
+                IRAmcorAc_setInfo(capture.state, &ir_state_recv);
+            }
+            else if (COOLIX == capture.decode_type)
+            {
+                IRAmcorAc_setInfo(capture.state, &ir_state_recv);
+            }
+            else if (WHIRLPOOL_AC == capture.decode_type)
+            {
+                #if DEBUG_ENABLE == 1
+                os_trace("WHIRLPOOL_AC: 0x ");
+                for(uint8_t i = 0; i < kWhirlpoolAcStateLength; i++) {
+                    os_trace("%02X-", capture.state[i]);
+                }
+                os_trace("\r\n");
+                #endif
+                IRWhirlpoolAc_setRaw(capture.state, kWhirlpoolAcStateLength, &ir_state_recv);
+            }
+            else if (NEOCLIMA == capture.decode_type)
+            {
+                IRNeoclimaAc_setRaw(capture.state, kNeoclimaStateLength, &ir_state_recv);
             }
 
             /***************************************************************************************/

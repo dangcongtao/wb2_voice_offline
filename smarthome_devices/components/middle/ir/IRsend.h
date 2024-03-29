@@ -47,6 +47,11 @@ typedef enum {
 } mirage_ac_remote_model_t;
 
 typedef enum {
+  DG11J13A = 1,  // DG11J1-04 too
+  DG11J191,
+} whirlpool_ac_remote_model_t;
+
+typedef enum {
   kPanasonicUnknown = 0,
   kPanasonicLke = 1,
   kPanasonicNke = 2,

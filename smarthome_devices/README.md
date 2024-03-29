@@ -27,3 +27,5 @@ vTaskExitCritical();
 để có thể gửi thành công
 
 nếu khi gửi mà nhận đc data ở IRrecv thì cần sử dụng 2 hàm trên khi gửi
+
+Casper là biến thể của WhirlpoolAC

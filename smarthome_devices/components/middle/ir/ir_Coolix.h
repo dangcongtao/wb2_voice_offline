@@ -25,7 +25,7 @@ typedef struct
             uint32_t ZoneFollow2:1;  ///< Additional control bit for Zone Follow mode.
             uint32_t            :4;  ///< Fixed value 0b1011 / 0xB.
         };
-    } data;
+    };
 } CoolixProtocol;
 
 // Constants
@@ -67,6 +67,21 @@ const uint32_t kCoolixCmdFan = 0b101100101011111111100100;  // 0xB2BFE4
 // On, 25C, Mode: Auto, Fan: Auto, Zone Follow: Off, Sensor Temp: Ignore.
 const uint32_t kCoolixDefaultState = 0b101100100001111111001000;  // 0xB21FC8
 
-
+const uint8_t kCoolixTempMap[] = {
+    0b0000,  // 17C
+    0b0001,  // 18c
+    0b0011,  // 19C
+    0b0010,  // 20C
+    0b0110,  // 21C
+    0b0111,  // 22C
+    0b0101,  // 23C
+    0b0100,  // 24C
+    0b1100,  // 25C
+    0b1101,  // 26C
+    0b1001,  // 27C
+    0b1000,  // 28C
+    0b1010,  // 29C
+    0b1011   // 30C
+};
 
 #endif

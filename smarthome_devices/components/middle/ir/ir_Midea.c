@@ -190,6 +190,19 @@ void Midea_setRaw(const uint64_t new_code, const decode_type_t protocol, state_i
     ir_state->degrees = getTemp(_, ir_state->celsius);
 }
 
+void Midea_setInfo(const uint64_t new_code, const decode_type_t protocol, state_ir_t *ir_state) 
+{
+    MideaProtocol _;
+    _.remote_state = new_code;
+
+    ir_state->protocol = MIDEA;
+    ir_state->power = _.Power;
+    ir_state->celsius = !_.useFahrenheit;
+    ir_state->mode = _.Mode;
+    ir_state->fanspeed = _.Fan;
+    ir_state->degrees = getTemp(_, ir_state->celsius);
+}
+
 static void setMode(MideaProtocol *_, const uint8_t mode) {
   switch (mode) {
     case kMideaACAuto:

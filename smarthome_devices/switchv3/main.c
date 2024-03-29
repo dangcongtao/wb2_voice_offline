@@ -26,6 +26,7 @@
 
 #include <bl_wdt.h>
 #include "IRrecv_test.h"
+#include "IRrecv.h"
 
 void main_loop(void)
 {
@@ -86,6 +87,7 @@ void main(void)
     m_event_init();
 
 #if DEBUG_ENABLE == 1
+    _tolerance = kTolerance;
     IRrecv_test_run();
 #endif
     
