@@ -57,7 +57,7 @@ typedef enum {
   MWM,
   RC5,
   DENON,
-  UNKNOWN_98345,  // (55)
+  TROTEC_3550,  // (55)
   SAMSUNG36,
   TROTEC,
   LEGOPF,
@@ -320,7 +320,9 @@ typedef enum {
 #define kCoronaAcBitsShort (kCoronaAcStateLengthShort * 8)
 #define kCoronaAcBits (kCoronaAcStateLength * 8)
 
-
+#define kTrotecStateLength  9
+#define kTrotecBits  (kTrotecStateLength * 8)
+#define kTrotecDefaultRepeat  kNoRepeat
 
 
 #endif

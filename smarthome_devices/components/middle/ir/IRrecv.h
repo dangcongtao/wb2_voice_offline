@@ -9,7 +9,7 @@
 #include "ir_Samsung.h"
 #include "IRsend.h"
 
-#define DEBUG_IR_RCV_ENABLE    0
+#define DEBUG_IR_RCV_ENABLE    1
 #define os_trace_rcv if (DEBUG_IR_RCV_ENABLE == 1) printf
 
 #define MS_TO_USEC(x) ((x) * 1000U)  // Convert milli-Seconds to micro-Seconds.
@@ -85,6 +85,8 @@
 #define DECODE_NEOCLIMA 1
 #define DECODE_YORK 1
 #define DECODE_CORONA_AC 1
+#define DECODE_TROTEC 1
+#define DECODE_TROTEC_3550 1
 
 
 #define IR_RX 1
@@ -422,6 +424,16 @@ bool decodeCoronaAc(decode_results *results, uint16_t offset,
                            const uint16_t nbits, const bool strict);
 #endif
 
+#if DECODE_TROTEC
+bool decodeTrotec(decode_results *results, uint16_t offset,
+                           const uint16_t nbits, const bool strict);
+#endif
+
+#if DECODE_TROTEC_3550
+bool decodeTrotec3550(decode_results *results, uint16_t offset,
+                           const uint16_t nbits, const bool strict);
+#endif
+
 bool matchSpace(uint32_t measured, uint32_t desired, uint8_t tolerance,
                         int16_t excess);
 
@@ -593,6 +605,8 @@ void IRWhirlpoolAc_setRaw(const uint8_t new_code[], const uint16_t length, state
 void IRNeoclimaAc_setRaw(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
 void Midea_setInfo(const uint64_t new_code, const decode_type_t protocol, state_ir_t *ir_state);
 void IRCoronaAc_setRaw(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
+void IRTrotec_setRaw(const uint8_t state[], state_ir_t *ir_state);
+void IRTrotec3550_setRaw(const uint8_t state[], state_ir_t *ir_state);
 
 // void enableIRIn(const bool pullup);
 void ir_loop(void);

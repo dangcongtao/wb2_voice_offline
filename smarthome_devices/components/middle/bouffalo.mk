@@ -101,6 +101,7 @@ COMPONENT_SRCS := database/m_database.c \
 				  ir/ir_Neoclima.c \
 				  ir/ir_York.c \
 				  ir/ir_Corona.c \
+				  ir/ir_Trotec.c \
 				  ir/IRrecv_test.c \
 				  
 COMPONENT_OBJS := $(patsubst %.c,%.o, $(COMPONENT_SRCS))

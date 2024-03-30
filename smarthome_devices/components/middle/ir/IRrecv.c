@@ -1368,6 +1368,14 @@ bool decode_for(decode_results *results, uint8_t max_skip)
     if (decodeCoronaAc(results, offset, kCoronaAcBitsShort, true)) return true;
 #endif
 
+#if DECODE_TROTEC
+    if (decodeTrotec(results, offset, kTrotecBits, true)) return true;
+#endif
+
+#if DECODE_TROTEC_3550
+    if (decodeTrotec3550(results, offset, kTrotecBits, true)) return true;
+#endif
+
 #if DECODE_NEC
        // os_trace("Attempting NEC decode\r\n");
         if (decodeNEC(results, offset, kNECBits, true))
@@ -1900,6 +1908,14 @@ void m_ir_task(void *param)
             else if (CORONA_AC == capture.decode_type)
             {
                 IRCoronaAc_setRaw(capture.state, capture.bits / 8, &ir_state_recv);
+            }
+            else if (TROTEC == capture.decode_type)
+            {
+                IRTrotec_setRaw(capture.state, &ir_state_recv);
+            }
+            else if (TROTEC_3550 == capture.decode_type)
+            {
+                IRTrotec3550_setRaw(capture.state, &ir_state_recv);
             }
 
             /***************************************************************************************/
