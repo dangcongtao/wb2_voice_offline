@@ -35,7 +35,7 @@ typedef enum {
   TCL112AC,
   RAW,  // Technically not a protocol, but an encoding. (30)
   PRONTO,  // Technically not a protocol, but an encoding.
-  GLOBALCACHE,  // Technically not a protocol, but an encoding.
+  TROTEC,
   VESTEL_AC,
   WHIRLPOOL_AC,
   MAGIQUEST,  // (35)
@@ -59,7 +59,7 @@ typedef enum {
   DENON,
   TROTEC_3550,  // (55)
   SAMSUNG36,
-  TROTEC,
+  GLOBALCACHE,  // Technically not a protocol, but an encoding.
   LEGOPF,
   VOLTAS,
   ZEPEAL,  // 60
@@ -324,5 +324,14 @@ typedef enum {
 #define kTrotecBits  (kTrotecStateLength * 8)
 #define kTrotecDefaultRepeat  kNoRepeat
 
+#define kArgoStateLength (12)
+#define kArgoShortStateLength (4)
+#define kArgoBits (kArgoStateLength * 8)
+#define kArgoShortBits (kArgoShortStateLength * 8)
+#define kArgo3AcControlStateLength (6)  // Bytes
+#define kArgo3iFeelReportStateLength (2)  // Bytes
+#define kArgo3TimerStateLength (9)  // Bytes
+#define kArgo3ConfigStateLength (4)  // Bytes
+#define kArgoDefaultRepeat (kNoRepeat)
 
 #endif

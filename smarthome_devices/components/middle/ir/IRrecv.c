@@ -726,7 +726,7 @@ uint16_t _matchGenericLimit(volatile uint16_t *data_ptr,
                                         excess, MSBfirst, kexpectspace);
         if (!data_used)
         {
-            os_trace_rcv("%s: matchBytesLimit fail ", __func__);
+            os_trace_rcv("%s: matchBytesLimit fail\r\n", __func__);
             return 0;
         }
         offset += data_used;
@@ -1376,6 +1376,14 @@ bool decode_for(decode_results *results, uint8_t max_skip)
     if (decodeTrotec3550(results, offset, kTrotecBits, true)) return true;
 #endif
 
+#if DECODE_ARGO
+    if (decodeArgoWREM3(results, offset, kArgo3AcControlStateLength * 8, true)) return true;
+    if (decodeArgoWREM3(results, offset, kArgo3iFeelReportStateLength * 8, true)) return true;
+    if (decodeArgoWREM3(results, offset, kArgo3ConfigStateLength * 8, true)) return true;
+    if (decodeArgoWREM3(results, offset, kArgo3TimerStateLength * 8, true)) return true;
+    if (decodeArgo(results, offset, decodeArgo, true) || decodeArgo(results, offset, kArgoShortBits, false)) return true;
+#endif
+
 #if DECODE_NEC
        // os_trace("Attempting NEC decode\r\n");
         if (decodeNEC(results, offset, kNECBits, true))
@@ -1916,6 +1924,10 @@ void m_ir_task(void *param)
             else if (TROTEC_3550 == capture.decode_type)
             {
                 IRTrotec3550_setRaw(capture.state, &ir_state_recv);
+            }
+            else if (ARGO == capture.decode_type)
+            {
+                IRArgoAC_setRaw(capture.state, capture.bits / 8, &ir_state_recv);
             }
 
             /***************************************************************************************/

@@ -35,7 +35,6 @@ bool decodeTrotec(decode_results *results, uint16_t offset,
                           const uint16_t nbits, const bool strict) {
   if (results->rawlen < 2 * nbits + kHeader + 2 * kFooter - 1 + offset)
   {
-    os_trace("%s rawlen: %u, other: %d\r\n", __func__, results->rawlen, (2 * nbits + kHeader + 2 * kFooter - 1 + offset));
     return false;  // Can't possibly be a valid Trotec A/C message.
   }
   if (strict && nbits != kTrotecBits) return false;
