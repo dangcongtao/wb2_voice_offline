@@ -84,6 +84,7 @@
 #define DECODE_WHIRLPOOL_AC 1
 #define DECODE_NEOCLIMA 1
 #define DECODE_YORK 1
+#define DECODE_CORONA_AC 1
 
 
 #define IR_RX 1
@@ -416,6 +417,11 @@ bool decodeYork(decode_results *results, uint16_t offset,
                            const uint16_t nbits, const bool strict);
 #endif
 
+#if DECODE_CORONA_AC
+bool decodeCoronaAc(decode_results *results, uint16_t offset,
+                           const uint16_t nbits, const bool strict);
+#endif
+
 bool matchSpace(uint32_t measured, uint32_t desired, uint8_t tolerance,
                         int16_t excess);
 
@@ -586,7 +592,7 @@ void IRAmcorAc_setInfo(const uint8_t state[], state_ir_t *ir_state);
 void IRWhirlpoolAc_setRaw(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
 void IRNeoclimaAc_setRaw(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
 void Midea_setInfo(const uint64_t new_code, const decode_type_t protocol, state_ir_t *ir_state);
-
+void IRCoronaAc_setRaw(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
 
 // void enableIRIn(const bool pullup);
 void ir_loop(void);

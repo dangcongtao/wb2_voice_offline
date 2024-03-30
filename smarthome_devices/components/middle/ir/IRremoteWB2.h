@@ -16,7 +16,7 @@ typedef enum {
   COOLIX48,  // (10)
   CARRIER_AC64,
   SANYO_AC152, // MIDEA - COMFEE 
-  DISH,
+  CORONA_AC,
   DAIKIN,
   COOLIX,  // (15)
   ELECTRA_AC,
@@ -88,7 +88,7 @@ typedef enum {
   UNKNOWN_48532,
   UNKNOWN_9432,
   ELITESCREENS,  // 85
-  CORONA_AC,
+  DISH,
   MIDEA24,
   UNKNOWN_985,
   UNKNOWN_9543245,  // 90
@@ -314,6 +314,11 @@ typedef enum {
 
 #define kYorkBits  136
 #define kYorkStateLength  17
+
+#define kCoronaAcStateLengthShort  7
+#define kCoronaAcStateLength (kCoronaAcStateLengthShort * 3)
+#define kCoronaAcBitsShort (kCoronaAcStateLengthShort * 8)
+#define kCoronaAcBits (kCoronaAcStateLength * 8)
 
 
 

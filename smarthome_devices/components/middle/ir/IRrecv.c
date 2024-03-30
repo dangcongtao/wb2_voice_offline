@@ -1364,6 +1364,10 @@ bool decode_for(decode_results *results, uint8_t max_skip)
     if (decodeYork(results, offset, kYorkBits, true)) return true;
 #endif
 
+#if DECODE_CORONA_AC
+    if (decodeCoronaAc(results, offset, kCoronaAcBitsShort, true)) return true;
+#endif
+
 #if DECODE_NEC
        // os_trace("Attempting NEC decode\r\n");
         if (decodeNEC(results, offset, kNECBits, true))
@@ -1892,6 +1896,10 @@ void m_ir_task(void *param)
             else if (NEOCLIMA == capture.decode_type)
             {
                 IRNeoclimaAc_setRaw(capture.state, kNeoclimaStateLength, &ir_state_recv);
+            }
+            else if (CORONA_AC == capture.decode_type)
+            {
+                IRCoronaAc_setRaw(capture.state, capture.bits / 8, &ir_state_recv);
             }
 
             /***************************************************************************************/
