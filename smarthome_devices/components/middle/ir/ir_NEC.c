@@ -1,6 +1,22 @@
 #include "ir_NEC.h"
 #include "system_typedef.h"
 
+void sendNEC(uint64_t data, uint16_t nbits, uint16_t repeat) {
+  vTaskEnterCritical();
+  sendGeneric1(kNecHdrMark, kNecHdrSpace, kNecBitMark, kNecOneSpace, kNecBitMark,
+              kNecZeroSpace, kNecBitMark, kNecMinGap, kNecMinCommandLength,
+              data, nbits, 38, true, 0,  // Repeats are handled later.
+              33);
+  // Optional command repeat sequence.
+  if (repeat)
+    sendGeneric1(kNecHdrMark, kNecRptSpace, 0, 0, 0, 0,  // No actual data sent.
+                kNecBitMark, kNecMinGap, kNecMinCommandLength, 0,
+                0,                     // No data to be sent.
+                38, true, repeat - 1,  // We've already sent a one message.
+                33);
+  vTaskExitCritical();
+}
+
 bool decodeNEC(decode_results *results, uint16_t offset,
                        const uint16_t nbits, const bool strict) {
   if (results->rawlen < kNecRptLength + offset - 1){
