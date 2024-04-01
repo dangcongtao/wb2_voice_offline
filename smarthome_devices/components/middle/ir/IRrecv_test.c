@@ -321,6 +321,17 @@ static void ArgoAC_test(void)
     assert(capture.decode_type == ARGO);
 }
 
+static void DelonghiAC_test(void)
+{
+    decode_results capture;
+    memset(&capture, 0, sizeof(capture));
+    uint16_t data1[] = {1,4501,2102,261,799,278,775,294,244,292,247,279,799,281,243,296,771,281,256,296,243,283,273,280,771,277,261,279,277,277,256,285,771,280,256,295,258,282,244,297,242,301,255,279,241,286,258,281,257,299,241,279,274,276,252,274,279,275,259,281,246,280,268,268,271,254,285,255,283,256,283,256,284,279,262,277,262,276,262,279,261,292,246,292,257,283,244,283,256,284,255,297,243,296,245,295,258,280,249,289,260,266,274,281,257,265,274,268,284,240,283,256,284,255,283,256,813,252,813,278,780,273,262,291,773,336,215,269,258,279,787,300};
+    capture.rawbuf = data1;
+    capture.rawlen = sizeof(data1) / sizeof(data1[0]);
+    decode_for(&capture, 0);
+    assert(capture.decode_type == DELONGHI_AC);
+}
+
 void IRrecv_test_run(void)
 {
     printf("\r\n\r\n-----------------RUNNING_IR_RECEIVE_TEST-------------------\r\n\r\n");
@@ -356,6 +367,7 @@ void IRrecv_test_run(void)
     // TrotecAC_test();
     Trotec3550AC_test();
     ArgoAC_test();
+    DelonghiAC_test();
 
     printf("\r\n\r\n----------------------TEST_FINISHED---------------------\r\n\r\n");
 

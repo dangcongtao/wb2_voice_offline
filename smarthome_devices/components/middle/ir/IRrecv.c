@@ -1143,6 +1143,12 @@ bool decode_for(decode_results *results, uint8_t max_skip)
     if (decodeCasperAC(results, offset, kCasperAcBits, true)) return true;
 #endif
 
+
+#if DECODE_DELONGHI_AC
+    //os_trace("Attempting CarrierAC64 AC\r\n");
+    if (decodeDelonghiAc(results, offset, kDelonghiAcBits, true)) return true;
+#endif
+
 #if DECODE_CARRIER_AC64
     //os_trace("Attempting CarrierAC64 AC\r\n");
     if (decodeCarrierAC64(results, offset, kCarrierAc64Bits, true)) return true;
@@ -1350,6 +1356,11 @@ bool decode_for(decode_results *results, uint8_t max_skip)
     if (decodeMidea(results, offset, kMideaBits, true)) return true;
 
     if (decodeMidea24(results, offset, kMidea24Bits, true)) return true;
+#endif
+
+
+#if DECODE_BOSCH144
+    if (decodeBosch144(results, offset, kBosch144Bits, true)) return true;
 #endif
 
 #if DECODE_COOLIX
@@ -1928,6 +1939,14 @@ void m_ir_task(void *param)
             else if (ARGO == capture.decode_type)
             {
                 IRArgoAC_setRaw(capture.state, capture.bits / 8, &ir_state_recv);
+            }
+            else if (DELONGHI_AC == capture.decode_type)
+            {
+                IRDelonghiAc_setRaw(capture.value, &ir_state_recv);
+            }
+            else if (BOSCH144 == capture.decode_type)
+            {
+                IRBosch144AC_setRaw(capture.state, capture.bits / 8, &ir_state_recv);
             }
 
             /***************************************************************************************/

@@ -18,7 +18,7 @@ typedef enum {
   SANYO_AC152, // MIDEA - COMFEE 
   CORONA_AC,
   DAIKIN,
-  COOLIX,  // (15)
+  DELONGHI_AC,  // (15)
   ELECTRA_AC,
   FUJITSU_AC,
   SANYO_LC7461,
@@ -47,7 +47,7 @@ typedef enum {
   TECHNIBEL_AC,
   HITACHI_AC2,
   GICABLE,
-  UNKNOWN_4938,
+  BOSCH144,
   UNKNOWN_98435,  // (45)
   ARGO,
   LUTRON,
@@ -82,7 +82,7 @@ typedef enum {
   HITACHI_AC3,
   DAIKIN64,
   UNKNOWN_4934,
-  DELONGHI_AC,  // 80
+  COOLIX,
   DOSHISHA,
   MULTIBRACKETS,
   UNKNOWN_48532,
@@ -333,5 +333,11 @@ typedef enum {
 #define kArgo3TimerStateLength (9)  // Bytes
 #define kArgo3ConfigStateLength (4)  // Bytes
 #define kArgoDefaultRepeat (kNoRepeat)
+
+#define kDelonghiAcBits  64
+#define kDelonghiAcDefaultRepeat  kNoRepeat
+
+#define kBosch144StateLength  18
+#define kBosch144Bits (kBosch144StateLength * 8)
 
 #endif
