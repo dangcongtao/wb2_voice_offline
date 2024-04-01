@@ -1387,6 +1387,10 @@ bool decode_for(decode_results *results, uint8_t max_skip)
     if (decodeTrotec3550(results, offset, kTrotecBits, true)) return true;
 #endif
 
+#if DECODE_VOLTAS
+    if (decodeVoltas(results, offset, kVoltasBits, true)) return true;
+#endif
+
 #if DECODE_ARGO
     if (decodeArgoWREM3(results, offset, kArgo3AcControlStateLength * 8, true)) return true;
     if (decodeArgoWREM3(results, offset, kArgo3iFeelReportStateLength * 8, true)) return true;
@@ -1947,6 +1951,10 @@ void m_ir_task(void *param)
             else if (BOSCH144 == capture.decode_type)
             {
                 IRBosch144AC_setRaw(capture.state, capture.bits / 8, &ir_state_recv);
+            }
+            else if (VOLTAS == capture.decode_type)
+            {
+                IRVoltas_setRaw(capture.state, &ir_state_recv);
             }
 
             /***************************************************************************************/

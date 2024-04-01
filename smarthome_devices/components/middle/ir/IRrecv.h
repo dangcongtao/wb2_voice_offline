@@ -90,6 +90,7 @@
 #define DECODE_ARGO 1
 #define DECODE_DELONGHI_AC 1
 #define DECODE_BOSCH144 1
+#define DECODE_VOLTAS 1
 
 
 #define IR_RX 1
@@ -454,6 +455,11 @@ bool decodeBosch144(decode_results *results, uint16_t offset,
                            const uint16_t nbits, const bool strict);
 #endif
 
+#if DECODE_VOLTAS
+bool decodeVoltas(decode_results *results, uint16_t offset,
+                           const uint16_t nbits, const bool strict);
+#endif
+
 bool matchSpace(uint32_t measured, uint32_t desired, uint8_t tolerance,
                         int16_t excess);
 
@@ -630,6 +636,7 @@ void IRTrotec3550_setRaw(const uint8_t state[], state_ir_t *ir_state);
 void IRArgoAC_setRaw(const uint8_t state[], const uint16_t length, state_ir_t *ir_state);
 void IRDelonghiAc_setRaw(const uint64_t state, state_ir_t *ir_state);
 void IRBosch144AC_setRaw(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
+void IRVoltas_setRaw(const uint8_t new_code[], state_ir_t *ir_state);
 
 // void enableIRIn(const bool pullup);
 void ir_loop(void);

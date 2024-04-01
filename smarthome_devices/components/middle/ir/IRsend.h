@@ -52,6 +52,11 @@ typedef enum {
 } whirlpool_ac_remote_model_t;
 
 typedef enum {
+  kVoltasUnknown = 0,  // Full Function
+  kVoltas122LZF = 1,   // (1) 122LZF (No SwingH support) (Default)
+} voltas_ac_remote_model_t;
+
+typedef enum {
   kPanasonicUnknown = 0,
   kPanasonicLke = 1,
   kPanasonicNke = 2,

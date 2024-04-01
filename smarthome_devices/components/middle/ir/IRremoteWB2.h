@@ -61,7 +61,7 @@ typedef enum {
   SAMSUNG36,
   GLOBALCACHE,  // Technically not a protocol, but an encoding.
   LEGOPF,
-  VOLTAS,
+  HAIER_AC176,
   ZEPEAL,  // 60
   RC6,
   NIKAI,
@@ -103,7 +103,7 @@ typedef enum {
   ECOCLIM,
   XMP,
   TRUMA,  // 100
-  HAIER_AC176,
+  VOLTAS,
   AQUA,
   HAIER_AC160,
   CASPER,
@@ -339,5 +339,8 @@ typedef enum {
 
 #define kBosch144StateLength  18
 #define kBosch144Bits (kBosch144StateLength * 8)
+
+#define kVoltasBits 80
+#define kVoltasStateLength 10
 
 #endif
