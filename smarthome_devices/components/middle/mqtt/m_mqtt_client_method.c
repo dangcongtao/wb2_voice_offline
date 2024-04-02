@@ -27,14 +27,12 @@ extern bool request_send_command_online;
 
 axk_mqtt_client_handle_t client = NULL;
 
-m_data_t message_rcv_mqtt;
-
 static uint32_t time_disconnect_mqtt = 0;
 static uint8_t is_disconnected = 0;
 static const uint32_t TIMEOUT_DISCONNECTED_MS = 1000 * 60 * 5; // 5 minutes
 
 extern void signal_post(m_signal_t sig);
-extern void push_data_to_pqueue(void);
+extern void push_data_to_pqueue(m_data_t *message);
 
 static void mqtt_on_message(char *data, uint32_t len);
 
@@ -83,11 +81,12 @@ static axk_err_t mqtt_event_handler_cb(axk_mqtt_event_handle_t event)
         if (event->data_len < DATA_MAX_LEN)
         {
             // m_data_t message_rcv_mqtt;
+            m_data_t message_rcv_mqtt;
             memset(&message_rcv_mqtt, 0, sizeof(message_rcv_mqtt));
             memcpy(message_rcv_mqtt.data, event->data, event->data_len);
             message_rcv_mqtt.length = event->data_len;
             message_rcv_mqtt.method_trasmit = MQTT_MSG;
-            push_data_to_pqueue();
+            push_data_to_pqueue(&message_rcv_mqtt);
         }
         break;
 

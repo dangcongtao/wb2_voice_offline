@@ -170,20 +170,19 @@ wswitch_handler_t array_ir_control_handler[] = {
 
 };
 
-// QueueHandle_t pqueue;
-extern m_data_t message_rcv_mqtt;
-uint8_t has_mess = 0;
+QueueHandle_t pqueue;
+// extern m_data_t message_rcv_mqtt;
 QueueHandle_t pqueue_ble;
 
 bool pdata_queue_init(void)
 {
-    // if (pqueue == NULL) {
-    //     pqueue = xQueueCreate(MAXIMUM_QUEUE_ITEM, sizeof(m_data_t));
-    //     if(pqueue == NULL){
-    //         os_trace("%s fail\r\n", __func__);
-    //         exit(-1);
-    //     }
-    // }
+    if (pqueue == NULL) {
+        pqueue = xQueueCreate(MAXIMUM_QUEUE_ITEM, sizeof(m_data_t));
+        if(pqueue == NULL){
+            os_trace("%s fail\r\n", __func__);
+            exit(-1);
+        }
+    }
 
     if (pqueue_ble == NULL) {
         pqueue_ble = xQueueCreate(8, sizeof(m_ble_data_t));
@@ -204,13 +203,12 @@ void push_data_to_pqueue_ble(m_ble_data_t *message)
     }
 }
 
-void push_data_to_pqueue(void)
+void push_data_to_pqueue(m_data_t *message)
 {
-    has_mess = 1;
-    // if (xQueueSend(pqueue, message, pdMS_TO_TICKS(0)) != pdPASS)
-    // {
-    //     os_trace("Push to queue data rx fail\r\n");
-    // }
+    if (xQueueSend(pqueue, message, pdMS_TO_TICKS(0)) != pdPASS)
+    {
+        os_trace("Push to queue data rx fail\r\n");
+    }
 }
 
 void app_send_data(char *data, uint32_t length)
@@ -230,63 +228,23 @@ void app_send_offline_message(uint8_t src)
 static void app_startup_message(void)
 {
     m_device_t app_databse = m_db_get_instance()->_m_device;
-    uint32_t buffer_seek = 0, i;
+    uint32_t i;
     extern uint8_t last_reason_reset;
     static uint32_t num_send = 0;
-
+    m_wifi_get_instance().wifi_sync_rssi_cb();
     /* respond server here */
     memset(respond, 0, sizeof(respond));
 
-    buffer_seek +=
-        sprintf(respond,
+    sprintf(respond,
                 "{\"%s\":100,\"reason\":%lu,\"id\":\"%s\",\"ver\":%s,"
-                "\"ssid\":\"%s\",\"pass\":\"%s\",\"streng\":%d, "
-                "\"ip\":\"%s\",\"po\":[",
+                "\"ssid\":\"%s\",\"pass\":\"%s\",\"streng\":%d,"
+                "\"ip\":\"%s\"}",
                 gs_dev_type[device_type], num_send * 100U + last_reason_reset * 10U + (uint32_t)bl_sys_rstinfo_get_hun(), // hang chuc: flash_reason reset, hang don vi: BL_RST_REASON_E
                 m_db_get_instance()->_get_dev_id(), FIRMWARE_VERSION,
                 app_databse._wifi_info->_ssid, app_databse._wifi_info->_passwd,
                 app_databse._wifi_info->_rssi, app_databse._wifi_info->_ip);
 
     num_send++;
-
-    /* default state value */
-    for (i = 0; i < m_db_get_number_channel(); i++)
-    {
-        buffer_seek += sprintf(&respond[buffer_seek], "%d,",
-                               app_databse._switch_info->default_state[i]);
-    }
-    buffer_seek--; /* remove last comma */
-    buffer_seek += sprintf(&respond[buffer_seek], "],");
-
-    /* current state value */
-    buffer_seek += sprintf(&respond[buffer_seek], "\"ps\":[");
-    for (i = 0; i < m_db_get_number_channel(); i++)
-    {
-        buffer_seek += sprintf(&respond[buffer_seek], "%d,",
-                               app_databse._switch_info->current_state[i]);
-    }
-    buffer_seek--; /* remove last comma */
-    buffer_seek += sprintf(&respond[buffer_seek], "],");
-
-    /* channel_lock_state */
-    buffer_seek += sprintf(&respond[buffer_seek], "\"lock\":[");
-    for (i = 0; i < m_db_get_number_channel(); i++)
-    {
-        buffer_seek += sprintf(&respond[buffer_seek], "%d,",
-                               app_databse._switch_info->channel_lock_state[i]);
-    }
-    buffer_seek--; /* remove last comma */
-    buffer_seek += sprintf(&respond[buffer_seek], "],");
-
-    /* time_release */
-    buffer_seek += sprintf(&respond[buffer_seek], "\"press_mode\":[");
-    for (i = 0; i < m_db_get_number_channel(); i++)
-    {
-        buffer_seek += sprintf(&respond[buffer_seek], "%ld,",
-                               app_databse._switch_info->time_release[i]);
-    }
-    buffer_seek--; /* remove last comma */
-    buffer_seek += sprintf(&respond[buffer_seek], "]}");
 
     m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
 }
@@ -3774,61 +3732,21 @@ static void app_get_info(cJSON *jsRoot)
 
     /* respond server here */
     m_device_t app_databse = m_db_get_instance()->_m_device;
-    uint32_t buffer_seek = 0, i;
+    uint32_t i;
+
+    m_wifi_get_instance().wifi_sync_rssi_cb();
 
     /* respond server here */
     memset(respond, 0, sizeof(respond));
 
-    m_wifi_get_instance().wifi_sync_rssi_cb();
-
-    buffer_seek +=
-        sprintf(respond,
-                "{\"%s\":%ld, \"u\":0, \"id\":\"%s\", \"ver\":%s, "
-                "\"extras\":%d,\"ssid\":\"%s\",\"pass\":\"%s\",\"streng\":%d, "
-                "\"ip\":\"%s\", \"po\":[",
+    sprintf(respond,
+                "{\"%s\":%ld,\"u\":0,\"id\":\"%s\",\"ver\":%s,"
+                "\"extras\":%d,\"ssid\":\"%s\",\"pass\":\"%s\",\"streng\":%d,"
+                "\"ip\":\"%s\"}",
                 gs_dev_type[device_type], type,
                 m_db_get_instance()->_get_dev_id(), FIRMWARE_VERSION, EXTRAS,
                 app_databse._wifi_info->_ssid, app_databse._wifi_info->_passwd,
                 app_databse._wifi_info->_rssi, app_databse._wifi_info->_ip);
-
-    /* default state value */
-    for (i = 0; i < m_db_get_number_channel(); i++)
-    {
-        buffer_seek += sprintf(&respond[buffer_seek], "%u,",
-                               app_databse._switch_info->default_state[i]);
-    }
-    buffer_seek--; /* remove last comma */
-    buffer_seek += sprintf(&respond[buffer_seek], "],");
-
-    /* current state value */
-    buffer_seek += sprintf(&respond[buffer_seek], "\"ps\":[");
-    for (i = 0; i < m_db_get_number_channel(); i++)
-    {
-        buffer_seek += sprintf(&respond[buffer_seek], "%u,",
-                               app_databse._switch_info->current_state[i]);
-    }
-    buffer_seek--; /* remove last comma */
-    buffer_seek += sprintf(&respond[buffer_seek], "],");
-
-    /* channel_lock_state */
-    buffer_seek += sprintf(&respond[buffer_seek], "\"lock\":[");
-    for (i = 0; i < m_db_get_number_channel(); i++)
-    {
-        buffer_seek += sprintf(&respond[buffer_seek], "%d,",
-                               app_databse._switch_info->channel_lock_state[i]);
-    }
-    buffer_seek--; /* remove last comma */
-    buffer_seek += sprintf(&respond[buffer_seek], "],");
-
-    /* time_release */
-    buffer_seek += sprintf(&respond[buffer_seek], "\"press_mode\":[");
-    for (i = 0; i < m_db_get_number_channel(); i++)
-    {
-        buffer_seek += sprintf(&respond[buffer_seek], "%ld,",
-                               app_databse._switch_info->time_release[i]);
-    }
-    buffer_seek--; /* remove last comma */
-    buffer_seek += sprintf(&respond[buffer_seek], "]}");
 
     app_send_data(respond, strlen(respond));
 }
@@ -4469,6 +4387,7 @@ extern void ble_init_first(void);
 void app_handler_msg_task(void * arg)
 {
     // m_data_t msg;
+    m_data_t message_rcv_mqtt;
     m_ble_data_t msg_ble;
     // memset(&msg, 0, sizeof(msg));
     memset(&msg_ble, 0, sizeof(msg_ble));
@@ -4480,9 +4399,8 @@ void app_handler_msg_task(void * arg)
 
     while (1) 
     {
-        if (has_mess) 
+        if (xQueueReceive(pqueue, &message_rcv_mqtt, 1) == pdPASS) 
         {
-            has_mess = 0;
             // os_trace("raw_data received: %s\r\n", msg.data);
 
             /* decode data */

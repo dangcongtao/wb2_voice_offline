@@ -6,7 +6,7 @@
 
 #define MAXIMUM_SIZE_MQTT_TOPIC                         324
 #define MAXIMUM_SIZE_MESSAGE							2048
-#define MAXIMUM_QUEUE_ITEM                              1
+#define MAXIMUM_QUEUE_ITEM                              5
 
 typedef struct {
 	// char topic_pub[MAXIMUM_SIZE_MQTT_TOPIC];
