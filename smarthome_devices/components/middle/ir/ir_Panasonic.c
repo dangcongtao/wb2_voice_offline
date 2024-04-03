@@ -25,6 +25,10 @@ const uint16_t kPanasonicAc32SectionGap = 13946;     ///< uSeconds.
 const uint8_t  kPanasonicAc32Sections = 2;
 const uint8_t  kPanasonicAc32BlocksPerSection = 2;
 
+static bool pre_ion_enable = false;
+static panasonic_ac_remote_model_t pre_model = kPanasonicUnknown;
+
+
 
 bool IRPanasonicAc_validChecksum(const uint8_t *state, const uint16_t length) {
   if (length < 2) return false;  // 1 byte of data can't have a checksum.
@@ -130,6 +134,16 @@ static uint8_t IRPanasonicAc_getSwingHorizontal(const uint8_t* remote_state) {
   return GETBITS8(remote_state[17], kLowNibble, kNibbleSize);
 }
 
+static uint8_t IRPanasonicAc_getIon(const uint8_t* remote_state) {
+  switch (IRPanasonicAc_getModel(remote_state)) {
+    case kPanasonicDke:
+      return GETBIT8(remote_state[kPanasonicAcIonFilterByte],
+                     kPanasonicAcIonFilterOffset);
+    default:
+      return false;
+  }
+}
+
 static uint8_t IRPanasonicAc_calcChecksum(const uint8_t *state,
                                     const uint16_t length) {
   return sumBytesState(state, length - 1, kPanasonicAcChecksumInit);
@@ -160,8 +174,10 @@ void PanasonicAC_setInfo(const uint8_t* newState, state_ir_t *ir_state)
     ir_state->degrees = IRPanasonicAc_getTemp(remote_state);
     ir_state->fanspeed = IRPanasonicAc_getFan(remote_state);
     ir_state->model = IRPanasonicAc_getModel(remote_state);
+    pre_model = ir_state->model;
     ir_state->swingv = IRPanasonicAc_getSwingVertical(remote_state);
     ir_state->swingh = IRPanasonicAc_getSwingHorizontal(remote_state);
+    pre_ion_enable = IRPanasonicAc_getIon(remote_state);
 }
 
 void sendPanasonicAC(const uint8_t data[], const uint16_t nbytes,
@@ -190,6 +206,55 @@ void PanasonicAC_send(state_ir_t state_ir)
     os_trace("%s\r\n", __func__);
     uint8_t remote_state[kPanasonicAcStateLength];
     memcpy(remote_state, kPanasonicKnownGoodState, kPanasonicAcStateLength);
+
+    if (pre_model != kPanasonicUnknown) {
+      switch (pre_model) {
+        case kPanasonicDke:
+        case kPanasonicJke:
+        case kPanasonicLke:
+        case kPanasonicNke:
+        case kPanasonicCkp:
+        case kPanasonicRkr: break;
+        // Only proceed if we know what to do.
+        default: break;;
+      }
+      // clear & set the various bits and bytes.
+      remote_state[13] &= 0xF0;
+      remote_state[17] = 0x00;
+      remote_state[21] &= 0b11101111;
+      remote_state[23] = 0x81;
+      remote_state[25] = 0x00;
+
+      switch (pre_model) {
+        case kPanasonicLke:
+          remote_state[13] |= 0x02;
+          remote_state[17] = 0x06;
+          break;
+        case kPanasonicDke:
+          remote_state[23] = 0x01;
+          remote_state[25] = 0x06;
+          // Has to be done last as setSwingHorizontal has model check built-in
+          // setSwingHorizontal(_swingh);
+          break;
+        case kPanasonicNke:
+          remote_state[17] = 0x06;
+          break;
+        case kPanasonicJke:
+          break;
+        case kPanasonicCkp:
+          remote_state[21] |= 0x10;
+          remote_state[23] = 0x01;
+          break;
+        case kPanasonicRkr:
+          remote_state[13] |= 0x08;
+          remote_state[23] = 0x89;
+        default:
+          break;
+      }
+      // Reset the Ion filter.
+      // setIon(getIon());
+    }
+
     // set power
     setBitU8(&remote_state[13], kPanasonicAcPowerOffset, state_ir.power);
     // set mode
@@ -231,43 +296,52 @@ void PanasonicAC_send(state_ir_t state_ir)
     // set temp
     IRPanasonicAc_setTemp(remote_state, (uint8_t)state_ir.degrees, true);
 
-    // set swing vertical
-    uint8_t elevation = state_ir.swingv;
-    if (elevation != kPanasonicAcSwingVAuto) {
-      if (elevation > kPanasonicAcSwingVLowest || elevation < kPanasonicAcSwingVHighest) {
-        elevation = kPanasonicAcSwingVAuto;
+    if (state_ir.swingv != swingv_kOff) {
+      // set swing vertical
+      uint8_t elevation = state_ir.swingv;
+      if (elevation != kPanasonicAcSwingVAuto) {
+        if (elevation > kPanasonicAcSwingVLowest || elevation < kPanasonicAcSwingVHighest) {
+          elevation = kPanasonicAcSwingVAuto;
+        }
       }
+      setBitsU8(&remote_state[16], kLowNibble, kNibbleSize, elevation);
     }
-    setBitsU8(&remote_state[16], kLowNibble, kNibbleSize, elevation);
 
     // set swing horizontal
-    switch ((uint8_t)state_ir.swingh) {
-      case kPanasonicAcSwingHAuto:
-      case kPanasonicAcSwingHMiddle:
-      case kPanasonicAcSwingHFullLeft:
-      case kPanasonicAcSwingHLeft:
-      case kPanasonicAcSwingHRight:
-      case kPanasonicAcSwingHFullRight: 
-        setBitsU8(&remote_state[17], kLowNibble, kNibbleSize, (uint8_t)state_ir.swingh);
+    if (state_ir.swingh != swingh_kOff) {
+      switch ((uint8_t)state_ir.swingh) {
+        case kPanasonicAcSwingHAuto:
+        case kPanasonicAcSwingHMiddle:
+        case kPanasonicAcSwingHFullLeft:
+        case kPanasonicAcSwingHLeft:
+        case kPanasonicAcSwingHRight:
+        case kPanasonicAcSwingHFullRight: 
+          break;
+        // Ignore anything that isn't valid.
+        default: 
+          state_ir.swingh = kPanasonicAcSwingHAuto;
+          
         break;
-      // Ignore anything that isn't valid.
-      default: 
-        setBitsU8(&remote_state[17], kLowNibble, kNibbleSize, (uint8_t)kPanasonicAcSwingHAuto);
-      break;
+      }
+      uint8_t direction = (uint8_t)state_ir.swingh;
+      switch (IRPanasonicAc_getModel(remote_state)) {
+        case kPanasonicDke:
+        case kPanasonicRkr:
+          break;
+        case kPanasonicNke:
+        case kPanasonicLke:
+          direction = kPanasonicAcSwingHMiddle;
+          break;
+        default:  // Ignore everything else.
+          return;
+      }
+      setBitsU8(&remote_state[17], kLowNibble, kNibbleSize, direction);
     }
-    // uint8_t direction = (uint8_t)state_ir.swingh;
-    // switch (IRPanasonicAc_getModel(remote_state)) {
-    //   case kPanasonicDke:
-    //   case kPanasonicRkr:
-    //     break;
-    //   case kPanasonicNke:
-    //   case kPanasonicLke:
-    //     direction = kPanasonicAcSwingHMiddle;
-    //     break;
-    //   default:  // Ignore everything else.
-    //     return;
-    // }
-    
+
+    if (pre_ion_enable) {
+      setBitU8(&remote_state[kPanasonicAcIonFilterByte],
+           kPanasonicAcIonFilterOffset, pre_ion_enable);
+    }
 
     // check sum
     IRPanasonicAc_fixChecksum(remote_state, kPanasonicAcStateLength);

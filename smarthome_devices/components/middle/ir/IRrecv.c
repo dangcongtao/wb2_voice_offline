@@ -2021,7 +2021,7 @@ void m_ir_init(void)
         return;
     }
     is_init = 1;
-    bl_gpio_enable_output(IRpin, 0, 0);
+    bl_gpio_enable_output(IRpin, 0, 1);
     IRsend_init(IRpin, false, true);
     IRrecv_init(IR_RX, 1024, 100, false);
 

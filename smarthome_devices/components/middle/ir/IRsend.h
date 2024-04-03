@@ -60,7 +60,7 @@ typedef enum {
   kPanasonicUnknown = 0,
   kPanasonicLke = 1,
   kPanasonicNke = 2,
-  kPanasonicDke = 3,  // PKR too.
+  kPanasonicDke = 3,  // PKR too. có ion
   kPanasonicJke = 4,
   kPanasonicCkp = 5,
   kPanasonicRkr = 6,
