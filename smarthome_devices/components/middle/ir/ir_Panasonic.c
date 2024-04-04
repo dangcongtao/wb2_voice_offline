@@ -327,15 +327,16 @@ void PanasonicAC_send(state_ir_t state_ir)
       switch (IRPanasonicAc_getModel(remote_state)) {
         case kPanasonicDke:
         case kPanasonicRkr:
+          setBitsU8(&remote_state[17], kLowNibble, kNibbleSize, direction);
           break;
         case kPanasonicNke:
         case kPanasonicLke:
           direction = kPanasonicAcSwingHMiddle;
+          setBitsU8(&remote_state[17], kLowNibble, kNibbleSize, direction);
           break;
         default:  // Ignore everything else.
-          return;
+          break;
       }
-      setBitsU8(&remote_state[17], kLowNibble, kNibbleSize, direction);
     }
 
     if (pre_ion_enable) {
