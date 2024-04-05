@@ -98,6 +98,8 @@ void IRMitsubishiHeavy88Ac_setInfo(const uint8_t *data, state_ir_t *ir_state)
     ir_state->mode = _.Mode;
     ir_state->fanspeed = _.Fan;
     ir_state->degrees = _.Temp + kMitsubishiHeavyMinTemp;
+    ir_state->swingv = _.SwingV5 | (_.SwingV7 << kMitsubishiHeavy88SwingVByte5Size);
+    ir_state->swingh = _.SwingH1 | (_.SwingH2 << kMitsubishiHeavy88SwingHSize);
 }
 
 static void IRMitsubishiHeavy88Ac_checksum(Mitsubishi88Protocol *_) {
@@ -170,6 +172,8 @@ void IRMitsubishiHeavy152Ac_setInfo(const uint8_t *data, state_ir_t *ir_state) {
   ir_state->mode = _.Mode;
   ir_state->fanspeed = _.Fan;
   ir_state->degrees = _.Temp + kMitsubishiHeavyMinTemp;
+  ir_state->swingv = _.SwingV;
+  ir_state->swingh = _.SwingH;
 }
 
 static void IRMitsubishiHeavy152Ac_checksum(Mitsubishi152Protocol *_) {

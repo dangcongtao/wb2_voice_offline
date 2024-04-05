@@ -275,6 +275,8 @@ void Mitsubishi112_setInfo(const uint8_t* newState, const decode_type_t protocol
     ir_state->mode = _.Mode;
     ir_state->degrees = kMitsubishiAcMaxTemp - _.Temp;
     ir_state->fanspeed = _.Fan;
+    ir_state->swingv = _.SwingV;
+    ir_state->swingh = _.SwingH;
 
     // Toshiba_toCommon(_, ir_state);
 }
@@ -516,6 +518,7 @@ void IRMitsubishi136_setInfo(const uint8_t *data, state_ir_t *ir_state) {
   ir_state->mode = _.Mode;
   ir_state->fanspeed = _.Fan;
   ir_state->degrees = _.Temp + kMitsubishiAcMinTemp;
+  ir_state->swingv = _.SwingV;
 }
 
 void sendMitsubishi136(const unsigned char data[],
