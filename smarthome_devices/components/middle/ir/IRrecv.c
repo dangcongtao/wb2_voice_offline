@@ -1983,7 +1983,7 @@ void m_ir_task(void *param)
                 char str[325];
                 memset(str, 0, 325);
 
-                sprintf(str, "{\"%s\":10,\"type\":1,\"brand\":\"%d\",\"model\":%d,\"power\":%u,\"mode\":%d,\"temp\":%.1f,\"fan\":%d,\"swingv\":%d,\"swingh\":%d}", 
+                sprintf(str, "{\"%s\":10,\"type\":1,\"brand\":%d,\"model\":%d,\"power\":%u,\"mode\":%d,\"temp\":%.1f,\"fan\":%d,\"swingv\":%d,\"swingh\":%d}", 
                 gs_dev_type[device_type], capture.decode_type, ir_state_recv.model, ir_state_recv.power, ir_state_recv.mode, ir_state_recv.degrees, ir_state_recv.fanspeed, ir_state_recv.swingv, ir_state_recv.swingh);
 
                 os_trace("datarcv[%u]:", strlen(str));
