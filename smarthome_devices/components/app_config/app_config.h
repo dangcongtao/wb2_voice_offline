@@ -11,7 +11,7 @@ void m_log(const char *fmt, ...);
 
 /* config for type of device, that will be used to parse json message */
 #define EXTRAS              1514
-#define FIRMWARE_VERSION    "240305"
+#define FIRMWARE_VERSION    "240408"
 #define HARDWARE_VERSION    "230303"
 
 // -> 1 nếu là thiết bị chống giật
