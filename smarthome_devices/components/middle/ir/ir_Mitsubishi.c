@@ -169,28 +169,42 @@ bool decodeMitsubishi112(decode_results *results, uint16_t offset,
         gap = kTcl112AcGap;
         tolerance += kTcl112AcTolerance;
 
-        hdrspace_lower = hdrspace - 200;
-        hdrspace_upper = hdrspace + 200;
+        hdrspace_lower = hdrspace - 400;
+        hdrspace_upper = hdrspace + 400;
         bitmark_lower = bitmark - 400;
         bitmark_upper = bitmark + 400;
-        onespace_lower = onespace - 200;
-        onespace_upper = onespace + 500;
+        onespace_lower = onespace - 350;
+        onespace_upper = onespace + 400;
         zerospace_lower = zerospace - 225;
-        zerospace_upper = zerospace + 350;
+        zerospace_upper = zerospace + 300;
     }
 #endif  // (DECODE_TCL112AC || DECODE_TEKNOPOINT)
   if (typeguess == UNKNOWN) return false;  // No header matched.
   offset++;
 
-  uint16_t used = matchGenericStateLimit(results->rawbuf + offset, results->state,
-                               results->rawlen - offset, nbits,
-                               0,  0,// Skip the header as we matched it earlier.
-                               hdrspace_lower, hdrspace_upper, bitmark_lower, bitmark_upper, onespace_lower, onespace_upper, bitmark_lower, bitmark_upper, zerospace_lower, zerospace_upper,
-                               bitmark_lower, bitmark_upper, gap - 25000, gap + 25000,
-                               true, tolerance, 0, false);
-  if (!used) {
-    // os_trace("%s matchGenericState failed\r\n", __func__);
-    return false;
+  if (typeguess == TCL112AC && results->rawlen >= 452 && results->rawlen <= 456) {
+    offset += kTcl112AcBits * 2 + 4;
+    uint16_t used = matchGenericStateLimit(results->rawbuf + offset, results->state,
+                                results->rawlen - offset, nbits,
+                                0,  0,// Skip the header as we matched it earlier.
+                                hdrspace_lower, hdrspace_upper, bitmark_lower, bitmark_upper, onespace_lower, onespace_upper, bitmark_lower, bitmark_upper, zerospace_lower, zerospace_upper,
+                                bitmark_lower, bitmark_upper, gap - 35000, gap + 25000,
+                                true, tolerance, 0, false);
+    if (!used) {
+      os_trace("%s tcl repeat 1 matchGenericState failed\r\n", __func__);
+      return false;
+    }
+  } else {
+    uint16_t used = matchGenericStateLimit(results->rawbuf + offset, results->state,
+                                results->rawlen - offset, nbits,
+                                0,  0,// Skip the header as we matched it earlier.
+                                hdrspace_lower, hdrspace_upper, bitmark_lower, bitmark_upper, onespace_lower, onespace_upper, bitmark_lower, bitmark_upper, zerospace_lower, zerospace_upper,
+                                bitmark_lower, bitmark_upper, gap - 35000, gap + 25000,
+                                true, tolerance, 0, false);
+    if (!used) {
+      os_trace("%s matchGenericState failed\r\n", __func__);
+      return false;
+    }
   }
   if (strict) {
     // Header validation: Codes start with 0x23CB26

@@ -41,7 +41,7 @@ void Tcl112_setRaw(const uint8_t* newState, const decode_type_t protocol, state_
 {
     // Tcl112Protocol _;
     Tcl112Protocol _;
-
+    memset(&_, 0, sizeof(Tcl112Protocol));
     memcpy(_.raw, newState, kTcl112AcStateLength);
 
     ir_state->protocol = MITSUBISHI112;
@@ -59,6 +59,7 @@ void Tcl112_setInfo(const uint8_t* newState, const decode_type_t protocol, state
 {
     os_trace("%s\r\n", __func__);
     Tcl112Protocol _;
+    memset(&_, 0, sizeof(Tcl112Protocol));
 
     memcpy(_.raw, newState, kTcl112AcStateLength);
 
@@ -70,6 +71,8 @@ void Tcl112_setInfo(const uint8_t* newState, const decode_type_t protocol, state
     ir_state->mode = _.Mode;
     ir_state->degrees = IRTcl112AcgetTemp(_);
     ir_state->fanspeed = _.Fan;
+    ir_state->swingv = _.SwingV;
+    ir_state->swingh = _.SwingH;
 
     // Toshiba_toCommon(_, ir_state);
 }
@@ -110,6 +113,14 @@ void Tcl112_send(state_ir_t state_ir)
   IRTcl112AcsetTemp(&_, state_ir.degrees);
 
   _.Power = state_ir.power;
+
+  if (state_ir.swingv != swingv_kOff) {
+    _.SwingV = (uint8_t)state_ir.swingv;
+  }
+
+  if (state_ir.swingh != swingh_kOff) {
+    _.SwingH = (uint8_t)state_ir.swingh;
+  }
 
   IRMitsubishi112checksum(&_);
 
