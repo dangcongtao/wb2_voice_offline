@@ -1396,7 +1396,7 @@ bool decode_for(decode_results *results, uint8_t max_skip)
     if (decodeArgoWREM3(results, offset, kArgo3iFeelReportStateLength * 8, true)) return true;
     if (decodeArgoWREM3(results, offset, kArgo3ConfigStateLength * 8, true)) return true;
     if (decodeArgoWREM3(results, offset, kArgo3TimerStateLength * 8, true)) return true;
-    if (decodeArgo(results, offset, decodeArgo, true) || decodeArgo(results, offset, kArgoShortBits, false)) return true;
+    if (decodeArgo(results, offset, kArgoBits, true) || decodeArgo(results, offset, kArgoShortBits, false)) return true;
 #endif
 
 #if DECODE_NEC
