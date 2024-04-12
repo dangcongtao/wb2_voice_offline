@@ -9,12 +9,12 @@
 
 // Constants
 #define kHitachiAcHdrMark       3300
-#define kHitachiAcHdrSpace      1700
+#define kHitachiAcHdrSpace      1650
 #define kHitachiAc1HdrMark      3400
 #define kHitachiAc1HdrSpace     3400
-#define kHitachiAcBitMark       400
+#define kHitachiAcBitMark       325
 #define kHitachiAcOneSpace      1250
-#define kHitachiAcZeroSpace     500
+#define kHitachiAcZeroSpace     600
 #define kHitachiAcMinGap        kDefaultMessageGap  // Just a guess.
 
 // Support for HitachiAc424 protocol
@@ -1585,6 +1585,7 @@ void HitachiAC264_setRaw(const uint8_t new_code[], const uint16_t length, state_
     ir_state->mode = _.Mode;
     ir_state->fanspeed = _.Fan;
     ir_state->degrees = _.Temp;
+    os_trace("btn: %u\r\n", _.Button);
     
 }
 
@@ -1906,8 +1907,9 @@ void sendHitachiAC(const unsigned char data[], const uint16_t nbytes,
     }
 
     vTaskEnterCritical();
-    sendGenericBytes(kHitachiAcHdrMark, kHitachiAcHdrSpace, kHitachiAcBitMark,
-                kHitachiAcOneSpace, kHitachiAcBitMark, kHitachiAcZeroSpace,
+    sendGenericBytes(kHitachiAcHdrMark, kHitachiAcHdrSpace, 
+                kHitachiAcBitMark, kHitachiAcOneSpace, 
+                kHitachiAcBitMark, kHitachiAcZeroSpace,
                 kHitachiAcBitMark, kHitachiAcMinGap, data, nbytes, 38, MSBfirst,
                 repeat, 50);
     vTaskExitCritical();
@@ -2181,6 +2183,10 @@ void HitachiAC264_send(state_ir_t state_ir)
     _.raw[47] = 0xFF;
     _.raw[49] = 0xFF;
     _.raw[51] = 0xFF;
+    _.Temp = 23;
+    _.Power = true;
+    _.Mode = kHitachiAc424Cool;
+    _.Fan = kHitachiAc424FanAuto;
 
     _.raw[9] = 0x92;
     _.raw[27] = 0xC1;
