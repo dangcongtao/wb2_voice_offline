@@ -1581,7 +1581,7 @@ void HitachiAC264_setRaw(const uint8_t new_code[], const uint16_t length, state_
     memset(&_, 0, sizeof(Hitachi424Protocol));
     memcpy(_.raw, new_code, min(length, kHitachiAc264StateLength));
 
-    ir_state->power = _.Power;
+    ir_state->power = _.Power == 0xF1 ? true : false;
     ir_state->mode = _.Mode;
     ir_state->fanspeed = _.Fan;
     ir_state->degrees = _.Temp;
@@ -2191,10 +2191,6 @@ void HitachiAC264_send(state_ir_t state_ir)
     _.raw[9] = 0x92;
     _.raw[27] = 0xC1;
 
-    // set power
-    _.Power = state_ir.power;
-    _.Button = kHitachiAc424ButtonPowerMode;
-
     // set temp
     uint8_t temp;
     temp = min((uint8_t)state_ir.degrees, kHitachiAc424MaxTemp);
@@ -2218,7 +2214,7 @@ void HitachiAC264_send(state_ir_t state_ir)
 
     // set fan
     uint8_t speed = (uint8_t)state_ir.fanspeed;
-    uint8_t newSpeed = max(speed, kHitachiAc424FanMin);
+    uint8_t newSpeed = max((uint8_t)speed, kHitachiAc424FanMin);
     uint8_t fanMax = kHitachiAc424FanMax;
 
     // Only 2 x low speeds in Dry mode or Auto
@@ -2236,6 +2232,7 @@ void HitachiAC264_send(state_ir_t state_ir)
     //   if (newSpeed != _.Fan) setButton(kHitachiAc424ButtonFan);
     // Set the values
     _.Fan = newSpeed;
+
     _.raw[9] = 0x92;
     _.raw[29] = 0x00;
 
@@ -2246,7 +2243,10 @@ void HitachiAC264_send(state_ir_t state_ir)
         _.raw[29] = 0x30;
     }
 
-    // set temp
+    // set power
+    _.Power = state_ir.power ? kHitachiAc424PowerOn : kHitachiAc424PowerOff;
+    _.Button = kHitachiAc424ButtonPowerMode;
+
     invertBytePairs(_.raw + 3, kHitachiAc424StateLength - 3);
 
     sendHitachiAC(_.raw, kHitachiAc264StateLength, kHitachiAcDefaultRepeat);

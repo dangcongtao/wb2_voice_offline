@@ -149,6 +149,7 @@ static uint8_t time_get_mqtt_info_failed = 0;
 static uint8_t time_connect_mqtt_failed = 0;
 static const uint32_t TIMEOUT_WIFI_CONFIG_MS = 1000*60*15;
 #define TIMEOUT_WIFI_CONNECT_MS (1000 * 60 * 2)
+extern uint8_t is_ota;
 void m_event_loop(uint32_t time_schedual_ms)
 {
     for (uint8_t i = 0; i < MAX_STATE_MACHINE; i++)
@@ -216,7 +217,7 @@ void m_event_loop(uint32_t time_schedual_ms)
             signal_post(SIG_AP_CFG_DONE);
         }
     }
-    else if (current_state == M_WIFI_DISCONNECT || current_state == M_WIFI_CONNECTING)
+    else if (!is_ota && (current_state == M_WIFI_DISCONNECT || current_state == M_WIFI_CONNECTING))
     {
         /* check timeout */
         if (sys_get_tick_ms() - start_time_wait_wifi >= 60000)
@@ -234,7 +235,7 @@ void m_event_loop(uint32_t time_schedual_ms)
             m_wifi_get_instance().wifi_sta_start_cb(ssid, pass);
         }
     }
-    else if (current_state == M_WIFI_MQTT_CONNECTING)
+    else if (!is_ota && current_state == M_WIFI_MQTT_CONNECTING)
     {
         /* check timeout */
         if (sys_get_tick_ms() - start_time_wait_mqtt >= 120000)

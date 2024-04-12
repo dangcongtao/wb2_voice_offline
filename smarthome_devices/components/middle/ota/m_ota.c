@@ -132,7 +132,8 @@ void m_ota_start(char* url)
     is_ota = 1;
     m_ir_deinit();
     flash_set_rs_reason(3);
-    os_trace("Free memory: %d\r\n", xPortGetFreeHeapSize());
+    // os_trace("Free memory: %d\r\n", xPortGetFreeHeapSize());
+    m_mqtt_get_instance()._mqtt_stop();
     vTaskDelay(pdMS_TO_TICKS(2000));
     axk_hal_user_ota_update(url);
 }

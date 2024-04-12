@@ -169,8 +169,8 @@ wswitch_handler_t array_ir_control_handler[] = {
     {HaierACYRW02_Callback, 115},
     {Teco_Callback, 116},
     {MirageAc_Callback, 117},
-    {HitachiAc264_Callback, 118},
-    {HitachiAc296_Callback, 119},
+    {HitachiAc264_Callback, HITACHI_AC264},
+    {HitachiAc296_Callback, HITACHI_AC296},
 
 };
 
