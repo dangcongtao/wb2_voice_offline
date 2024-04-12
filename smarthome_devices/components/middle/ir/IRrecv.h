@@ -91,6 +91,7 @@
 #define DECODE_DELONGHI_AC 1
 #define DECODE_BOSCH144 1
 #define DECODE_VOLTAS 1
+#define DECODE_HITACHI_AC296 1
 
 
 #define IR_RX 1
@@ -302,6 +303,11 @@ bool decodeHitachiAC(decode_results *results, uint16_t offset,
 #endif
 #if DECODE_HITACHI_AC424
 bool decodeHitachiAC424(decode_results *results, uint16_t offset,
+                                const uint16_t nbits,
+                                const bool strict);
+#endif
+#if DECODE_HITACHI_AC296
+bool decodeHitachiAc296(decode_results *results, uint16_t offset,
                                 const uint16_t nbits,
                                 const bool strict);
 #endif
@@ -637,6 +643,8 @@ void IRArgoAC_setRaw(const uint8_t state[], const uint16_t length, state_ir_t *i
 void IRDelonghiAc_setRaw(const uint64_t state, state_ir_t *ir_state);
 void IRBosch144AC_setRaw(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
 void IRVoltas_setRaw(const uint8_t new_code[], state_ir_t *ir_state);
+void HitachiAC264_setRaw(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
+void HitachiAc296_setRaw(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
 
 // void enableIRIn(const bool pullup);
 void ir_loop(void);

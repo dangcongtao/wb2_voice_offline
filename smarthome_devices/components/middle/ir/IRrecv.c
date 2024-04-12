@@ -1290,7 +1290,7 @@ bool decode_for(decode_results *results, uint8_t max_skip)
         // blog_error("decode hitachi fail ");
     }
 
-    if (decodeHitachiAC(results, offset, kHitachiAc344Bits, true, true))
+    if (decodeHitachiAC(results, offset, kHitachiAc344Bits, true, false))
     {
         //blog_info("decode hitachi ac344 2 success ");
         return true;
@@ -1299,6 +1299,23 @@ bool decode_for(decode_results *results, uint8_t max_skip)
     {
         // blog_error("decode hitachi fail ");
     }
+
+    if (decodeHitachiAC(results, offset, kHitachiAc264Bits, true, false))
+    {
+        //blog_info("decode hitachi ac344 2 success ");
+        return true;
+    }
+    else
+    {
+        // blog_error("decode hitachi fail ");
+    }
+
+
+#endif
+
+#if DECODE_HITACHI_AC296
+    // os_trace("Attempting decodeFujitsuAC decode\r\n");        
+    if (decodeHitachiAc296(results, offset, kHitachiAc296Bits, true)) return true;
 #endif
 
 #if DECODE_FUJITSU_AC
@@ -1955,6 +1972,14 @@ void m_ir_task(void *param)
             else if (VOLTAS == capture.decode_type)
             {
                 IRVoltas_setRaw(capture.state, &ir_state_recv);
+            }
+            else if (HITACHI_AC264 == capture.decode_type)
+            {
+                HitachiAC264_setRaw(capture.state, capture.bits / 8, &ir_state_recv);
+            }
+            else if (HITACHI_AC296 == capture.decode_type)
+            {
+                HitachiAc296_setRaw(capture.state, capture.bits / 8, &ir_state_recv);
             }
 
             /***************************************************************************************/

@@ -75,40 +75,43 @@ union HitachiProtocol{
 #define kHitachiAcAutoTemp  23  // 23C
 
 /// Native representation of a Hitachi 53-byte/424-bit A/C message.
-union Hitachi424Protocol{
-  uint8_t raw[kHitachiAc424StateLength];  ///< The state in native code
-  struct {
-    // Byte 0~10
-    uint8_t pad0[11];
-    // Byte 11
-    uint8_t Button  :8;
-    // Byte 12
-    uint8_t       :8;
-    // Byte 13
-    uint8_t       :2;
-    uint8_t Temp  :6;
-    // Byte 14~24
-    uint8_t pad1[11];
-    // Byte 25
-    uint8_t Mode  :4;
-    uint8_t Fan   :4;
-    // Byte 26
-    uint8_t       :8;
-    // Byte 27
-    uint8_t Power :8;
-    // Byte 28~34
-    uint8_t pad2[7];
-    // Byte 35
-    uint8_t SwingH  :3;
-    uint8_t         :5;
-    // Byte 36
-    uint8_t         :8;
-    // Byte 37
-    uint8_t         :5;
-    uint8_t SwingV  :1;
-    uint8_t         :2;
+typedef struct
+{
+  union {
+    uint8_t raw[kHitachiAc424StateLength];  ///< The state in native code
+    struct {
+      // Byte 0~10
+      uint8_t pad0[11];
+      // Byte 11
+      uint8_t Button  :8;
+      // Byte 12
+      uint8_t       :8;
+      // Byte 13
+      uint8_t       :2;
+      uint8_t Temp  :6;
+      // Byte 14~24
+      uint8_t pad1[11];
+      // Byte 25
+      uint8_t Mode  :4;
+      uint8_t Fan   :4;
+      // Byte 26
+      uint8_t       :8;
+      // Byte 27
+      uint8_t Power :8;
+      // Byte 28~34
+      uint8_t pad2[7];
+      // Byte 35
+      uint8_t SwingH  :3;
+      uint8_t         :5;
+      // Byte 36
+      uint8_t         :8;
+      // Byte 37
+      uint8_t         :5;
+      uint8_t SwingV  :1;
+      uint8_t         :2;
+    };
   };
-};
+} Hitachi424Protocol;
 
 // HitachiAc424 & HitachiAc344
 #define kHitachiAc424ButtonPowerMode    0x13
@@ -232,6 +235,78 @@ union Hitachi1Protocol{
 #define kHitachiAc1Sleep4   0b100
 // Checksum
 #define kHitachiAc1ChecksumStartByte    5
+
+typedef struct
+{
+  union {
+    uint8_t raw[kHitachiAc296StateLength];
+    struct {
+      // Byte 0~12
+      uint8_t pad0[13];
+      // Byte 13
+      uint8_t                    :2;
+      uint8_t Temp               :5;  // LSB
+      uint8_t                    :1;
+      uint8_t                    :8;
+      // Byte 15~16
+      uint8_t                    :8;
+      uint8_t                    :8;
+      // Byte 17~24
+      uint8_t OffTimerLow        :8;  // LSB
+      uint8_t /* Parity */       :8;
+      uint8_t OffTimerHigh       :8;
+      uint8_t /* Parity */       :8;
+      uint8_t OnTimerLow         :8;  // LSB
+      uint8_t /* Parity */       :8;
+      uint8_t OnTimerHigh        :4;
+      uint8_t OffTimerActive     :1;
+      uint8_t OnTimerActive      :1;
+      uint8_t                    :2;
+      uint8_t /* Parity */       :8;
+      // Byte 25~26
+      uint8_t Mode               :4;
+      uint8_t Fan                :3;
+      uint8_t                    :1;
+      uint8_t                    :8;
+      // Byte 27~28
+      uint8_t                    :4;
+      uint8_t Power              :1;
+      uint8_t                    :2;
+      uint8_t TimerActive        :1;
+      uint8_t                    :8;
+      // Byte 29~34
+      uint8_t pad1[6];
+      // Byte 35~36
+      uint8_t                    :4;
+      uint8_t Humidity           :4;  // LSB
+      uint8_t                    :8;
+    };
+  };
+} HitachiAC296Protocol;
+
+
+// Mode & Fan
+const uint8_t kHitachiAc296Cool                = 0b0011;
+const uint8_t kHitachiAc296DryCool             = 0b0100;
+const uint8_t kHitachiAc296Dehumidify          = 0b0101;
+const uint8_t kHitachiAc296Heat                = 0b0110;
+const uint8_t kHitachiAc296Auto                = 0b0111;
+const uint8_t kHitachiAc296AutoDehumidifying   = 0b1001;
+const uint8_t kHitachiAc296QuickLaundry        = 0b1010;
+const uint8_t kHitachiAc296CondensationControl = 0b1100;
+
+const uint8_t kHitachiAc296FanSilent = 0b001;
+const uint8_t kHitachiAc296FanLow    = 0b010;
+const uint8_t kHitachiAc296FanMedium = 0b011;
+const uint8_t kHitachiAc296FanHigh   = 0b100;
+const uint8_t kHitachiAc296FanAuto   = 0b101;
+
+const uint8_t kHitachiAc296TempAuto = 1;  // Special value for "Auto" op mode.
+const uint8_t kHitachiAc296MinTemp  = 16;
+const uint8_t kHitachiAc296MaxTemp  = 31;  // Max value you can store in 5 bits.
+
+const uint8_t kHitachiAc296PowerOn  = 1;
+const uint8_t kHitachiAc296PowerOff = 0;
 
 
 #endif  // IR_HITACHI_H_

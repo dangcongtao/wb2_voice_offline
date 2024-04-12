@@ -121,6 +121,8 @@ typedef enum {
   HAIER_AC_YRW02, // AQUA
   TECO,
   MIRAGE,
+  HITACHI_AC264,
+  HITACHI_AC296,
   // Add new entries before this one, and update it to point to the last entry.
   kLastDecodeType = LG,
   MIDEA = 1934,
@@ -228,7 +230,11 @@ typedef enum {
 #define kHitachiAc344StateLength  43
 #define kHitachiAc344Bits         kHitachiAc344StateLength*8
 #define kHitachiAc424StateLength  53
-#define kHitachiAc424Bits         kHitachiAc424StateLength*8
+#define kHitachiAc424Bits         (kHitachiAc424StateLength*8)
+#define kHitachiAc264StateLength  33
+#define kHitachiAc264Bits  (kHitachiAc264StateLength * 8)
+#define kHitachiAc296StateLength  37
+#define kHitachiAc296Bits (kHitachiAc296StateLength * 8)
 
 /* Panasonic*/
 #define kPanasonicBits  (48)
