@@ -92,7 +92,7 @@ typedef struct
       uint8_t Temp    :6;
       // Byte 14
       uint8_t         :8;
-      // Bytes 14~24
+      // Bytes 15~24
       uint8_t pad1[10];
       // Byte 25
       uint8_t Mode    :4;

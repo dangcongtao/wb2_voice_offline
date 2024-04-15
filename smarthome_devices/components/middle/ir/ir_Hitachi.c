@@ -2160,9 +2160,11 @@ void Hitachi_AC344_send(state_ir_t state_ir)
 
 void HitachiAC264_send(state_ir_t state_ir)
 {
+    os_trace("%s\r\n", __func__);
+    // return;
     HitachiAC264Protocol _;
     memset(&_, 0, sizeof(HitachiAC264Protocol)); 
-    for (uint8_t i = 0; i < kHitachiAcStateLength; i++)
+    for (uint8_t i = 0; i < kHitachiAc264StateLength; i++)
         _.raw[i] = 0x00;
 
     _.raw[0]  = 0x01;
@@ -2191,7 +2193,7 @@ void HitachiAC264_send(state_ir_t state_ir)
     switch ((uint8_t)state_ir.mode) {
         // Fan mode sets a special temp.
         case kHitachiAc424Fan: {
-            state_ir.degrees = kHitachiAc424FanTemp;
+            // state_ir.degrees = kHitachiAc424FanTemp;
             _.Temp = kHitachiAc424FanTemp; 
         } break;
         case kHitachiAc424Heat:
@@ -2236,7 +2238,7 @@ void HitachiAC264_send(state_ir_t state_ir)
     _.Power = state_ir.power;
     _.Button = kHitachiAc424ButtonPowerMode;
 
-    invertBytePairs(_.raw + 3, kHitachiAc424StateLength - 3);
+    invertBytePairs(_.raw + 3, kHitachiAc264StateLength - 3);
 
     sendHitachiAC(_.raw, kHitachiAc264StateLength, kHitachiAcDefaultRepeat);
 }

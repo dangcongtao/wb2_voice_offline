@@ -717,7 +717,7 @@ uint16_t _matchGenericLimit(volatile uint16_t *data_ptr,
     }
     else
     { // bytes
-        // os_trace("%s match bytes use_bits: %d\r\n", __func__, use_bits);
+        // os_trace_rcv("%s match bytes use_bits: %d\r\n", __func__, use_bits);
         uint16_t data_used = matchBytesLimit(data_ptr + offset, result_bytes_ptr,
                                         remaining - offset, nbits / 8,
                                         onemarkLower, onemarkUpper, onespaceLower, onespaceUpper,
@@ -1077,162 +1077,162 @@ bool decode_for(decode_results *results, uint8_t max_skip)
          offset += 2)
     {
 #if DECODE_LG
-       // os_trace("Attempting LG (28-bit) decode\r\n");
+        os_trace_rcv("Attempting LG (28-bit) decode\r\n");
         if (decodeLG(results, offset, kLgBits, false))
         {
-            // os_trace("decode LG 28-bit success\r\n");
+            os_trace_rcv("decode LG 28-bit success\r\n");
             return true;
         }
-       // os_trace("Attempting LG (32-bit) decode\r\n");
+       os_trace_rcv("Attempting LG (32-bit) decode\r\n");
         if (decodeLG(results, offset, kLg32Bits, true))
         {
-            //os_trace("decode LG 32-bit success\r\n");
+            os_trace_rcv("decode LG 32-bit success\r\n");
             return true;
         }
 #endif
 
 #if DECODE_SAMSUNG_AC
-    //os_trace("Attempting Samsung AC (extended) decode\r\n");
+    os_trace_rcv("Attempting Samsung AC (extended) decode\r\n");
     // Check the extended size first, as it should fail fast due to longer
     // length.
     if (decodeSamsungAC(results, offset, kSamsungAcExtendedBits, true)) return true;
     // Now check for the more common length.
-    //os_trace("Attempting Samsung AC decode\r\n");
+    os_trace_rcv("Attempting Samsung AC decode\r\n");
     if (decodeSamsungAC(results, offset, kSamsungAcBits, true)) return true;
 #endif
 
 
 #if DECODE_AQUA
-    //os_trace("Attempting Aqua AC\r\n");
+    os_trace_rcv("Attempting Aqua AC\r\n");
     if (decodeAquaAC(results, offset, kAquaAcBits, true)) return true;
 #endif
 
 #if DECODE_HAIER_AC
-    //os_trace("Attempting Aqua AC\r\n");
+    os_trace_rcv("Attempting Aqua AC\r\n");
     if (decodeHaierAC(results, offset, kHaierACBits, true)) return true;
 #endif
 
 #if DECODE_HAIER_AC_YRW02
-    //os_trace("Attempting Aqua AC\r\n");
+    os_trace_rcv("Attempting Aqua AC\r\n");
     if (decodeHaierACYRW02(results, offset, kHaierACYRW02Bits, true)) return true;
 #endif
 
 #if DECODE_HAIER_AC176
-    //os_trace("Attempting Aqua AC\r\n");
+    os_trace_rcv("Attempting Aqua AC\r\n");
     if (decodeHaierAC176(results, offset, kHaierAC176Bits, true)) return true;
 #endif
 
 #if DECODE_HAIER_AC160
-    //os_trace("Attempting Aqua AC\r\n");
+    os_trace_rcv("Attempting Aqua AC\r\n");
     if (decodeHaierAC160(results, offset, kHaierAC160Bits, true)) return true;
 #endif
 
 #if DECODE_NEOCLIMA
-    //os_trace("Attempting Aqua AC\r\n");
+    os_trace_rcv("Attempting Aqua AC\r\n");
     if (decodeNeoclima(results, offset, kNeoclimaBits, true)) return true;
 #endif
 
 #if DECODE_WHIRLPOOL_AC
-    // os_trace("Attempting Casper AC\r\n");
+    os_trace_rcv("Attempting Casper AC\r\n");
     if (decodeWhirlpoolAC(results, offset, kWhirlpoolAcBits, true)) return true;
 #endif
 
 
 #if DECODE_CASPER
-    // os_trace("Attempting Casper AC\r\n");
+    os_trace_rcv("Attempting Casper AC\r\n");
     if (decodeCasperAC(results, offset, kCasperAcBits, true)) return true;
 #endif
 
 
 #if DECODE_DELONGHI_AC
-    //os_trace("Attempting CarrierAC64 AC\r\n");
+    os_trace_rcv("Attempting CarrierAC64 AC\r\n");
     if (decodeDelonghiAc(results, offset, kDelonghiAcBits, true)) return true;
 #endif
 
 #if DECODE_CARRIER_AC64
-    //os_trace("Attempting CarrierAC64 AC\r\n");
+    os_trace_rcv("Attempting CarrierAC64 AC\r\n");
     if (decodeCarrierAC64(results, offset, kCarrierAc64Bits, true)) return true;
 #endif
 
 #if DECODE_TOSHIBA
-    //os_trace("Attempting Toshiba AC 72bit decode\r\n");
+    os_trace_rcv("Attempting Toshiba AC 72bit decode\r\n");
     if (decodeToshibaAC(results, offset, kToshibaACBits, true)) return true;
-    // os_trace("Attempting Toshiba AC 80bit decode\r\n");
+    os_trace_rcv("Attempting Toshiba AC 80bit decode\r\n");
     // if (decodeToshibaAC(results, offset, kToshibaACBitsLong, true)) return true;
-    // os_trace("Attempting Toshiba AC 56bit decode\r\n");
+    os_trace_rcv("Attempting Toshiba AC 56bit decode\r\n");
     // if (decodeToshibaAC(results, offset, kToshibaACBitsShort, true)) return true;
 #endif
 
 #if DECODE_DAIKIN
-    //os_trace("Attempting Daikin AC decode\r\n");
+    os_trace_rcv("Attempting Daikin AC decode\r\n");
     if (decodeDaikin(results, offset, kDaikinBits, true)) return true;
 #endif
 
 #if DECODE_DAIKIN2
-    //os_trace("Attempting Daikin 2 AC decode\r\n");
+    os_trace_rcv("Attempting Daikin 2 AC decode\r\n");
     if (decodeDaikin2(results, offset, kDaikin2Bits, true)) return true;
 #endif
 
 #if DECODE_DAIKIN152
-    //os_trace("Attempting Daikin 152 bit AC decode\r\n");
+    os_trace_rcv("Attempting Daikin 152 bit AC decode\r\n");
     if (decodeDaikin152(results, offset, kDaikin152Bits, true)) return true;
 #endif
 
 #if DECODE_DAIKIN160
-    //os_trace("Attempting Daikin 160 bit AC decode\r\n");
+    os_trace_rcv("Attempting Daikin 160 bit AC decode\r\n");
     if (decodeDaikin160(results, offset, kDaikin160Bits, true)) return true;
 #endif
 
 #if DECODE_DAIKIN216
-    //os_trace("Attempting Daikin 216 bit AC decode\r\n");
+    os_trace_rcv("Attempting Daikin 216 bit AC decode\r\n");
     if (decodeDaikin216(results, offset, kDaikin216Bits, true)) return true;
 #endif
 
 #if DECODE_DAIKIN128
-    //os_trace("Attempting Daikin 128 bit AC decode\r\n");
+    os_trace_rcv("Attempting Daikin 128 bit AC decode\r\n");
     if (decodeDaikin128(results, offset, kDaikin128Bits, true)) return true;
 #endif
 
 #if DECODE_DAIKIN64
-    //os_trace("Attempting Daikin 64 bit AC decode\r\n");
+    os_trace_rcv("Attempting Daikin 64 bit AC decode\r\n");
     if (decodeDaikin64(results, offset, kDaikin64Bits, true)) return true;
 #endif
 
 
 
 #if DECODE_KELVINATOR
-    // os_trace("Attempting Kelvinator AC decode\r\n");
+    os_trace_rcv("Attempting Kelvinator AC decode\r\n");
     if (decodeKelvinator(results, offset, kKelvinatorBits, true)) return true;
 #endif
 
 #if DECODE_GREE
-    // os_trace("Attempting Gree AC decode\r\n");
+    os_trace_rcv("Attempting Gree AC decode\r\n");
     if (decodeGree(results, offset, kGreeBits, true)) return true;
 #endif
 
 #if (DECODE_MITSUBISHI112 || DECODE_NAGAKAWA || DECODE_TCL112AC)
-    //os_trace("Attempting decodeMitsubishi, Tcl, Nagakawa 112bit AC decode\r\n");
+    os_trace_rcv("Attempting decodeMitsubishi, Tcl, Nagakawa 112bit AC decode\r\n");
     if (decodeMitsubishi112(results, offset, kMitsubishi112Bits, true)) return true;
 #endif
 
 #if (DECODE_MITSUBISHIHEAVY)
-    // os_trace("Attempting decodeMitsubishiHeavyAC decode\r\n");
+    os_trace_rcv("Attempting decodeMitsubishiHeavyAC decode\r\n");
     if (decodeMitsubishiHeavy(results, offset, kMitsubishiHeavy88Bits, true)) return true;
     if (decodeMitsubishiHeavy(results, offset, kMitsubishiHeavy152Bits, true)) return true;
 #endif
 
 #if (DECODE_MITSUBISHI_AC)
-    // os_trace("Attempting DECODE_MITSUBISHI_AC decode\r\n");
+    os_trace_rcv("Attempting DECODE_MITSUBISHI_AC decode\r\n");
     if (decodeMitsubishiAC(results, offset, kMitsubishiACBits, false)) return true;
 #endif
 
 #if (DECODE_MITSUBISHI136)
-    // os_trace("Attempting decodeMitsubishi136 decode\r\n");
+    os_trace_rcv("Attempting decodeMitsubishi136 decode\r\n");
     if (decodeMitsubishi136(results, offset, kMitsubishi136Bits, true)) return true;
 #endif
 
 #if (DECODE_TECO)
-    // os_trace("Attempting decodeMitsubishi136 decode\r\n");
+    os_trace_rcv("Attempting decodeMitsubishi136 decode\r\n");
     if (decodeTeco(results, offset, kTecoBits, false)) return true;
 #endif
 
@@ -1314,62 +1314,71 @@ bool decode_for(decode_results *results, uint8_t max_skip)
 #endif
 
 #if DECODE_HITACHI_AC296
-    // os_trace("Attempting decodeFujitsuAC decode\r\n");        
+    os_trace_rcv("Attempting decodeFujitsuAC decode\r\n");        
     if (decodeHitachiAc296(results, offset, kHitachiAc296Bits, true)) return true;
 #endif
 
 #if DECODE_FUJITSU_AC
-    // os_trace("Attempting decodeFujitsuAC decode\r\n");        
+    os_trace_rcv("Attempting decodeFujitsuAC decode\r\n");        
     if (decodeFujitsuAC(results, offset, kFujitsuAcBits, false)) return true;
 #endif
 
 #if DECODE_PANASONIC_AC
-    // os_trace("Attempting decodePanasonicAC AC decode\r\n");        
+    os_trace_rcv("Attempting decodePanasonicAC AC decode\r\n");        
     if (decodePanasonicAC(results, offset, kPanasonicAcBits, true)) return true;
     if (decodePanasonicAC(results, offset, kPanasonicAcShortBits, true)) return true;
 
 #endif
 
 #if DECODE_MIRAGE
+    os_trace_rcv("Attempting decodeMirage decode\r\n");
     if (decodeMirage(results, offset, kMirageBits, true)) return true;
 
 #endif
 
 #if DECODE_AMCOR
+    os_trace_rcv("Attempting decodeAmcor decode\r\n");
     if (decodeAmcor(results, offset, kAmcorBits, true)) return true;
 #endif
 
 #if DECODE_PANASONIC_AC32
+    os_trace_rcv("Attempting decodePanasonicAC32 decode\r\n");
     if (decodePanasonicAC32(results, offset, kPanasonicAc32Bits, true)) return true;
     if (decodePanasonicAC32(results, offset, kPanasonicAc32Bits / 2, true)) return true;
 
 #endif
 
 #if DECODE_ELECTRA_AC
+    os_trace_rcv("Attempting decodeElectraAC decode\r\n");
     if (decodeElectraAC(results, offset, kElectraAcBits, true)) return true;
 
 #endif
 
 #if DECODE_AIRWELL
+    os_trace_rcv("Attempting decodeAirwell decode\r\n");
     if (decodeAirwell(results, offset, kAirwellBits, true)) return true;
 #endif
 
 #if DECODE_VESTEL_AC
+    os_trace_rcv("Attempting decodeVestelAc decode\r\n");
     if (decodeVestelAc(results, offset, kVestelAcBits, true)) return true;
 #endif
 
 #if DECODE_FUNIKI
+    os_trace_rcv("Attempting decodeFunikiAC decode\r\n");
     if (decodeFunikiAC(results, offset, kFunikiAcBits, true)) return true;
     if (decodeFunikiAC(results, offset, kFunikiAcExtendedBits, true)) return true;
 #endif
 
 #if DECODE_SANYO
+    os_trace_rcv("Attempting decodeSanyoAc decode\r\n");
     if (decodeSanyoAc(results, offset, kSanyoAcBits, true)) return true;
     if (decodeSanyoAc88(results, offset, kSanyoAc88Bits, true)) return true;
     if (decodeSanyoAc152(results, offset, kSanyoAc152Bits, true)) return true;
 #endif
 
 #if DECODE_MIDEA
+    os_trace_rcv("Attempting decodeMidea decode\r\n");
     if (decodeMidea(results, offset, kMideaBits, true)) return true;
 
     if (decodeMidea24(results, offset, kMidea24Bits, true)) return true;
@@ -1377,38 +1386,47 @@ bool decode_for(decode_results *results, uint8_t max_skip)
 
 
 #if DECODE_BOSCH144
+    os_trace_rcv("Attempting decodeBosch144 decode\r\n");
     if (decodeBosch144(results, offset, kBosch144Bits, true)) return true;
 #endif
 
 #if DECODE_COOLIX
+    os_trace_rcv("Attempting decodeCOOLIX decode\r\n");
     if (decodeCOOLIX(results, offset, kCoolixBits, true)) return true;
 #endif
 
 #if DECODE_COOLIX48
+    os_trace_rcv("Attempting decodeCoolix48 decode\r\n");
     if (decodeCoolix48(results, offset, kCoolix48Bits, true)) return true;
 #endif
 
 #if DECODE_YORK
+    os_trace_rcv("Attempting decodeYork decode\r\n");
     if (decodeYork(results, offset, kYorkBits, true)) return true;
 #endif
 
 #if DECODE_CORONA_AC
+    os_trace_rcv("Attempting decodeCoronaAc decode\r\n");
     if (decodeCoronaAc(results, offset, kCoronaAcBitsShort, true)) return true;
 #endif
 
 #if DECODE_TROTEC
+    os_trace_rcv("Attempting decodeTrotec decode\r\n");
     if (decodeTrotec(results, offset, kTrotecBits, true)) return true;
 #endif
 
 #if DECODE_TROTEC_3550
+    os_trace_rcv("Attempting decodeTrotec3550 decode\r\n");
     if (decodeTrotec3550(results, offset, kTrotecBits, true)) return true;
 #endif
 
 #if DECODE_VOLTAS
+    os_trace_rcv("Attempting decodeVoltas decode\r\n");
     if (decodeVoltas(results, offset, kVoltasBits, true)) return true;
 #endif
 
 #if DECODE_ARGO
+    os_trace_rcv("Attempting decodeArgo decode\r\n");
     if (decodeArgoWREM3(results, offset, kArgo3AcControlStateLength * 8, true)) return true;
     if (decodeArgoWREM3(results, offset, kArgo3iFeelReportStateLength * 8, true)) return true;
     if (decodeArgoWREM3(results, offset, kArgo3ConfigStateLength * 8, true)) return true;
