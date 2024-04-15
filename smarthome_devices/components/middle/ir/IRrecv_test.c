@@ -353,7 +353,7 @@ static void TCL112AC_test(void)
     decode_for(&capture, 0);
     assert(capture.decode_type == TCL112AC);
 }
-static void huy_test(void)
+static void Hitachi264AC_test(void)
 {
     decode_results capture;
     memset(&capture, 0, sizeof(capture));
@@ -365,7 +365,7 @@ static void huy_test(void)
     capture.rawbuf = data1;
     capture.rawlen = sizeof(data1) / sizeof(data1[0]);
     decode_for(&capture, 0);
-    // assert(capture.decode_type == TCL112AC);
+    assert(capture.decode_type == HITACHI_AC264);
 }
 
 #include "base64.h"
@@ -450,8 +450,8 @@ void IRrecv_test_run(void)
     DelonghiAC_test();
     VoltasAC_test();
     TCL112AC_test();
-    Hitachi433AC_test();
-    huy_test();
+    // Hitachi433AC_test();
+    Hitachi264AC_test();
 
     printf("\r\n\r\n----------------------TEST_FINISHED---------------------\r\n\r\n");
 

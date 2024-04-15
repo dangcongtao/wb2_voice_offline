@@ -142,11 +142,11 @@ bool decodeHitachiAC(decode_results *results, uint16_t offset,
                     results->rawlen - offset, nbits,
                     hmark-600, hmark+600,
                     hspace-500, hspace+500,
-                    kHitachiAcBitMark-300, kHitachiAcBitMark+300,
+                    kHitachiAcBitMark-300, kHitachiAcBitMark+500,
                     kHitachiAcOneSpace-500, kHitachiAcOneSpace+500,
-                    kHitachiAcBitMark-300, kHitachiAcBitMark+300,
+                    kHitachiAcBitMark-300, kHitachiAcBitMark+500,
                     kHitachiAcZeroSpace-300, kHitachiAcZeroSpace+300,
-                    kHitachiAcBitMark-300, kHitachiAcBitMark+300,
+                    kHitachiAcBitMark-300, kHitachiAcBitMark+500,
                     kHitachiAcMinGap-25000, kHitachiAcMinGap+25000,
                     true, k_tolerance, kMarkExcess, MSBfirst))
     {
@@ -1525,15 +1525,11 @@ void HitachiAC344_stateReset(void) {
     hitachi344_protocol.raw[35] = 0x03;
     hitachi344_protocol.raw[37] = 0x00; /* diff with ac 424 */
     hitachi344_protocol.raw[39] = 0x00; /* diff with ac 424 */
-    hitachi344_protocol.raw[45] = 0xFF;
-    hitachi344_protocol.raw[47] = 0xFF;
-    hitachi344_protocol.raw[49] = 0xFF;
-    hitachi344_protocol.raw[51] = 0xFF;
 
     HitachiAC344_setTemp(23, true);
-    HitachiAC344_setPower(true);
     HitachiAC344_setMode(kHitachiAc344Cool);
     HitachiAC344_setFan(kHitachiAc344FanAuto);
+    HitachiAC344_setPower(true);
 }
 
 #if SEND_HITACHI_AC344
@@ -1577,11 +1573,11 @@ void HitachiAC344_setRaw(const uint8_t new_code[], const uint16_t length, state_
 
 void HitachiAC264_setRaw(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state)
 {
-    Hitachi424Protocol _;
-    memset(&_, 0, sizeof(Hitachi424Protocol));
+    HitachiAC264Protocol _;
+    memset(&_, 0, sizeof(HitachiAC264Protocol));
     memcpy(_.raw, new_code, min(length, kHitachiAc264StateLength));
 
-    ir_state->power = _.Power == 0xF1 ? true : false;
+    ir_state->power = _.Power;
     ir_state->mode = _.Mode;
     ir_state->fanspeed = _.Fan;
     ir_state->degrees = _.Temp;
@@ -2097,10 +2093,10 @@ void Hitachi_AC424_send(state_ir_t state_ir)
     }
 
     /* set ir_state */
-    HitachiAC424_setPower(state_ir.power);
     HitachiAC424_setTemp(state_ir.degrees, true);
     HitachiAC424_setMode(state_ir.mode);
     HitachiAC424_setFan(state_ir.fanspeed);
+    HitachiAC424_setPower(state_ir.power);
 
     /* send */
     sendHitachiAc424(HitachiAC424_getRaw(), kHitachiAc424StateLength, kHitachiAcDefaultRepeat);
@@ -2152,10 +2148,10 @@ void Hitachi_AC344_send(state_ir_t state_ir)
         break;
     }
     /* set ir_state */
-    HitachiAC344_setPower(state_ir.power);
     HitachiAC344_setTemp(state_ir.degrees, true);
     HitachiAC344_setMode(state_ir.mode);
     HitachiAC344_setFan(state_ir.fanspeed);
+    HitachiAC344_setPower(state_ir.power);
 
     /* send */
     sendHitachiAc344(HitachiAC344_getRaw(), kHitachiAc344StateLength, kHitachiAcDefaultRepeat);
@@ -2164,9 +2160,9 @@ void Hitachi_AC344_send(state_ir_t state_ir)
 
 void HitachiAC264_send(state_ir_t state_ir)
 {
-    Hitachi424Protocol _;
-    memset(&_, 0, sizeof(Hitachi424Protocol)); 
-    for (uint8_t i = 0; i < kHitachiAc424StateLength; i++)
+    HitachiAC264Protocol _;
+    memset(&_, 0, sizeof(HitachiAC264Protocol)); 
+    for (uint8_t i = 0; i < kHitachiAcStateLength; i++)
         _.raw[i] = 0x00;
 
     _.raw[0]  = 0x01;
@@ -2175,14 +2171,7 @@ void HitachiAC264_send(state_ir_t state_ir)
     _.raw[5]  = 0xFF;
     _.raw[7]  = 0xCC;
     _.raw[27] = 0xE1;
-    _.raw[33] = 0x80;
-    _.raw[35] = 0x03;
-    _.raw[37] = 0x01;
-    _.raw[39] = 0x88;
-    _.raw[45] = 0xFF;
-    _.raw[47] = 0xFF;
-    _.raw[49] = 0xFF;
-    _.raw[51] = 0xFF;
+
     _.Temp = 23;
     _.Power = true;
     _.Mode = kHitachiAc424Cool;
@@ -2244,7 +2233,7 @@ void HitachiAC264_send(state_ir_t state_ir)
     }
 
     // set power
-    _.Power = state_ir.power ? kHitachiAc424PowerOn : kHitachiAc424PowerOff;
+    _.Power = state_ir.power;
     _.Button = kHitachiAc424ButtonPowerMode;
 
     invertBytePairs(_.raw + 3, kHitachiAc424StateLength - 3);
@@ -2264,9 +2253,9 @@ bool decodeHitachiAc296(decode_results *results, uint16_t offset,
   if (!matchGenericStateLimit(results->rawbuf + offset, results->state,
                     results->rawlen - offset, nbits,
                     kHitachiAcHdrMark-700, kHitachiAcHdrMark+700, kHitachiAcHdrSpace-400, kHitachiAcHdrSpace+400,
-                    kHitachiAcBitMark-350, kHitachiAcBitMark+350, kHitachiAcOneSpace-450, kHitachiAcOneSpace+450,
-                    kHitachiAcBitMark-350, kHitachiAcBitMark+350, kHitachiAcZeroSpace-350, kHitachiAcZeroSpace+350,
-                    kHitachiAcBitMark-350, kHitachiAcBitMark+350, kHitachiAcMinGap-25000, kHitachiAcMinGap+25000, true,
+                    kHitachiAcBitMark-250, kHitachiAcBitMark+350, kHitachiAcOneSpace-450, kHitachiAcOneSpace+450,
+                    kHitachiAcBitMark-250, kHitachiAcBitMark+350, kHitachiAcZeroSpace-350, kHitachiAcZeroSpace+350,
+                    kHitachiAcBitMark-250, kHitachiAcBitMark+350, kHitachiAcMinGap-25000, kHitachiAcMinGap+25000, true,
                     kUseDefTol, 0, false)) return false;
 
   // Compliance

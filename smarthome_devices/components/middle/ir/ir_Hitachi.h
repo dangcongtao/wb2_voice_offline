@@ -74,42 +74,80 @@ union HitachiProtocol{
 #define kHitachiAcMaxTemp   32  // 32C
 #define kHitachiAcAutoTemp  23  // 23C
 
+
+/// Native representation of a Hitachi 53-byte/424-bit A/C message.
+typedef struct
+{
+  union {
+    uint8_t raw[kHitachiAc264StateLength];  ///< The state in native code.
+    struct {
+      // Bytes 0~10
+      uint8_t pad0[11];
+      // Byte 11
+      uint8_t Button  :8;
+      // Byte 12
+      uint8_t         :8;
+      // Byte 13
+      uint8_t         :2;
+      uint8_t Temp    :6;
+      // Byte 14
+      uint8_t         :8;
+      // Bytes 14~24
+      uint8_t pad1[10];
+      // Byte 25
+      uint8_t Mode    :4;
+      uint8_t Fan     :4;
+      // Byte 26
+      uint8_t         :8;
+      // Byte 27
+      uint8_t         :4;
+      uint8_t Power   :1;
+      uint8_t         :3;
+      // Byte 28
+      uint8_t         :8;
+      // Bytes 29~32
+      uint8_t pad2[4];
+    };
+  };
+} HitachiAC264Protocol;
+
+
 /// Native representation of a Hitachi 53-byte/424-bit A/C message.
 typedef struct
 {
   union {
     uint8_t raw[kHitachiAc424StateLength];  ///< The state in native code
-    struct {
-      // Byte 0~10
-      uint8_t pad0[11];
-      // Byte 11
-      uint8_t Button  :8;
-      // Byte 12
-      uint8_t       :8;
-      // Byte 13
-      uint8_t       :2;
-      uint8_t Temp  :6;
-      // Byte 14~24
-      uint8_t pad1[11];
-      // Byte 25
-      uint8_t Mode  :4;
-      uint8_t Fan   :4;
-      // Byte 26
-      uint8_t       :8;
-      // Byte 27
-      uint8_t Power :8;
-      // Byte 28~34
-      uint8_t pad2[7];
-      // Byte 35
-      uint8_t SwingH  :3;
-      uint8_t         :5;
-      // Byte 36
-      uint8_t         :8;
-      // Byte 37
-      uint8_t         :5;
-      uint8_t SwingV  :1;
-      uint8_t         :2;
-    };
+  struct {
+    // Byte 0~10
+    uint8_t pad0[11];
+    // Byte 11
+    uint8_t Button  :8;
+    // Byte 12
+    uint8_t       :8;
+    // Byte 13
+    uint8_t       :2;
+    uint8_t Temp  :6;
+    // Byte 14~24
+    uint8_t pad1[11];
+    // Byte 25
+    uint8_t Mode  :4;
+    uint8_t Fan   :4;
+    // Byte 26
+    uint8_t       :8;
+    // Byte 27
+    uint8_t Power :8;
+    // Byte 28~34
+    uint8_t pad2[7];
+    // Byte 35
+    uint8_t SwingH  :3;
+    uint8_t         :5;
+    // Byte 36
+    uint8_t         :8;
+    // Byte 37
+    uint8_t         :5;
+    uint8_t SwingV  :1;
+    uint8_t         :2;
+  };
   };
 } Hitachi424Protocol;
 
