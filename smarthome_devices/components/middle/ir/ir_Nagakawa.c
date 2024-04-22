@@ -120,6 +120,10 @@ void Nagakawa_send(state_ir_t state_ir)
   NagakawaStateReset(&_);
   _.SwingV = kNagakawaSwingVOn; // swingv auto
 
+  if (state_ir.swingv != swingv_kOff) {
+    _.SwingV = state_ir.swingv;
+  }
+
   _.Mode = (uint8_t)state_ir.mode;
 
   _.Fan = (uint8_t)state_ir.fanspeed;
