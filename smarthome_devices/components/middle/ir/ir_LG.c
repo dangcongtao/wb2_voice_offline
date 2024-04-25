@@ -19,7 +19,7 @@ const uint16_t kLg32RptHdrMark = 8950;        ///< uSeconds.
 // LG2 (28 Bit)
 const uint16_t kLg2HdrMark = 3200;            ///< uSeconds.
 const uint16_t kLg2HdrSpace = 9900;           ///< uSeconds.
-const uint16_t kLg2BitMark = 480; 
+const uint16_t kLg2BitMark = 550; 
 
 const uint32_t kLgAcAKB74955603DetectionMask = 0x0000080;
 const uint8_t  kLgAcChecksumSize = 4;  ///< Size in bits.

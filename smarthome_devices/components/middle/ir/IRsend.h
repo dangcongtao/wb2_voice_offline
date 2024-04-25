@@ -216,10 +216,12 @@ void Mitsubishi112_send(state_ir_t state_ir);
 void Midea_send(state_ir_t state_ir);
 void SharpAc_send(state_ir_t state_ir);
 void Daikin2_send(state_ir_t state_ir);
+void Daikin64_send(state_ir_t state_ir);
 void Daikin152_send(state_ir_t state_ir);
 void Daikin160_send(state_ir_t state_ir);
 void Daikin216_send(state_ir_t state_ir);
 void Daikin128_send(state_ir_t state_ir);
+void Daikin176_send(state_ir_t state_ir);
 void Hitachi_AC_send(state_ir_t state_ir);
 void Hitachi_AC1_send(state_ir_t state_ir);
 

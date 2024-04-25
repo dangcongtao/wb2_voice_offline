@@ -1188,6 +1188,11 @@ bool decode_for(decode_results *results, uint8_t max_skip)
     if (decodeDaikin216(results, offset, kDaikin216Bits, true)) return true;
 #endif
 
+#if DECODE_DAIKIN176
+    os_trace_rcv("Attempting Daikin 176 bit AC decode\r\n");
+    if (decodeDaikin176(results, offset, kDaikin176Bits, true)) return true;
+#endif
+
 #if DECODE_DAIKIN128
     os_trace_rcv("Attempting Daikin 128 bit AC decode\r\n");
     if (decodeDaikin128(results, offset, kDaikin128Bits, true)) return true;
@@ -1503,8 +1508,7 @@ bool decode(decode_results *results, irparams_t *save,
         return false;
     }
 
-    
-if (DEBUG_IR_RCV_ENABLE){
+#if DEBUG_ENABLE == 1
     os_trace("BUFF_LEN[%d]: [", results->rawlen);
     char str_res[300];
     int seek = 0;
@@ -1522,7 +1526,7 @@ if (DEBUG_IR_RCV_ENABLE){
     seek--;
     sprintf(&str_res[seek], "]\r\n");
     os_trace(str_res);
-}
+#endif
 
 #if ENABLE_NOISE_FILTER_OPTION
     crudeNoiseFilter(results, noise_floor);
@@ -1701,11 +1705,14 @@ static void learnIR(decode_results *results)
     int size_rawData = getCorrectedRawLength(results) * sizeof(uint16_t);
     os_trace("%s step 3\r\n", __func__);
 
+    size_rawData = min(size_rawData, 1460); // max data base64
+
     uint8_t buffDataIR[2001];
     memset(buffDataIR, 0, sizeof(buffDataIR));
     b64_encode((unsigned char *)result_temp, size_rawData, (unsigned char *)buffDataIR);
     os_trace("%s step 4: len_buffDataIR: %u\r\n\r\n\r\n", __func__, strlen((const char*)buffDataIR));
     // os_trace("%s step 5: len_buffDataIR: %u\r\n\r\n\r\n", __func__, strlen((const char*)buffDataIR));
+    os_trace("%s step 5: size_rawData: %d, len_temp: %u\r\n", __func__, size_rawData, len_temp);
 
     char str[MAXIMUM_SIZE_MESSAGE];
     memset(str, 0, MAXIMUM_SIZE_MESSAGE);
@@ -1736,11 +1743,13 @@ void m_ir_task(void *param)
                 LG_setInfo(capture.value, capture.decode_type, &ir_state_recv);
             } 
             else if (capture.decode_type == FUNIKI){
+                #if DEBUG_ENABLE == 1
                 os_trace("FUNIKI: 0x ");
                 for(uint8_t i = 0; i < 12; i++) {
                     os_trace("%02X-", capture.state[i]);
                 }
                 os_trace("\r\n");
+                #endif
                 Funiki_setRaw((uint8_t*)&capture.value, capture.decode_type, &ir_state);
                 Funiki_setInfo((uint8_t*)&capture.value, capture.decode_type, &ir_state_recv);
             } else if (capture.decode_type == CASPER){
@@ -1800,7 +1809,7 @@ void m_ir_task(void *param)
             }
             else if (capture.decode_type == DAIKIN64){
                 Daikin64_setRaw(capture.value, capture.decode_type, &ir_state);
-                // Daikin64_setInfo(capture.value, capture.decode_type, &ir_state_recv);
+                Daikin64_setInfo(capture.value, capture.decode_type, &ir_state_recv);
             }
             else if (capture.decode_type == DAIKIN152){
                 Daikin152_setRaw((uint8_t*)capture.state, kDaikin152StateLength, capture.decode_type, &ir_state);
@@ -1817,6 +1826,9 @@ void m_ir_task(void *param)
             else if (capture.decode_type == DAIKIN128){
                 Daikin128_setRaw((uint8_t*)capture.state, kDaikin128StateLength, capture.decode_type, &ir_state);
                 Daikin128_setInfo((uint8_t*)capture.state, kDaikin128StateLength, capture.decode_type, &ir_state_recv);
+            }
+            else if (capture.decode_type == DAIKIN176){
+                IRDaikin176_setRaw((uint8_t*)capture.state, &ir_state_recv);
             }
             else if (capture.decode_type == GREE){
                 Gree_setRaw((uint8_t*)capture.state, capture.decode_type, &ir_state);
@@ -1844,11 +1856,13 @@ void m_ir_task(void *param)
                 Nagakawa_setInfo((uint8_t*)capture.state, capture.decode_type, &ir_state_recv);
             }
             else if (capture.decode_type == TCL112AC){
+                #if DEBUG_ENABLE == 1
                 os_trace("TCL: 0x ");
                 for(uint8_t i = 0; i < 14; i++) {
                     os_trace("%02X-", capture.state[i]);
                 }
                 os_trace("\r\n");
+                #endif
                 Tcl112_setRaw((uint8_t*)capture.state, capture.decode_type, &ir_state);
                 Tcl112_setInfo((uint8_t*)capture.state, capture.decode_type, &ir_state_recv);
                 
@@ -1951,11 +1965,11 @@ void m_ir_task(void *param)
             else if (WHIRLPOOL_AC == capture.decode_type)
             {
                 #if DEBUG_ENABLE == 1
-                os_trace("WHIRLPOOL_AC: 0x ");
-                for(uint8_t i = 0; i < kWhirlpoolAcStateLength; i++) {
-                    os_trace("%02X-", capture.state[i]);
-                }
-                os_trace("\r\n");
+                // os_trace("WHIRLPOOL_AC: 0x ");
+                // for(uint8_t i = 0; i < kWhirlpoolAcStateLength; i++) {
+                //     os_trace("%02X-", capture.state[i]);
+                // }
+                // os_trace("\r\n");
                 #endif
                 IRWhirlpoolAc_setRaw(capture.state, kWhirlpoolAcStateLength, &ir_state_recv);
             }
@@ -2003,7 +2017,6 @@ void m_ir_task(void *param)
             /***************************************************************************************/
             if (old_time_learn_ir) {
                 learnIR(&capture);
-                // old_time_learn_ir = 0;
                 IR_stop_learn();
             }
             else if(old_time_learn_ir_auto && capture.decode_type != UNKNOWN) 
@@ -2035,7 +2048,7 @@ void m_ir_task(void *param)
                     m_mqtt_get_instance()._mqtt_publish(str, strlen(str));
             }
             
-            IR_logCommon(ir_state);
+            // IR_logCommon(ir_state);
             irRecvCounter++;
             
             resume();
@@ -2075,7 +2088,7 @@ void m_ir_init(void)
 
     xTaskCreate(m_ir_task,   /* Function that implements the task. */
                 "m_ir_task", /* Text name for the task. */
-                1024*3,        /* Stack size in words, not bytes. */
+                1024*4,        /* Stack size in words, not bytes. */
                 NULL,        /* Parameter passed into the task. */
                 1,           /* Priority at which the task is created. */
                 &xHandle);

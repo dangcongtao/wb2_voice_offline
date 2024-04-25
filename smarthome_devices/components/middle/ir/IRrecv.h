@@ -49,6 +49,7 @@
 #define DECODE_DAIKIN160  1
 #define DECODE_DAIKIN216  1
 #define DECODE_DAIKIN128  1
+#define DECODE_DAIKIN176  1
 #define DECODE_DAIKIN64  1
 #define DECODE_GREE   1
 #define DECODE_MITSUBISHI112  1
@@ -263,6 +264,11 @@ bool decodeDaikin128(decode_results *results, uint16_t offset,
 #if DECODE_DAIKIN64
 bool decodeDaikin64(decode_results *results, uint16_t offset,
                             const uint16_t nbits, const bool strict);
+#endif
+#if DECODE_DAIKIN176
+bool decodeDaikin176(decode_results *results, uint16_t offset,
+                             const uint16_t nbits,
+                             const bool strict);
 #endif
 
 #if DECODE_KELVINATOR
@@ -601,6 +607,7 @@ void Daikin160_setInfo(const uint8_t* newState, const uint16_t length, const dec
 void Daikin128_setInfo(const uint8_t* newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state);
 void Daikin64_setInfo(const uint64_t new_state, const decode_type_t protocol, state_ir_t *ir_state);
 void Daikin216_setInfo(const uint8_t* newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state);
+void IRDaikin176_setRaw(const uint8_t new_code[], state_ir_t *ir_state);
 void Tcl112_setInfo(const uint8_t* newState, const decode_type_t protocol, state_ir_t *ir_state);
 void Mitsubishi112_setInfo(const uint8_t* newState, const decode_type_t protocol, state_ir_t *ir_state);
 void Toshiba_setInfo(const uint8_t* newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state);

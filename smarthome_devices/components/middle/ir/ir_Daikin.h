@@ -581,4 +581,85 @@ const uint8_t kDaikin64ChecksumOffset = 60;
 const uint8_t kDaikin64ChecksumSize = 4;  // Mask 0b1111 << 59
 
 
+
+typedef struct
+{
+    union
+    {
+        uint8_t raw[kDaikin176StateLength];  ///< The state of the IR remote.
+        struct {
+            // Byte 0~2
+            uint8_t      :8;
+            uint8_t      :8;
+            uint8_t      :8;
+            // Byte 3
+            uint8_t Id1  :1;
+            uint8_t      :7;
+            // Byte 4
+            uint8_t      :8;
+            // Byte 5
+            uint8_t      :8;
+            // Byte 6
+            uint8_t Sum1 :8;
+            // Byte 7-9
+            uint8_t      :8;
+            uint8_t      :8;
+            uint8_t      :8;
+            // Byte 10
+            uint8_t Id2  :1;
+            uint8_t      :7;
+            // Byte 11
+            uint8_t      :8;
+            // Byte 12
+            uint8_t         :4;
+            uint8_t AltMode :3;
+            uint8_t         :1;
+            // Byte 13
+            uint8_t ModeButton  :8;
+            // Byte 14
+            uint8_t Power :1;
+            uint8_t       :3;
+            uint8_t Mode  :3;
+            uint8_t       :1;
+            // Byte 15~16
+            uint8_t pad2[2];
+            // Byte 17
+            uint8_t       :1;
+            uint8_t Temp  :6;
+            uint8_t       :1;
+            // Byte 18
+            uint8_t SwingH  :4;
+            uint8_t Fan     :4;
+            // Byte 19~20
+            uint8_t pad3[2];
+            // Byte 21
+            uint8_t Sum2  :8;
+        };
+    };
+} Daikin176Protocol;
+
+
+const uint16_t kDaikin176Freq = 38000;  // Modulation Frequency in Hz.
+const uint16_t kDaikin176HdrMark = 5070;
+const uint16_t kDaikin176HdrSpace = 2140;
+const uint16_t kDaikin176BitMark = 370;
+const uint16_t kDaikin176OneSpace = 1780;
+const uint16_t kDaikin176ZeroSpace = 710;
+const uint16_t kDaikin176Gap = 29410;
+const uint16_t kDaikin176Sections = 2;
+const uint16_t kDaikin176Section1Length = 7;
+const uint16_t kDaikin176Section2Length = kDaikin176StateLength -
+                                          kDaikin176Section1Length;
+const uint8_t kDaikin176Fan =  0b000;  // 0
+const uint8_t kDaikin176Heat = 0b001;  // 1
+const uint8_t kDaikin176Cool = 0b010;  // 2
+const uint8_t kDaikin176Auto = 0b011;  // 3
+const uint8_t kDaikin176Dry =  0b111;  // 7
+const uint8_t kDaikin176ModeButton = 0b00000100;
+const uint8_t kDaikin176DryFanTemp = 17;  // Dry/Fan mode is always 17 Celsius.
+const uint8_t kDaikin176FanMax = 3;
+const uint8_t kDaikin176SwingHAuto =  0x5;
+const uint8_t kDaikin176SwingHOff = 0x6;
+
+
 #endif

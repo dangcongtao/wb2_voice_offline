@@ -1175,6 +1175,8 @@ void Daikin160_setInfo(const uint8_t* newState, const uint16_t length, const dec
     default:
       break;
     }
+
+  ir_state->swingv = _.SwingV;
 }
 
 static void sendDaikin160(const unsigned char data[], const uint16_t nbytes,
@@ -1906,24 +1908,24 @@ bool decodeDaikin64(decode_results *results, uint16_t offset,
 
   // Leader
   for (uint8_t i = 0; i < 2; i++) {
-    if (!matchLimit(results->rawbuf[offset++], kDaikin64LdrMark-500, kDaikin64LdrMark+500))
+    if (!matchLimit(results->rawbuf[offset++], kDaikin64LdrMark-2000, kDaikin64LdrMark+2000))
       return false;
-    if (!matchLimit(results->rawbuf[offset++], kDaikin64LdrSpace-500, kDaikin64LdrSpace+500))
+    if (!matchLimit(results->rawbuf[offset++], kDaikin64LdrSpace-2000, kDaikin64LdrSpace+2000))
       return false;
   }
   // Header + Data + Footer #1
-  uint16_t used = matchGeneric(results->rawbuf + offset, &results->value,
+  uint16_t used = matchGenericDataLimit(results->rawbuf + offset, &results->value,
                                results->rawlen - offset, nbits,
-                               kDaikin64HdrMark, kDaikin64HdrSpace,
-                               kDaikin64BitMark, kDaikin64OneSpace,
-                               kDaikin64BitMark, kDaikin64ZeroSpace,
-                               kDaikin64BitMark, kDaikin64Gap,
+                               kDaikin64HdrMark-800, kDaikin64HdrMark+800, kDaikin64HdrSpace-500, kDaikin64HdrSpace+500,
+                               kDaikin64BitMark-250, kDaikin64BitMark+300, kDaikin64OneSpace-350, kDaikin64OneSpace+350,
+                               kDaikin64BitMark-250, kDaikin64BitMark+300, kDaikin64ZeroSpace-250, kDaikin64ZeroSpace+300,
+                               kDaikin64BitMark-250, kDaikin64BitMark+300, kDaikin64Gap-5000, kDaikin64Gap+5000,
                                false, _tolerance + kDaikin64ToleranceDelta,
                                kMarkExcess, false);
   if (used == 0) return false;
   offset += used;
   // Footer #2
-  if (!matchLimit(results->rawbuf[offset++], kDaikin64HdrMark-500, kDaikin64HdrMark+500))
+  if (!matchLimit(results->rawbuf[offset++], kDaikin64HdrMark-1000, kDaikin64HdrMark+1000))
     return false;
 
   // Compliance
@@ -1977,6 +1979,8 @@ void Daikin64_setRaw(const uint64_t new_state, const decode_type_t protocol, sta
   ir_state->degrees = IRDaikin64getTemp(_);
   ir_state->swingv = _.SwingV ? swingv_kAuto : swingv_kOff;
 }
+
+static bool daikin64_pre_power = true;
 void Daikin64_setInfo(const uint64_t new_state, const decode_type_t protocol, state_ir_t *ir_state) 
 {
   os_trace("%s\r\n", __func__);
@@ -1984,12 +1988,15 @@ void Daikin64_setInfo(const uint64_t new_state, const decode_type_t protocol, st
   _.raw = new_state;
 
   ir_state->protocol = DAIKIN64;
-  ir_state->power ^= _.Power;
-  ir_state->mode = IRDaikin64toCommonMode(_.Mode);
-  ir_state->fanspeed = IRDaikin64toCommonFanSpeed(_.Fan);
+  if (_.Power) {
+    daikin64_pre_power = !daikin64_pre_power;
+  }
+  ir_state->power = daikin64_pre_power;
+  ir_state->mode = _.Mode;
+  ir_state->fanspeed = _.Fan;
 
   ir_state->degrees = IRDaikin64getTemp(_);
-  ir_state->swingv = _.SwingV ? swingv_kAuto : swingv_kOff;
+  ir_state->swingv = _.SwingV;
 }
 
 static void IRDaikin64setMode(Daikin64Protocol *_, const uint8_t mode) {
@@ -2053,8 +2060,17 @@ void Daikin64_send(state_ir_t state_ir)
     os_trace("%s\r\n", __func__);
     Daikin64Protocol _;
     _.raw = kDaikin64KnownGoodState;
-    _.SwingV = 1;
-    _.Power = 0;
+
+    if (state_ir.swingv != swingv_kOff) {
+      _.SwingV = 1;
+    }
+
+    if (state_ir.power != daikin64_pre_power) {
+      daikin64_pre_power = !daikin64_pre_power;
+      _.Power = 1;
+    } else {
+      _.Power = 0;
+    }
 
     IRDaikin64setMode(&_, state_ir.mode);
     IRDaikin64setFan(&_, state_ir.fanspeed);
@@ -2064,4 +2080,181 @@ void Daikin64_send(state_ir_t state_ir)
     _.Sum = IRDaikin64calcChecksum(_.raw);
 
     sendDaikin64(_.raw, kDaikin64Bits, kDaikin64DefaultRepeat); 
+}
+
+static bool IRDaikin176_validChecksum(uint8_t state[], const uint16_t length) {
+  // Validate the checksum of section #1.
+  if (length <= kDaikin176Section1Length - 1 ||
+      state[kDaikin176Section1Length - 1] != sumBytesState(
+          state, kDaikin176Section1Length - 1, 0))
+    return false;
+  // Validate the checksum of section #2 (a.k.a. the rest)
+  if (length <= kDaikin176Section1Length + 1 ||
+      state[length - 1] != sumBytesState(state + kDaikin176Section1Length,
+                                    length - kDaikin176Section1Length - 1, 0))
+    return false;
+  return true;
+}
+
+bool decodeDaikin176(decode_results *results, uint16_t offset,
+                             const uint16_t nbits,
+                             const bool strict) {
+  if (results->rawlen < 2 * (nbits + kHeader + kFooter) - 1 + offset)
+    return false;
+
+  // Compliance
+  if (strict && nbits != kDaikin176Bits) return false;
+
+  uint8_t ksectionSize[] = {kDaikin176Section1Length,
+                                                    kDaikin176Section2Length};
+
+  // Sections
+  uint16_t pos = 0;
+  for (uint8_t section = 0; section < kDaikin176Sections; section++) {
+    uint16_t used;
+    // Section Header + Section Data (7 bytes) + Section Footer
+    used = matchGenericStateLimit(results->rawbuf + offset, results->state + pos,
+                        results->rawlen - offset, ksectionSize[section] * 8,
+                        kDaikin176HdrMark-1000, kDaikin176HdrMark+1000, kDaikin176HdrSpace-500, kDaikin176HdrSpace+500,
+                        kDaikin176BitMark-270, kDaikin176BitMark+330, kDaikin176OneSpace-500, kDaikin176OneSpace+500,
+                        kDaikin176BitMark-270, kDaikin176BitMark+330, kDaikin176ZeroSpace-500, kDaikin176ZeroSpace+500,
+                        kDaikin176BitMark-270, kDaikin176BitMark+330, kDaikin176Gap-6000, kDaikin176Gap+6000,
+                        section >= kDaikin176Sections - 1,
+                        kDaikinTolerance, kDaikinMarkExcess, false);
+    if (used == 0) return false;
+    offset += used;
+    pos += ksectionSize[section];
+  }
+  // Compliance
+  if (strict) {
+    // Validate the checksum.
+    if (!IRDaikin176_validChecksum(results->state, kDaikin176StateLength)){
+      os_trace("%s invalid checksum\r\n", __func__);
+      return false;
+    }
+  }
+
+  // Success
+  os_trace("%s success\r\n", __func__);
+  results->decode_type = DAIKIN176;
+  results->bits = nbits;
+  // No need to record the state as we stored it as we decoded it.
+  // As we use result->state, we don't record value, address, or command as it
+  // is a union data type.
+  return true;
+}
+
+void IRDaikin176_setRaw(const uint8_t new_code[], state_ir_t *ir_state) {
+  Daikin176Protocol _;
+  memset(&_, 0, sizeof(Daikin176Protocol));
+  memcpy(_.raw, new_code, kDaikin176StateLength);
+
+  ir_state->power = _.Power;
+  ir_state->degrees = _.Temp + 9;
+  ir_state->mode = _.Mode;
+  ir_state->fanspeed = _.Fan;
+  ir_state->swingh = _.SwingH;
+  // _saved_temp = getTemp();
+}
+
+
+static void sendDaikin176(const unsigned char data[], const uint16_t nbytes,
+                           const uint16_t repeat) {
+  if (nbytes < kDaikin176Section1Length)
+    return;  // Not enough bytes to send a partial message.
+  vTaskEnterCritical();
+  for (uint16_t r = 0; r <= repeat; r++) {
+    // Section #1
+    sendGenericBytes(kDaikin176HdrMark, kDaikin176HdrSpace, kDaikin176BitMark,
+                kDaikin176OneSpace, kDaikin176BitMark, kDaikin176ZeroSpace,
+                kDaikin176BitMark, kDaikin176Gap, data,
+                kDaikin176Section1Length,
+                kDaikin176Freq, false, 0, kDutyDefault);
+    // Section #2
+    sendGenericBytes(kDaikin176HdrMark, kDaikin176HdrSpace, kDaikin176BitMark,
+                kDaikin176OneSpace, kDaikin176BitMark, kDaikin176ZeroSpace,
+                kDaikin176BitMark, kDaikin176Gap,
+                data + kDaikin176Section1Length,
+                nbytes - kDaikin176Section1Length,
+                kDaikin176Freq, false, 0, kDutyDefault);
+  }
+  vTaskExitCritical();
+}
+
+void Daikin176_send(state_ir_t state_ir)
+{
+  Daikin176Protocol _;
+  memset(&_, 0, sizeof(Daikin176Protocol));
+
+  for (uint8_t i = 0; i < kDaikin176StateLength; i++) _.raw[i] = 0x00;
+  _.raw[0] =  0x11;
+  _.raw[1] =  0xDA;
+  _.raw[2] =  0x17;
+  _.raw[3] =  0x18;
+  _.raw[4] =  0x04;
+  // _.raw[6] is a checksum byte, it will be set by checksum().
+  _.raw[7] =  0x11;
+  _.raw[8] =  0xDA;
+  _.raw[9] =  0x17;
+  _.raw[10] = 0x18;
+  _.raw[12] = 0x73;
+  _.raw[14] = 0x20;
+  _.raw[18] = 0x16;  // Fan speed and swing
+  _.raw[20] = 0x20;
+
+  // power
+  _.Power = state_ir.power;
+
+  // mode
+  uint8_t altmode = 0;
+  // Set the mode bits.
+  _.Mode = state_ir.mode;
+  // Daikin172 has some alternate/additional mode bits that need to be changed
+  // in line with the operating mode. The following few lines match up these
+  // bits with the corresponding operating bits.
+  switch ((uint8_t)state_ir.mode) {
+    case kDaikin176Dry:  altmode = 2; break;
+    case kDaikin176Fan:  altmode = 6; break;
+    case kDaikin176Auto:
+    case kDaikin176Cool:
+    case kDaikin176Heat: altmode = 7; break;
+    default: _.Mode = kDaikin176Cool; altmode = 7; break;
+  }
+  // Set the additional mode bits.
+  _.AltMode = altmode;
+
+  // set fanspeed
+  switch ((uint8_t) state_ir.fanspeed) {
+    case kDaikinFanMin:
+    case kDaikin176FanMax:
+      _.Fan = state_ir.fanspeed;
+      break;
+    default:
+      _.Fan = kDaikin176FanMax;
+      break;
+  }
+
+  uint8_t degrees = min(kDaikinMaxTemp, max((uint8_t)state_ir.degrees, kDaikinMinTemp));
+  switch (_.Mode) {
+    case kDaikin176Dry:
+    case kDaikin176Fan:
+      degrees = kDaikin176DryFanTemp; break;
+  }
+  _.Temp = degrees - 9;
+
+  if (state_ir.swingh != swingh_kOff) {
+    switch ((uint8_t)state_ir.swingh) {
+      case kDaikin176SwingHOff:
+      case kDaikin176SwingHAuto:
+        _.SwingH = state_ir.swingh;
+        break;
+      default: _.SwingH = kDaikin176SwingHAuto;
+    }
+  }
+
+  _.Sum1 = sumBytesState(_.raw, kDaikin176Section1Length - 1, 0);
+  _.Sum2 = sumBytesState(_.raw + kDaikin176Section1Length,
+                    kDaikin176Section2Length - 1, 0);
+
+  sendDaikin176(_.raw, kDaikin176StateLength, kDaikin176DefaultRepeat);
 }

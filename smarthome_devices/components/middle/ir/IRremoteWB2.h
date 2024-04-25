@@ -3,7 +3,7 @@
 
 typedef enum {
   UNKNOWN = -1,
-  UNUSED = 0,
+  UNUSED,
   DAIKIN2,
   DAIKIN216,
   NEC,
@@ -69,7 +69,7 @@ typedef enum {
   INAX,
   SONY,  // 65
   UNKNOWN_94843,
-  DAIKIN176,
+  UNKNOWN_3852,
   UNKNOWN_12,
   AIWA_RC_T501,
   JVC,  // 70
@@ -80,7 +80,7 @@ typedef enum {
   EPSON,  // 75
   SYMPHONY,
   HITACHI_AC3,
-  DAIKIN64,
+  UNKNOWN_9835,
   UNKNOWN_4934,
   COOLIX,
   DOSHISHA,
@@ -123,6 +123,8 @@ typedef enum {
   MIRAGE,
   HITACHI_AC264,
   HITACHI_AC296,
+  DAIKIN64,
+  DAIKIN176,
   // Add new entries before this one, and update it to point to the last entry.
   kLastDecodeType = LG,
   MIDEA = 1934,

@@ -364,12 +364,31 @@ static void Hitachi264AC_test(void)
     capture.rawlen = sizeof(data1) / sizeof(data1[0]);
     decode_for(&capture, 0);
 
-    os_trace("0x ");
-    for (uint32_t i = 0; i < (capture.bits / 8); i++) {
-        os_trace("%02X-", capture.state[i]);
-    }
-    os_trace("\r\n");
     assert(capture.decode_type == HITACHI_AC264);
+}
+
+static void Daikin64AC_test(void)
+{
+    decode_results capture;
+    memset(&capture, 0, sizeof(capture));
+    uint16_t data1[] = {1,4888,4916,4906,4927,2293,1264,164,203,163,493,171,484,164,205,164,493,160,203,167,201,165,203,164,201,165,493,162,208,159,205,166,201,165,492,165,201,163,207,160,208,159,494,164,492,164,203,164,492,166,491,168,200,201,169,162,209,155,201,167,201,175,198,157,207,160,494,162,212,158,201,167,201,178,189,163,207,160,205,163,494,161,204,167,491,164,201,167,201,164,205,161,208,159,204,167,491,164,201,167,201,165,492,162,205,163,204,165,203,164,494,162,204,161,497,160,207,160,211,156,204,167,201,165,496,161,491,162,206,163,493,162,205,163,493,164,10163,2293,0};
+    capture.rawbuf = data1;
+    capture.rawlen = sizeof(data1) / sizeof(data1[0]);
+    decode_for(&capture, 0);
+
+    assert(capture.decode_type == DAIKIN64);
+}
+
+static void Daikin176AC_test(void)
+{
+    decode_results capture;
+    memset(&capture, 0, sizeof(capture));
+    uint16_t data1[] = {1,2521,1075,175,904,174,365,174,365,175,362,190,879,158,382,182,367,173,367,173,366,174,904,148,378,160,932,163,903,176,361,177,908,168,891,176,922,169,897,184,878,158,381,158,917,188,351,176,363,175,364,160,381,158,380,159,380,159,919,173,904,175,365,195,342,189,363,162,363,175,363,176,908,188,345,188,352,175,364,175,363,175,363,177,363,189,350,189,350,176,364,201,337,178,362,160,382,157,380,160,379,159,918,175,903,176,904,172,892,174,365,160,393,146,383,158,14735,2529,1074,173,902,175,366,187,349,191,362,177,888,176,363,176,363,189,363,175,350,179,902,173,367,186,878,160,916,177,363,177,902,176,892,199,875,175,905,174,904,175,363,189,877,159,381,184,367,173,366,172,366,174,366,173,366,177,893,156,916,177,363,188,350,176,363,174,365,160,382,157,380,160,392,169,357,184,356,183,358,183,366,174,891,160,917,190,349,178,361,189,889,189,881,182,898,167,366,161,378,159,381,158,381,185,355,184,361,189,355,173,366,176,362,175,891,159,393,146,381,182,358,183,893,188,364,147,379,160,380,160,380,159,386,154,379,183,357,196,354,176,366,170,365,176,362,176,362,176,363,189,350,189,350,176,376,175,350,177,363,176,363,188,351,188,890,190,890,172,892,175,903,189,350,177,363,177,361,176,904,188,364,176,881,195,353,187,877,160,924,170,364,176,363,178,393,143,362,176,364,160,378,161,383,156,393,147,385,155,381,182,357,183,367,173,355,185,364,188,351,175,930,120,381,183,341,199,896,173,376,146,381,158,381,159,917,188,350,188,350,189,350,175};
+    capture.rawbuf = data1;
+    capture.rawlen = sizeof(data1) / sizeof(data1[0]);
+    decode_for(&capture, 0);
+
+    assert(capture.decode_type == DAIKIN176);
 }
 
 static void Hitachi433AC_test(void)
@@ -377,7 +396,7 @@ static void Hitachi433AC_test(void)
     uint16_t result_temp[750];
     uint32_t len_data_b64 = 0;
 
-    char* data_dec = "7gxkDX4B\/gR6AcoBjgESBXYB8ARkAfgBkAG2AUgBNgVeAeYBYgEGBZoB3gFoAfgEigGoAYABHAViAQwFegEKBYIBvgF6AcgBegEWBTgBGAJeAcgBfAEKBXwBCAV8AeoBVgEmBV4B4gFcAQ4FRgEYAl4BJgVgAd4BYAHkAYIBvAFkAQwFgAEABXwBDAVgASYFkgEUBYgBrgFoAb4BpAG+AWAB5AFIAdoBeAEOBYIBAgV8AcYBZAHaAXwB4gFgAeABaAEeBWABCgV8AcoBdgFQBTgBFgJIAfAEkAGwAXoB4gFoAb4BfAHQAYoBrgF8AeIBYAHGAV4B\/gGEAcgBVgH+AVwB5AFIARQCKgHKAZQBxgFkAdoBZAHkAVwB5AFkAcQBeAHkAVwBygGAAQQCVAHIAUIBAAJCAQACWgHiAWIB\/AFKAeIBXAHkAVwBygF+AfgBRAHiAUQBAAJ+AawBWgEGAnQBxgFmAcQBYAH+AWQB3gFIAf4BYgHoAVQB5AFcAeIBYAHiAWIBxgGWAfwBLAEMBZIBxAFeAQ4FegHQAW4B4gFiAeABYgH\/\/wAAuQ+4DPIGZgE4BUoB3AGAAeIBfgGmAXgByAF6AcYBegHkAWYBwgF8AcwBdAHIAXoB4gFGARYCRAEMBXwB4gFkAdgBZAHeAWIB\/AFEAeIBfAGsAX4BygFcARICYAHIAWAByAGUAa4BfgHEAZoBwAFgAeABYAHKAXoB\/AFcAcwBZgE8BUQB4AFiASQFXAEoBWgBCgVwASYFYgEIBYYBEgWaAbABLAFYBWYBCAVeAUAFXgEoBWABPAVgAQoFYAEkBXwB8AR4AUAFRgHoAXABsgFkARICYgGwAUwBJgIwARICRAHOAVgB6AF6AcQBYAHuAXABLAVYATAFWgH4AUQB4AFkASYFWgEMBXwBCAV4ASYFXgHqAXgBwgFiASQFKgFWBWQB5gFgAdwBYgHwAXABCAVeAcQBegHmAUQBOgVkAfwBeAGcAVYBMAWKAfIEkAHIAWABDAVeAUAFgAHAAUIBXgV6AdQEfAHGAX4B3AFeAcgBYAFcBUQB5gFMAfYBlAGcAVIBLgV0AcgBXgE+BXQB\/gRyAdIBcAEKBXoBCgWwAdwEeAHAAXwBJgViAeABXgHmAWABCAVeATICKgHKAUgB+AF8ASQFYgHaAWABKgViAQgFfAHgAWQBMgVOAUAFKgEoBZQBwAFkASYFZAHeAWAByAFkAeABfgHEAXwBxgF4AcwBnAHWAS4BAAJ6AQgFYAEMBZQBCgVkAQYFeAEmBXIBFAV+Ae4EvAHMBHwBwgF6AQQCQAHMAXoBxAFeAf4BRAEYAkQB2gGcAeQBSAHuBHoBEgVmATIFZAEiBXYBKgVIATwFSAEkBXoB8AR+AdwBRAH+AWQBxAF6ARACPAHaAWAB4AFEAQACRAEYAnwB1AR4AQoFhgEcBWQBIAVeARAFeAEkBWQBCAV4AQoFkgG0AXYB4gFKAdwBegHQAYwBxgFIAQICTAEUApIBjgEwAVQFeAH0BF4BMAVYASQFegEkBUYBKgVeASIFXgFABUQB6AF2AeQBSAEWAkQB4gF4Aa4BYAEaAigBNAJgAZQBXgEmBXYBKgVgAQwFfAEkBWIBBgV8ARwFbgEIBXgBCgV6AUAFSAEiBWYB8gFKAf4BRgFCBWQBpgFgAUAFSAH4AWAB4gFeAe4BXAE8BUYBCAV4AeQBZgEeBUgB5AF4AQoFeAEYBX4B2gFYAUoC\/gDWAWgBDAWUAQ4CGgEmBWABBgV6AeQBfgHyBHQBJgVgASYFMAEuAkQBDAV8AcoBdAHoAVoBygF+Af4BQAHkAXgB5gFKAcQBSgH+AT4BKAIcARgCXAEmBWYBHgVcARAFYAFaBYQBBAV4AQwFRAEoBWYBCAV2AeIBRAEYAkQB5gFeAdwBcAHAAUQBNAJAAeIBYgHiAUQBQAVoAR4FYAESBZoB5ASEARwFegEqBVQB+gSCASIFXAE=";
+    char* data_dec = "MCZoJlQmfibqEeAJSAGWAUYB2gNWAcgDSAGaAUgB2gNAAZYBTgGSAUoBlgFIAZIBSgHaA0QBoAE+AZoBTAGSAUoB2ANKAZIBRgGeAUABoAE+AdwDSAHYA0gBlgFIAdgDTAHWA1ABkAGSAVIBRAGiATYBkgFOAZIBXgGMAToBngFAAdwDRAGoATwBkgFOAZIBZAF6AUYBngFAAZoBRgHcA0IBmAFOAdYDSAGSAU4BkgFIAZoBQgGgAT4BmAFOAdYDSAGSAU4BkgFKAdgDRAGaAUYBmAFKAZYBSAHcA0QBmAFCAeIDQAGeAUABpgE4AZgBTgGSAUoB4ANCAdYDRAGcAUYB2gNEAZoBRgHaA0gBZk/qEQ==";
     len_data_b64 = strlen(data_dec);
     os_trace("%s len_base64_dec_data: %lu\r\n", __func__, len_data_b64);
     memset(result_temp, 0, sizeof(result_temp));
@@ -399,18 +418,18 @@ static void Hitachi433AC_test(void)
     {
         uint32_t data_tempt= result_temp[h];
         
-        if (result_temp[h] == 0xFFFF) {
-            uint32_t total = result_temp[h];
-            h += 2;
-            while (result_temp[h] == 0xFFFF && result_temp[h-1] == 0) {
-                total += result_temp[h];
-                h += 2;
-            }
-            if (result_temp[h-1] == 0) {
-                total += result_temp[h];
-            }
-            data_tempt = total;
-        }
+        // if (result_temp[h] == 0xFFFF) {
+        //     uint32_t total = result_temp[h];
+        //     h += 2;
+        //     while (result_temp[h] == 0xFFFF && result_temp[h-1] == 0) {
+        //         total += result_temp[h];
+        //         h += 2;
+        //     }
+        //     if (result_temp[h-1] == 0) {
+        //         total += result_temp[h];
+        //     }
+        //     data_tempt = total;
+        // }
 
         seek += sprintf(&str_res[seek], "%lu,", (data_tempt / 2)); // thời gian nhận là đã x2
         if (seek >= 128)
@@ -468,7 +487,7 @@ void IRrecv_test_run(void)
     Haier160AC_test();
     VestelAC_test();
     Corona_test();
-    // TrotecAC_test();
+    //// TrotecAC_test();
     Trotec3550AC_test();
     ArgoAC_test();
     DelonghiAC_test();
@@ -476,6 +495,8 @@ void IRrecv_test_run(void)
     TCL112AC_test();
     Hitachi264AC_test();
     Hitachi433AC_test();
+    Daikin64AC_test();
+    Daikin176AC_test();
 
     printf("\r\n\r\n----------------------TEST_FINISHED---------------------\r\n\r\n");
 
