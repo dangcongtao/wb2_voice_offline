@@ -31,8 +31,8 @@ void main_loop(void)
 
     while (true)
     {
-        bl_wdt_feed();
         m_event_loop(delay_ms);
+        bl_wdt_feed();
 
         // old += 1;
         // if (old > 20) {
@@ -59,7 +59,7 @@ void main(void)
     bl_sys_logall_disable();
     #endif
     // hw_switch_cfg(0);
-    bl_wdt_init(20000);
+    bl_wdt_init(60000);
 
     easyflash_init();
     tcpip_init(NULL, NULL);

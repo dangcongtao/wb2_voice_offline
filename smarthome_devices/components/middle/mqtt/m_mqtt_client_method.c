@@ -253,11 +253,11 @@ void m_mqtt_stop(void)
 
     if (client != NULL && s_mqtt_obj._mqtt_state != MQTT_UNINTIALIZED)
     {
+        s_mqtt_obj._mqtt_state = MQTT_UNINTIALIZED;
         axk_mqtt_client_disconnect(client);
         axk_mqtt_client_destroy(client);
         vTaskDelay(pdMS_TO_TICKS(2000));
         client = NULL;
-        s_mqtt_obj._mqtt_state = MQTT_UNINTIALIZED;
     }
 
     os_trace("END %s: free mem %d\r\n", __func__, xPortGetFreeHeapSize());

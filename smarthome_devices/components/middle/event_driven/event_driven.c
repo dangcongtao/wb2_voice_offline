@@ -248,7 +248,8 @@ void m_event_loop(uint32_t time_schedual_ms)
             time_connect_mqtt_failed++;
             start_time_wait_mqtt = sys_get_tick_ms();
             if (time_connect_mqtt_failed % 5 == 2) {
-                 m_wifi_get_instance().wifi_sta_stop_cb();
+                m_wifi_get_instance().wifi_sta_stop_cb();
+                start_time_wait_wifi = sys_get_tick_ms();
 
                 os_trace("%s M_WIFI_MQTT_CONNECTING try stop staion and re start station\r\n", __func__);
 
