@@ -63,7 +63,7 @@ void main(void)
     bl_sys_logall_disable();
     #endif
     bl_sys_init(); // if use ble ,must init
-    bl_wdt_init(20000);
+    bl_wdt_init(40000);
     // hw_switch_cfg(0);
 
     easyflash_init();
