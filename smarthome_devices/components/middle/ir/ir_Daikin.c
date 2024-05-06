@@ -1043,7 +1043,7 @@ bool decodeDaikin160(decode_results *results, uint16_t offset,
     // Section Header + Section Data (7 bytes) + Section Footer
     used = matchGenericStateLimit(results->rawbuf + offset, results->state + pos,
                         results->rawlen - offset, ksectionSize[section] * 8,
-                        kDaikin160HdrMark-400,kDaikin160HdrMark+400, kDaikin160HdrSpace-300, kDaikin160HdrSpace+300,
+                        kDaikin160HdrMark-1000,kDaikin160HdrMark+1000, kDaikin160HdrSpace-300, kDaikin160HdrSpace+300,
                         kDaikin160BitMark-262, kDaikin160BitMark+458, kDaikin160OneSpace-500, kDaikin160OneSpace+400,
                         kDaikin160BitMark-262, kDaikin160BitMark+458, kDaikin160ZeroSpace-300, kDaikin160ZeroSpace+400,
                         kDaikin160BitMark-262, kDaikin160BitMark+458, kDaikin160Gap-7500, kDaikin160Gap+7500,
@@ -1151,6 +1151,7 @@ void Daikin160_setInfo(const uint8_t* newState, const uint16_t length, const dec
       break;
     
     default:
+      ir_state->mode = 10;
       break;
     }
 
@@ -1173,6 +1174,7 @@ void Daikin160_setInfo(const uint8_t* newState, const uint16_t length, const dec
       break;
     
     default:
+      ir_state->fanspeed = 1;
       break;
     }
 

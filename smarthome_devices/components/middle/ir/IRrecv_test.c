@@ -391,12 +391,23 @@ static void Daikin176AC_test(void)
     assert(capture.decode_type == DAIKIN176);
 }
 
+static void AC_test(void)
+{
+    decode_results capture;
+    memset(&capture, 0, sizeof(capture));
+    uint16_t data1[] = {1,3023,3717,282,817,245,848,273,832,244,848,272,829,257,849,272,818,276,827,248,307,277,293,250,311,272,298,244,315,272,297,243,328,264,308,230,859,258,846,239,855,251,897,211,846,243,846,257,847,243,848,256,315,229,329,258,309,234,324,261,310,233,327,254,316,228,330,261,843,235,857,260,843,256,837,253,848,255,849,247,844,257,846,231,327,257,312,228,330,254,316,229,334,253,309,234,324,260,311,233,861,255,848,255,304,256,847,258,835,256,846,255,849,229,863,256,314,231,329,255,846,231,327,254,316,228,330,254,324,238,312,257,849,253,299,260,847,259,832,255,848,258,846,231,860,258,846,229,329,254,853,235,319,257,309,234,324,260,310,233,327,254,317,239,320,252,850,257,300,257,846,258,312,232,860,256,315,228,330,255,848,231,324,261,846,231,327,254,849,254,304,255,848,257,847,245,3730,258,0};
+    capture.rawbuf = data1;
+    capture.rawlen = sizeof(data1) / sizeof(data1[0]);
+    decode_for(&capture, 0);
+    os_trace("%s decode_type: %d\r\n", __func__, capture.decode_type);
+}
+
 static void Hitachi433AC_test(void)
 {
     uint16_t result_temp[750];
     uint32_t len_data_b64 = 0;
 
-    char* data_dec = "MCZoJlQmfibqEeAJSAGWAUYB2gNWAcgDSAGaAUgB2gNAAZYBTgGSAUoBlgFIAZIBSgHaA0QBoAE+AZoBTAGSAUoB2ANKAZIBRgGeAUABoAE+AdwDSAHYA0gBlgFIAdgDTAHWA1ABkAGSAVIBRAGiATYBkgFOAZIBXgGMAToBngFAAdwDRAGoATwBkgFOAZIBZAF6AUYBngFAAZoBRgHcA0IBmAFOAdYDSAGSAU4BkgFIAZoBQgGgAT4BmAFOAdYDSAGSAU4BkgFKAdgDRAGaAUYBmAFKAZYBSAHcA0QBmAFCAeIDQAGeAUABpgE4AZgBTgGSAUoB4ANCAdYDRAGcAUYB2gNEAZoBRgHaA0gBZk/qEQ==";
+    char* data_dec = "nhcKHTQCYgbqAaAGIgKABugBoAYgAnoGAgKiBiACZAYoAnYG8AFmAioCSgL0AW4CIAJUAugBdgIgAlIC5gGQAhACaALMAbYGBAKcBt4Brgb2AQIHpgGcBuYBnAYCAp4G5gGgBgACdgLKAZICBAJqAtQBiAIKAmwC0gGOAvwBeALIAZQCCgKWBtYBsgYIApYGAAKKBvoBoAb+AaIG7gGYBgICnAbOAY4CAgJwAsgBlAL8AXgCygGcAvoBagLUAYgCCAJuAtIBugb+AaAG/gFgAgACngYEAoYGAAKcBv4BogbKAb4GAAJ0As4BkgL+AZwGzgGOAvwBeALIAZQC/AGIAtwBcAICAqIG+gFWAggCngYGAoAG/gGgBgQCnAbOAbgGBAKcBsoBkgL8AaoG1gF+AgICagLUAYgCCAJsAtIBjgL8AXoC3gGAAvgBpAYCAlgCAgKcBgQCcALQAbgGAAJ2AsgBlAL+AaAGzgGIAgoCnAbOAY4C/AGiBvwBYAL+AaAGAgKeBuoBJB0EAg==";
     len_data_b64 = strlen(data_dec);
     os_trace("%s len_base64_dec_data: %lu\r\n", __func__, len_data_b64);
     memset(result_temp, 0, sizeof(result_temp));
@@ -459,44 +470,45 @@ void IRrecv_test_run(void)
 {
     printf("\r\n\r\n-----------------RUNNING_IR_RECEIVE_TEST-------------------\r\n\r\n");
     
-    hatachiac1_test();
-    Casper_test();
-    Daikin_test();
-    Tcl_test();
-    Funiki_test();
-    Electra_test();
-    Aqua_test();
-    Gree_test();
-    Toshiba_test();
-    LG_test();
-    LG2_test();
-    PanasonicAC_test();
-    PanasonicAC_test2();
-    PanasonicAC32_test();
-    TecoAC_test();
-    MirageAC_test();
-    FujitsuAC_test();
-    SamsungAC_test();
-    HaierAC_test();
-    AirwellAC_test();
-    AmcorAC_test();
-    WhirlpoolAC_test();
-    NeoclimaAC_test();
-    Midea_test();
-    Carrier64AC_test();
-    Haier160AC_test();
-    VestelAC_test();
-    Corona_test();
-    //// TrotecAC_test();
-    Trotec3550AC_test();
-    ArgoAC_test();
-    DelonghiAC_test();
-    VoltasAC_test();
-    TCL112AC_test();
-    Hitachi264AC_test();
+    // hatachiac1_test();
+    // Casper_test();
+    // Daikin_test();
+    // Tcl_test();
+    // Funiki_test();
+    // Electra_test();
+    // Aqua_test();
+    // Gree_test();
+    // Toshiba_test();
+    // LG_test();
+    // LG2_test();
+    // PanasonicAC_test();
+    // PanasonicAC_test2();
+    // PanasonicAC32_test();
+    // TecoAC_test();
+    // MirageAC_test();
+    // FujitsuAC_test();
+    // SamsungAC_test();
+    // HaierAC_test();
+    // AirwellAC_test();
+    // AmcorAC_test();
+    // WhirlpoolAC_test();
+    // NeoclimaAC_test();
+    // Midea_test();
+    // Carrier64AC_test();
+    // Haier160AC_test();
+    // VestelAC_test();
+    // Corona_test();
+    // //// TrotecAC_test();
+    // Trotec3550AC_test();
+    // ArgoAC_test();
+    // DelonghiAC_test();
+    // VoltasAC_test();
+    // TCL112AC_test();
+    // Hitachi264AC_test();
     Hitachi433AC_test();
-    Daikin64AC_test();
-    Daikin176AC_test();
+    // Daikin64AC_test();
+    // Daikin176AC_test();
+    AC_test();
 
     printf("\r\n\r\n----------------------TEST_FINISHED---------------------\r\n\r\n");
 

@@ -408,11 +408,28 @@ void IRMitsubishiAC_setInfo(const uint8_t *data, state_ir_t *ir_state) {
   memcpy(_.raw, data, kMitsubishiACStateLength);
 
   ir_state->power = _.Power;
-  ir_state->mode = _.Mode;
+
+  switch ((uint8_t)_.Mode) {
+    case kMitsubishiAcAuto:
+    case kMitsubishiAcCool:
+    case kMitsubishiAcDry:
+    case kMitsubishiAcHeat:
+    case kMitsubishiAcFan:
+        ir_state->mode = _.Mode;
+      break;
+
+    default:
+      ir_state->mode = kMitsubishiAcAuto;
+  }
 
   uint8_t fan = _.Fan;
-  if (fan == kMitsubishiAcFanMax)
+
+  if (fan == kMitsubishiAcFanMax) {
     fan = kMitsubishiAcFanSilent;
+  } else if (fan > kMitsubishiAcFanSilent) {
+    fan = kMitsubishiAcFanAuto;
+  }
+
   ir_state->fanspeed = fan;
 
   ir_state->degrees = _.Temp + kMitsubishiAcMinTemp + (_.HalfDegree ? 0.5 : 0);
