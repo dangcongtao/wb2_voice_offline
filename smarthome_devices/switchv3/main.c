@@ -61,6 +61,8 @@ void main(void)
 {
     #if DEBUG_ENABLE == 0
     bl_sys_logall_disable();
+    #else
+    bl_sys_logall_enable();
     #endif
     bl_sys_init(); // if use ble ,must init
     bl_wdt_init(40000);
