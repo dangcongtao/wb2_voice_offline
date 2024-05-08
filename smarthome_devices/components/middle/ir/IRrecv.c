@@ -674,8 +674,10 @@ uint16_t _matchGenericLimit(volatile uint16_t *data_ptr,
                        const bool MSBfirst)
 {
     // If we are expecting byte sizes, check it's a factor of 8 or fail.
-    if (!use_bits && nbits % 8 != 0)
+    if (!use_bits && nbits % 8 != 0) {
+        os_trace_rcv("%s expecting byte sizes: %d\r\n", __func__, nbits);
         return 0;
+    }
     // Calculate if we expect a trailing space in the data section.
     const bool kexpectspace = footermarkLower || (onespaceLower != zerospaceLower);
     // Calculate how much remaining buffer is required.
@@ -690,15 +692,21 @@ uint16_t _matchGenericLimit(volatile uint16_t *data_ptr,
     // Don't need to extend for footerspace because it could be the end of message
 
     // Check if there is enough capture buffer to possibly have the message.
-    if (remaining < min_remaining)
+    if (remaining < min_remaining) {
+        os_trace_rcv("%s enough capture buffer to possibly have the message\r\n", __func__);
         return 0; // Nope, so abort.
+    }
     uint16_t offset = 0;
 
     // Header
-    if (hdrmarkLower && !matchLimit(*(data_ptr + offset++), hdrmarkLower, hdrmarkUpper))
+    if (hdrmarkLower && !matchLimit(*(data_ptr + offset++), hdrmarkLower, hdrmarkUpper)) {
+        os_trace_rcv("%s hdr upper failed: %lu, %lu %lu\r\n", __func__, *(data_ptr + offset - 1) * 2, hdrmarkLower, hdrmarkUpper);
         return 0;
-    if (hdrspaceLower && !matchLimit(*(data_ptr + offset++), hdrspaceLower, hdrspaceUpper))
+    }
+    if (hdrspaceLower && !matchLimit(*(data_ptr + offset++), hdrspaceLower, hdrspaceUpper)) {
+        os_trace_rcv("%s hdr lower failed: %lu, %lu %lu\r\n", __func__, *(data_ptr + offset - 1) * 2, hdrmarkLower, hdrmarkUpper);
         return 0;
+    }
 
     // Data
     if (use_bits)
@@ -710,6 +718,7 @@ uint16_t _matchGenericLimit(volatile uint16_t *data_ptr,
                                           excess, MSBfirst, kexpectspace);
         if (!result.success)
         {
+            os_trace_rcv("%s matchDataLimit failed\r\n", __func__);
             return 0;
         }
         *result_bits_ptr = result.data;
