@@ -392,6 +392,7 @@ void FujitsuAC_send(state_ir_t state_ir)
 {
     os_trace("%s\r\n", __func__);
     FujitsuProtocol _;
+    setModel(state_ir.model);
     for (size_t i = 0; i < kFujitsuAcStateLength; i++) {
         _.longcode[i] = 0;
     }
@@ -410,13 +411,13 @@ void FujitsuAC_send(state_ir_t state_ir)
   _.longcode[3] = 0x10;
   _.longcode[4] = 0x10;
 
-    // set mode
-    if (state_ir.mode > kFujitsuAcModeHeat)
+  // set mode
+  if (state_ir.mode > kFujitsuAcModeHeat)
     _.Mode = kFujitsuAcModeHeat;  // Set the mode to maximum if out of range.
   else
     _.Mode = state_ir.mode;
-    // set fanspeed
-    if (state_ir.fanspeed > kFujitsuAcFanQuiet)
+  // set fanspeed
+  if (state_ir.fanspeed > kFujitsuAcFanQuiet)
     _.Fan = kFujitsuAcFanHigh;  // Set the fan to maximum if out of range.
   else
     _.Fan = state_ir.fanspeed;

@@ -693,7 +693,7 @@ uint16_t _matchGenericLimit(volatile uint16_t *data_ptr,
 
     // Check if there is enough capture buffer to possibly have the message.
     if (remaining < min_remaining) {
-        os_trace_rcv("%s enough capture buffer to possibly have the message\r\n", __func__);
+        os_trace_rcv("%s not enough capture buffer to possibly have the message\r\n", __func__);
         return 0; // Nope, so abort.
     }
     uint16_t offset = 0;
@@ -1929,6 +1929,24 @@ void m_ir_task(void *param)
                     IRFujitsuAC_setInfo(capture.state, kFujitsuAcStateLength, &ir_state_recv);
                 } else if (capture.bits >= kFujitsuAcMinBits) {
                     IRFujitsuAC_setInfo(capture.state, (uint16_t)capture.bits / 8, &ir_state_recv);
+                }
+
+                switch (ir_state_recv.model)
+                {
+                case ARRAH2E:
+                case ARREB1E:
+                case ARRY4:
+                case ARREW4E:
+                    capture.decode_type = FUJITSU_AC;
+                    break;
+                
+                case ARDB1:
+                case ARJW2:
+                    capture.decode_type = FUJITSU2_AC;
+                    break;
+                default:
+                    capture.decode_type = FUJITSU_AC;
+                    break;
                 }
             }
             else if (VESTEL_AC == capture.decode_type)

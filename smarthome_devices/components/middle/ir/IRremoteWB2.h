@@ -125,6 +125,7 @@ typedef enum {
   HITACHI_AC296,
   DAIKIN64,
   DAIKIN176,
+  FUJITSU2_AC,
   // Add new entries before this one, and update it to point to the last entry.
   kLastDecodeType = LG,
   MIDEA = 1934,
