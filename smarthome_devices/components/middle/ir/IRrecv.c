@@ -1335,6 +1335,8 @@ bool decode_for(decode_results *results, uint8_t max_skip)
 #if DECODE_FUJITSU_AC
     os_trace_rcv("Attempting decodeFujitsuAC decode\r\n");        
     if (decodeFujitsuAC(results, offset, kFujitsuAcBits, false)) return true;
+    // os_trace_rcv("Attempting decodeFujitsuAC Long decode\r\n");  
+    // if (decodeFujitsuNewAC(results, offset, kFujitsuAcLongBits, false)) return true;
 #endif
 
 #if DECODE_PANASONIC_AC
@@ -1923,9 +1925,22 @@ void m_ir_task(void *param)
             {
                 IRMitsubishiHeavy152Ac_setInfo(capture.state, &ir_state_recv);
             }
+            else if (FUJITSU_NEW_AC == capture.decode_type)
+            {
+                IRFujitsuAC_setInfo(capture.state, kFujitsuAcStateLength, &ir_state_recv);
+            }
             else if (FUJITSU_AC == capture.decode_type)
             {
-                if (capture.bits == kFujitsuAcBits) {
+                if (capture.bits == kFujitsuAcLongBits) {
+                    #if DEBUG_ENABLE == 1
+                    os_trace("FUJITSU LONG: 0x ");
+                    for(uint8_t i = 0; i < kFujitsuAcStateLengthLong; i++) {
+                        os_trace("%02X-", capture.state[i]);
+                    }
+                    os_trace("\r\n");
+                    #endif
+                    IRFujitsuAC_setInfo(capture.state, kFujitsuAcStateLengthLong, &ir_state_recv);
+                } else if (capture.bits == kFujitsuAcBits) {
                     IRFujitsuAC_setInfo(capture.state, kFujitsuAcStateLength, &ir_state_recv);
                 } else if (capture.bits >= kFujitsuAcMinBits) {
                     IRFujitsuAC_setInfo(capture.state, (uint16_t)capture.bits / 8, &ir_state_recv);

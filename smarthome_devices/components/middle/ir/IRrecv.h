@@ -338,6 +338,9 @@ bool decodeElectraAC(decode_results *results, uint16_t offset,
 bool decodeFujitsuAC(decode_results* results, uint16_t offset,
                              const uint16_t nbits,
                              const bool strict);
+bool decodeFujitsuNewAC(decode_results* results, uint16_t offset,
+                             const uint16_t nbits,
+                             const bool strict);
 #endif
 
 #if DECODE_AIRWELL

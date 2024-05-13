@@ -12,6 +12,8 @@ const uint16_t kFujitsuAcZeroSpace = 390;
 const uint16_t kFujitsuAcMinGap = 8100;
 const uint8_t  kFujitsuAcExtraTolerance = 5;  // Extra tolerance percentage.
 
+uint8_t pre_power_fujitsu = 1;
+
 static bool IRFujitsuAC_validChecksum(uint8_t state[], const uint16_t length) {
   uint8_t sum = 0;
   uint8_t sum_complement = 0;
@@ -26,6 +28,15 @@ static bool IRFujitsuAC_validChecksum(uint8_t state[], const uint16_t length) {
     case kFujitsuAcStateLength:  // ARRAH2E, ARRY4, & ARREB1E
       sum = sumBytesState(state + kFujitsuAcStateLengthShort,
                      length - 1 - kFujitsuAcStateLengthShort, 0);
+      break;
+    case kFujitsuAcStateLengthLong:
+      os_trace("checksum: %u\r\n", checksum);
+      os_trace("1: %u\r\n", sumBytesState(state, length - 3, 0));
+      os_trace("2: %u\r\n", sumBytesState(state + kFujitsuAcStateLengthShort,
+                     length - 1 - kFujitsuAcStateLengthShort, 0));
+
+      os_trace("3: %u\r\n", checksum + sumBytesState(state, length - 1, 0));
+      return true;
       break;
     default:        // Includes ARDB1 & ARJW2 short.
       return true;  // Assume the checksum is valid for other lengths.
@@ -72,7 +83,7 @@ bool decodeFujitsuAC(decode_results* results, uint16_t offset,
   // Keep reading bytes until we either run out of message or state to fill.
   match_result_t data_result;
   for (uint16_t i = 5;
-       offset <= results->rawlen - 16 && i < kFujitsuAcStateLength;
+       offset <= results->rawlen - 16 && i < kFujitsuAcStateLengthLong;
        i++, dataBitsSoFar += 8, offset += data_result.used) {
     data_result = matchDataLimit(
         &(results->rawbuf[offset]), 8,  kFujitsuAcBitMark-300, kFujitsuAcBitMark+300, kFujitsuAcOneSpace-300, kFujitsuAcOneSpace+300,
@@ -121,6 +132,8 @@ bool decodeFujitsuAC(decode_results* results, uint16_t offset,
       // Long messages of this size require this byte be correct.
       if (results->state[5] != 0xFE) return false;
       break;
+    case kFujitsuAcLongBits:
+      break;
     default:
       os_trace("%s Unexpected size\r\n", __func__);
       return false;  // Unexpected size.
@@ -129,6 +142,78 @@ bool decodeFujitsuAC(decode_results* results, uint16_t offset,
     os_trace("%s invalid\r\n", __func__);
     return false;
   }
+
+  // Success
+  return true;  // All good.
+}
+
+bool decodeFujitsuNewAC(decode_results* results, uint16_t offset,
+                             const uint16_t nbits,
+                             const bool strict) {
+  uint16_t dataBitsSoFar = 0;
+
+  // Have we got enough data to successfully decode?
+  if (results->rawlen < (2 * kFujitsuAcMinBits) + kHeader + kFooter - 1 +
+      offset)
+    return false;  // Can't possibly be a valid message.
+
+  // Compliance
+  if (strict) {
+    switch (nbits) {
+      case kFujitsuAcLongBits: break;
+      default: return false;  // Must be called with the correct nr. of bits.
+    }
+  }
+
+  // Header / Some of the Data
+  uint16_t used = matchGenericStateLimit(results->rawbuf + offset, results->state,
+                               results->rawlen - offset, kFujitsuAcLongBits,
+                               kFujitsuAcHdrMark-324,kFujitsuAcHdrMark+376, kFujitsuAcHdrSpace-374, kFujitsuAcHdrSpace+376,  // Header
+                               kFujitsuAcBitMark-300, kFujitsuAcBitMark+300, kFujitsuAcOneSpace-300, kFujitsuAcOneSpace+300,  // Data
+                               kFujitsuAcBitMark-300, kFujitsuAcBitMark+300, kFujitsuAcZeroSpace -300, kFujitsuAcZeroSpace+300,
+                               0, 0, 0, 0,  // No Footer (yet)
+                               false, _tolerance + kFujitsuAcExtraTolerance, 0,
+                               false);  // LSBF
+  if (!used) return false;
+  offset += used;
+  // Check we have the typical data header.
+  if (results->state[0] != 0x14 || results->state[1] != 0x63) return false;
+  dataBitsSoFar += kFujitsuAcLongBits - 8;
+
+  // Keep reading bytes until we either run out of message or state to fill.
+  match_result_t data_result;
+  // for (uint16_t i = 5;
+  //      offset <= results->rawlen - 16 && i < kFujitsuAcStateLengthLong;
+  //      i++, dataBitsSoFar += 8, offset += data_result.used) {
+  //   data_result = matchDataLimit(
+  //       &(results->rawbuf[offset]), 8,  kFujitsuAcBitMark-300, kFujitsuAcBitMark+300, kFujitsuAcOneSpace-300, kFujitsuAcOneSpace+300,
+  //       kFujitsuAcBitMark-300, kFujitsuAcBitMark+300, kFujitsuAcZeroSpace -300, kFujitsuAcZeroSpace+300,
+  //       _tolerance + kFujitsuAcExtraTolerance, 0, false, true);
+  //   if (data_result.success == false) break;  // Fail
+  //   results->state[i] = data_result.data;
+  // }
+
+  // Footer
+  // if (offset > results->rawlen ||
+  //     !matchLimit(results->rawbuf[offset++], kFujitsuAcBitMark-348, kFujitsuAcBitMark+342))
+  //   return false;
+  // // The space is optional if we are out of capture.
+  // if (offset < results->rawlen &&
+  //     !matchAtLeastLimit(results->rawbuf[offset], kFujitsuAcMinGap-2000))
+  //   return false;
+
+  // Compliance
+  // if (strict) {
+  //   if (dataBitsSoFar != nbits) return false;
+  // }
+  os_trace("%s new success\r\n", __func__);
+  results->decode_type = FUJITSU_NEW_AC;
+  results->bits = dataBitsSoFar;
+
+  // if (!IRFujitsuAC_validChecksum(results->state, dataBitsSoFar / 8)) {
+  //   os_trace("%s invalid\r\n", __func__);
+  //   return false;
+  // }
 
   // Success
   return true;  // All good.
@@ -272,7 +357,7 @@ float IRFujitsuAC_getTemp(FujitsuProtocol *_){
 bool IRFujitsuAC_setInfo(const uint8_t newState[], const uint16_t length, state_ir_t *ir_state) {
     FujitsuProtocol _;
 
-  if (length > kFujitsuAcStateLength) return false;
+  if (length > kFujitsuAcStateLengthLong) return false;
   for (uint16_t i = 0; i < kFujitsuAcStateLength; i++) {
     if (i < length)
       _.longcode[i] = newState[i];
@@ -280,8 +365,10 @@ bool IRFujitsuAC_setInfo(const uint8_t newState[], const uint16_t length, state_
       _.longcode[i] = 0;
   }
   IRFujitsuAC_buildFromState(&_, length);
+  os_trace("%s cmd: %u\r\n", __func__, _cmd);
     ir_state->model = _model;
     ir_state->power = _cmd != kFujitsuAcCmdTurnOff;
+    pre_power_fujitsu = ir_state->power;
     ir_state->mode = _.Mode;
     ir_state->fanspeed = _.Fan;
     ir_state->degrees = IRFujitsuAC_getTemp(&_);
@@ -425,7 +512,21 @@ void FujitsuAC_send(state_ir_t state_ir)
     setTemp(&_, state_ir.degrees, true);
 
     // set power
-  setCmd(state_ir.power ? kFujitsuAcCmdTurnOn : kFujitsuAcCmdTurnOff);
+  if (state_ir.power == 0)
+  {
+    setCmd(kFujitsuAcCmdTurnOff);
+    pre_power_fujitsu = 0;
+  }
+  else
+  {
+    if (pre_power_fujitsu) {
+      setCmd(kFujitsuAcCmdStayOn);
+    } else {
+      setCmd(kFujitsuAcCmdTurnOn);
+    }
+    pre_power_fujitsu = 1;
+  }
+  // setCmd(state_ir.power ? kFujitsuAcCmdTurnOn : kFujitsuAcCmdTurnOff);
 
 
     // check sum
@@ -499,6 +600,7 @@ void FujitsuAC_send(state_ir_t state_ir)
         {};  // We don't need to do anything for the others.
     }
   }
+  os_trace("%s send cmd: %u\r\n", __func__, _cmd);
 //   _rawstatemodified = true;
     sendFujitsuAC(getRaw(&_), getStateLength(&_), kFujitsuAcMinRepeat);
 }

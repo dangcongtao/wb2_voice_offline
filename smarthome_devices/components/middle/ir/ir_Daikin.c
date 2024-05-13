@@ -309,8 +309,14 @@ void Daikin_send(state_ir_t state_ir)
     os_trace("%s\r\n", __func__);
     DaikinProtocol _;
     IRDaikinstateReset(&_);
-    _.SwingV = kDaikinSwingOn;
-    _.SwingH = kDaikinSwingOn;
+    if (state_ir.swingv != swingv_kOff) {
+      _.SwingV = state_ir.swingv;
+    }
+
+    if (state_ir.swingh != swingh_kOff) {
+      _.SwingH = state_ir.swingh;
+    }
+    
     DaikinsetTemp(&_, state_ir.degrees);
     DaikinsetMode(&_, state_ir.mode);
     DaikinsetFan(&_, state_ir.fanspeed);

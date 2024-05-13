@@ -144,7 +144,7 @@ wswitch_handler_t array_ir_control_handler[] = {
     {AC_Funiki_Callback, 104}, // 12
     {AC_Samsung_Callback, 27} , //27 - 14 bytes
     {AC_Toshiba_Callback, 108} , // 31 - 9 bytes
-    {AC_Daikin_Callback, 14} , // 14 - 35 bytes
+    {AC_Daikin_Callback, DAIKIN} , // 14 - 35 bytes
     {AC_Daikin2_Callback, 1} , // 14 - 35 bytes
     {AC_Daikin64_Callback, DAIKIN64} , // 35 bytes
     {AC_Daikin152_Callback, 6} , // 6 - 35 bytes
@@ -1099,6 +1099,7 @@ static void AC_Daikin_Callback(cJSON *jsRoot)
     cJSON *jsBrand, *jsPower, *jsTemp, *jsMode, *jsFan, *jsU, *jsAct_ID;
     uint32_t type = 0, brand = 0, power = 0, temp = 0, mode = 0, fan = 0, act_id = 0;
     uint8_t result = 0;
+    state_ir_t state_ir = {UNKNOWN, -1, false, opmode_kOff, 25, true, fanspeed_kAuto, swingv_kOff, swingh_kOff, false, false, false, false, false, false, false, -1, -1, kControlCommand, false, kNoTempValue};
 
     if (jsRoot == NULL)
     {
@@ -1162,24 +1163,33 @@ static void AC_Daikin_Callback(cJSON *jsRoot)
     }
     fan = jsFan->valueint;
 
-    state_ir_t state_ir = {UNKNOWN, -1, false, opmode_kOff, 25, true, fanspeed_kAuto, swingv_kOff, swingh_kOff, false, false, false, false, false, false, false, -1, -1, kControlCommand, false, kNoTempValue};
     state_ir.power = (power ? true : false);
     state_ir.degrees = (float)temp;
     state_ir.mode = mode;
     state_ir.fanspeed = fan;
 
+    cJSON *jsSwingV = NULL, *jsSwingH = NULL;
+    jsSwingV = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGV);
+    if (jsSwingV != NULL) {
+        state_ir.swingv = jsSwingV->valueint;
+    }
+
+    jsSwingH = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGH);
+    if (jsSwingH != NULL) {
+        state_ir.swingh = jsSwingH->valueint;
+    }
+
     Daikin_send(state_ir);
 
     result = 1;
-
 
 RESPONSE:
     /* respond server here */
     memset(respond, 0, sizeof(respond));
     sprintf(
         respond,
-        "{\"%s\":%lu,\"type\":1,\"brand\":%lu,\"power\":%lu,\"temp\":%lu,\"mode\":%lu,\"fan\":%lu,\"act\":%lu,\"result\":%d}",
-        gs_dev_type[device_type], type, brand, power, temp, mode, fan, act_id, result);
+        "{\"%s\":%lu,\"type\":1,\"brand\":%lu,\"power\":%lu,\"temp\":%lu,\"mode\":%lu,\"fan\":%lu,\"swingv\":%d,\"swingh\":%d,\"act\":%lu,\"result\":%d}",
+        gs_dev_type[device_type], type, brand, power, temp, mode, fan, state_ir.swingv, state_ir.swingh, act_id, result);
     app_send_data(respond, strlen(respond));
 }
 

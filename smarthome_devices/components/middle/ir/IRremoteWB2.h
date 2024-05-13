@@ -126,6 +126,7 @@ typedef enum {
   DAIKIN64,
   DAIKIN176,
   FUJITSU2_AC,
+  FUJITSU_NEW_AC,
   // Add new entries before this one, and update it to point to the last entry.
   kLastDecodeType = LG,
   MIDEA = 1934,
@@ -262,8 +263,10 @@ typedef enum {
 
 #define kFujitsuAcMinRepeat kNoRepeat
 #define kFujitsuAcStateLength  16
+#define kFujitsuAcStateLengthLong  18
 #define kFujitsuAcStateLengthShort 7
 #define kFujitsuAcBits (kFujitsuAcStateLength * 8)
+#define kFujitsuAcLongBits (kFujitsuAcStateLengthLong * 8)
 #define kFujitsuAcMinBits ((kFujitsuAcStateLengthShort - 1) * 8)
 
 #define  kVestelAcBits  56
