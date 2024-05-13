@@ -1000,7 +1000,9 @@ void Daikin152_send(state_ir_t state_ir)
     _.Power = state_ir.power;
     IRDaikin152setTemp(&_, state_ir.degrees);
 
-    _.SwingV = kDaikinSwingOn;
+    if (state_ir.swingv != swingv_kOff) {
+      _.SwingV = state_ir.swingv;
+    }
 
     _.Sum = sumBytesState(_.raw, kDaikin152StateLength - 1, 0);
 

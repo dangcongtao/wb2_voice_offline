@@ -174,7 +174,7 @@ static opmode_t get_mode_casper(uint8_t *states)
         break;
     
     default:
-        return opmode_kAuto;
+        return opmode_kCool;
         break;
     }
 }
