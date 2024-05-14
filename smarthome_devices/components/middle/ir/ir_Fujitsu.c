@@ -13,6 +13,7 @@ const uint16_t kFujitsuAcMinGap = 8100;
 const uint8_t  kFujitsuAcExtraTolerance = 5;  // Extra tolerance percentage.
 
 uint8_t pre_power_fujitsu = 1;
+uint8_t pre_mode_fujitsu = kFujitsuAcModeCool;
 
 static bool IRFujitsuAC_validChecksum(uint8_t state[], const uint16_t length) {
   uint8_t sum = 0;
@@ -30,13 +31,9 @@ static bool IRFujitsuAC_validChecksum(uint8_t state[], const uint16_t length) {
                      length - 1 - kFujitsuAcStateLengthShort, 0);
       break;
     case kFujitsuAcStateLengthLong:
-      os_trace("checksum: %u\r\n", checksum);
-      os_trace("1: %u\r\n", sumBytesState(state, length - 3, 0));
-      os_trace("2: %u\r\n", sumBytesState(state + kFujitsuAcStateLengthShort,
-                     length - 1 - kFujitsuAcStateLengthShort, 0));
-
-      os_trace("3: %u\r\n", checksum + sumBytesState(state, length - 1, 0));
-      return true;
+      sum = sumBytesState(state, length - 1, 0);
+      sum_complement = 0xA0;
+      // return true;
       break;
     default:        // Includes ARDB1 & ARJW2 short.
       return true;  // Assume the checksum is valid for other lengths.
@@ -232,6 +229,10 @@ static void setModel(const fujitsu_ac_remote_model_t model) {
       _state_length = kFujitsuAcStateLength - 1;
       _state_length_short = kFujitsuAcStateLengthShort - 1;
       break;
+    case ARRFH2J:
+      _state_length = kFujitsuAcStateLengthLong;
+      _state_length_short = kFujitsuAcStateLengthShort;
+      break;
     case ARRY4:
     case ARRAH2E:
     case ARREB1E:
@@ -298,6 +299,9 @@ static void IRFujitsuAC_buildFromState(FujitsuProtocol *_, const uint16_t length
       if (_->Swing > kFujitsuAcSwingVert)
         setModel(ARJW2);
       break;
+    case kFujitsuAcStateLengthLong:
+      setModel(ARRFH2J);
+      break;
     default:
       switch (_->Cmd) {
         case kFujitsuAcCmdEcono:
@@ -344,8 +348,8 @@ static void IRFujitsuAC_buildFromState(FujitsuProtocol *_, const uint16_t length
 }
 
 float IRFujitsuAC_getTemp(FujitsuProtocol *_){
-  if (_model == ARREW4E) {
-    if (_->Fahrenheit)  // Currently only ARREW4E supports native Fahrenheit.
+  if (_model == ARREW4E || _model == ARRFH2J) {
+    if (_->Fahrenheit)  // Currently ARREW4E and ARRFH2J supports native Fahrenheit.
       return _->Temp + kFujitsuAcTempOffsetF;
     else
       return (_->Temp / 2.0) + (kFujitsuAcMinTemp / 2);
@@ -370,7 +374,7 @@ bool IRFujitsuAC_setInfo(const uint8_t newState[], const uint16_t length, state_
     ir_state->power = _cmd != kFujitsuAcCmdTurnOff;
     pre_power_fujitsu = ir_state->power;
     ir_state->mode = _.Mode;
-    ir_state->fanspeed = _.Fan;
+    ir_state->fanspeed = ((_model == ARRFH2J) ? _.Fan_new : _.Fan);
     ir_state->degrees = IRFujitsuAC_getTemp(&_);
     ir_state->command = _cmd;
   return true;
@@ -386,6 +390,7 @@ static void setTemp(FujitsuProtocol *_, const float temp, const bool useCelsius)
   switch (_model) {
     // These models have native Fahrenheit & Celsius upport.
     case ARREW4E:
+    case ARRFH2J:
       _useCelsius = useCelsius;
       _temp = temp;
       break;
@@ -408,7 +413,7 @@ static void setTemp(FujitsuProtocol *_, const float temp, const bool useCelsius)
   _temp = max(mintemp, _temp);
   _temp = min(maxtemp, _temp);
   if (_useCelsius) {
-    if (_model == ARREW4E)
+    if (_model == ARREW4E || _model == ARRFH2J)
       _->Temp = (_temp - (offset / 2)) * 2;
     else
       _->Temp = (_temp - offset) * 4;
@@ -438,6 +443,7 @@ static bool updateUseLongOrShort(FujitsuProtocol *_) {
         case ARRAH2E:
         case ARREB1E:
         case ARREW4E:
+        case ARRFH2J:
           _->Cmd = 0xFE;
         //   _rawstatemodified = true;
           break;
@@ -445,6 +451,8 @@ static bool updateUseLongOrShort(FujitsuProtocol *_) {
         case ARJW2:
           _->Cmd = 0xFC;
         //   _rawstatemodified = true;
+          break;
+        default:
           break;
       }
       fullCmd = true;
@@ -455,6 +463,14 @@ static bool updateUseLongOrShort(FujitsuProtocol *_) {
 
 static void sendFujitsuAC(const unsigned char data[], const uint16_t nbytes,
                            const uint16_t repeat) {
+
+  // os_trace("%s[%u]: 0x ", __func__, nbytes);
+  // for(uint8_t i = 0; i < nbytes; i++) {
+  //     os_trace("%02X-", data[i]);
+  // }
+  // os_trace("\r\n");
+  // vTaskDelay(pdMS_TO_TICKS(100));
+
 vTaskEnterCritical();
   sendGenericBytes(kFujitsuAcHdrMark, kFujitsuAcHdrSpace, kFujitsuAcBitMark,
               kFujitsuAcOneSpace, kFujitsuAcBitMark, kFujitsuAcZeroSpace,
@@ -499,14 +515,20 @@ void FujitsuAC_send(state_ir_t state_ir)
   _.longcode[4] = 0x10;
 
   // set mode
-  if (state_ir.mode > kFujitsuAcModeHeat)
+  if (state_ir.mode > kFujitsuAcModeHeat) {
     _.Mode = kFujitsuAcModeHeat;  // Set the mode to maximum if out of range.
-  else
+    if (_model == ARRFH2J && state_ir.mode <= 5) {
+      _.Mode = state_ir.mode;
+    }
+  } else
     _.Mode = state_ir.mode;
   // set fanspeed
-  if (state_ir.fanspeed > kFujitsuAcFanQuiet)
+  if (state_ir.fanspeed > kFujitsuAcFanQuiet) {
     _.Fan = kFujitsuAcFanHigh;  // Set the fan to maximum if out of range.
-  else
+    if (_model == ARRFH2J && state_ir.fanspeed <= 8) {
+      _.Fan_new = state_ir.fanspeed;
+    }
+  } else
     _.Fan = state_ir.fanspeed;
 
     setTemp(&_, state_ir.degrees, true);
@@ -521,20 +543,35 @@ void FujitsuAC_send(state_ir_t state_ir)
   {
     if (pre_power_fujitsu) {
       setCmd(kFujitsuAcCmdStayOn);
+      if (pre_mode_fujitsu != _.Mode) {
+        setCmd(kFujitsuAcCmdTurnOn);
+      }
     } else {
       setCmd(kFujitsuAcCmdTurnOn);
     }
     pre_power_fujitsu = 1;
   }
-  // setCmd(state_ir.power ? kFujitsuAcCmdTurnOn : kFujitsuAcCmdTurnOff);
-
+  pre_mode_fujitsu = _.Mode;
 
     // check sum
     //   _rawstatemodified = true;
   if (updateUseLongOrShort(&_)) {  // Is it going to be a long code?
     // Nr. of bytes in the message after this byte.
     _.RestLength = _state_length - 7;
-    _.Protocol = (_model == ARREW4E) ? 0x31 : 0x30;
+    switch (_model)
+    {
+    case ARREW4E:
+      _.Protocol = 0x31;
+      break;
+    case ARRFH2J:
+      _.Protocol = 0x41;
+      _.longcode[15] = 0x1A;
+      _.longcode[16] = 0x07;
+      break;
+    default:
+      _.Protocol = 0x30;
+      break;
+    }
     _.Power = (_cmd == kFujitsuAcCmdTurnOn) || get10CHeat(&_);
 
     // These values depend on model
@@ -571,6 +608,11 @@ void FujitsuAC_send(state_ir_t state_ir)
         _.Swing = kFujitsuAcSwingOff;
         checksum = sumBytesState(_.longcode, _state_length - 1, 0);
         checksum_complement = 0x9B;
+        break;
+      case ARRFH2J:
+        _.Swing = kFujitsuAcSwingOff;
+        checksum = sumBytesState(_.longcode, _state_length - 1, 0);
+        checksum_complement = 0xA0;
         break;
       case ARREB1E:
       case ARRAH2E:

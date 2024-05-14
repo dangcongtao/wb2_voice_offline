@@ -9,7 +9,7 @@ typedef struct
 {
     union {
         struct {
-            uint8_t longcode[kFujitsuAcStateLength];  ///< The state of the IR remote.
+            uint8_t longcode[kFujitsuAcStateLengthLong];  ///< The state of the IR remote.
             uint8_t shortcode[kFujitsuAcStateLengthShort];
         };
         struct {
@@ -54,6 +54,50 @@ typedef struct
             uint64_t              :1;
             uint64_t OutsideQuiet :1;
             // Byte 15
+            uint64_t              :0;  // Checksum
+        };
+
+        struct {
+            // Byte 0~1
+            uint64_t           :16;  // Fixed header
+            // Byte 2
+            uint64_t            :4;
+            uint64_t          :2;   // Device Number/Identifier
+            uint64_t            :2;
+            // Byte 3-4
+            uint64_t            :16;
+            // Byte 5
+            uint64_t         :8;  // short codes:cmd; long codes:fixed value
+            // Byte 6
+            uint64_t  :8;  // Nr. of bytes in the message after this byte.
+            // Byte 7
+            uint64_t    :8;  // Seems like a protocol version number. Not sure.
+            // Byte 8
+            uint64_t       :1;
+            uint64_t  :1;
+            uint64_t        :6;  // Internal representation varies between models.
+            // Byte 9
+            uint64_t        :3;
+            uint64_t       :1;  // Also 10C Heat in ARREW4E.
+            uint64_t   :2;
+            uint64_t            :2;
+            // Byte 10
+            uint64_t Fan_new    :4;
+            uint64_t   :2;
+            uint64_t        :2;
+            // Byte 11~13
+            uint64_t        :11;  // Also is the sleep timer value
+            uint64_t  :1;
+            uint64_t         :11;
+            uint64_t   :1;
+            // Byte 14
+            uint64_t              :3;
+            uint64_t        :1;
+            uint64_t              :1;
+            uint64_t       :1;
+            uint64_t              :1;
+            uint64_t  :1;
+            // Byte 15
             uint64_t              :0;
             // Byte 16
             uint64_t              :0;
@@ -62,6 +106,64 @@ typedef struct
         };
     };
 } FujitsuProtocol;
+
+typedef struct 
+{
+    union {
+        struct {
+            uint8_t longcode[kFujitsuAcStateLength];  ///< The state of the IR remote.
+            uint8_t shortcode[kFujitsuAcStateLengthShort];
+        };
+        struct {
+            // Byte 0~1
+            uint64_t           :16;  // Fixed header
+            // Byte 2
+            uint64_t            :4;
+            uint64_t Id         :2;   // Device Number/Identifier
+            uint64_t            :2;
+            // Byte 3-4
+            uint64_t            :16;
+            // Byte 5
+            uint64_t Cmd        :8;  // short codes:cmd; long codes:fixed value
+            // Byte 6
+            uint64_t RestLength :8;  // Nr. of bytes in the message after this byte.
+            // Byte 7
+            uint64_t Protocol   :8;  // Seems like a protocol version number. Not sure.
+            // Byte 8
+            uint64_t Power      :1;
+            uint64_t Fahrenheit :1;
+            uint64_t Temp       :6;  // Internal representation varies between models.
+            // Byte 9
+            uint64_t Mode       :3;
+            uint64_t Clean      :1;  // Also 10C Heat in ARREW4E.
+            uint64_t TimerType  :2;
+            uint64_t            :2;
+            // Byte 10
+            uint64_t Fan    :4;
+            uint64_t Swing  :2;
+            uint64_t        :2;
+            // Byte 11~13
+            uint64_t OffTimer       :11;  // Also is the sleep timer value
+            uint64_t OffTimerEnable :1;
+            uint64_t OnTimer        :11;
+            uint64_t OnTimerEnable  :1;
+            // Byte 14
+            uint64_t              :3;
+            uint64_t Filter       :1;
+            uint64_t              :1;
+            uint64_t unknown      :1;
+            uint64_t              :1;
+            uint64_t OutsideQuiet :1;
+            // Byte 15
+            uint64_t              :0;
+            // Byte 16
+            uint64_t              :0;
+            // Byte 17
+            uint64_t              :0;  // Checksum
+        };
+    };
+} Fujitsu144Protocol;
+
 
 // Constants
 const uint8_t kFujitsuAcModeAuto =  0x0;  // 0b000

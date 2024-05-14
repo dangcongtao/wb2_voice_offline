@@ -1933,11 +1933,11 @@ void m_ir_task(void *param)
             {
                 if (capture.bits == kFujitsuAcLongBits) {
                     #if DEBUG_ENABLE == 1
-                    os_trace("FUJITSU LONG: 0x ");
-                    for(uint8_t i = 0; i < kFujitsuAcStateLengthLong; i++) {
-                        os_trace("%02X-", capture.state[i]);
-                    }
-                    os_trace("\r\n");
+                    // os_trace("FUJITSU LONG: 0x ");
+                    // for(uint8_t i = 0; i < kFujitsuAcStateLengthLong; i++) {
+                    //     os_trace("%02X-", capture.state[i]);
+                    // }
+                    // os_trace("\r\n");
                     #endif
                     IRFujitsuAC_setInfo(capture.state, kFujitsuAcStateLengthLong, &ir_state_recv);
                 } else if (capture.bits == kFujitsuAcBits) {
@@ -1958,6 +1958,9 @@ void m_ir_task(void *param)
                 case ARDB1:
                 case ARJW2:
                     capture.decode_type = FUJITSU2_AC;
+                    break;
+                case ARRFH2J:
+                    capture.decode_type = FUJITSU_NEW_AC;
                     break;
                 default:
                     capture.decode_type = FUJITSU_AC;
