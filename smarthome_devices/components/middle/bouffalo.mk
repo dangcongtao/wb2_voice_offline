@@ -106,6 +106,7 @@ COMPONENT_SRCS := database/m_database.c \
 				  ir/ir_Delonghi.c \
 				  ir/ir_Bosch.c \
 				  ir/ir_Voltas.c \
+				  ir/ir_Goodweather.c \
 				  ir/IRrecv_test.c \
 				  
 COMPONENT_OBJS := $(patsubst %.c,%.o, $(COMPONENT_SRCS))

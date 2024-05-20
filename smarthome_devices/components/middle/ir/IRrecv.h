@@ -9,7 +9,7 @@
 #include "ir_Samsung.h"
 #include "IRsend.h"
 
-#define DEBUG_IR_RCV_ENABLE    0
+#define DEBUG_IR_RCV_ENABLE    1
 #define os_trace_rcv if (DEBUG_IR_RCV_ENABLE == 1) printf
 
 #define MS_TO_USEC(x) ((x) * 1000U)  // Convert milli-Seconds to micro-Seconds.
@@ -93,6 +93,7 @@
 #define DECODE_BOSCH144 1
 #define DECODE_VOLTAS 1
 #define DECODE_HITACHI_AC296 1
+#define DECODE_GOOD_WEATHER 1
 
 
 #define IR_RX 1
@@ -316,6 +317,11 @@ bool decodeHitachiAC424(decode_results *results, uint16_t offset,
 bool decodeHitachiAc296(decode_results *results, uint16_t offset,
                                 const uint16_t nbits,
                                 const bool strict);
+#endif
+#if DECODE_GOOD_WEATHER
+bool decodeGoodweather(decode_results* results, uint16_t offset,
+                               const uint16_t nbits,
+                               const bool strict);
 #endif
 
 #if DECODE_PANASONIC_AC
@@ -655,6 +661,7 @@ void IRBosch144AC_setRaw(const uint8_t new_code[], const uint16_t length, state_
 void IRVoltas_setRaw(const uint8_t new_code[], state_ir_t *ir_state);
 void HitachiAC264_setRaw(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
 void HitachiAc296_setRaw(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
+void GoodweatherAc_setRaw(const uint64_t state, state_ir_t *ir_state);
 
 // void enableIRIn(const bool pullup);
 void ir_loop(void);

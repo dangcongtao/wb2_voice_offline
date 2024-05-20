@@ -1253,6 +1253,9 @@ bool decode_for(decode_results *results, uint8_t max_skip)
 #if DECODE_SHARP
     if (decodeSharpAc(results, offset, kSharpAcBits, true)) return true;
 #endif
+#if DECODE_SHARP
+    if (decodeGoodweather(results, offset, kGoodweatherBits, true)) return true;
+#endif
 
 #if DECODE_HITACHI_AC424
     // HitachiAc424 should be checked before HitachiAC, HitachiAC2,
@@ -2057,6 +2060,10 @@ void m_ir_task(void *param)
             else if (HITACHI_AC296 == capture.decode_type)
             {
                 HitachiAc296_setRaw(capture.state, capture.bits / 8, &ir_state_recv);
+            }
+            else if (GOODWEATHER == capture.decode_type)
+            {
+                GoodweatherAc_setRaw(capture.value, &ir_state_recv);
             }
 
             /***************************************************************************************/

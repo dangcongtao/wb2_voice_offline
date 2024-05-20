@@ -65,7 +65,7 @@ typedef enum {
   ZEPEAL,  // 60
   RC6,
   NIKAI,
-  GOODWEATHER,
+  UNKNOWN_9845,
   INAX,
   SONY,  // 65
   UNKNOWN_94843,
@@ -127,6 +127,7 @@ typedef enum {
   DAIKIN176,
   FUJITSU2_AC,
   FUJITSU_NEW_AC,
+  GOODWEATHER,
   // Add new entries before this one, and update it to point to the last entry.
   kLastDecodeType = LG,
   MIDEA = 1934,
@@ -354,5 +355,8 @@ typedef enum {
 
 #define kVoltasBits 80
 #define kVoltasStateLength 10
+
+#define kGoodweatherBits  48
+#define kGoodweatherMinRepeat  kNoRepeat
 
 #endif
