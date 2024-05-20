@@ -42,6 +42,7 @@
 #define CJSON_KEY_AP_USER_ID        "uid"
 #define CJSON_KEY_TIMESTAMP      "timestamp"
 #define CJSON_KEY_LEAKAGE       "leakage"
+#define CJSON_KEY_DISALBE_AS       "disable_as"
 
 
 #define DEFAULT_AES_KEY "0000000000000000"

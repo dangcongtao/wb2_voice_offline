@@ -59,6 +59,9 @@ typedef struct {
     m_switch_info_t*    _switch_info;
     m_ble_info_t*       _ble_info;
     uint32_t checksum_crc;
+#if PROJECT_SHOCK
+    uint8_t disable_anti_shock;
+#endif
 } m_device_t;
 
 typedef struct {

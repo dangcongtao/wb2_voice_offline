@@ -134,6 +134,9 @@ void flash_read_database(m_device_t *object_data)
         size = sizeof(m_ble_info_t);
         ef_get_bytes(BLE_INFO, (uint8_t *)object_data->_ble_info, size);
     }
+#if PROJECT_SHOCK
+    ef_get_u8(CJSON_KEY_DISALBE_AS, (uint8_t *)&object_data->disable_anti_shock);
+#endif
 
     /* read state pair */
     if ((ef_get_u32(PAIR_STATE, &(object_data->_device_is_paired)) == false) || (object_data->_device_is_paired == 0))

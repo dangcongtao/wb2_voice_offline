@@ -11,7 +11,7 @@
 #include "m_ble.h"
 #include "m_wf_ble_cfg.h"
 #include "hardware.h"
-
+#include "easyflash_common.h"
 
 
 
@@ -50,6 +50,7 @@ static void app_swmini_set_use_mode_stair(cJSON *jsRoot);
 #if PROJECT_SHOCK
 static void app_get_leakage(cJSON *jsRoot);
 static void app_fake_leakage(cJSON *jsRoot);
+static void app_set_func_leak(cJSON *jsRoot);
 #endif
 
 static void ble_config_step1(cJSON *jsRoot);
@@ -63,6 +64,7 @@ wswitch_handler_t array_handler[] = {
 #if PROJECT_SHOCK
     {app_get_leakage, 71}, 
     {app_fake_leakage, 72},
+    {app_set_func_leak, 73},
 #endif
     {app_get_info, 105},
     {app_set_power_on, 121},     
@@ -1138,8 +1140,8 @@ static void app_get_leakage(cJSON *jsRoot)
 RESPONSE:
     /* respond server here */
     memset(respond, 0, sizeof(respond));
-    sprintf(respond, "{\"%s\":%ld, \"%s\":%d}",
-            gs_dev_type[device_type], type, CJSON_KEY_LEAKAGE, is_leakage_current());
+    sprintf(respond, "{\"%s\":%ld, \"%s\":%d, \"%s\":%u}",
+            gs_dev_type[device_type], type, CJSON_KEY_LEAKAGE, is_leakage_current(), CJSON_KEY_DISALBE_AS, m_db_get_instance()->_m_device.disable_anti_shock);
     m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
 }
 
@@ -1177,6 +1179,53 @@ RESPONSE:
     memset(respond, 0, sizeof(respond));
     sprintf(respond, "{\"%s\":%ld, \"u\":%ld, \"result\":%d}",
             gs_dev_type[device_type], type, uid, result);
+    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
+}
+
+static void app_set_func_leak(cJSON *jsRoot)
+{
+    cJSON *jsType, *jsU, *jsDisableAs;
+    uint32_t type = 0, uid = 0, disable_as = 0;
+    uint8_t result = 0;
+
+    os_trace("app_get_leakage get\n");
+
+    jsType = cJSON_GetObjectItem(jsRoot, gs_dev_type[device_type]);
+    if (jsType == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    type = jsType->valueint;
+
+    jsU = cJSON_GetObjectItem(jsRoot, CJSON_KEY_USER_ID);
+    if (jsU == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    uid = jsU->valueint;
+
+    jsDisableAs = cJSON_GetObjectItem(jsRoot, CJSON_KEY_DISALBE_AS);
+    if (jsDisableAs == NULL)
+    {
+        os_trace("Get JSON jsDisableAs mqtt message fail\n");
+        goto RESPONSE;
+    }
+    disable_as = jsDisableAs->valueint;
+
+
+    /* implement here */
+    // fake_current_leak();
+    m_db_get_instance()->_m_device.disable_anti_shock = disable_as;
+    ef_set_u8(CJSON_KEY_DISALBE_AS, disable_as);
+    result = 1;
+
+RESPONSE:
+    /* respond server here */
+    memset(respond, 0, sizeof(respond));
+    sprintf(respond, "{\"%s\":%ld, \"%s\":%ld, \"u\":%ld, \"result\":%d}",
+            gs_dev_type[device_type], type, CJSON_KEY_DISALBE_AS, disable_as, uid, result);
     m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
 }
 #endif

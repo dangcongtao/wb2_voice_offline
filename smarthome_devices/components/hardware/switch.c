@@ -97,7 +97,7 @@ void hw_switch_change_pin_type(void)
 #if PROJECT_SHOCK
 static void touch_irq_handler(void *arg)
 {
-    if (is_need_interrupt_relay == 1)
+    if (!m_db_get_instance()->_m_device.disable_anti_shock && is_need_interrupt_relay == 1)
     {
         is_need_interrupt_relay = 2;
         if (!has_leak_current)
