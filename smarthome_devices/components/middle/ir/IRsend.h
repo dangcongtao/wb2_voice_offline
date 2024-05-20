@@ -248,6 +248,7 @@ void IRTecoAc_send(state_ir_t state_ir);
 void IRMirageAc_send(state_ir_t state_ir);
 void HitachiAC264_send(state_ir_t state_ir);
 void HitachiAc296_send(state_ir_t state_ir);
+void Asanzo_send(state_ir_t state_ir);
 
 /* end */
 

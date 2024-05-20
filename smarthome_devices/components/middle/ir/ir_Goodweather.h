@@ -30,8 +30,8 @@ typedef struct
             uint8_t Fan     :2;
             uint8_t         :0;
             // Byte 4
-            uint8_t Temp  :4;
-            uint8_t       :1;
+            uint8_t Temp  :5;
+            // uint8_t       :1;
             uint8_t Mode  :3;
             uint8_t       :0;
         };
@@ -65,7 +65,7 @@ const uint8_t kGoodweatherFanMed =  0b10;
 const uint8_t kGoodweatherFanLow =  0b11;
 // Temperature
 const uint8_t kGoodweatherTempMin = 16;  // Celsius
-const uint8_t kGoodweatherTempMax = 31;  // Celsius
+const uint8_t kGoodweatherTempMax = 32;  // Celsius
 // Commands
 const uint8_t kGoodweatherCmdPower    = 0x00;
 const uint8_t kGoodweatherCmdMode     = 0x01;

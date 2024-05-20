@@ -78,11 +78,93 @@ void GoodweatherAc_setRaw(const uint64_t state, state_ir_t *ir_state)
 { 
     GoodweatherProtocol _;
     memset(&_, 0, sizeof(GoodweatherProtocol));
-    _.raw  = state; 
-
+    _.raw  = state;
+    os_trace("%s cmd: %u\r\n", __func__, _.Command);
     ir_state->power = _.Power;
     ir_state->mode = _.Mode;
     ir_state->fanspeed = _.Fan;
     ir_state->degrees = _.Temp + kGoodweatherTempMin;
     ir_state->swingv = _.Swing;
+}
+
+void sendGoodweather(const uint64_t data, const uint16_t nbits,
+                             const uint16_t repeat) {
+  if (nbits != kGoodweatherBits)
+    return;  // Wrong nr. of bits to send a proper message.
+  // Set IR carrier frequency
+  vTaskEnterCritical();
+  enableIROut(38, 50);
+
+  for (uint16_t r = 0; r <= repeat; r++) {
+    // Header
+    mark(kGoodweatherHdrMark);
+    space(kGoodweatherHdrSpace);
+
+    // Data
+    for (int16_t i = 0; i < nbits; i += 8) {
+      uint16_t chunk = (data >> i) & 0xFF;  // Grab a byte at a time.
+      chunk = (~chunk) << 8 | chunk;  // Prepend a inverted copy of the byte.
+      sendData(kGoodweatherBitMark, kGoodweatherOneSpace,
+               kGoodweatherBitMark, kGoodweatherZeroSpace,
+               chunk, 16, false);
+    }
+    // Footer
+    mark(kGoodweatherBitMark);
+    space(kGoodweatherHdrSpace);
+    mark(kGoodweatherBitMark);
+    space(kDefaultMessageGap);
+  }
+  vTaskExitCritical();
+}
+
+void Asanzo_send(state_ir_t state_ir)
+{
+  GoodweatherProtocol _;
+  memset(&_, 0, sizeof(GoodweatherProtocol));
+  _.raw = kGoodweatherStateInit;
+  _.Command = kGoodweatherCmdPower;
+  _.Power = state_ir.power;
+
+  switch ((uint8_t)state_ir.mode) {
+    case kGoodweatherAuto:
+    case kGoodweatherDry:
+    case kGoodweatherCool:
+    case kGoodweatherFan:
+    case kGoodweatherHeat:
+      _.Mode = state_ir.mode;
+      break;
+    default:
+      _.Mode = kGoodweatherAuto;
+  }
+
+  switch ((uint8_t)state_ir.fanspeed) {
+    case kGoodweatherFanAuto:
+    case kGoodweatherFanLow:
+    case kGoodweatherFanMed:
+    case kGoodweatherFanHigh:
+      _.Fan = state_ir.fanspeed;
+      break;
+    default:
+      _.Fan = kGoodweatherFanAuto;
+  }
+
+  uint8_t new_temp = max(kGoodweatherTempMin, (uint8_t)state_ir.degrees);
+  new_temp = min(kGoodweatherTempMax, new_temp);
+  // if (new_temp > getTemp()) _.Command = kGoodweatherCmdUpTemp;
+  // if (new_temp < getTemp()) _.Command = kGoodweatherCmdDownTemp;
+  _.Temp = new_temp - kGoodweatherTempMin;
+
+  if (state_ir.swingv != swingv_kOff) {
+    switch ((uint8_t)state_ir.swingv) {
+      case kGoodweatherSwingOff:
+      case kGoodweatherSwingSlow:
+      case kGoodweatherSwingFast:
+        _.Swing = state_ir.swingv;
+        break;
+      default:
+        _.Swing = kGoodweatherSwingOff;
+    }
+  }
+  os_trace("%s raw: %llu\r\n", __func__, _.raw);
+  sendGoodweather(_.raw, kGoodweatherBits, kGoodweatherMinRepeat);
 }

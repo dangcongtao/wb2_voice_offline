@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <blog.h>
 
-#define DEBUG_ENABLE    1
+#define DEBUG_ENABLE    0
 void m_log(const char *fmt, ...);
 #define os_trace if (DEBUG_ENABLE == 1) printf
 
