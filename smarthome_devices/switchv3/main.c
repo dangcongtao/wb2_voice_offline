@@ -55,9 +55,11 @@ void main_loop(void)
 
 void main(void)
 {
-    #if DEBUG_ENABLE == 0
+#if DEBUG_ENABLE == 0
     bl_sys_logall_disable();
-    #endif
+#else
+    bl_sys_logall_enable();
+#endif
     // hw_switch_cfg(0);
     bl_wdt_init(60000);
 
