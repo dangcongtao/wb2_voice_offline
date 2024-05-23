@@ -21,6 +21,8 @@ const uint64_t kSharpAddressMask = ((uint64_t)1 << kSharpAddressBits) - 1;
 const uint64_t kSharpCommandMask = ((uint64_t)1 << kSharpCommandBits) - 1;
 
 
+static uint8_t _prev_on = true;
+
 uint8_t IRSharpAccalcChecksum(uint8_t state[], const uint16_t length) {
   uint8_t xorsum = xorBytes(state, length - 1, 0);
   xorsum ^= GETBITS8(state[length - 1], kLowNibble, kNibbleSize);
@@ -151,6 +153,7 @@ void SharpAc_setInfo(const uint8_t* newState, const decode_type_t protocol, stat
     ir_state->protocol = SHARP_AC;
     ir_state->model = IRSharpAcgetModel(_);
     ir_state->power = IRSharpAcgetPower(_);
+    _prev_on = ir_state->power;
     ir_state->mode = _.Mode;
     ir_state->degrees = _.Temp + kSharpAcMinTemp;
     ir_state->fanspeed = _.Fan;
@@ -208,7 +211,8 @@ static void IRSharpAcsetFan(SharpProtocol *_, const uint8_t speed) {
 
 static void IRSharpAcsetClean(SharpProtocol *_, const bool on);
 static void IRSharpAcsetPower(SharpProtocol *_, const bool on, const bool prev_on) {
-  IRSharpAcsetPowerSpecial(_, on ? kSharpAcPowerOnFromOff : kSharpAcPowerOff);
+  IRSharpAcsetPowerSpecial(_, on ? (prev_on ? kSharpAcPowerOn : kSharpAcPowerOnFromOff)
+                     : kSharpAcPowerOff);
   // Power operations are incompatible with clean mode.
   if (_->Clean) IRSharpAcsetClean(_, false);
   _->Special = kSharpAcSpecialPower;
@@ -290,7 +294,8 @@ void SharpAc_send(state_ir_t state_ir)
   os_trace("%s set mode finished\r\n", __func__);
   IRSharpAcsetFan(&_, state_ir.fanspeed);
   os_trace("%s set fan finished\r\n", __func__);
-  IRSharpAcsetPower(&_, state_ir.power, false);
+  IRSharpAcsetPower(&_, state_ir.power, _prev_on);
+  _prev_on = state_ir.power;
   os_trace("%s set power finished\r\n", __func__);
   IRSharpAcsetTemp(&_, (uint8_t)state_ir.degrees);
   os_trace("%s set temp finished\r\n", __func__);

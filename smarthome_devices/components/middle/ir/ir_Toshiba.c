@@ -14,6 +14,8 @@
 #define kToshibaAcMinGap 4600    // WH-UB03NJ remote
 #define kToshibaAcUsualGap 7400  // Others
 
+static uint8_t _prev_mode = kToshibaAcCool;
+
 static uint8_t calcChecksum(const uint8_t state[],
                                   const uint16_t length) {
   return length ? xorBytes(state, length - 1, 0) : 0;
@@ -169,6 +171,7 @@ void Toshiba_setInfo(const uint8_t* newState, const uint16_t length, const decod
 
     ir_state->power = getPower(_);
     ir_state->mode = _.Mode;
+    _prev_mode = ir_state->mode;
     ir_state->degrees = getTemp(_);
     ir_state->fanspeed = _.Fan;
     ir_state->turbo = getTurbo(_);
@@ -182,18 +185,28 @@ static void setTemp(ToshibaProtocol *_, const uint8_t degrees) {
   _->Temp = temp - kToshibaAcMinTemp;
 }
 
+static void setStateLength(ToshibaProtocol *_, const uint16_t size) {
+  if (size < kToshibaAcMinLength) return;
+  _->Length = size - kToshibaAcMinLength;
+}
+
 static void setMode(ToshibaProtocol *_, const uint8_t mode) {
+  if (mode != _prev_mode) {
+    setStateLength(_, kToshibaACStateLength);
+  }
   switch (mode) {
     case kToshibaAcAuto:
     case kToshibaAcCool:
     case kToshibaAcDry:
     case kToshibaAcHeat:
     case kToshibaAcFan:
+      _prev_mode = mode;
       // FALL-THRU
     case kToshibaAcOff:
       _->Mode = mode;
       break;
     default:
+      _prev_mode = kToshibaAcAuto;
       _->Mode = kToshibaAcAuto;
   }
 }
@@ -235,7 +248,11 @@ void Toshiba_send(state_ir_t state_ir)
 
     if (!state_ir.power) {  // Off
         setMode(&_, kToshibaAcOff);
+    } else {
+      if (!_.Mode) {
+        //setMode(&_, (uint8_t) state_ir.mode);
+      }
     }
     checksum(&_, getStateLength(_));
-    sendToshibaAC(_.raw, kToshibaACStateLength, kToshibaACMinRepeat);
+    sendToshibaAC(_.raw, getStateLength(_), kToshibaACMinRepeat);
 }
