@@ -2105,13 +2105,21 @@ void m_ir_task(void *param)
             else if (capture.decode_type != UNKNOWN)
             {
                 char str[325];
+                int seek = 0;
                 memset(str, 0, 325);
 
-                sprintf(str, "{\"%s\":10,\"type\":1,\"brand\":%d,\"model\":%d,\"power\":%u,\"mode\":%d,\"temp\":%.1f,\"fan\":%d,\"swingv\":%d,\"swingh\":%d}", 
-                gs_dev_type[device_type], capture.decode_type, ir_state_recv.model, ir_state_recv.power, ir_state_recv.mode, ir_state_recv.degrees, ir_state_recv.fanspeed, ir_state_recv.swingv, ir_state_recv.swingh);
+                seek += sprintf(str, "{\"%s\":10,\"type\":1,\"brand\":%d,\"model\":%d,\"power\":%u,\"mode\":%d,\"temp\":%.1f,\"fan\":%d,\"swingv\":%d,\"swingh\":%d,\"debug\":{\"nbits\":%u,\"data\":\"", 
+                gs_dev_type[device_type], capture.decode_type, ir_state_recv.model, ir_state_recv.power, ir_state_recv.mode, ir_state_recv.degrees, ir_state_recv.fanspeed, ir_state_recv.swingv, ir_state_recv.swingh, capture.bits);
+                for(uint8_t i = 0; i < capture.bits / 8; i++) {
+                    seek += sprintf(&str[seek], "%02X-", capture.state[i]);
+                }
+                seek--;
+                seek += sprintf(&str[seek], "\"}}");
 
                 os_trace("datarcv[%u]:", strlen(str));
-                os_trace("'%s'\r\n", str);
+                if (seek < 300)
+                    os_trace("'%s'\r\n", str);
+                os_trace("\r\n");
                 if (m_mqtt_get_instance()._mqtt_state >= MQTT_INTIALIZED)
                     m_mqtt_get_instance()._mqtt_publish(str, strlen(str));
             }

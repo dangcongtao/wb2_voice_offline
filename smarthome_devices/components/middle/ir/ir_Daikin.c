@@ -2337,9 +2337,90 @@ void Daikin312_setInfo(const uint8_t* newState, const uint16_t length, state_ir_
 
   ir_state->protocol = DAIKIN312;
   ir_state->power = (_.Power && !_.Power2);
-  ir_state->mode = DaikintoCommonMode(_.Mode);
-  ir_state->fanspeed = DaikintoCommonFanSpeed(_.Fan);
+  ir_state->mode = _.Mode;
+  ir_state->fanspeed = _.Fan;
   ir_state->degrees = _.Temp;
 }
+
+static void sendDaikin312(const unsigned char data[], const uint16_t nbytes,
+                           const uint16_t repeat) {
+  if (nbytes < kDaikin312Section1Length)
+    return;  // Not enough bytes to send a partial message.
+
+  for (uint16_t r = 0; r <= repeat; r++) {
+    // Send the header, 0b00000
+    sendGeneric(0, 0,  // No header for the header
+                kDaikin312BitMark, kDaikin312OneSpace,
+                kDaikin312BitMark, kDaikin312ZeroSpace,
+                kDaikin312BitMark, kDaikin312HdrGap,
+                (uint64_t)0b00000, kDaikinHeaderLength,
+                kDaikin2Freq, false, 0, kDutyDefault);
+    // Section #1
+    sendGenericBytes(kDaikin312HdrMark, kDaikin312HdrSpace, kDaikin312BitMark,
+                kDaikin312OneSpace, kDaikin312BitMark, kDaikin312ZeroSpace,
+                kDaikin312BitMark, kDaikin312SectionGap, data,
+                kDaikin312Section1Length,
+                kDaikin2Freq, false, 0, kDutyDefault);
+    // Section #2
+    sendGenericBytes(kDaikin312HdrMark, kDaikin312HdrSpace, kDaikin312BitMark,
+                kDaikin312OneSpace, kDaikin312BitMark, kDaikin312ZeroSpace,
+                kDaikin312BitMark, kDaikin312SectionGap,
+                data + kDaikin312Section1Length,
+                nbytes - kDaikin312Section1Length,
+                kDaikin2Freq, false, 0, kDutyDefault);
+  }
+}
+
+
+static void Daikin312stateReset(Daikin2Protocol *_) {
+  for (uint8_t i = 0; i < kDaikin2StateLength; i++) _->raw[i] = 0x0;
+
+  _->raw[0] = 0x11;
+  _->raw[1] = 0xDA;
+  _->raw[2] = 0x27;
+  _->raw[4] = 0x02;
+  _->raw[6] = 0xC0;
+  _->raw[9] = 0x01;
+  _->raw[11] = 0x04;
+  _->raw[12] = 0x01;
+  _->raw[14] = 0x10;
+  // _.raw[19] is a checksum byte, it will be set by checksum().
+  _->raw[20] = 0x11;
+  _->raw[21] = 0xDA;
+  _->raw[22] = 0x27;
+  _->raw[25] = 0x49;
+  _->raw[28] = 0x40;
+  _->raw[31] = 0x06;
+  _->raw[32] = 0x60;
+  _->raw[35] = 0xC5;
+  _->raw[37] = 0x08;
+  // _.raw[38] is a checksum byte, it will be set by checksum().
+  // IRDaikin2disableOnTimer(&_);
+  // IRDaikin2disableOffTimer(&_);
+  // IRDaikin2disableOnTimer(&_);
+  IRDaikin2checksum(&_);
+}
+
+
+void Daikin312_send(state_ir_t state_ir)
+{
+    os_trace("%s\r\n", __func__);
+
+    Daikin2Protocol _;
+    IRDaikin2stateReset(&_);
+
+    _.SwingV = kDaikin2SwingVAuto;
+    _.SwingH = kDaikin2SwingHAuto;
+
+    IRDaikin2setMode(&_, state_ir.mode);
+    IRDaikin2setFan(&_, state_ir.fanspeed);
+    IRDaikin2setPower(&_, state_ir.power);
+    IRDaikin2setTemp(&_, state_ir.degrees);
+
+    IRDaikin2checksum(&_);
+
+    sendDaikin312(_.raw, kDaikin2StateLength, kDaikin2DefaultRepeat); 
+}
+
 
 
