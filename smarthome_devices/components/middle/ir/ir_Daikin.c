@@ -376,7 +376,7 @@ bool decodeDaikin2(decode_results *results, uint16_t offset,
                         40, kDaikinMarkExcess,
                         false);
     if (used == 0) {
-      // os_trace("%s matchGenericState failed %u\r\n", __func__, section);
+      os_trace("%s matchGenericState failed %u\r\n", __func__, section);
       return false;
     }
     offset += used;
@@ -2268,3 +2268,78 @@ void Daikin176_send(state_ir_t state_ir)
 
   sendDaikin176(_.raw, kDaikin176StateLength, kDaikin176DefaultRepeat);
 }
+
+bool decodeDaikin312(decode_results *results, uint16_t offset,
+                             const uint16_t nbits, const bool strict) {
+  // Is there enough data to match successfully?
+  if (results->rawlen < 2 * (nbits + kDaikinHeaderLength + kHeader + kFooter) +
+                        kFooter - 1 + offset)
+    return false;
+
+  // Compliance
+  if (strict && nbits != kDaikin312Bits) return false;
+
+  uint8_t ksectionSize[] = {kDaikin312Section1Length,
+                                                    kDaikin312Section2Length};
+  // Header/Leader Section
+  uint64_t leaderdata = 0;
+  uint16_t used = matchGenericDataLimit(results->rawbuf + offset, &leaderdata,
+                      results->rawlen - offset, kDaikinHeaderLength,
+                      0, 0, 0, 0,  // No Header Mark or Space for the "header"
+                      kDaikin312BitMark - 353, kDaikin312BitMark + 400, kDaikin312OneSpace-400, kDaikin312OneSpace+400,
+                      kDaikin312BitMark - 353, kDaikin312BitMark + 400, kDaikin312ZeroSpace - 351, kDaikin312ZeroSpace+ 359,
+                      kDaikin312BitMark - 353, kDaikin312BitMark + 400, kDaikin312HdrGap-6250, kDaikin312HdrGap+6250,
+                      false, kDaikinTolerance, 0, false);
+  if (!used) return false;  // Failed to match.
+  if (leaderdata) return false;  // The header bits should all be zero.
+
+  offset += used;
+
+  // Data Sections
+  uint16_t pos = 0;
+  for (uint8_t section = 0; section < kDaikin312Sections; section++) {
+    // Section Header + Section Data + Section Footer
+    used = matchGenericStateLimit(results->rawbuf + offset, results->state + pos,
+                        results->rawlen - offset, ksectionSize[section] * 8,
+                        kDaikin312HdrMark-900, kDaikin312HdrMark+900, kDaikin312HdrSpace-500, kDaikin312HdrSpace+500,
+                        kDaikin312BitMark - 353, kDaikin312BitMark + 400, kDaikin312OneSpace-400, kDaikin312OneSpace+400,
+                        kDaikin312BitMark - 353, kDaikin312BitMark + 400, kDaikin312ZeroSpace - 351, kDaikin312ZeroSpace+ 460,
+                        kDaikin312BitMark - 353, kDaikin312BitMark + 400, kDaikin312SectionGap-9000, kDaikin312SectionGap+9000,
+                        section >= kDaikin312Sections - 1,
+                        kDaikinTolerance, 0, false);
+    if (used == 0) {
+      os_trace("%s matchGenericStateLimit failed\r\n", __func__);
+      return false;
+    }
+    offset += used;
+    pos += ksectionSize[section];
+  }
+  // Compliance
+  if (strict) {
+    if (pos * 8 != kDaikin312Bits) return false;
+  }
+
+  // Success
+  os_trace("%s success\r\n", __func__);
+  results->decode_type = DAIKIN312;
+  results->bits = nbits;
+  // No need to record the state as we stored it as we decoded it.
+  // As we use result->state, we don't record value, address, or command as it
+  // is a union data type.
+  return true;
+}
+
+void Daikin312_setInfo(const uint8_t* newState, const uint16_t length, state_ir_t *ir_state) 
+{
+  os_trace("%s\r\n", __func__);
+  Daikin2Protocol _;
+  memcpy(_.raw, newState, kDaikin312StateLength);
+
+  ir_state->protocol = DAIKIN312;
+  ir_state->power = (_.Power && !_.Power2);
+  ir_state->mode = DaikintoCommonMode(_.Mode);
+  ir_state->fanspeed = DaikintoCommonFanSpeed(_.Fan);
+  ir_state->degrees = _.Temp;
+}
+
+

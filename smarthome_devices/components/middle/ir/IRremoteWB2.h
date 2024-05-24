@@ -128,6 +128,7 @@ typedef enum {
   FUJITSU2_AC,
   FUJITSU_NEW_AC,
   GOODWEATHER,
+  DAIKIN312,
   // Add new entries before this one, and update it to point to the last entry.
   kLastDecodeType = LG,
   MIDEA = 1934,

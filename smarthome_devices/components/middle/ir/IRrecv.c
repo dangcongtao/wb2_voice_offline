@@ -1396,6 +1396,11 @@ bool decode_for(decode_results *results, uint8_t max_skip)
     if (decodeSanyoAc152(results, offset, kSanyoAc152Bits, true)) return true;
 #endif
 
+#if DECODE_DAIKIN312
+    os_trace_rcv("Attempting decodeDaikin312 decode\r\n");
+    if (decodeDaikin312(results, offset, kDaikin312Bits, true)) return true;
+#endif
+
 #if DECODE_MIDEA
     os_trace_rcv("Attempting decodeMidea decode\r\n");
     if (decodeMidea(results, offset, kMideaBits, true)) return true;
@@ -1840,6 +1845,17 @@ void m_ir_task(void *param)
             else if (capture.decode_type == DAIKIN128){
                 Daikin128_setRaw((uint8_t*)capture.state, kDaikin128StateLength, capture.decode_type, &ir_state);
                 Daikin128_setInfo((uint8_t*)capture.state, kDaikin128StateLength, capture.decode_type, &ir_state_recv);
+            }
+            else if (capture.decode_type == DAIKIN312){
+                extern void Daikin312_setInfo(const uint8_t* newState, const uint16_t length, state_ir_t *ir_state);
+                #if DEBUG_ENABLE == 1
+                os_trace("DAIKIN312: 0x ");
+                for(uint8_t i = 0; i < kDaikin312StateLength; i++) {
+                    os_trace("%02X-", capture.state[i]);
+                }
+                os_trace("\r\n");
+                #endif
+                Daikin312_setInfo((uint8_t*)capture.state, kDaikin312StateLength, &ir_state_recv);
             }
             else if (capture.decode_type == DAIKIN176){
                 IRDaikin176_setRaw((uint8_t*)capture.state, &ir_state_recv);

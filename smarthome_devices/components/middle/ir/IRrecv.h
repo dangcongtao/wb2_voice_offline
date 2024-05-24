@@ -9,7 +9,7 @@
 #include "ir_Samsung.h"
 #include "IRsend.h"
 
-#define DEBUG_IR_RCV_ENABLE    0
+#define DEBUG_IR_RCV_ENABLE    1
 #define os_trace_rcv if (DEBUG_IR_RCV_ENABLE == 1) printf
 
 #define MS_TO_USEC(x) ((x) * 1000U)  // Convert milli-Seconds to micro-Seconds.
@@ -51,6 +51,7 @@
 #define DECODE_DAIKIN128  1
 #define DECODE_DAIKIN176  1
 #define DECODE_DAIKIN64  1
+#define DECODE_DAIKIN312  1
 #define DECODE_GREE   1
 #define DECODE_MITSUBISHI112  1
 #define DECODE_MITSUBISHIHEAVY  1
@@ -268,6 +269,11 @@ bool decodeDaikin64(decode_results *results, uint16_t offset,
 #endif
 #if DECODE_DAIKIN176
 bool decodeDaikin176(decode_results *results, uint16_t offset,
+                             const uint16_t nbits,
+                             const bool strict);
+#endif
+#if DECODE_DAIKIN312
+bool decodeDaikin312(decode_results *results, uint16_t offset,
                              const uint16_t nbits,
                              const bool strict);
 #endif

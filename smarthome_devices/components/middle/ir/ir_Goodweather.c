@@ -6,7 +6,7 @@
 bool decodeGoodweather(decode_results* results, uint16_t offset,
                                const uint16_t nbits,
                                const bool strict) {
-    os_trace("%s start\r\n", __func__);
+    // os_trace("%s start\r\n", __func__);
   if (results->rawlen < 2 * (2 * nbits) + kHeader + 2 * kFooter - 1 + offset)
     return false;  // Can't possibly be a valid Goodweather message.
   if (strict && nbits != kGoodweatherBits)

@@ -50,12 +50,12 @@ bool decodeToshibaAC(decode_results* results, uint16_t offset,
   }
 
   // Match Header + Data + Footer
-  if (!matchGenericState(results->rawbuf + offset, results->state,
+  if (!matchGenericStateLimit(results->rawbuf + offset, results->state,
                     results->rawlen - offset, nbits,
-                    kToshibaAcHdrMark, kToshibaAcHdrSpace,
-                    kToshibaAcBitMark, kToshibaAcOneSpace,
-                    kToshibaAcBitMark, kToshibaAcZeroSpace,
-                    kToshibaAcBitMark, kToshibaAcMinGap, true,
+                    kToshibaAcHdrMark-1000, kToshibaAcHdrMark+1000, kToshibaAcHdrSpace-1000, kToshibaAcHdrSpace+1000,
+                    kToshibaAcBitMark-400, kToshibaAcBitMark+400, kToshibaAcOneSpace-500, kToshibaAcOneSpace+500,
+                    kToshibaAcBitMark-400, kToshibaAcBitMark+400, kToshibaAcZeroSpace-400, kToshibaAcZeroSpace+400,
+                    kToshibaAcBitMark-400, kToshibaAcBitMark+400, kToshibaAcMinGap-1000, kToshibaAcMinGap+1000, true,
                     40, kMarkExcess, true)) {
                         // os_trace("%s matchGenericState failed\r\n", __func__);
                         return false;
@@ -162,12 +162,19 @@ void Toshiba_setRaw(const uint8_t* newState, const uint16_t length, const decode
 
 void Toshiba_setInfo(const uint8_t* newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state) 
 {
+    os_trace("TOSHIBA_AC: 0x ");
+    for(uint8_t i = 0; i < length; i++) {
+        os_trace("%02X-", newState[i]);
+    }
+    os_trace("\r\n");
     ToshibaProtocol _;
     memset(&_, 0, sizeof(ToshibaProtocol));
     memcpy(_.raw, newState, length);
 
     ir_state->protocol = TOSHIBA_AC;
     ir_state->model = -1;
+
+    os_trace("%s length: %u\r\n", __func__, _.Length);
 
     ir_state->power = getPower(_);
     ir_state->mode = _.Mode;
@@ -254,5 +261,6 @@ void Toshiba_send(state_ir_t state_ir)
       }
     }
     checksum(&_, getStateLength(_));
+    os_trace("%s length: %u\r\n", __func__, _.Length);
     sendToshibaAC(_.raw, getStateLength(_), kToshibaACMinRepeat);
 }
