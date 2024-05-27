@@ -1167,9 +1167,9 @@ bool decode_for(decode_results *results, uint8_t max_skip)
     os_trace_rcv("Attempting Toshiba AC 72bit decode\r\n");
     if (decodeToshibaAC(results, offset, kToshibaACBits, true)) return true;
     os_trace_rcv("Attempting Toshiba AC 80bit decode\r\n");
-    // if (decodeToshibaAC(results, offset, kToshibaACBitsLong, true)) return true;
+    if (decodeToshibaAC(results, offset, kToshibaACBitsLong, true)) return true;
     os_trace_rcv("Attempting Toshiba AC 56bit decode\r\n");
-    // if (decodeToshibaAC(results, offset, kToshibaACBitsShort, true)) return true;
+    if (decodeToshibaAC(results, offset, kToshibaACBitsShort, true)) return true;
 #endif
 
 #if DECODE_DAIKIN
