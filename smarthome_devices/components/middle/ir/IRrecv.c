@@ -1168,8 +1168,8 @@ bool decode_for(decode_results *results, uint8_t max_skip)
     if (decodeToshibaAC(results, offset, kToshibaACBits, true)) return true;
     os_trace_rcv("Attempting Toshiba AC 80bit decode\r\n");
     if (decodeToshibaAC(results, offset, kToshibaACBitsLong, true)) return true;
-    os_trace_rcv("Attempting Toshiba AC 56bit decode\r\n");
-    if (decodeToshibaAC(results, offset, kToshibaACBitsShort, true)) return true;
+    // os_trace_rcv("Attempting Toshiba AC 56bit decode\r\n");
+    // if (decodeToshibaAC(results, offset, kToshibaACBitsShort, true)) return true;
 #endif
 
 #if DECODE_DAIKIN
@@ -1808,10 +1808,12 @@ void m_ir_task(void *param)
                 
                 case kToshibaACBitsShort:
                     Toshiba_setRaw((uint8_t*)capture.state, kToshibaACStateLengthShort, capture.decode_type, &ir_state);
+                    Toshiba_setInfo((uint8_t*)capture.state, kToshibaACStateLengthShort, capture.decode_type, &ir_state_recv);
                     break;
                 
                 case kToshibaACBitsLong:
                     Toshiba_setRaw((uint8_t*)capture.state, kToshibaACStateLengthLong, capture.decode_type, &ir_state);
+                    Toshiba_setInfo((uint8_t*)capture.state, kToshibaACStateLengthLong, capture.decode_type, &ir_state_recv);
                     break;
                 
                 default:

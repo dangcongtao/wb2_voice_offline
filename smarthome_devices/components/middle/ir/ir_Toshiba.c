@@ -117,9 +117,18 @@ static fanspeed_t toCommonFanSpeed(const uint8_t spd) {
   }
 }
 
+static uint8_t getMode(ToshibaProtocol _, const bool raw) {
+  uint8_t mode = _.Mode;
+  if (raw) return mode;
+  switch (mode) {
+    case kToshibaAcOff: return _prev_mode;
+    default:            return mode;
+  }
+}
+
 static bool getPower(ToshibaProtocol _)
 {
-  return _.Mode != kToshibaAcOff;
+  return getMode(_, true) != kToshibaAcOff;
 }
 
 static uint8_t getTemp(ToshibaProtocol _) { return _.Temp + kToshibaAcMinTemp; }
@@ -170,6 +179,7 @@ void Toshiba_setInfo(const uint8_t* newState, const uint16_t length, const decod
     ToshibaProtocol _;
     memset(&_, 0, sizeof(ToshibaProtocol));
     memcpy(_.raw, newState, length);
+    _prev_mode = getMode(_, false);
 
     ir_state->protocol = TOSHIBA_AC;
     ir_state->model = -1;
@@ -177,8 +187,8 @@ void Toshiba_setInfo(const uint8_t* newState, const uint16_t length, const decod
     os_trace("%s length: %u\r\n", __func__, _.Length);
 
     ir_state->power = getPower(_);
-    ir_state->mode = _.Mode;
-    _prev_mode = ir_state->mode;
+    ir_state->mode = _prev_mode;
+    // _prev_mode = ir_state->mode;
     ir_state->degrees = getTemp(_);
     ir_state->fanspeed = _.Fan;
     ir_state->turbo = getTurbo(_);
@@ -256,9 +266,7 @@ void Toshiba_send(state_ir_t state_ir)
     if (!state_ir.power) {  // Off
         setMode(&_, kToshibaAcOff);
     } else {
-      if (!_.Mode) {
-        //setMode(&_, (uint8_t) state_ir.mode);
-      }
+      if (!getPower(_)) setMode(&_, _prev_mode);
     }
     checksum(&_, getStateLength(_));
     os_trace("%s length: %u\r\n", __func__, _.Length);
