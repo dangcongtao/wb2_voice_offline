@@ -2112,7 +2112,11 @@ void m_ir_task(void *param)
 
                 seek += sprintf(str, "{\"%s\":10,\"type\":1,\"brand\":%d,\"model\":%d,\"power\":%u,\"mode\":%d,\"temp\":%.1f,\"fan\":%d,\"swingv\":%d,\"swingh\":%d,\"debug\":{\"nbits\":%u,\"data\":\"", 
                 gs_dev_type[device_type], capture.decode_type, ir_state_recv.model, ir_state_recv.power, ir_state_recv.mode, ir_state_recv.degrees, ir_state_recv.fanspeed, ir_state_recv.swingv, ir_state_recv.swingh, capture.bits);
-                for(uint8_t i = 0; i < capture.bits / 8; i++) {
+                uint8_t n_bytes = capture.bits / 8;
+                if (capture.bits % 8) {
+                    n_bytes++;
+                }
+                for(uint8_t i = 0; i < n_bytes; i++) {
                     seek += sprintf(&str[seek], "%02X-", capture.state[i]);
                 }
                 seek--;
