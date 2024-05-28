@@ -162,7 +162,7 @@ void Casper2024Ac_send(state_ir_t state_ir)
     os_trace("%s\r\n", __func__);
     ElectraProtocol _;
     uint8_t kState[kElectraAcStateLength] = {0xCA, 0x12, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x80, 0x20, 0x00, 0x45, 0xC3};
-    for (uint8_t i = 1; i < kElectraAcStateLength - 1; i++) _.raw[i] = kState[i];
+    for (uint8_t i = 0; i < kElectraAcStateLength - 1; i++) _.raw[i] = kState[i];
 
     // if (state_ir.swingv != swingv_kOff) {
     //   _.SwingV = ((state_ir.swingv == 1) ? kElectraAcSwingOn : kElectraAcSwingOff);
