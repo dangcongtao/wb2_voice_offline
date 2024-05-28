@@ -46,9 +46,15 @@ bool decodeElectraAC(decode_results *results, uint16_t offset,
     if (!IRElectraAc_validChecksum(results->state, kElectraAcStateLength)) return false;
   }
 
-    os_trace("%s success\r\n", __func__);
+    
   // Success
-  results->decode_type = ELECTRA_AC;
+  if (results->state[0] == 0xCA) {
+    os_trace("%s CASPER 2024 success\r\n", __func__);
+    results->decode_type = CASPER2024_AC;
+  } else {
+    os_trace("%s Electra success\r\n", __func__);
+    results->decode_type = ELECTRA_AC;
+  }
   results->bits = nbits;
   // No need to record the state as we stored it as we decoded it.
   // As we use result->state, we don't record value, address, or command as it
@@ -71,6 +77,19 @@ void ElectraAc_setInfo(const uint8_t new_code[], const uint16_t length, state_ir
     ir_state->quiet = _.Quiet;
     ir_state->swingv = !_.SwingV;
     ir_state->swingh = !_.SwingH;
+}
+
+
+void Casper2024Ac_setInfo(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state) 
+{
+    ElectraProtocol _;
+    memset(&_, 0, sizeof(ElectraProtocol));
+    memcpy(_.raw, new_code, min(length, kElectraAcStateLength));
+
+    ir_state->power = _.Power;
+    ir_state->mode = _.Mode2;
+    ir_state->fanspeed = _.Fan2;
+    ir_state->degrees = _.Temp2 + kElectraAcTempDelta;
 }
 
 static void sendElectraAC(const uint8_t data[], const uint16_t nbytes,
@@ -131,6 +150,68 @@ void ElectraAc_send(state_ir_t state_ir)
   uint8_t newtemp = max(kElectraAcMinTemp, (uint8_t)state_ir.degrees);
   newtemp = min(kElectraAcMaxTemp, newtemp) - kElectraAcTempDelta;
   _.Temp = newtemp;
+    // calculate checksum
+    _.Sum = IRElectraAc_calcChecksum(_.raw, kElectraAcStateLength);
+
+    sendElectraAC(_.raw, kElectraAcStateLength, kElectraAcMinRepeat);
+}
+
+
+void Casper2024Ac_send(state_ir_t state_ir)
+{
+    os_trace("%s\r\n", __func__);
+    ElectraProtocol _;
+    uint8_t kState[kElectraAcStateLength] = {0xCA, 0x12, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x80, 0x20, 0x00, 0x45, 0xC3};
+    for (uint8_t i = 1; i < kElectraAcStateLength - 1; i++) _.raw[i] = kState[i];
+
+    // if (state_ir.swingv != swingv_kOff) {
+    //   _.SwingV = ((state_ir.swingv == 1) ? kElectraAcSwingOn : kElectraAcSwingOff);
+    // }
+    // if (state_ir.swingh != swingh_kOff) {
+    //   _.SwingH = ((state_ir.swingh == 1) ? kElectraAcSwingOn : kElectraAcSwingOff);
+    // }
+    // Power
+    _.Power = state_ir.power;
+    // set Temp
+    uint8_t newtemp = max(kElectraAcMinTemp, (uint8_t)state_ir.degrees);
+    newtemp = min(kElectraAcMaxTemp, newtemp) - kElectraAcTempDelta;
+    _.Temp2 = newtemp;
+    // fanspeed
+    switch ((uint8_t)state_ir.fanspeed) {
+      case kCasperAcFanLow:
+      case kCasperAcFanMed:
+      case kCasperAcFanHigh:
+        _.Fan2 = state_ir.fanspeed;
+        break;
+      default:
+        // If we get an unexpected speed, default to Auto.
+        _.Fan2 = kCasperAcFanHigh;
+    }
+    // Mode
+    switch ((uint8_t)state_ir.mode) {
+        case kElectraAcFan:
+              _.raw[2] = 0xE0;
+              _.Temp2 = 0;
+              _.Temp_disable = 0b111;
+              _.Mode2 = kElectraAcFan;
+              break;
+        case kElectraAcAuto:
+              _.raw[2] = 0xE0;
+              _.Temp2 = 0;
+              _.Temp_disable = 0b111;
+              _.Fan2 = 0b111;
+              _.Mode2 = kElectraAcAuto;
+              break;
+        case kElectraAcDry:
+        case kElectraAcCool:
+        case kElectraAcHeat:
+        _.Mode2 = state_ir.mode;
+        break;
+        default:
+        // If we get an unexpected mode, default to Cool.
+        _.Mode2 = kElectraAcCool;
+    }
+
     // calculate checksum
     _.Sum = IRElectraAc_calcChecksum(_.raw, kElectraAcStateLength);
 

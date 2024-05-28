@@ -250,6 +250,7 @@ void HitachiAC264_send(state_ir_t state_ir);
 void HitachiAc296_send(state_ir_t state_ir);
 void Asanzo_send(state_ir_t state_ir);
 void Daikin312_send(state_ir_t state_ir);
+void Casper2024Ac_send(state_ir_t state_ir);
 
 /* end */
 

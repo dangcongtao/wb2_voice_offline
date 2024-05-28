@@ -668,6 +668,7 @@ void IRVoltas_setRaw(const uint8_t new_code[], state_ir_t *ir_state);
 void HitachiAC264_setRaw(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
 void HitachiAc296_setRaw(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
 void GoodweatherAc_setRaw(const uint64_t state, state_ir_t *ir_state);
+void Casper2024Ac_setInfo(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
 
 // void enableIRIn(const bool pullup);
 void ir_loop(void);

@@ -1934,6 +1934,10 @@ void m_ir_task(void *param)
             {
                 ElectraAc_setInfo(capture.state, kElectraAcStateLength, &ir_state_recv);
             }
+            else if (CASPER2024_AC == capture.decode_type)
+            {
+                Casper2024Ac_setInfo(capture.state, kElectraAcStateLength, &ir_state_recv);
+            }
             else if (AIRWELL == capture.decode_type)
             {
                 AirwellAc_setInfo(capture.value, &ir_state_recv);

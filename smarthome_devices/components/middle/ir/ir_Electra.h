@@ -50,6 +50,49 @@ union {
     // Byte 12
     uint8_t Sum     :8;
   };
+  struct {
+    // Byte 0
+    uint8_t         :8;
+    // Byte 1
+    uint8_t Temp2    :5;
+    uint8_t  Temp_disable :3;
+    // Byte 2
+    uint8_t         :5;
+    uint8_t   :3;
+    // Byte 3
+    uint8_t              :6;
+    uint8_t  :1;
+    uint8_t              :1;
+    // Byte 4
+    uint8_t Fan2     :3;
+    uint8_t         :5;
+    // Byte 5
+    uint8_t         :6;
+    uint8_t    :1;
+    uint8_t    :1;
+    // Byte 6
+    uint8_t Mode2       :3;
+    uint8_t    :1;
+    uint8_t         :1;
+    uint8_t     :3;
+    // Byte 7
+    uint8_t  :8;
+    // Byte 8
+    uint8_t         :8;
+    // Byte 9
+    uint8_t         :2;
+    uint8_t    :1;
+    uint8_t         :2;
+    uint8_t    :1;
+    uint8_t         :2;
+    // Byte 10
+    uint8_t         :8;
+    // Byte 11
+    uint8_t button :4; // 0x5 btn Power
+    uint8_t  :4;
+    // Byte 12
+    uint8_t      :8;
+  };
 };
 } ElectraProtocol;
 
@@ -70,6 +113,10 @@ const uint8_t kElectraAcCool =     0b001;
 const uint8_t kElectraAcDry =      0b010;
 const uint8_t kElectraAcHeat =     0b100;
 const uint8_t kElectraAcFan =      0b110;
+
+const uint8_t kCasperAcFanLow =     5;
+const uint8_t kCasperAcFanMed =     3;
+const uint8_t kCasperAcFanHigh =    1;
 
 const uint8_t kElectraAcLightToggleOn  = 0x15;
 // Light has known ON values of 0x15 (0b00010101) or 0x19 (0b00011001)
