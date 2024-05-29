@@ -43,6 +43,8 @@
 #define CJSON_KEY_TIMESTAMP      "timestamp"
 #define CJSON_KEY_LEAKAGE       "leakage"
 #define CJSON_KEY_DISALBE_AS       "disable_as"
+#define CJSON_KEY_TIME_DELAY_CBCT       "t_d"
+
 
 
 #define DEFAULT_AES_KEY "0000000000000000"
@@ -85,7 +87,8 @@ typedef enum
     SRC_ACTION_USER = 0,
     SRC_ACTION_ALARM = 2,
     SRC_ACTION_LEADK_CURR = 7,
-    SRC_ACTION_LINK_STAIR = 8
+    SRC_ACTION_LINK_STAIR = 8,
+    SRC_ACTION_LINK_CBCT = 9,
 } src_action_t;
 
 typedef enum

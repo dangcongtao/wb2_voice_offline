@@ -3,6 +3,7 @@
 #include "hardware.h"
 #include "hci_core.h"
 #include "m_database.h"
+#include "process_data.h"
 
 // static ble_scan_info_t master_scan_tbl[MASTER_SCAN_MAX];
 // static int master_current_scan;
@@ -35,6 +36,7 @@ void slave_proc_response_request_link(uint8_t *data, uint8_t len);
 void master_proc_rcv_verify_link(uint8_t *data, uint8_t len);
 void slave_proc_rcv_switch_linking_request(uint8_t *data, uint8_t len);
 void m_ble_request_state(uint8_t *data, uint8_t len);
+void m_ble_cbct_request_state(uint8_t *data, uint8_t len, int index);
 void m_ble_send_state(uint8_t need_rst);
 void slave_proc_remove_link(uint8_t *data, uint8_t len);
 void slave_proc_remove_all_nodes(uint8_t *data, uint8_t len);
@@ -94,7 +96,7 @@ static bool scan_data_cb(struct bt_data *data, void *user_data)
             case REQUEST_CHANGE_STATE:
             {
                 if (is_tid_valid(is_existed_in_db((uint8_t*)(&data->data[3])), data->data[9])) {
-                    os_trace("state changed %d ->> %u\r\n", is_existed_in_db((uint8_t*)(&data->data[3])), data->data[9]);
+                    //os_trace("state changed %d ->> %u\r\n", is_existed_in_db((uint8_t*)(&data->data[3])), data->data[9]);
                     m_ble_request_state(data->data, data->data_len);
                     return false;
                 } else {
@@ -103,8 +105,10 @@ static bool scan_data_cb(struct bt_data *data, void *user_data)
             } break;
 
             case SEND_SS_STATE_CBCT:{
-                if (is_tid_valid(is_existed_in_db((uint8_t*)(&data->data[3])), data->data[9])) {
-                    // os_trace("bat den\r\n");
+                int this_index = -1;
+                if (is_tid_valid((this_index = is_existed_in_db((uint8_t*)(&data->data[3]))), data->data[9])) {
+                    // os_trace("bat den tid: %u\r\n", (uint8_t)data->data[9]);
+                    m_ble_cbct_request_state(data->data, data->data_len, this_index);
                     return false;
                 } else {
                     return true;
@@ -266,10 +270,13 @@ void adv_send_request_link(void)
     my_ble_update_data();
 }
 
-void master_accept_request_link(void)
+void master_accept_request_link(uint8_t *mac_acpt, uint8_t act)
 {
     if (s_ble_obj.step != WAIT_CONFIG) {
         os_trace("master_accept_request_link: step incorrect %u\r\n", s_ble_obj.step);
+        return;
+    } else if (memcmp(mac_acpt, s_ble_obj.mac, 6)) {
+        os_trace("%s mac invalid\r\n", __func__);
         return;
     }
     memset(data_adv, 0, sizeof(data_adv));
@@ -285,6 +292,7 @@ void master_accept_request_link(void)
     data_adv_len = 16;
 
     s_ble_obj.step = WAIT_VERIFY_ACCEPT_LINK;
+    s_ble_obj.my_act = act;
 
     my_ble_update_data();
 
@@ -325,6 +333,37 @@ void db_remove_child(uint8_t id)
     memset(&obj_ble.list_child[obj_ble.num_devices_link-1], 0, sizeof(ble_child_t));
 
     obj_ble.num_devices_link--;
+    // sync database
+    m_db_get_instance()->_request_sync_db(BIT_FLAG_SYNC_BLE);
+}
+
+void db_remove_child_by_mac(uint8_t *mac)
+{
+    for (uint8_t j = 0; j < obj_ble.num_devices_link; j++) {
+        if (!memcmp(mac, obj_ble.list_child[j].mac, 6)) {
+            for (uint8_t i = j+1; i < obj_ble.num_devices_link; i++) {
+                obj_ble.list_child[i - 1] = obj_ble.list_child[i];
+            }
+            break;
+        }
+    }
+
+    memset(&obj_ble.list_child[obj_ble.num_devices_link-1], 0, sizeof(ble_child_t));
+
+    obj_ble.num_devices_link--;
+    // sync database
+    m_db_get_instance()->_request_sync_db(BIT_FLAG_SYNC_BLE);
+}
+
+void db_change_delay_cbct_by_mac(uint8_t *mac, uint32_t delay_time)
+{
+    for (uint8_t j = 0; j < obj_ble.num_devices_link; j++) {
+        if (!memcmp(mac, obj_ble.list_child[j].mac, 6)) {
+            obj_ble.list_child[j].data.holder = delay_time;
+            break;
+        }
+    }
+
     // sync database
     m_db_get_instance()->_request_sync_db(BIT_FLAG_SYNC_BLE);
 }
@@ -529,6 +568,8 @@ void master_proc_rcv_request_link(uint8_t *data, uint8_t len)
             s_ble_obj.step = WAIT_CONFIG;
             s_ble_obj.last_time_running_config = xTaskGetTickCount();
             // TODO: send to mqtt: has a device need to pair
+            if (s_ble_obj.type_device_config == DEVICE_TYPE_CBCT)
+                s_ble_obj.flags.flag_need_send_device_wait_config = 1;
         }
     }
     else if (s_ble_obj.is_run_config == 0)
@@ -547,6 +588,8 @@ void master_proc_rcv_request_link(uint8_t *data, uint8_t len)
         s_ble_obj.last_time_running_config = xTaskGetTickCount();
         s_ble_obj.step = WAIT_CONFIG;
         // TODO: send to mqtt: has a device need to pair
+        if (s_ble_obj.type_device_config == DEVICE_TYPE_CBCT)
+            s_ble_obj.flags.flag_need_send_device_wait_config = 1;
     }
 }
 
@@ -703,6 +746,28 @@ void m_ble_request_state(uint8_t *data, uint8_t len)
     }
 }
 
+void m_ble_cbct_request_state(uint8_t *data, uint8_t len, int index)
+{
+    uint8_t channel = (obj_ble.list_child[index].my_act - 1) / 2;
+    s_ble_obj.state_await = (0x01 << (channel * 2));
+    memset(s_ble_obj.mac_request_state, 0, 6);
+    memcpy(s_ble_obj.mac_request_state, &data[3], 6);
+
+    memset(s_ble_obj.check_mac_source, 0, 6);
+    
+    memcpy(s_ble_obj.check_mac_source, &data[10], 6);
+    os_trace("data_ble:\r\n");
+    for(uint8_t i = 0; i < len; i++) {
+        os_trace("%02X-", data[i]);
+    }
+    os_trace("\r\n");
+    os_trace("%s batt: %u, len: %u\r\n", __func__, data[21], len);
+    if (obj_ble.list_child[index].opp_act != data[21]) {
+        obj_ble.list_child[index].opp_act = data[21];
+        m_db_get_instance()->_request_sync_db(BIT_FLAG_SYNC_BLE);
+    }
+}
+
 void m_ble_sync_state(void)
 {
     if (!s_ble_obj.state_await) {
@@ -721,30 +786,48 @@ void m_ble_sync_state(void)
         temp = (state >> (j * 2) & (0b11));
         if (temp) {
             for (uint8_t i = 0; i < obj_ble.num_devices_link; i++) {
-                my_channel_act = (obj_ble.list_child[i].my_act - 1) / 2 ;
-                opp_channel_act = (obj_ble.list_child[i].opp_act - 1) / 2 ;
-                if (opp_channel_act == j && memcmp(s_ble_obj.check_mac_source, adv_addr.a.val, 6) && !memcmp(s_ble_obj.mac_request_state, obj_ble.list_child[i].mac, 6)) {
-                    os_trace("j=%u, my_channel_act: %u, opp_channel_act: %u, temp=%u, level %u\r\n", j, my_channel_act, opp_channel_act, temp, m_switch_get_instance()._read_switch_cb(my_channel_act));
-                    m_ble_send_t ble_send;
-                    ble_send.send_ble = true;
-                    ble_send.need_create_new_id = false;
-                    ble_send.send_self = true;
-                    memcpy(ble_send.mac_source, s_ble_obj.check_mac_source, 6);
+                if (obj_ble.list_child[i].type == DEVICE_NEW) {
+                    my_channel_act = (obj_ble.list_child[i].my_act - 1) / 2 ;
+                    opp_channel_act = (obj_ble.list_child[i].opp_act - 1) / 2 ;
+                    if (opp_channel_act == j && memcmp(s_ble_obj.check_mac_source, adv_addr.a.val, 6) && !memcmp(s_ble_obj.mac_request_state, obj_ble.list_child[i].mac, 6)) {
+                        os_trace("j=%u, my_channel_act: %u, opp_channel_act: %u, temp=%u, level %u\r\n", j, my_channel_act, opp_channel_act, temp, m_switch_get_instance()._read_switch_cb(my_channel_act));
+                        m_ble_send_t ble_send;
+                        ble_send.send_ble = true;
+                        ble_send.need_create_new_id = false;
+                        ble_send.send_self = true;
+                        memcpy(ble_send.mac_source, s_ble_obj.check_mac_source, 6);
 
-                    if (temp == 1) {
-                        if (s_ble_obj.time_cnt_startup || m_switch_get_instance()._read_switch_cb(my_channel_act) == 0) {
-                            if (s_ble_obj.time_cnt_startup) {
-                                s_ble_obj.time_cnt_startup = 0;
+                        if (temp == 1) {
+                            if (s_ble_obj.time_cnt_startup || m_switch_get_instance()._read_switch_cb(my_channel_act) == 0) {
+                                if (s_ble_obj.time_cnt_startup) {
+                                    s_ble_obj.time_cnt_startup = 0;
+                                }
+                                m_switch_get_instance()._control_switch_cb(CH1_ON + my_channel_act * 2, SRC_ACTION_LINK_STAIR, 0, 1, 1, ble_send);
                             }
-                            m_switch_get_instance()._control_switch_cb(CH1_ON + my_channel_act * 2, SRC_ACTION_LINK_STAIR, 0, 1, 1, ble_send);
-                        }
-                    } else if (temp == 2) {
-                        if (s_ble_obj.time_cnt_startup || m_switch_get_instance()._read_switch_cb(my_channel_act) == 1) {
-                            if (s_ble_obj.time_cnt_startup) {
-                                s_ble_obj.time_cnt_startup = 0;
+                        } else if (temp == 2) {
+                            if (s_ble_obj.time_cnt_startup || m_switch_get_instance()._read_switch_cb(my_channel_act) == 1) {
+                                if (s_ble_obj.time_cnt_startup) {
+                                    s_ble_obj.time_cnt_startup = 0;
+                                }
+                                m_switch_get_instance()._control_switch_cb(CH1_OFF + my_channel_act * 2, SRC_ACTION_LINK_STAIR, 0, 1, 1, ble_send);
                             }
-                            m_switch_get_instance()._control_switch_cb(CH1_OFF + my_channel_act * 2, SRC_ACTION_LINK_STAIR, 0, 1, 1, ble_send);
                         }
+                    }
+                } else if (obj_ble.list_child[i].type == DEVICE_TYPE_CBCT) {
+                    my_channel_act = (obj_ble.list_child[i].my_act - 1) / 2 ;
+                    if (!memcmp(s_ble_obj.mac_request_state, obj_ble.list_child[i].mac, 6) && my_channel_act == j) {
+
+                        os_trace("%s %u motion sensor detected, index: %u, time cnt_down: %lu\r\n", __func__, i, my_channel_act, s_ble_obj.cnt_down_light_off[my_channel_act]);
+                        if (!s_ble_obj.cnt_down_light_off[my_channel_act]) {
+                            os_trace("%s turn on light by motion sensor, index: %u\r\n", __func__, my_channel_act);
+                            m_ble_send_t ble_send;
+                            ble_send.send_ble = true;
+                            ble_send.need_create_new_id = false;
+                            ble_send.send_self = true;
+                            memcpy(ble_send.mac_source, s_ble_obj.check_mac_source, 6);
+                            m_switch_get_instance()._control_switch_cb(CH1_ON + my_channel_act * 2, SRC_ACTION_LINK_CBCT, 0, 1, 1, ble_send);
+                        }
+                        s_ble_obj.cnt_down_light_off[my_channel_act] = obj_ble.list_child[i].data.holder * 1000;
                     }
                 }
             }
@@ -770,7 +853,7 @@ static void check_config_timeout(void)
 	}
 }
 
-static uint8_t ble_db_add_child(uint8_t* mac, uint8_t type)
+static uint8_t ble_db_add_child(uint8_t* mac, uint8_t type, uint8_t act)
 {
     if (-1 != is_existed_in_db(mac)) {
         os_trace("device existed\r\n");
@@ -779,8 +862,10 @@ static uint8_t ble_db_add_child(uint8_t* mac, uint8_t type)
     memcpy(obj_ble.list_child[obj_ble.num_devices_link].mac, mac, 6);
     obj_ble.list_child[obj_ble.num_devices_link].data.holder = 0;
     obj_ble.list_child[obj_ble.num_devices_link].type = type;
+    obj_ble.list_child[obj_ble.num_devices_link].my_act = act;
     if (type == DEVICE_TYPE_CBCT) {
-        obj_ble.time_delay_light_off[obj_ble.num_devices_link] = DEFAULT_DELAY_LIGHT_OFF_CBCT;
+        obj_ble.list_child[obj_ble.num_devices_link].data.holder = DEFAULT_DELAY_LIGHT_OFF_CBCT;
+        obj_ble.list_child[obj_ble.num_devices_link].opp_act = 100; // default 100% batt pcn
     }
     obj_ble.num_devices_link++;
     // sync database
@@ -799,6 +884,19 @@ void ble_config_loop(void)
     if (s_ble_obj.time_cnt_startup) {
         s_ble_obj.time_cnt_startup -= 100;
     }
+    for (uint8_t k = 0; k < 4; k++)
+        if (s_ble_obj.cnt_down_light_off[k]) {
+            s_ble_obj.cnt_down_light_off[k] -= 100;
+            if (s_ble_obj.cnt_down_light_off[k] == 0) {
+                os_trace("cnt_down_light_off index: %u\r\n", k);
+                m_ble_send_t ble_send;
+                ble_send.send_ble = true;
+                ble_send.need_create_new_id = true;
+                ble_send.send_self = true;
+                memcpy(ble_send.mac_source, s_ble_obj.check_mac_source, 6);
+                m_switch_get_instance()._control_switch_cb(CH1_OFF + k * 2, SRC_ACTION_LINK_CBCT, 0, 1, 1, ble_send);
+            }
+        }
     
     tick_send_state += 100;
     if (s_ble_obj.my_state){
@@ -813,8 +911,14 @@ void ble_config_loop(void)
 
     switch (s_ble_obj.step)
     {
-    case WAIT_VERIFY_ACCEPT_LINK:
     case WAIT_CONFIG: // step_2: -> master
+    {
+        if (s_ble_obj.flags.flag_need_send_device_wait_config) {
+            s_ble_obj.flags.flag_need_send_device_wait_config = 0;
+            send_device_wait_link_stair(s_ble_obj.type_device_config, s_ble_obj.mac);
+        }
+    }
+    case WAIT_VERIFY_ACCEPT_LINK:
     {
         check_config_timeout();
     }
@@ -885,7 +989,11 @@ void ble_config_loop(void)
         if (s_ble_obj.type_device_config == DEVICE_NEW) {
             ble_db_add_child_new(s_ble_obj.mac, s_ble_obj.type_device_config, s_ble_obj.my_act, s_ble_obj.opp_act);
         } else {
-            ble_db_add_child(s_ble_obj.mac, s_ble_obj.type_device_config);
+            ble_db_add_child(s_ble_obj.mac, s_ble_obj.type_device_config, s_ble_obj.my_act);
+        }
+
+        if (s_ble_obj.type_device_config == DEVICE_TYPE_CBCT) {
+            send_device_cbct_link_success(s_ble_obj.type_device_config, s_ble_obj.mac);
         }
 
         s_ble_obj.is_run_config = 0;
@@ -901,7 +1009,7 @@ void ble_config_loop(void)
         if (s_ble_obj.type_device_config == DEVICE_NEW) {
             ble_db_add_child_new(s_ble_obj.mac, s_ble_obj.type_device_config, s_ble_obj.my_act, s_ble_obj.opp_act);
         } else {
-            ble_db_add_child(s_ble_obj.mac, s_ble_obj.type_device_config);
+            ble_db_add_child(s_ble_obj.mac, s_ble_obj.type_device_config, s_ble_obj.my_act);
         }
 
         s_ble_obj.is_run_config = 0;

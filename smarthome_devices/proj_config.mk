@@ -20,7 +20,7 @@ CONFIG_FREERTOS_TICKLESS_MODE:=0
 CONFIG_WIFI:=1
 
 
-LOG_ENABLED_COMPONENTS := hardware
+LOG_ENABLED_COMPONENTS := hardware blog_testc
 # ========== BLE ===================
 
 #set CONFIG_ENABLE_ACP to 1 to enable ACP, set to 0 or comment this line to disable
@@ -42,5 +42,12 @@ CONFIG_BT_STACK_CLI:=1
 CONFIG_BLE_STACK_DBG_PRINT := 1
 CONFIG_BT_STACK_PTS := 0
 CONF_ENABLE_COREDUMP:=1
+CONFIG_ENABLE_FP:=1
+CONF_ENABLE_FUNC_BACKTRACE:=1
+CONFIG_COMPONENT_BUGKILLER_ENABLE:=1
+ifeq ($(CONFIG_COMPONENT_BUGKILLER_ENABLE),1)
+INCLUDE_COMPONENTS += bugkiller_freertos
+endif
+
 
 # ========== END BLE ===================

@@ -42,8 +42,12 @@ static void app_remove_device(cJSON *jsRoot);
 static void app_start_cyclic_timer(cJSON *jsRoot);
 static void app_stop_cyclic_timer(cJSON *jsRoot);
 static void app_backup_db(cJSON *jsRoot);
+static void app_accept_cbct_link_device(cJSON *jsRoot);
+static void app_change_delay_cbct(cJSON *jsRoot);
+static void app_get_list_cbct(cJSON *jsRoot);
 static void app_link_device(cJSON *jsRoot);
 static void app_get_list_link_device(cJSON *jsRoot);
+static void app_remove_link_device_by_mac(cJSON *jsRoot);
 static void app_remove_link_device(cJSON *jsRoot);
 static void app_swmini_set_use_mode_stair(cJSON *jsRoot);
 
@@ -76,6 +80,10 @@ wswitch_handler_t array_handler[] = {
     {app_set_static_ip, 132},    
     {app_set_lock, 133},
     {app_backup_db, 151},
+    {app_accept_cbct_link_device, 314},
+    {app_get_list_cbct, 310},
+    {app_remove_link_device_by_mac, 311},
+    {app_change_delay_cbct, 312},
     {app_link_device, 400},
     {app_get_list_link_device, 401},
     {app_remove_link_device, 402},
@@ -1118,6 +1126,285 @@ RESPONSE:
     m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
 }
 
+static void app_accept_cbct_link_device(cJSON *jsRoot)
+{
+    uint8_t result = 0;
+    cJSON *jsType, *jsU, *jsMac, *jsAct1, *jsAct2;
+    uint32_t type = 0, uid = 0, act1 = 0, act2 = 0;
+    char mac_str[32];
+
+    os_trace("%s\n", __func__);
+
+    jsType = cJSON_GetObjectItem(jsRoot, gs_dev_type[device_type]);
+    if (jsType == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    type = jsType->valueint;
+
+    jsU = cJSON_GetObjectItem(jsRoot, CJSON_KEY_USER_ID);
+    if (jsU == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    uid = jsU->valueint;
+
+    jsMac = cJSON_GetObjectItem(jsRoot, CJSON_KEY_ID_DEVICE);
+    if (jsMac == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    memset(mac_str, 0, sizeof(mac_str));
+    memcpy(mac_str, jsMac->valuestring, strlen(jsMac->valuestring));
+    // mac_str = jsMac->valuestring;
+
+    if (strlen(mac_str) != 12) {
+        os_trace("mac addr invalid\n");
+        goto RESPONSE;
+    }
+
+    int mac[6];
+    sscanf(mac_str, "%02x%02x%02x%02x%02x%02x", &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
+    uint8_t my_mac[6];
+    for (uint8_t j = 0; j < 6; j++) {
+        my_mac[j] = (uint8_t)mac[j];
+    }
+
+    jsAct1 = cJSON_GetObjectItem(jsRoot, CJSON_KEY_ACT1);
+    if (jsAct1 == NULL)
+    {
+        os_trace("Get JSON jsAct1 mqtt message fail\n");
+        goto RESPONSE;
+    }
+    act1 = jsAct1->valueint;
+
+    master_accept_request_link(my_mac, act1);
+
+
+RESPONSE:
+    /* respond server here */
+    memset(respond, 0, sizeof(respond));
+    sprintf(respond, "{\"%s\":%ld,\"u\":%ld,\"id\":\"%s\",\"act1\":%lu,\"result\":%d}",
+            gs_dev_type[device_type], type, uid, mac_str, act1, result);
+    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
+}
+
+static void app_change_delay_cbct(cJSON *jsRoot)
+{
+    uint8_t result = 0;
+    cJSON *jsType, *jsU, *jsMac, *jsDelayTime;
+    uint32_t type = 0, uid = 0, delay_time = 0;
+    char mac_str[32];
+
+    os_trace("%s\n", __func__);
+
+    jsType = cJSON_GetObjectItem(jsRoot, gs_dev_type[device_type]);
+    if (jsType == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    type = jsType->valueint;
+
+    jsU = cJSON_GetObjectItem(jsRoot, CJSON_KEY_USER_ID);
+    if (jsU == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    uid = jsU->valueint;
+
+    jsMac = cJSON_GetObjectItem(jsRoot, CJSON_KEY_ID_DEVICE);
+    if (jsMac == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    memset(mac_str, 0, sizeof(mac_str));
+    memcpy(mac_str, jsMac->valuestring, strlen(jsMac->valuestring));
+    // mac_str = jsMac->valuestring;
+
+    if (strlen(mac_str) != 12) {
+        os_trace("mac addr invalid\n");
+        goto RESPONSE;
+    }
+
+    int mac[6];
+    sscanf(mac_str, "%02x%02x%02x%02x%02x%02x", &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
+    uint8_t my_mac[6];
+    for (uint8_t j = 0; j < 6; j++) {
+        my_mac[j] = (uint8_t)mac[j];
+    }
+
+    jsDelayTime = cJSON_GetObjectItem(jsRoot, CJSON_KEY_TIME_DELAY_CBCT);
+    if (jsDelayTime == NULL)
+    {
+        os_trace("Get JSON jsDelayTime mqtt message fail\n");
+        goto RESPONSE;
+    }
+    delay_time = jsDelayTime->valueint;
+
+    db_change_delay_cbct_by_mac(my_mac, delay_time);
+
+
+RESPONSE:
+    /* respond server here */
+    memset(respond, 0, sizeof(respond));
+    sprintf(respond, "{\"%s\":%ld,\"u\":%ld,\"id\":\"%s\",\"%s\":%lu,\"result\":%d}",
+            gs_dev_type[device_type], type, uid, mac_str, CJSON_KEY_TIME_DELAY_CBCT, delay_time, result);
+    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
+}
+
+static void app_get_list_cbct(cJSON *jsRoot)
+{
+    uint8_t result = 0;
+    cJSON *jsType, *jsU, *jsIndex, *jsMac;
+    uint32_t type = 0, uid = 0, index = 0;
+
+    os_trace("%s\n", __func__);
+
+    jsType = cJSON_GetObjectItem(jsRoot, gs_dev_type[device_type]);
+    if (jsType == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        return;
+    }
+    type = jsType->valueint;
+
+    jsU = cJSON_GetObjectItem(jsRoot, CJSON_KEY_USER_ID);
+    if (jsU == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        return;
+    }
+    uid = jsU->valueint;
+
+    jsIndex = cJSON_GetObjectItem(jsRoot, CJSON_KEY_INDEX);
+    if (jsIndex == NULL)
+    {
+        os_trace("Get JSON jsIndex mqtt message fail\n");
+        return;
+    }
+    index = jsIndex->valueint;
+
+    uint32_t buffer_seek = 0, i;
+    memset(respond, 0, sizeof(respond));
+    buffer_seek += sprintf(respond, "{\"%s\":%lu,\"u\":%lu, \"ids\":[", gs_dev_type[device_type], type, uid);
+    uint8_t num_send = 0;
+    
+    for (i = 0; i < m_db_get_instance()->_m_device._ble_info->num_devices_link; i++) {
+        uint8_t my_channel_act = (m_db_get_instance()->_m_device._ble_info->list_child[i].my_act + 1) / 2 ;
+        if (my_channel_act == index) {
+            num_send++;
+            buffer_seek += sprintf(&respond[buffer_seek], "{\"id\":\"%02x%02x%02x%02x%02x%02x\",\"bat\":%u,\"%s\":%lu},", 
+                m_db_get_instance()->_m_device._ble_info->list_child[i].mac[0],
+                m_db_get_instance()->_m_device._ble_info->list_child[i].mac[1],
+                m_db_get_instance()->_m_device._ble_info->list_child[i].mac[2],
+                m_db_get_instance()->_m_device._ble_info->list_child[i].mac[3],
+                m_db_get_instance()->_m_device._ble_info->list_child[i].mac[4],
+                m_db_get_instance()->_m_device._ble_info->list_child[i].mac[5],
+                m_db_get_instance()->_m_device._ble_info->list_child[i].opp_act,
+                CJSON_KEY_TIME_DELAY_CBCT, m_db_get_instance()->_m_device._ble_info->list_child[i].data.holder
+            );
+        }
+    }
+
+    if(num_send > 0) {
+        buffer_seek--;
+    }
+
+    buffer_seek += sprintf(&respond[buffer_seek], "]}");
+
+    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
+}
+
+
+static void app_remove_link_device_by_mac(cJSON *jsRoot)
+{
+    uint8_t result = 0;
+    cJSON *jsType, *jsU, *jsMac, *jsAct1, *jsAct2;
+    uint32_t type = 0, uid = 0, act1 = 0, act2 = 0;
+    char mac_str[32];
+
+    os_trace("%s\n", __func__);
+
+    jsType = cJSON_GetObjectItem(jsRoot, gs_dev_type[device_type]);
+    if (jsType == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    type = jsType->valueint;
+
+    jsU = cJSON_GetObjectItem(jsRoot, CJSON_KEY_USER_ID);
+    if (jsU == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    uid = jsU->valueint;
+
+    jsMac = cJSON_GetObjectItem(jsRoot, CJSON_KEY_ID_DEVICE);
+    if (jsMac == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    memset(mac_str, 0, sizeof(mac_str));
+    memcpy(mac_str, jsMac->valuestring, strlen(jsMac->valuestring));
+    // mac_str = jsMac->valuestring;
+
+    if (strlen(mac_str) != 12) {
+        os_trace("mac addr invalid\n");
+        goto RESPONSE;
+    }
+
+    int mac[6];
+    sscanf(mac_str, "%02x%02x%02x%02x%02x%02x", &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
+    uint8_t my_mac[6];
+    for (uint8_t j = 0; j < 6; j++) {
+        my_mac[j] = (uint8_t)mac[j];
+    }
+    db_remove_child_by_mac(my_mac);
+
+    /* implement here */
+    result = 1;
+
+RESPONSE:
+    /* respond server here */
+    memset(respond, 0, sizeof(respond));
+    sprintf(respond, "{\"%s\":%ld,\"u\":%ld,\"id\":\"%s\",\"result\":%d}",
+            gs_dev_type[device_type], type, uid, mac_str, result);
+    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
+}
+
+
+
+void send_device_wait_link_stair(uint8_t type, uint8_t *mac)
+{
+    if (m_mqtt_get_instance()._mqtt_state >= MQTT_INTIALIZED)
+    {
+        memset(respond, 0, sizeof(respond));
+        sprintf(respond, "{\"%s\":%d,\"id\":\"%02x%02x%02x%02x%02x%02x\",\"type\":%u}",
+                gs_dev_type[device_type], 313, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], type);
+        m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
+    }
+}
+
+void send_device_cbct_link_success(uint8_t type, uint8_t *mac)
+{
+    if (m_mqtt_get_instance()._mqtt_state >= MQTT_INTIALIZED)
+    {
+        memset(respond, 0, sizeof(respond));
+        sprintf(respond, "{\"%s\":%d,\"id\":\"%02x%02x%02x%02x%02x%02x\",\"type\":%u}",
+                gs_dev_type[device_type], 315, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], type);
+        m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
+    }
+}
+
 #if PROJECT_SHOCK
 static void app_get_leakage(cJSON *jsRoot)
 {
@@ -1317,6 +1604,7 @@ void app_handler_msg_task(void * arg)
         vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
+
 
 void process_data_init(void)
 {

@@ -145,7 +145,6 @@ typedef struct
     uint32_t last_time_notify_state;
     uint32_t last_time_request_sync_led_stt;
     uint32_t light_count_down_ss;
-    uint32_t time_delay_light_off;
 
     uint8_t my_state;
     uint8_t mac_source[6];
@@ -159,6 +158,7 @@ typedef struct
     uint16_t time_cnt_startup;
 
     uint8_t id_remove;
+    uint32_t cnt_down_light_off[4];
     struct
     {
         uint32_t is_init_ble_finished : 1;
@@ -168,7 +168,8 @@ typedef struct
         uint32_t active_motion_detect : 1;
         uint32_t flag_state_change : 4;
         uint32_t flag_remove_link : 1;
-        uint32_t : 21;
+        uint32_t flag_need_send_device_wait_config : 1;
+        uint32_t : 20;
     } flags;
 
 } m_ble_t;
@@ -178,7 +179,7 @@ typedef struct
     uint8_t type;
     uint8_t mac[6];
     uint8_t my_act;
-    uint8_t opp_act;
+    uint8_t opp_act; // or battery cbct
     union
     {
         struct
@@ -203,8 +204,10 @@ int ble_master_scan(void);
 void ble_master_deinit(void);
 void ble_config_loop(void);
 void ble_go_request_pair(void);
-void master_accept_request_link(void);
+void master_accept_request_link(uint8_t *mac_acpt ,uint8_t act);
 uint8_t ble_db_remove_child(uint8_t id);
+void db_remove_child_by_mac(uint8_t *mac);
+void db_change_delay_cbct_by_mac(uint8_t *mac, uint32_t delay_time);
 void m_ble_get_mac_addr(uint8_t *my_mac);
 void m_ble_set_state_change(uint8_t channel, uint8_t level, m_ble_send_t send_ble);
 void ble_db_remove_all_nodes(void);
