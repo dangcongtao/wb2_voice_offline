@@ -113,12 +113,12 @@ bool decodeMidea24(decode_results *results, uint16_t offset,
   if (nbits > 32) return false;  // Can't successfully match something that big.
 
   uint64_t longdata = 0;
-  if (!matchGeneric(results->rawbuf + offset, &longdata,
+  if (!matchGenericDataLimit(results->rawbuf + offset, &longdata,
                     results->rawlen - offset, nbits * 2,
-                    kNecHdrMark, kNecHdrSpace,
-                    kNecBitMark, kNecOneSpace,
-                    kNecBitMark, kNecZeroSpace,
-                    kNecBitMark, kMidea24MinGap, true, kUseDefTol, kMarkExcess, true)) return false;
+                    kNecHdrMark-2250, kNecHdrMark+2250, kNecHdrSpace-1250, kNecHdrSpace+1250,
+                    kNecBitMark-460, kNecBitMark+440, kNecOneSpace-500, kNecOneSpace+500,
+                    kNecBitMark-460, kNecBitMark+440, kNecZeroSpace - 460, kNecZeroSpace+440,
+                    kNecBitMark-460, kNecBitMark+440, kMidea24MinGap-3000, kMidea24MinGap+3000, true, kUseDefTol, kMarkExcess, true)) return false;
 
   // Build the result by checking every second byte is a complement(inversion)
   // of the previous one.

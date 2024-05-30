@@ -56,4 +56,6 @@
 // Didn't have a better description for it...
 #define kAlokaLedTreeGrow   0xFF58A7
 
+void sendNEC(uint64_t data, uint16_t nbits, uint16_t repeat);
+
 #endif
