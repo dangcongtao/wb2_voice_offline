@@ -837,12 +837,15 @@ void ble_go_request_pair(void)
 
 static void check_config_timeout(void)
 {
-	if (s_ble_obj.is_run_config == 1 && xTaskGetTickCount() - s_ble_obj.last_time_running_config >= pdMS_TO_TICKS(20000))
+	if (s_ble_obj.is_run_config == 1 && xTaskGetTickCount() - s_ble_obj.last_time_running_config >= pdMS_TO_TICKS(10000))
 	{
 		s_ble_obj.is_run_config = 0;
 		os_trace("check_config_timeout: TIMEOUT CONFIG\r\n");
 		// led_timeout_config();
-		s_ble_obj.step = NOTHING;
+        if (s_ble_obj.type_device_config == DEVICE_TYPE_CBCT && s_ble_obj.step == WAIT_VERIFY_ACCEPT_LINK) {
+            send_device_cbct_link_success(s_ble_obj.type_device_config, s_ble_obj.mac, 0);
+        }
+        s_ble_obj.step = NOTHING;
 		// m_db_backup_database();
 		// ble_data_init();
 	}
@@ -988,7 +991,7 @@ void ble_config_loop(void)
         }
 
         if (s_ble_obj.type_device_config == DEVICE_TYPE_CBCT) {
-            send_device_cbct_link_success(s_ble_obj.type_device_config, s_ble_obj.mac);
+            send_device_cbct_link_success(s_ble_obj.type_device_config, s_ble_obj.mac, 1);
         }
 
         s_ble_obj.is_run_config = 0;

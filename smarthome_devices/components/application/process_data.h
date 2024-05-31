@@ -16,7 +16,7 @@ typedef struct {
 } wswitch_handler_t;
 
 void send_device_wait_link_stair(uint8_t type, uint8_t *mac);
-void send_device_cbct_link_success(uint8_t type, uint8_t *mac);
+void send_device_cbct_link_success(uint8_t type, uint8_t *mac, uint8_t result);
 void process_data_init(void);
 void app_handler_msg_loop(void);
 

@@ -1048,17 +1048,19 @@ static void app_get_list_link_device(cJSON *jsRoot)
 
     m_ble_info_t *ble_info = m_db_get_instance()->_m_device._ble_info;
     for (uint8_t i = 0; i < ble_info->num_devices_link; i++) {
-        num_send++;
-        seek += sprintf(&respond[seek], "{\"id\":%u,\"mac\":\"%02x:%02x:%02x:%02x:%02x:%02x\",\"act1\":%u,\"act2\":%u},", i, ble_info->list_child[i].mac[0], ble_info->list_child[i].mac[1], ble_info->list_child[i].mac[2], ble_info->list_child[i].mac[3], ble_info->list_child[i].mac[4], ble_info->list_child[i].mac[5], ble_info->list_child[i].my_act, ble_info->list_child[i].opp_act);
-        if (num_send >= 5) {
-            seek--;
-            seek += sprintf(&respond[seek], "]}");
-            os_trace("DATASEND[%d]: '%s'\r\n", strlen(respond), respond);
-            m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
+        if (ble_info->list_child[i].type != DEVICE_TYPE_CBCT) {
+            num_send++;
+            seek += sprintf(&respond[seek], "{\"id\":%u,\"mac\":\"%02x:%02x:%02x:%02x:%02x:%02x\",\"act1\":%u,\"act2\":%u},", i, ble_info->list_child[i].mac[0], ble_info->list_child[i].mac[1], ble_info->list_child[i].mac[2], ble_info->list_child[i].mac[3], ble_info->list_child[i].mac[4], ble_info->list_child[i].mac[5], ble_info->list_child[i].my_act, ble_info->list_child[i].opp_act);
+            if (num_send >= 5) {
+                seek--;
+                seek += sprintf(&respond[seek], "]}");
+                os_trace("DATASEND[%d]: '%s'\r\n", strlen(respond), respond);
+                m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
 
-            seek = 0;
-            num_send = 0;
-            seek += sprintf(&respond[seek], "{\"%s\":%ld,\"u\":%ld,\"list\":[", gs_dev_type[device_type], type, uid);
+                seek = 0;
+                num_send = 0;
+                seek += sprintf(&respond[seek], "{\"%s\":%ld,\"u\":%ld,\"list\":[", gs_dev_type[device_type], type, uid);
+            }
         }
     }
 
@@ -1161,13 +1163,13 @@ static void app_accept_cbct_link_device(cJSON *jsRoot)
     memcpy(mac_str, jsMac->valuestring, strlen(jsMac->valuestring));
     // mac_str = jsMac->valuestring;
 
-    if (strlen(mac_str) != 12) {
+    if (strlen(mac_str) != 17) {
         os_trace("mac addr invalid\n");
         goto RESPONSE;
     }
 
     int mac[6];
-    sscanf(mac_str, "%02x%02x%02x%02x%02x%02x", &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
+    sscanf(mac_str, "%02x:%02x:%02x:%02x:%02x:%02x", &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
     uint8_t my_mac[6];
     for (uint8_t j = 0; j < 6; j++) {
         my_mac[j] = (uint8_t)mac[j];
@@ -1182,6 +1184,7 @@ static void app_accept_cbct_link_device(cJSON *jsRoot)
     act1 = jsAct1->valueint;
 
     master_accept_request_link(my_mac, act1);
+    result = 1;
 
 
 RESPONSE:
@@ -1227,13 +1230,13 @@ static void app_change_delay_cbct(cJSON *jsRoot)
     memcpy(mac_str, jsMac->valuestring, strlen(jsMac->valuestring));
     // mac_str = jsMac->valuestring;
 
-    if (strlen(mac_str) != 12) {
+    if (strlen(mac_str) != 17) {
         os_trace("mac addr invalid\n");
         goto RESPONSE;
     }
 
     int mac[6];
-    sscanf(mac_str, "%02x%02x%02x%02x%02x%02x", &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
+    sscanf(mac_str, "%02x:%02x:%02x:%02x:%02x:%02x", &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
     uint8_t my_mac[6];
     for (uint8_t j = 0; j < 6; j++) {
         my_mac[j] = (uint8_t)mac[j];
@@ -1297,15 +1300,16 @@ static void app_get_list_cbct(cJSON *jsRoot)
     
     for (i = 0; i < m_db_get_instance()->_m_device._ble_info->num_devices_link; i++) {
         uint8_t my_channel_act = (m_db_get_instance()->_m_device._ble_info->list_child[i].my_act + 1) / 2 ;
-        if (my_channel_act == index) {
+        if ((my_channel_act == index || index == 0) && m_db_get_instance()->_m_device._ble_info->list_child[i].type == DEVICE_TYPE_CBCT) {
             num_send++;
-            buffer_seek += sprintf(&respond[buffer_seek], "{\"id\":\"%02x%02x%02x%02x%02x%02x\",\"bat\":%u,\"%s\":%lu},", 
+            buffer_seek += sprintf(&respond[buffer_seek], "{\"id\":\"%02x:%02x:%02x:%02x:%02x:%02x\",\"index\":%u,\"bat\":%u,\"%s\":%lu},", 
                 m_db_get_instance()->_m_device._ble_info->list_child[i].mac[0],
                 m_db_get_instance()->_m_device._ble_info->list_child[i].mac[1],
                 m_db_get_instance()->_m_device._ble_info->list_child[i].mac[2],
                 m_db_get_instance()->_m_device._ble_info->list_child[i].mac[3],
                 m_db_get_instance()->_m_device._ble_info->list_child[i].mac[4],
                 m_db_get_instance()->_m_device._ble_info->list_child[i].mac[5],
+                my_channel_act,
                 m_db_get_instance()->_m_device._ble_info->list_child[i].opp_act,
                 CJSON_KEY_TIME_DELAY_CBCT, m_db_get_instance()->_m_device._ble_info->list_child[i].data.holder
             );
@@ -1357,13 +1361,13 @@ static void app_remove_link_device_by_mac(cJSON *jsRoot)
     memcpy(mac_str, jsMac->valuestring, strlen(jsMac->valuestring));
     // mac_str = jsMac->valuestring;
 
-    if (strlen(mac_str) != 12) {
+    if (strlen(mac_str) != 17) {
         os_trace("mac addr invalid\n");
         goto RESPONSE;
     }
 
     int mac[6];
-    sscanf(mac_str, "%02x%02x%02x%02x%02x%02x", &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
+    sscanf(mac_str, "%02x:%02x:%02x:%02x:%02x:%02x", &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
     uint8_t my_mac[6];
     for (uint8_t j = 0; j < 6; j++) {
         my_mac[j] = (uint8_t)mac[j];
@@ -1388,19 +1392,19 @@ void send_device_wait_link_stair(uint8_t type, uint8_t *mac)
     if (m_mqtt_get_instance()._mqtt_state >= MQTT_INTIALIZED)
     {
         memset(respond, 0, sizeof(respond));
-        sprintf(respond, "{\"%s\":%d,\"id\":\"%02x%02x%02x%02x%02x%02x\",\"type\":%u}",
+        sprintf(respond, "{\"%s\":%d,\"id\":\"%02x:%02x:%02x:%02x:%02x:%02x\",\"type\":%u}",
                 gs_dev_type[device_type], 313, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], type);
         m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
     }
 }
 
-void send_device_cbct_link_success(uint8_t type, uint8_t *mac)
+void send_device_cbct_link_success(uint8_t type, uint8_t *mac, uint8_t result)
 {
     if (m_mqtt_get_instance()._mqtt_state >= MQTT_INTIALIZED)
     {
         memset(respond, 0, sizeof(respond));
-        sprintf(respond, "{\"%s\":%d,\"id\":\"%02x%02x%02x%02x%02x%02x\",\"type\":%u}",
-                gs_dev_type[device_type], 315, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], type);
+        sprintf(respond, "{\"%s\":%d,\"id\":\"%02x:%02x:%02x:%02x:%02x:%02x\",\"type\":%u,\"result\":%u}",
+                gs_dev_type[device_type], 315, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], type, result);
         m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
     }
 }
