@@ -1251,6 +1251,7 @@ static void app_change_delay_cbct(cJSON *jsRoot)
     delay_time = jsDelayTime->valueint;
 
     db_change_delay_cbct_by_mac(my_mac, delay_time);
+    result = 1;
 
 
 RESPONSE:
