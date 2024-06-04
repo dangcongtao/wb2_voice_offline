@@ -106,8 +106,8 @@ bool decodeDaikin(decode_results *results, uint16_t offset,
                     os_trace("%s Footer 1\r\n", __func__);
                     return false;
                  }
-  if (!matchLimit(results->rawbuf[offset++], kDaikinZeroSpace + kDaikinGap - 7000, kDaikinZeroSpace + kDaikinGap + 7000 )) {
-                    os_trace("%s Footer 2\r\n", __func__);
+  if (!matchLimit(results->rawbuf[offset++], kDaikinZeroSpace + kDaikinGap - 7500, kDaikinZeroSpace + kDaikinGap + 7500 )) {
+                    os_trace("%s Footer 2 %u\r\n", __func__, results->rawbuf[offset-1]);
                     return false;
                   }
   // Sections
@@ -120,9 +120,9 @@ bool decodeDaikin(decode_results *results, uint16_t offset,
     used = matchGenericStateLimit(results->rawbuf + offset, results->state + pos,
                         results->rawlen - offset, ksectionSize[section] * 8,
                         kDaikinHdrMark-400, kDaikinHdrMark+500, kDaikinHdrSpace-500, kDaikinHdrSpace+400,
-                        kDaikinBitMark-300, kDaikinBitMark+300, kDaikinOneSpace-300, kDaikinOneSpace+300,
-                        kDaikinBitMark-300, kDaikinBitMark+300, kDaikinZeroSpace-300, kDaikinZeroSpace+400,
-                        kDaikinBitMark-300, kDaikinBitMark+300, kDaikinZeroSpace + kDaikinGap-7000, kDaikinZeroSpace + kDaikinGap+7000,
+                        kDaikinBitMark-328, kDaikinBitMark+400, kDaikinOneSpace-399, kDaikinOneSpace+500,
+                        kDaikinBitMark-328, kDaikinBitMark+400, kDaikinZeroSpace-328, kDaikinZeroSpace+452,
+                        kDaikinBitMark-328, kDaikinBitMark+400, kDaikinZeroSpace + kDaikinGap-7000, kDaikinZeroSpace + kDaikinGap+7000,
                         section >= kDaikinSections - 1,
                         45, kDaikinMarkExcess, false);
     if (used == 0) {

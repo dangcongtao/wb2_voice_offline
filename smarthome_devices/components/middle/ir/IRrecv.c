@@ -1175,6 +1175,8 @@ bool decode_for(decode_results *results, uint8_t max_skip)
 #if DECODE_DAIKIN
     os_trace_rcv("Attempting Daikin AC decode\r\n");
     if (decodeDaikin(results, offset, kDaikinBits, true)) return true;
+    os_trace_rcv("Attempting Daikin AC next decode\r\n");
+    if (decodeDaikin(results, offset+2, kDaikinBits, true)) return true;
 #endif
 
 #if DECODE_DAIKIN2
