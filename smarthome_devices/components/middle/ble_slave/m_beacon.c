@@ -4,6 +4,7 @@
 #include "hci_core.h"
 #include "m_database.h"
 #include "process_data.h"
+#include "event_driven.h"
 
 // static ble_scan_info_t master_scan_tbl[MASTER_SCAN_MAX];
 // static int master_current_scan;
@@ -205,6 +206,9 @@ void ble_master_deinit(void)
 
 void my_ble_update_data(void)
 {
+    if (dev_is_smartconfig()) {
+        return;
+    }
     //
     bt_le_adv_stop();
     struct bt_le_adv_param param;
@@ -243,6 +247,9 @@ void my_ble_update_data(void)
 
 void my_ble_reset_data(void)
 {
+    if (dev_is_smartconfig()) {
+        return;
+    }
     memset(data_adv, 0, sizeof(data_adv));
     data_adv_len = 0;
     // for (uint8_t i = 0; i < max_number_channel; i++) {

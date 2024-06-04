@@ -339,6 +339,10 @@ uint8_t dev_is_doing_config(void)
 {
     return current_state == M_WIFI_APCONFIG || current_state == M_WIFI_SMARTCONFIG;
 }
+uint8_t dev_is_smartconfig(void)
+{
+    return current_state == M_WIFI_SMARTCONFIG;
+}
 
 uint8_t dev_is_online(void)
 {
