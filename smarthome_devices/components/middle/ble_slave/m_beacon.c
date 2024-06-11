@@ -763,9 +763,11 @@ void m_ble_cbct_request_state(uint8_t *data, uint8_t len, int index)
     memset(s_ble_obj.check_mac_source, 0, 6);
     
     memcpy(s_ble_obj.check_mac_source, &data[10], 6);
-    // os_trace("%s batt: %u, len: %u\r\n", __func__, data[21], len);
-    if (obj_ble.list_child[index].opp_act != data[21]) {
+    uint32_t ver = *((uint32_t*) (&data[17]));
+    os_trace("%s batt: %u, ver: %lu, len: %u\r\n", __func__, data[21], ver, len);
+    if (obj_ble.list_child[index].opp_act != data[21] || ver != obj_ble.ver_cbct[index]) {
         obj_ble.list_child[index].opp_act = data[21];
+        obj_ble.ver_cbct[index] = ver;
         m_db_get_instance()->_request_sync_db(BIT_FLAG_SYNC_BLE);
     }
 }

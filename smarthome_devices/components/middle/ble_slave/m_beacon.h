@@ -197,7 +197,7 @@ typedef struct
 {
     uint8_t num_devices_link;
     ble_child_t list_child[MAX_CTLK_SUPPORT];
-    uint32_t time_delay_light_off[MAX_CTLK_SUPPORT];
+    uint32_t ver_cbct[MAX_CTLK_SUPPORT];
 } m_ble_info_t;
 
 int ble_master_scan(void);

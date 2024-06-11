@@ -1303,7 +1303,7 @@ static void app_get_list_cbct(cJSON *jsRoot)
         uint8_t my_channel_act = (m_db_get_instance()->_m_device._ble_info->list_child[i].my_act + 1) / 2 ;
         if ((my_channel_act == index || index == 0) && m_db_get_instance()->_m_device._ble_info->list_child[i].type == DEVICE_TYPE_CBCT) {
             num_send++;
-            buffer_seek += sprintf(&respond[buffer_seek], "{\"id\":\"%02x:%02x:%02x:%02x:%02x:%02x\",\"index\":%u,\"bat\":%u,\"%s\":%lu},", 
+            buffer_seek += sprintf(&respond[buffer_seek], "{\"id\":\"%02x:%02x:%02x:%02x:%02x:%02x\",\"index\":%u,\"bat\":%u,\"%s\":%lu,\"v\":%lu},", 
                 m_db_get_instance()->_m_device._ble_info->list_child[i].mac[0],
                 m_db_get_instance()->_m_device._ble_info->list_child[i].mac[1],
                 m_db_get_instance()->_m_device._ble_info->list_child[i].mac[2],
@@ -1312,7 +1312,8 @@ static void app_get_list_cbct(cJSON *jsRoot)
                 m_db_get_instance()->_m_device._ble_info->list_child[i].mac[5],
                 my_channel_act,
                 m_db_get_instance()->_m_device._ble_info->list_child[i].opp_act,
-                CJSON_KEY_TIME_DELAY_CBCT, m_db_get_instance()->_m_device._ble_info->list_child[i].data.holder
+                CJSON_KEY_TIME_DELAY_CBCT, m_db_get_instance()->_m_device._ble_info->list_child[i].data.holder,
+                m_db_get_instance()->_m_device._ble_info->ver_cbct[i]
             );
         }
     }
