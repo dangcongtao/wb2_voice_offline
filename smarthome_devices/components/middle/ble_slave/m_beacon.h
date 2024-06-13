@@ -7,6 +7,7 @@
 
 #include "system_typedef.h"
 #include "m_switch.h"
+#include "hardware.h"
 
 #define MASTER_SCAN_MAX 36
 #define NAME_LEN 30
@@ -186,7 +187,8 @@ typedef struct
         {
             uint32_t firmware_version : 19;
             uint32_t battery: 7;
-            uint32_t : 6;
+            uint32_t enable: 1;
+            uint32_t : 5;
         } info;
 
         uint32_t holder;
@@ -196,8 +198,9 @@ typedef struct
 typedef struct
 {
     uint8_t num_devices_link;
+    uint8_t disallow_use_sensor[MAX_NUM_SWITCH];
     ble_child_t list_child[MAX_CTLK_SUPPORT];
-    uint32_t ver_cbct[MAX_CTLK_SUPPORT];
+    uint32_t delay_cbct[MAX_CTLK_SUPPORT];
 } m_ble_info_t;
 
 int ble_master_scan(void);
@@ -208,6 +211,7 @@ void master_accept_request_link(uint8_t *mac_acpt ,uint8_t act);
 uint8_t ble_db_remove_child(uint8_t id);
 void db_remove_child_by_mac(uint8_t *mac);
 void db_change_delay_cbct_by_mac(uint8_t *mac, uint32_t delay_time);
+void db_set_active_cbct_by_mac(uint8_t *mac, uint8_t enable);
 void m_ble_get_mac_addr(uint8_t *my_mac);
 void m_ble_set_state_change(uint8_t channel, uint8_t level, m_ble_send_t send_ble);
 void ble_db_remove_all_nodes(void);

@@ -44,6 +44,8 @@ static void app_stop_cyclic_timer(cJSON *jsRoot);
 static void app_backup_db(cJSON *jsRoot);
 static void app_accept_cbct_link_device(cJSON *jsRoot);
 static void app_change_delay_cbct(cJSON *jsRoot);
+static void app_set_active_cbct(cJSON *jsRoot);
+static void app_set_use_cbct(cJSON *jsRoot);
 static void app_get_list_cbct(cJSON *jsRoot);
 static void app_link_device(cJSON *jsRoot);
 static void app_get_list_link_device(cJSON *jsRoot);
@@ -84,6 +86,8 @@ wswitch_handler_t array_handler[] = {
     {app_get_list_cbct, 310},
     {app_remove_link_device_by_mac, 311},
     {app_change_delay_cbct, 312},
+    {app_set_active_cbct, 316},
+    {app_set_use_cbct, 317},
     {app_link_device, 400},
     {app_get_list_link_device, 401},
     {app_remove_link_device, 402},
@@ -1050,7 +1054,7 @@ static void app_get_list_link_device(cJSON *jsRoot)
     for (uint8_t i = 0; i < ble_info->num_devices_link; i++) {
         if (ble_info->list_child[i].type != DEVICE_TYPE_CBCT) {
             num_send++;
-            seek += sprintf(&respond[seek], "{\"id\":%u,\"mac\":\"%02x:%02x:%02x:%02x:%02x:%02x\",\"act1\":%u,\"act2\":%u},", i, ble_info->list_child[i].mac[0], ble_info->list_child[i].mac[1], ble_info->list_child[i].mac[2], ble_info->list_child[i].mac[3], ble_info->list_child[i].mac[4], ble_info->list_child[i].mac[5], ble_info->list_child[i].my_act, ble_info->list_child[i].opp_act);
+            seek += sprintf(&respond[seek], "{\"id\":%u,\"mac\":\"%02x:%02x:%02x:%02x:%02x:%02x\",\"act1\":%u,\"act2\":%u},", i, ble_info->list_child[i].mac[0], ble_info->list_child[i].mac[1], ble_info->list_child[i].mac[2], ble_info->list_child[i].mac[3], ble_info->list_child[i].mac[4], ble_info->list_child[i].mac[5], ble_info->list_child[i].my_act, ble_info->list_child[i].data.info.battery);
             if (num_send >= 5) {
                 seek--;
                 seek += sprintf(&respond[seek], "]}");
@@ -1262,6 +1266,119 @@ RESPONSE:
     m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
 }
 
+static void app_set_active_cbct(cJSON *jsRoot)
+{
+    uint8_t result = 0;
+    cJSON *jsType, *jsU, *jsMac, *jsDelayTime;
+    uint32_t type = 0, uid = 0, active = 0;
+    char mac_str[32];
+
+    os_trace("%s\n", __func__);
+
+    jsType = cJSON_GetObjectItem(jsRoot, gs_dev_type[device_type]);
+    if (jsType == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    type = jsType->valueint;
+
+    jsU = cJSON_GetObjectItem(jsRoot, CJSON_KEY_USER_ID);
+    if (jsU == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    uid = jsU->valueint;
+
+    jsMac = cJSON_GetObjectItem(jsRoot, CJSON_KEY_ID_DEVICE);
+    if (jsMac == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    memset(mac_str, 0, sizeof(mac_str));
+    memcpy(mac_str, jsMac->valuestring, strlen(jsMac->valuestring));
+    // mac_str = jsMac->valuestring;
+
+    if (strlen(mac_str) != 17) {
+        os_trace("mac addr invalid\n");
+        goto RESPONSE;
+    }
+
+    int mac[6];
+    sscanf(mac_str, "%02x:%02x:%02x:%02x:%02x:%02x", &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
+    uint8_t my_mac[6];
+    for (uint8_t j = 0; j < 6; j++) {
+        my_mac[j] = (uint8_t)mac[j];
+    }
+
+    jsDelayTime = cJSON_GetObjectItem(jsRoot, CJSON_KEY_ACTIVE_CBCT);
+    if (jsDelayTime == NULL)
+    {
+        os_trace("Get JSON jsDelayTime mqtt message fail\n");
+        goto RESPONSE;
+    }
+    active = jsDelayTime->valueint;
+
+    db_set_active_cbct_by_mac(my_mac, (uint8_t)active);
+    result = 1;
+
+RESPONSE:
+    /* respond server here */
+    memset(respond, 0, sizeof(respond));
+    sprintf(respond, "{\"%s\":%ld,\"u\":%ld,\"id\":\"%s\",\"%s\":%lu,\"result\":%d}",
+            gs_dev_type[device_type], type, uid, mac_str, CJSON_KEY_ACTIVE_CBCT, active, result);
+    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
+}
+
+static void app_set_use_cbct(cJSON *jsRoot)
+{
+    uint8_t result = 0;
+    cJSON *jsType, *jsIndex, *jsMac, *jsDelayTime;
+    uint32_t type = 0, index = 0, active = 0;
+    char mac_str[32];
+
+    os_trace("%s\n", __func__);
+
+    jsType = cJSON_GetObjectItem(jsRoot, gs_dev_type[device_type]);
+    if (jsType == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    type = jsType->valueint;
+
+    jsIndex = cJSON_GetObjectItem(jsRoot, CJSON_KEY_INDEX);
+    if (jsIndex == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    index = jsIndex->valueint;
+
+    jsDelayTime = cJSON_GetObjectItem(jsRoot, CJSON_KEY_DISABLE_USE_CBCT);
+    if (jsDelayTime == NULL)
+    {
+        os_trace("Get JSON jsDelayTime mqtt message fail\n");
+        goto RESPONSE;
+    }
+    active = jsDelayTime->valueint;
+
+    if (index >= 1 && index <= 4) {
+        m_db_get_instance()->_m_device._ble_info->disallow_use_sensor[index-1] = active;
+        m_db_get_instance()->_request_sync_db(BIT_FLAG_SYNC_BLE);
+        result = 1;
+    }
+
+RESPONSE:
+    /* respond server here */
+    memset(respond, 0, sizeof(respond));
+    sprintf(respond, "{\"%s\":%ld,\"%s\":%ld,\"%s\":%lu,\"result\":%d}",
+            gs_dev_type[device_type], type, CJSON_KEY_INDEX, index, CJSON_KEY_DISABLE_USE_CBCT, active, result);
+    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
+}
+
 static void app_get_list_cbct(cJSON *jsRoot)
 {
     uint8_t result = 0;
@@ -1303,7 +1420,7 @@ static void app_get_list_cbct(cJSON *jsRoot)
         uint8_t my_channel_act = (m_db_get_instance()->_m_device._ble_info->list_child[i].my_act + 1) / 2 ;
         if ((my_channel_act == index || index == 0) && m_db_get_instance()->_m_device._ble_info->list_child[i].type == DEVICE_TYPE_CBCT) {
             num_send++;
-            buffer_seek += sprintf(&respond[buffer_seek], "{\"id\":\"%02x:%02x:%02x:%02x:%02x:%02x\",\"index\":%u,\"bat\":%u,\"%s\":%lu,\"v\":%lu},", 
+            buffer_seek += sprintf(&respond[buffer_seek], "{\"id\":\"%02x:%02x:%02x:%02x:%02x:%02x\",\"index\":%u,\"bat\":%u,\"%s\":%lu,\"v\":%d,\"en\":%u},", 
                 m_db_get_instance()->_m_device._ble_info->list_child[i].mac[0],
                 m_db_get_instance()->_m_device._ble_info->list_child[i].mac[1],
                 m_db_get_instance()->_m_device._ble_info->list_child[i].mac[2],
@@ -1311,9 +1428,10 @@ static void app_get_list_cbct(cJSON *jsRoot)
                 m_db_get_instance()->_m_device._ble_info->list_child[i].mac[4],
                 m_db_get_instance()->_m_device._ble_info->list_child[i].mac[5],
                 my_channel_act,
-                m_db_get_instance()->_m_device._ble_info->list_child[i].opp_act,
-                CJSON_KEY_TIME_DELAY_CBCT, m_db_get_instance()->_m_device._ble_info->list_child[i].data.holder,
-                m_db_get_instance()->_m_device._ble_info->ver_cbct[i]
+                m_db_get_instance()->_m_device._ble_info->list_child[i].data.info.battery,
+                CJSON_KEY_TIME_DELAY_CBCT, m_db_get_instance()->_m_device._ble_info->delay_cbct[i],
+                m_db_get_instance()->_m_device._ble_info->list_child[i].data.info.firmware_version,
+                m_db_get_instance()->_m_device._ble_info->list_child[i].data.info.enable
             );
         }
     }

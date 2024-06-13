@@ -33,6 +33,9 @@
 #define GOOGLE_DNS_1 "8.8.8.8"
 #define GOOGLE_DNS_2 "8.8.4.4"
 
+//DNS_SERVER_ADDRESS(ipaddr), where 'ipaddr' is an 'ip_addr_t*'
+ 
+
 #define WIFI_RECONN_INTERVAL_SEC 2
 #define WIFI_RECONN_REPEAT_TIMES 0
 

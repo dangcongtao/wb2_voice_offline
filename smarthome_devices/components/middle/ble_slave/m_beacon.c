@@ -99,6 +99,7 @@ static bool scan_data_cb(struct bt_data *data, void *user_data)
                 if (is_tid_valid(is_existed_in_db((uint8_t*)(&data->data[3])), data->data[9])) {
                     //os_trace("state changed %d ->> %u\r\n", is_existed_in_db((uint8_t*)(&data->data[3])), data->data[9]);
                     m_ble_request_state(data->data, data->data_len);
+                    return true;
                     return false;
                 } else {
                     return true;
@@ -110,6 +111,7 @@ static bool scan_data_cb(struct bt_data *data, void *user_data)
                 if (is_tid_valid((this_index = is_existed_in_db((uint8_t*)(&data->data[3]))), data->data[9])) {
                     // os_trace("bat den tid: %u\r\n", (uint8_t)data->data[9]);
                     m_ble_cbct_request_state(data->data, data->data_len, this_index);
+                    return true;
                     return false;
                 } else {
                     return true;
@@ -125,6 +127,7 @@ static bool scan_data_cb(struct bt_data *data, void *user_data)
             {
                 if (is_tid_valid(is_existed_in_db((uint8_t*)(&data->data[3])), data->data[9])) {
                     slave_proc_remove_link(data->data, data->data_len);
+                    return true;
                     return false;
                 }
             } break;
@@ -133,6 +136,7 @@ static bool scan_data_cb(struct bt_data *data, void *user_data)
             {
                 if (is_tid_valid(is_existed_in_db((uint8_t*)(&data->data[3])), data->data[9])) {
                     slave_proc_remove_all_nodes(data->data, data->data_len);
+                    return true;
                     return false;
                 }
             } break;
@@ -179,7 +183,7 @@ int ble_master_scan(void)
     scan_param.type = BT_LE_SCAN_TYPE_PASSIVE;
     scan_param.filter_dup = BT_LE_SCAN_FILTER_DUPLICATE;
     scan_param.interval = 0xA0; // 100 ms
-    scan_param.window = 0x10;
+    scan_param.window = 0x0030;
 
     // master_current_scan = 0;
     // memset(scan_le_addr, 0, sizeof(scan_le_addr));
@@ -366,7 +370,21 @@ void db_change_delay_cbct_by_mac(uint8_t *mac, uint32_t delay_time)
 {
     for (uint8_t j = 0; j < obj_ble.num_devices_link; j++) {
         if (!memcmp(mac, obj_ble.list_child[j].mac, 6)) {
-            obj_ble.list_child[j].data.holder = delay_time;
+            obj_ble.delay_cbct[j] = delay_time;
+            break;
+        }
+    }
+
+    // sync database
+    m_db_get_instance()->_request_sync_db(BIT_FLAG_SYNC_BLE);
+}
+
+
+void db_set_active_cbct_by_mac(uint8_t *mac, uint8_t enable)
+{
+    for (uint8_t j = 0; j < obj_ble.num_devices_link; j++) {
+        if (!memcmp(mac, obj_ble.list_child[j].mac, 6)) {
+            obj_ble.list_child[j].data.info.enable = enable;
             break;
         }
     }
@@ -570,10 +588,10 @@ void master_proc_rcv_request_link(uint8_t *data, uint8_t len)
     }
     if (s_ble_obj.is_run_config == 1)
     {
-        if (!memcmp(s_ble_obj.mac, &data[3], 6) && xTaskGetTickCount() - s_ble_obj.last_time_running_config >= pdMS_TO_TICKS(3000)) {
+        if (!memcmp(s_ble_obj.mac, &data[3], 6) && sys_get_tick_ms() - s_ble_obj.last_time_running_config >= 3000) {
             os_trace("recv repeated request link\r\n");
             s_ble_obj.step = WAIT_CONFIG;
-            s_ble_obj.last_time_running_config = xTaskGetTickCount();
+            s_ble_obj.last_time_running_config = sys_get_tick_ms();
             // TODO: send to mqtt: has a device need to pair
             if (s_ble_obj.type_device_config == DEVICE_TYPE_CBCT)
                 s_ble_obj.flags.flag_need_send_device_wait_config = 1;
@@ -592,7 +610,7 @@ void master_proc_rcv_request_link(uint8_t *data, uint8_t len)
             s_ble_obj.type_device_config = DEVICE_TYPE_CTLK;
         }
         s_ble_obj.is_run_config = 1;
-        s_ble_obj.last_time_running_config = xTaskGetTickCount();
+        s_ble_obj.last_time_running_config = sys_get_tick_ms();
         s_ble_obj.step = WAIT_CONFIG;
         // TODO: send to mqtt: has a device need to pair
         if (s_ble_obj.type_device_config == DEVICE_TYPE_CBCT)
@@ -755,7 +773,15 @@ void m_ble_request_state(uint8_t *data, uint8_t len)
 
 void m_ble_cbct_request_state(uint8_t *data, uint8_t len, int index)
 {
+    if (!obj_ble.list_child[index].data.info.enable) {
+        os_trace("sensor is disabled\r\n");
+        return;
+    }
     uint8_t channel = (obj_ble.list_child[index].my_act - 1) / 2;
+    if (obj_ble.disallow_use_sensor[channel]) {
+        os_trace("switch is disabled from sensor\r\n");
+        return;
+    }
     s_ble_obj.state_await = (0x01 << (channel * 2));
     memset(s_ble_obj.mac_request_state, 0, 6);
     memcpy(s_ble_obj.mac_request_state, &data[3], 6);
@@ -764,10 +790,10 @@ void m_ble_cbct_request_state(uint8_t *data, uint8_t len, int index)
     
     memcpy(s_ble_obj.check_mac_source, &data[10], 6);
     uint32_t ver = *((uint32_t*) (&data[17]));
-    os_trace("%s batt: %u, ver: %lu, len: %u\r\n", __func__, data[21], ver, len);
-    if (obj_ble.list_child[index].opp_act != data[21] || ver != obj_ble.ver_cbct[index]) {
-        obj_ble.list_child[index].opp_act = data[21];
-        obj_ble.ver_cbct[index] = ver;
+    os_trace("%s index: %d,batt: %u, ver: %lu, len: %u\r\n", __func__, index, data[21], ver, len);
+    if (obj_ble.list_child[index].data.info.battery != data[21] || ver != obj_ble.list_child[index].data.info.firmware_version) {
+        obj_ble.list_child[index].data.info.battery = data[21];
+        obj_ble.list_child[index].data.info.firmware_version = ver;
         m_db_get_instance()->_request_sync_db(BIT_FLAG_SYNC_BLE);
     }
 }
@@ -831,7 +857,7 @@ void m_ble_sync_state(void)
                             memcpy(ble_send.mac_source, s_ble_obj.check_mac_source, 6);
                             m_switch_get_instance()._control_switch_cb(CH1_ON + my_channel_act * 2, SRC_ACTION_LINK_CBCT, 0, 1, 1, ble_send);
                         }
-                        s_ble_obj.cnt_down_light_off[my_channel_act] = obj_ble.list_child[i].data.holder * 1000;
+                        s_ble_obj.cnt_down_light_off[my_channel_act] = obj_ble.delay_cbct[i] * 1000;
                     }
                 }
             }
@@ -846,7 +872,7 @@ void ble_go_request_pair(void)
 
 static void check_config_timeout(void)
 {
-	if (s_ble_obj.is_run_config == 1 && xTaskGetTickCount() - s_ble_obj.last_time_running_config >= pdMS_TO_TICKS(10000))
+	if (s_ble_obj.is_run_config == 1 && sys_get_tick_ms() - s_ble_obj.last_time_running_config >= 20000)
 	{
 		s_ble_obj.is_run_config = 0;
 		os_trace("check_config_timeout: TIMEOUT CONFIG\r\n");
@@ -871,8 +897,10 @@ static uint8_t ble_db_add_child(uint8_t* mac, uint8_t type, uint8_t act)
     obj_ble.list_child[obj_ble.num_devices_link].type = type;
     obj_ble.list_child[obj_ble.num_devices_link].my_act = act;
     if (type == DEVICE_TYPE_CBCT) {
-        obj_ble.list_child[obj_ble.num_devices_link].data.holder = DEFAULT_DELAY_LIGHT_OFF_CBCT;
-        obj_ble.list_child[obj_ble.num_devices_link].opp_act = 100; // default 100% batt pcn
+        obj_ble.delay_cbct[obj_ble.num_devices_link] = DEFAULT_DELAY_LIGHT_OFF_CBCT;
+        obj_ble.list_child[obj_ble.num_devices_link].data.info.battery = 100;
+        obj_ble.list_child[obj_ble.num_devices_link].data.info.enable = 1;
+        obj_ble.list_child[obj_ble.num_devices_link].data.info.firmware_version = 0;
     }
     obj_ble.num_devices_link++;
     // sync database
