@@ -113,7 +113,9 @@ static uint8_t m_control_switch(uint32_t action, uint32_t act_id, uint32_t uid, 
         obj_ble = m_ble_get_info_reference();
         
         for (uint8_t i = 0; i < obj_ble->num_devices_link; i++) {
-            if (obj_ble->list_child[i].type == DEVICE_SELF) {
+            if (obj_ble->list_child[i].type == DEVICE_SELF && is_mine_mac(obj_ble->list_child[i].mac) 
+                && obj_ble->list_child[i].opp_act > 0 && obj_ble->list_child[i].opp_act < 9 
+                && obj_ble->list_child[i].my_act > 0 && obj_ble->list_child[i].my_act < 9) {
                 m_ble_send_t send_self;
                 send_self.send_self = false;
                 send_self.send_ble = send_ble.send_ble;

@@ -45,7 +45,7 @@
 #define CJSON_KEY_DISALBE_AS       "disable_as"
 #define CJSON_KEY_TIME_DELAY_CBCT       "t_d"
 #define CJSON_KEY_ACTIVE_CBCT       "en"
-#define CJSON_KEY_DISABLE_USE_CBCT       "notss"
+#define CJSON_KEY_DISABLE_USE_CBCT       "usess"
 
 
 

@@ -1054,7 +1054,7 @@ static void app_get_list_link_device(cJSON *jsRoot)
     for (uint8_t i = 0; i < ble_info->num_devices_link; i++) {
         if (ble_info->list_child[i].type != DEVICE_TYPE_CBCT) {
             num_send++;
-            seek += sprintf(&respond[seek], "{\"id\":%u,\"mac\":\"%02x:%02x:%02x:%02x:%02x:%02x\",\"act1\":%u,\"act2\":%u},", i, ble_info->list_child[i].mac[0], ble_info->list_child[i].mac[1], ble_info->list_child[i].mac[2], ble_info->list_child[i].mac[3], ble_info->list_child[i].mac[4], ble_info->list_child[i].mac[5], ble_info->list_child[i].my_act, ble_info->list_child[i].data.info.battery);
+            seek += sprintf(&respond[seek], "{\"id\":%u,\"mac\":\"%02x:%02x:%02x:%02x:%02x:%02x\",\"act1\":%u,\"act2\":%u},", i, ble_info->list_child[i].mac[0], ble_info->list_child[i].mac[1], ble_info->list_child[i].mac[2], ble_info->list_child[i].mac[3], ble_info->list_child[i].mac[4], ble_info->list_child[i].mac[5], ble_info->list_child[i].my_act, ble_info->list_child[i].opp_act);
             if (num_send >= 5) {
                 seek--;
                 seek += sprintf(&respond[seek], "]}");
@@ -1366,7 +1366,7 @@ static void app_set_use_cbct(cJSON *jsRoot)
     active = jsDelayTime->valueint;
 
     if (index >= 1 && index <= 4) {
-        m_db_get_instance()->_m_device._ble_info->disallow_use_sensor[index-1] = active;
+        m_db_get_instance()->_m_device._ble_info->disallow_use_sensor[index-1] = !active;
         m_db_get_instance()->_request_sync_db(BIT_FLAG_SYNC_BLE);
         result = 1;
     }
@@ -1413,7 +1413,14 @@ static void app_get_list_cbct(cJSON *jsRoot)
 
     uint32_t buffer_seek = 0, i;
     memset(respond, 0, sizeof(respond));
-    buffer_seek += sprintf(respond, "{\"%s\":%lu,\"u\":%lu, \"ids\":[", gs_dev_type[device_type], type, uid);
+    buffer_seek += sprintf(&respond[buffer_seek], "{\"%s\":%lu,\"u\":%lu,\"ch_en\":[", gs_dev_type[device_type], type, uid);
+
+    for (uint8_t k = 0; k < m_switch_get_instance().max_number_channel; k++) {
+        buffer_seek += sprintf(&respond[buffer_seek], "%u,", !m_db_get_instance()->_m_device._ble_info->disallow_use_sensor[k]);
+    }
+    buffer_seek--;
+
+    buffer_seek += sprintf(&respond[buffer_seek], "],\"ids\":[");
     uint8_t num_send = 0;
     
     for (i = 0; i < m_db_get_instance()->_m_device._ble_info->num_devices_link; i++) {

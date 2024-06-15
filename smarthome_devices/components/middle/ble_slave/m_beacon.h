@@ -214,6 +214,7 @@ void db_change_delay_cbct_by_mac(uint8_t *mac, uint32_t delay_time);
 void db_set_active_cbct_by_mac(uint8_t *mac, uint8_t enable);
 void m_ble_get_mac_addr(uint8_t *my_mac);
 void m_ble_set_state_change(uint8_t channel, uint8_t level, m_ble_send_t send_ble);
+uint8_t is_mine_mac(uint8_t *mac_check);
 void ble_db_remove_all_nodes(void);
 m_ble_info_t* m_ble_get_info_reference(void);
 

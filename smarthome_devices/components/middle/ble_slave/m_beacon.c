@@ -181,9 +181,10 @@ int ble_master_scan(void)
     int ret;
     struct bt_le_scan_param scan_param;
     scan_param.type = BT_LE_SCAN_TYPE_PASSIVE;
-    scan_param.filter_dup = BT_LE_SCAN_FILTER_DUPLICATE;
+    // scan_param.filter_dup = BT_LE_SCAN_FILTER_DUPLICATE;
+    scan_param.filter_dup = 0;
     scan_param.interval = 0xA0; // 100 ms
-    scan_param.window = 0x0030;
+    scan_param.window = 0x0010;
 
     // master_current_scan = 0;
     // memset(scan_le_addr, 0, sizeof(scan_le_addr));
@@ -279,6 +280,16 @@ void adv_send_request_link(void)
     data_adv_len = 11;
 
     my_ble_update_data();
+}
+
+uint8_t is_mine_mac(uint8_t *mac_check)
+{
+    bt_addr_le_t adv_addr;
+    bt_get_local_public_address(&adv_addr);
+    if (!memcmp(adv_addr.a.val, mac_check, 6)) {
+        return 1;
+    }
+    return 0;
 }
 
 void master_accept_request_link(uint8_t *mac_acpt, uint8_t act)
