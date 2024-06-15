@@ -183,7 +183,7 @@ int ble_master_scan(void)
     scan_param.type = BT_LE_SCAN_TYPE_PASSIVE;
     // scan_param.filter_dup = BT_LE_SCAN_FILTER_DUPLICATE;
     scan_param.filter_dup = 0;
-    scan_param.interval = 0xA0; // 100 ms
+    scan_param.interval = 0x60; // 100 ms
     scan_param.window = 0x0010;
 
     // master_current_scan = 0;
@@ -784,10 +784,10 @@ void m_ble_request_state(uint8_t *data, uint8_t len)
 
 void m_ble_cbct_request_state(uint8_t *data, uint8_t len, int index)
 {
-    if (!obj_ble.list_child[index].data.info.enable) {
-        os_trace("sensor is disabled\r\n");
-        return;
-    }
+    // if (!obj_ble.list_child[index].data.info.enable) {
+    //     os_trace("sensor is disabled\r\n");
+    //     return;
+    // }
     uint8_t channel = (obj_ble.list_child[index].my_act - 1) / 2;
     if (obj_ble.disallow_use_sensor[channel]) {
         os_trace("switch is disabled from sensor\r\n");
@@ -868,7 +868,7 @@ void m_ble_sync_state(void)
                             memcpy(ble_send.mac_source, s_ble_obj.check_mac_source, 6);
                             m_switch_get_instance()._control_switch_cb(CH1_ON + my_channel_act * 2, SRC_ACTION_LINK_CBCT, 0, 1, 1, ble_send);
                         }
-                        s_ble_obj.cnt_down_light_off[my_channel_act] = obj_ble.delay_cbct[i] * 1000;
+                        s_ble_obj.cnt_down_light_off[my_channel_act] = obj_ble.arr_ch_delay[my_channel_act] * 1000;
                     }
                 }
             }

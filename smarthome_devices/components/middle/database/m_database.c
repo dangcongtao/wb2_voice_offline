@@ -209,10 +209,39 @@ static void generate_aes_key_iv(void)
     }
 }
 
+uint16_t dfu_crc16(uint16_t crc, unsigned char *pD, int len)
+{
+    uint16_t poly[2] = {0, 0xa001}; // 0x8005 <==> 0xa001
+    int i, j;
+
+    for (j = len; j > 0; j--)
+    {
+        unsigned char ds = *pD++;
+        for (i = 0; i < 8; i++)
+        {
+            crc = (crc >> 1) ^ poly[(crc ^ ds) & 1];
+            ds = ds >> 1;
+        }
+    }
+
+	// os_trace("crc: %u\n", crc);
+    return crc;
+}
+
 static void m_load_databse(void)
 {
     m_db_read_device_id();
     flash_read_database(&s_m_database._m_device);
+
+    // check crc ble info
+    if (s_m_database._m_device._ble_info->crc != dfu_crc16(0xFFFF, s_m_database._m_device._ble_info, sizeof(m_ble_info_t)-sizeof(uint16_t))) {
+        memset(s_m_database._m_device._ble_info, 0, sizeof(m_ble_info_t));
+        for (uint8_t i = 0; i < MAX_NUM_SWITCH; i++) {
+            s_m_database._m_device._ble_info->arr_ch_delay[i] = 10;
+        }
+        s_m_database._m_device._ble_info->crc = dfu_crc16(0xFFFF, s_m_database._m_device._ble_info, sizeof(m_ble_info_t)-sizeof(uint16_t));
+        m_db_get_instance()->_request_sync_db(BIT_FLAG_SYNC_BLE);
+    }
 
     // memset(s_m_database._m_device._ble_info, 0, sizeof(m_ble_info_t));
     // flash_ble_write_database(s_m_database._m_device);

@@ -201,6 +201,8 @@ typedef struct
     uint8_t disallow_use_sensor[MAX_NUM_SWITCH];
     ble_child_t list_child[MAX_CTLK_SUPPORT];
     uint32_t delay_cbct[MAX_CTLK_SUPPORT];
+    uint8_t arr_ch_delay[MAX_NUM_SWITCH];
+    uint16_t crc;
 } m_ble_info_t;
 
 int ble_master_scan(void);

@@ -23,6 +23,8 @@ void flash_init(void)
 {
     easyflash_init();
 }
+
+extern uint16_t dfu_crc16(uint16_t crc, unsigned char *pD, int len);
 /*
     m_wifi_info_t*      _wifi_info;
     m_mqtt_info_t*      _mqtt_info;
@@ -72,6 +74,7 @@ void flash_write_database(m_device_t object_data, uint8_t request_flag)
     }
     else if (GET(request_flag, BIT_FLAG_SYNC_BLE))
     {
+        object_data._ble_info->crc = dfu_crc16(0xFFFF, object_data._ble_info, sizeof(m_ble_info_t)-sizeof(uint16_t));
         size = sizeof(m_ble_info_t);
         ef_set_bytes(BLE_INFO, (uint8_t *)object_data._ble_info, size);
     }
