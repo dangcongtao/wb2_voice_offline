@@ -577,10 +577,10 @@ match_result_t matchDataLimit(
             else
             {
                 if (!MSBfirst) {
-                    os_trace_rcv("%s !MSBfirst one mark data: %lu, %lu %lu, space %lu, %lu %lu\r\n", __func__, *data_ptr * 2, onemarkLower, onemarkUpper,*(data_ptr + 1) * 2, onespaceLower, onespaceUpper);
-                    os_trace_rcv("%s !MSBfirst zero mark data: %lu, %lu %lu, space %lu, %lu %lu\r\n", __func__, *data_ptr * 2, zeromarkLower, zeromarkUpper,(*(data_ptr + 1)) * 2, zerospaceLower, zerospaceUpper);
                     result.data = reverseBits(result.data, result.used / 2);
                 }
+                os_trace_rcv("%s MSBfirst %u one mark data: %lu, %lu %lu, space %lu, %lu %lu\r\n", __func__, MSBfirst, *data_ptr * 2, onemarkLower, onemarkUpper,*(data_ptr + 1) * 2, onespaceLower, onespaceUpper);
+                os_trace_rcv("%s MSBfirst %u zero mark data: %lu, %lu %lu, space %lu, %lu %lu\r\n", __func__, MSBfirst, *data_ptr * 2, zeromarkLower, zeromarkUpper,(*(data_ptr + 1)) * 2, zerospaceLower, zerospaceUpper);
                 return result; // It's neither, so fail.
             }
         }
@@ -718,7 +718,7 @@ uint16_t _matchGenericLimit(volatile uint16_t *data_ptr,
                                           excess, MSBfirst, kexpectspace);
         if (!result.success)
         {
-            os_trace_rcv("%s matchDataLimit failed\r\n", __func__);
+            os_trace_rcv("%s matchDataLimit failed !result.success\r\n", __func__);
             return 0;
         }
         *result_bits_ptr = result.data;
@@ -735,7 +735,7 @@ uint16_t _matchGenericLimit(volatile uint16_t *data_ptr,
                                         excess, MSBfirst, kexpectspace);
         if (!data_used)
         {
-            os_trace_rcv("%s: matchBytesLimit fail\r\n", __func__);
+            os_trace_rcv("%s: matchBytesLimit fail data_used\r\n", __func__);
             return 0;
         }
         offset += data_used;
@@ -1248,7 +1248,7 @@ bool decode_for(decode_results *results, uint8_t max_skip)
 #endif
 
 #if (DECODE_TECO)
-    os_trace_rcv("Attempting decodeMitsubishi136 decode\r\n");
+    os_trace_rcv("Attempting decodeTeco decode\r\n");
     if (decodeTeco(results, offset, kTecoBits, false)) return true;
 #endif
 
@@ -1279,6 +1279,7 @@ bool decode_for(decode_results *results, uint8_t max_skip)
 #endif  // DECODE_HITACHI_AC344
 
 #if DECODE_HITACHI_AC
+    os_trace_rcv("Attempting decodeHitachiAC decode\r\n");
     if (decodeHitachiAC(results, offset, kHitachiAc1Bits, true, true))
     {
         //blog_info("decode hitachi ac1 success ");

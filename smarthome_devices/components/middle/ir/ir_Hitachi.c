@@ -143,15 +143,15 @@ bool decodeHitachiAC(decode_results *results, uint16_t offset,
                     hmark-600, hmark+600,
                     hspace-500, hspace+500,
                     kHitachiAcBitMark-300, kHitachiAcBitMark+500,
-                    kHitachiAcOneSpace-500, kHitachiAcOneSpace+500,
+                    kHitachiAcOneSpace-350, kHitachiAcOneSpace+500,
                     kHitachiAcBitMark-300, kHitachiAcBitMark+500,
-                    kHitachiAcZeroSpace-300, kHitachiAcZeroSpace+300,
+                    kHitachiAcZeroSpace-450, kHitachiAcZeroSpace+290,
                     kHitachiAcBitMark-300, kHitachiAcBitMark+500,
-                    kHitachiAcMinGap-25000, kHitachiAcMinGap+25000,
+                    kHitachiAcMinGap-35000, kHitachiAcMinGap+25000,
                     true, k_tolerance, kMarkExcess, MSBfirst))
     {
         // blog_error("%s: Header data footer fail ", __func__);
-        // os_trace("%s: Header data footer fail %d\r\n", __func__, nbits);
+        os_trace("%s: Header data footer fail %d\r\n", __func__, nbits);
         return false;
     }
 
