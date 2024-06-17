@@ -150,8 +150,7 @@ bool decodeHitachiAC(decode_results *results, uint16_t offset,
                     kHitachiAcMinGap-35000, kHitachiAcMinGap+25000,
                     true, k_tolerance, kMarkExcess, MSBfirst))
     {
-        // blog_error("%s: Header data footer fail ", __func__);
-        os_trace("%s: Header data footer fail %d\r\n", __func__, nbits);
+        // os_trace("%s: Header data footer fail %d\r\n", __func__, nbits);
         return false;
     }
 
