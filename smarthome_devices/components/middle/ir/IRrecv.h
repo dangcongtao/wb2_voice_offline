@@ -95,6 +95,7 @@
 #define DECODE_VOLTAS 1
 #define DECODE_HITACHI_AC296 1
 #define DECODE_GOOD_WEATHER 1
+#define DECODE_SAIJODENKI 1
 
 
 #define IR_RX 1
@@ -487,6 +488,11 @@ bool decodeVoltas(decode_results *results, uint16_t offset,
                            const uint16_t nbits, const bool strict);
 #endif
 
+#if DECODE_SAIJODENKI
+bool decodeSaijoDenki(decode_results *results, uint16_t offset,
+                        const uint16_t nbits, const bool strict);
+#endif
+
 bool matchSpace(uint32_t measured, uint32_t desired, uint8_t tolerance,
                         int16_t excess);
 
@@ -669,6 +675,7 @@ void HitachiAC264_setRaw(const uint8_t new_code[], const uint16_t length, state_
 void HitachiAc296_setRaw(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
 void GoodweatherAc_setRaw(const uint64_t state, state_ir_t *ir_state);
 void Casper2024Ac_setInfo(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
+void SaijoDenki_setInfo(const uint8_t state[], state_ir_t *ir_state);
 
 // void enableIRIn(const bool pullup);
 void ir_loop(void);

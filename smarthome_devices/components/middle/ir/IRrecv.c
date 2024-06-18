@@ -1452,6 +1452,11 @@ bool decode_for(decode_results *results, uint8_t max_skip)
     if (decodeVoltas(results, offset, kVoltasBits, true)) return true;
 #endif
 
+#if DECODE_SAIJODENKI
+    os_trace_rcv("Attempting decodeSaijoDenki decode\r\n");
+    if (decodeSaijoDenki(results, offset, kSaijoDenkiBits, true)) return true;
+#endif
+
 #if DECODE_ARGO
     os_trace_rcv("Attempting decodeArgo decode\r\n");
     if (decodeArgoWREM3(results, offset, kArgo3AcControlStateLength * 8, true)) return true;
@@ -2089,6 +2094,10 @@ void m_ir_task(void *param)
             else if (GOODWEATHER == capture.decode_type)
             {
                 GoodweatherAc_setRaw(capture.value, &ir_state_recv);
+            }
+            else if (SAIJODENKI == capture.decode_type)
+            {
+                SaijoDenki_setInfo(capture.state, &ir_state_recv);
             }
 
             /***************************************************************************************/
