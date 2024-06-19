@@ -131,3 +131,90 @@ void IRWhirlpoolAc_setRaw(const uint8_t new_code[], const uint16_t length, state
     ir_state->swingv = (_.Swing1 && _.Swing2);
 
 }
+
+static void sendWhirlpoolAC(const unsigned char data[], const uint16_t nbytes,
+                             const uint16_t repeat) {
+  if (nbytes < kWhirlpoolAcStateLength)
+    return;  // Not enough bytes to send a proper message.
+  vTaskEnterCritical();
+  for (uint16_t r = 0; r <= repeat; r++) {
+    // Section 1
+    sendGenericBytes(kWhirlpoolAcHdrMark, kWhirlpoolAcHdrSpace, kWhirlpoolAcBitMark,
+                kWhirlpoolAcOneSpace, kWhirlpoolAcBitMark,
+                kWhirlpoolAcZeroSpace, kWhirlpoolAcBitMark, kWhirlpoolAcGap,
+                data, 6,  // 6 bytes == 48 bits
+                38000,    // Complete guess of the modulation frequency.
+                false, 0, 50);
+    // Section 2
+    sendGenericBytes(0, 0, kWhirlpoolAcBitMark, kWhirlpoolAcOneSpace,
+                kWhirlpoolAcBitMark, kWhirlpoolAcZeroSpace, kWhirlpoolAcBitMark,
+                kWhirlpoolAcGap, data + 6, 8,  // 8 bytes == 64 bits
+                38000,  // Complete guess of the modulation frequency.
+                false, 0, 50);
+    // Section 3
+    sendGenericBytes(0, 0, kWhirlpoolAcBitMark, kWhirlpoolAcOneSpace,
+                kWhirlpoolAcBitMark, kWhirlpoolAcZeroSpace, kWhirlpoolAcBitMark,
+                kWhirlpoolAcMinGap, data + 14, 7,  // 7 bytes == 56 bits
+                38000,  // Complete guess of the modulation frequency.
+                false, 0, 50);
+  }
+  vTaskExitCritical();
+}
+
+void Whirlpool_send(state_ir_t state_ir)
+{
+  WhirlpoolProtocol _;
+  memset(&_, 0, sizeof(WhirlpoolProtocol));
+  for (uint8_t i = 2; i < kWhirlpoolAcStateLength; i++) _.raw[i] = 0x0;
+  _.raw[0] = 0x83;
+  _.raw[1] = 0x06;
+  _.raw[6] = 0x80;
+
+  // _.Swing1 = 1;
+  // _.Swing2 = 1;
+  // _.Cmd = kWhirlpoolAcCommandSwing;
+
+  state_ir.model = DG11J191;
+    switch ((uint8_t)state_ir.mode) {
+    case kWhirlpoolAcAuto:
+      // setFan(kWhirlpoolAcFanAuto);
+      // _setTemp(kWhirlpoolAcAutoTemp, false);
+      // setSleep(false);  // Cancel sleep mode when in auto/6thsense mode.
+      // FALL THRU
+    case kWhirlpoolAcHeat:
+    case kWhirlpoolAcCool:
+    case kWhirlpoolAcDry:
+    case kWhirlpoolAcFan:
+      _.Mode = state_ir.mode;
+      break;
+    default:
+      return;
+  }
+  // if (mode == kWhirlpoolAcAuto) _.Cmd = kWhirlpoolAcCommand6thSense;
+  int8_t offset = getTempOffset(state_ir.model);
+  uint8_t newtemp = max((uint8_t)(kWhirlpoolAcMinTemp + offset), (uint8_t)state_ir.degrees);
+  newtemp = min((uint8_t)(kWhirlpoolAcMaxTemp + offset), newtemp);
+  _.Temp = newtemp - (kWhirlpoolAcMinTemp + offset);
+  _.Cmd = kWhirlpoolAcCommandTemp;
+
+  switch ((uint8_t)state_ir.fanspeed) {
+    case kWhirlpoolAcFanAuto:
+    case kWhirlpoolAcFanLow:
+    case kWhirlpoolAcFanMedium:
+    case kWhirlpoolAcFanHigh:
+      _.Fan = state_ir.fanspeed;
+      break;
+  }
+
+  if (pre_power != state_ir.power) {
+    _.Power = 1;
+    _.Cmd = kWhirlpoolAcCommandPower;
+    pre_power = !pre_power;
+  }
+
+  _.Sum1 = xorBytes(_.raw + 2, kWhirlpoolAcChecksumByte1 - 1 - 2, 0);
+  _.Sum2 = xorBytes(_.raw + kWhirlpoolAcChecksumByte1 + 1,
+                kWhirlpoolAcChecksumByte2 - kWhirlpoolAcChecksumByte1 - 1, 0);
+  
+  sendWhirlpoolAC(_.raw, kWhirlpoolAcStateLength, kWhirlpoolAcDefaultRepeat);
+}
