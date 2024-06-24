@@ -144,4 +144,87 @@ void IRCoronaAc_setRaw(const uint8_t new_code[], const uint16_t length, state_ir
   ir_state->fanspeed = _.Fan;
   ir_state->degrees = _.Temp + kCoronaAcMinTemp - 1;
   ir_state->swingv = _.SwingVToggle;
+  os_trace("%s PowerButton: %u\r\n", __func__, _.PowerButton);
+}
+
+static void sendCoronaAc(const uint8_t data[],
+                          const uint16_t nbytes, const uint16_t repeat) {
+  if (nbytes < kCoronaAcSectionBytes) return;
+  if (kCoronaAcSectionBytes < nbytes &&
+      nbytes < kCoronaAcStateLength) return;
+  vTaskEnterCritical();
+  for (uint16_t r = 0; r <= repeat; r++) {
+    uint16_t pos = 0;
+    // Data Section #1 - 3 loop
+    // e.g.
+    //   bits = 56; bytes = 7;
+    // #1  *(data + pos) = {0x28, 0x61, 0x3D, 0x19, 0xE6, 0x37, 0xC8};
+    // #2  *(data + pos) = {0x28, 0x61, 0x6D, 0xFF, 0x00, 0xFF, 0x00};
+    // #3  *(data + pos) = {0x28, 0x61, 0xCD, 0xFF, 0x00, 0xFF, 0x00};
+    for (uint8_t section = 0; section < kCoronaAcSections; section++) {
+      sendGenericBytes(kCoronaAcHdrMark, kCoronaAcHdrSpace,
+                  kCoronaAcBitMark, kCoronaAcOneSpace,
+                  kCoronaAcBitMark, kCoronaAcZeroSpace,
+                  kCoronaAcBitMark, kCoronaAcSpaceGap,
+                  data + pos, kCoronaAcSectionBytes,
+                  kCoronaAcFreq, false, kNoRepeat, kDutyDefault);
+      pos += kCoronaAcSectionBytes;  // Adjust by how many bytes was sent
+      // don't send more data then what we have
+      if (nbytes <= pos)
+        break;
+    }
+  }
+  vTaskExitCritical();
+}
+
+void Corona_send(state_ir_t state_ir)
+{
+  CoronaProtocol _;
+  memset(&_, 0, sizeof(CoronaProtocol));
+
+  _.sections[kCoronaAcSettingsSection].Data0 = kCoronaAcSectionData0Base;
+  _.sections[kCoronaAcSettingsSection].Data1 = 0x00;  // ensure no unset mem
+    // convert 16 bit value to separate 8 bit parts
+  _.sections[kCoronaAcOnTimerSection].Data1 = kCoronaAcTimerOff >> 8;
+  _.sections[kCoronaAcOnTimerSection].Data0 = kCoronaAcTimerOff;
+  _.sections[kCoronaAcOffTimerSection].Data1 = kCoronaAcTimerOff >> 8;
+  _.sections[kCoronaAcOffTimerSection].Data0 = kCoronaAcTimerOff;
+
+  _.PowerButton = false;
+  // power
+  _.Power = state_ir.power;
+
+  // temp
+  uint8_t degrees = max((uint8_t)state_ir.degrees, kCoronaAcMinTemp);
+  degrees = min(degrees, kCoronaAcMaxTemp);
+  _.Temp = degrees - kCoronaAcMinTemp + 1;
+
+  // fan
+  if ((uint8_t)state_ir.fanspeed > kCoronaAcFanHigh)
+    _.Fan = kCoronaAcFanAuto;
+  else
+    _.Fan = state_ir.fanspeed;
+
+  // mode
+  switch ((uint8_t)state_ir.mode) {
+    case kCoronaAcModeCool:
+    case kCoronaAcModeDry:
+    case kCoronaAcModeFan:
+    case kCoronaAcModeHeat:
+      _.Mode = state_ir.mode;
+      return;
+    default:
+      _.Mode = kCoronaAcModeCool;
+  }
+
+  // checksum
+  for (uint8_t i = 0; i < kCoronaAcSections; i++) {
+    _.sections[i].Header0 = kCoronaAcSectionHeader0;
+    _.sections[i].Header1 = kCoronaAcSectionHeader1;
+    _.sections[i].Label = getSectionByte(i);
+    _.sections[i].Data0Inv = ~_.sections[i].Data0;
+    _.sections[i].Data1Inv = ~_.sections[i].Data1;
+  }
+
+  sendCoronaAc(_.raw, kCoronaAcStateLength, kNoRepeat);
 }
