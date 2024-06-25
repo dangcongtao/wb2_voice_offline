@@ -232,3 +232,171 @@ void MitsubishiHeavy152Ac_send(state_ir_t state_ir)
   sendMitsubishiHeavy152(_.raw, kMitsubishiHeavy152StateLength,
                                  kMitsubishiHeavy152MinRepeat);
 }
+
+const uint16_t kMitsubishiHeavy160HdrMark = 6000;
+const uint16_t kMitsubishiHeavy160HdrSpace = 7500;
+const uint16_t kMitsubishiHeavy160BitMark = 550;
+const uint16_t kMitsubishiHeavy160OneSpace = 1500;
+const uint16_t kMitsubishiHeavy160ZeroSpace = 3450;
+const uint32_t kMitsubishiHeavy160Gap = 7500;  // Just a guess.
+
+static void sendMitsubishiHeavy160(const unsigned char data[],
+                                   const uint16_t nbytes,
+                                   const uint16_t repeat) {
+  if (nbytes < kMitsubishiHeavy160StateLength)
+    return;  // Not enough bytes to send a proper message.
+  vTaskEnterCritical();
+  sendGenericBytes(kMitsubishiHeavy160HdrMark, kMitsubishiHeavy160HdrSpace,
+              kMitsubishiHeavy160BitMark, kMitsubishiHeavy160OneSpace,
+              kMitsubishiHeavy160BitMark, kMitsubishiHeavy160ZeroSpace,
+              kMitsubishiHeavy160BitMark, kMitsubishiHeavy160Gap,
+              data, nbytes, 38000, false, repeat, kDutyDefault);
+
+  mark(kMitsubishiHeavy160BitMark);
+  vTaskExitCritical();
+}
+
+static bool IRMitsubishiHeavy160Ac_validChecksum(const uint8_t *state,
+                                           const uint16_t length) {
+
+  for (uint8_t i = 0; i < 4; i++) {
+    if (state[i] != (uint8_t)(~state[i+4])) {
+      os_trace("%s failed i = %u\r\n", __func__, i);
+      return false;
+    }
+  }
+
+  for (uint8_t i = 8; i < 12; i++) {
+    if (state[i] != (uint8_t)(~state[i+4])) {
+      os_trace("%s failed i = %u, val= %u %u\r\n", __func__, i, (uint8_t)(~state[i]), (uint8_t)(~state[i+4]));
+      return false;
+    }
+  }
+  return true;
+}
+
+bool decodeMitsubishiHeavy160(decode_results* results, uint16_t offset,
+                                   const uint16_t nbits, const bool strict) {
+  
+  os_trace("%s start decode\r\n", __func__);
+
+  uint16_t used;
+
+  used = matchGenericStateLimit(results->rawbuf + offset, results->state,
+                      results->rawlen - offset, nbits,
+                      kMitsubishiHeavy160HdrMark - 1500, kMitsubishiHeavy160HdrMark+1500, kMitsubishiHeavy160HdrSpace-1800,kMitsubishiHeavy160HdrSpace+1800,
+                      kMitsubishiHeavy160BitMark-400,kMitsubishiHeavy160BitMark+400, kMitsubishiHeavy160OneSpace-500,kMitsubishiHeavy160OneSpace+500,
+                      kMitsubishiHeavy160BitMark-400,kMitsubishiHeavy160BitMark+400, kMitsubishiHeavy160ZeroSpace-800, kMitsubishiHeavy160ZeroSpace+800,
+                      kMitsubishiHeavy160BitMark-400,kMitsubishiHeavy160BitMark+400, kMitsubishiHeavy160Gap-900, kMitsubishiHeavy160Gap+900, true,
+                      _tolerance, 0, false);
+  if (used == 0) {
+    return false;
+  }
+  offset += used;
+
+  if (strict) {
+    if (!IRMitsubishiHeavy160Ac_validChecksum(results->state, kMitsubishiHeavy160StateLength)) {
+      os_trace("%s checksum failed\r\n", __func__);
+      return false;
+    }
+  }
+
+  os_trace("%s success, decode_type: %d\r\n", __func__, results->decode_type);
+
+  // Success
+  results->bits = nbits;
+  results->decode_type = MITSUBISHI_HEAVY_160;
+  // No need to record the state as we stored it as we decoded it.
+  // As we use result->state, we don't record value, address, or command as it
+  // is a union data type.
+  return true;
+}
+
+
+void MitsubishiHeavy160_setInfo(const uint8_t state[], state_ir_t *ir_state)
+{
+  Mitsubishi160Protocol _;
+  memset(&_, 0, sizeof(kMitsubishiHeavy160StateLength));
+  memcpy(_.raw, state, kMitsubishiHeavy160StateLength);
+
+  ir_state->protocol = MITSUBISHI_HEAVY_160;
+  ir_state->power = _.Power;
+  ir_state->mode = _.Mode;
+  ir_state->fanspeed = _.Fan;
+  ir_state->degrees = _.Temp + 16;
+  ir_state->swingv = _.SwingV + _.Sw_auto;
+}
+
+#define kMitsubishiHeavy160AcMinTemp  18
+#define kMitsubishiHeavy160AcMaxTemp  30
+
+#define kitsubishiHeavy160ModeCool  0x02
+#define kitsubishiHeavy160ModeHeat  0x04
+#define kitsubishiHeavy160ModeDry  0x01
+#define kitsubishiHeavy160ModeFan  0x03
+#define kitsubishiHeavy160ModeAuto  0x00
+
+void MitsubishiHeavy160_send(state_ir_t state_ir)
+{
+  Mitsubishi160Protocol _;
+  memset(&_, 0, sizeof(kMitsubishiHeavy160StateLength));
+  const uint8_t kReset[kMitsubishiHeavy160StateLength] = {0xF2, 0xBF, 0x5B, 0xCF, 0x0D, 0x40, 0xA4, 0x30, 0xFB, 0xFE, 0xEB, 0xFF, 0x04, 0x01, 0x14, 0x00, 0xFD, 0x02, 0xFF, 0xFF};
+  memcpy(_.raw, kReset, kMitsubishiHeavy160StateLength);
+
+  // power
+  _.Power = state_ir.power;
+
+  // temp
+  uint8_t degrees = max((uint8_t)state_ir.degrees, kMitsubishiHeavy160AcMinTemp);
+  degrees = min(degrees, kMitsubishiHeavy160AcMaxTemp);
+  _.Temp = degrees - 16;
+
+  // mode
+  switch ((uint8_t)state_ir.mode) {
+    case kitsubishiHeavy160ModeCool:
+    case kitsubishiHeavy160ModeHeat:
+    case kitsubishiHeavy160ModeDry:
+    case kitsubishiHeavy160ModeFan:
+    case kitsubishiHeavy160ModeAuto:
+      _.Mode = state_ir.mode;
+      break;
+    default:
+      _.Mode = kitsubishiHeavy160ModeCool;
+  }
+
+  // fan: auto: 3
+  if ((uint8_t)state_ir.fanspeed > 7 || (uint8_t)state_ir.fanspeed < 3)
+    _.Fan = 3;
+  else
+    _.Fan = state_ir.fanspeed;
+
+  // SwingV auto: 3, highest: 0, high: 1, mid: 2, lowest: 3
+  if (state_ir.swingv != -1) {
+    if ((uint8_t)state_ir.swingv > 3) {
+      _.SwingV = 3;
+      _.Sw_auto = 1;
+    } else {
+      _.SwingV = state_ir.swingv;
+      _.Sw_auto = 0;
+    }
+  }
+
+  for (uint8_t i = 0; i < 4; i++) {
+    _.raw[i] = (uint8_t)(~_.raw[i+4]);
+  }
+
+  for (uint8_t i = 8; i < 12; i++) {
+    _.raw[i+4] = (uint8_t)(~_.raw[i]);
+  }
+
+  #if DEBUG_ENABLE == 1
+    os_trace("MITSUBISHI_HEAVY_send: 0x ");
+    for(uint8_t i = 0; i < kMitsubishiHeavy160StateLength; i++) {
+        os_trace("%02X-", _.raw[i]);
+    }
+    os_trace("\r\n");
+  #endif
+
+  sendMitsubishiHeavy160(_.raw, kMitsubishiHeavy160StateLength, kMitsubishiHeavy160MinRepeat);
+}
+

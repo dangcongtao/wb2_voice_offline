@@ -253,6 +253,7 @@ void Daikin312_send(state_ir_t state_ir);
 void Casper2024Ac_send(state_ir_t state_ir);
 void Whirlpool_send(state_ir_t state_ir);
 void Corona_send(state_ir_t state_ir);
+void MitsubishiHeavy160_send(state_ir_t state_ir);
 
 /* end */
 

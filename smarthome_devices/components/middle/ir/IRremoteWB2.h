@@ -131,6 +131,7 @@ typedef enum {
   DAIKIN312,
   CASPER2024_AC,
   SAIJODENKI,
+  MITSUBISHI_HEAVY_160,
   // Add new entries before this one, and update it to point to the last entry.
   kLastDecodeType = LG,
   MIDEA = 1934,
@@ -201,6 +202,10 @@ typedef enum {
 #define kMitsubishiHeavy152StateLength 19
 #define kMitsubishiHeavy152Bits (kMitsubishiHeavy152StateLength * 8)
 #define kMitsubishiHeavy152MinRepeat kNoRepeat
+
+#define kMitsubishiHeavy160StateLength 20
+#define kMitsubishiHeavy160Bits (kMitsubishiHeavy160StateLength * 8)
+#define kMitsubishiHeavy160MinRepeat kNoRepeat
 
 #define kNagakawaStateLength  14
 

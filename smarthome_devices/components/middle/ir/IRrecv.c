@@ -1235,6 +1235,8 @@ bool decode_for(decode_results *results, uint8_t max_skip)
     os_trace_rcv("Attempting decodeMitsubishiHeavyAC decode\r\n");
     if (decodeMitsubishiHeavy(results, offset, kMitsubishiHeavy88Bits, true)) return true;
     if (decodeMitsubishiHeavy(results, offset, kMitsubishiHeavy152Bits, true)) return true;
+    if (decodeMitsubishiHeavy160(results, offset, kMitsubishiHeavy160Bits, true)) return true;
+    
 #endif
 
 #if (DECODE_MITSUBISHI_AC)
@@ -2098,6 +2100,17 @@ void m_ir_task(void *param)
             else if (SAIJODENKI == capture.decode_type)
             {
                 SaijoDenki_setInfo(capture.state, &ir_state_recv);
+            }
+            else if (MITSUBISHI_HEAVY_160 == capture.decode_type)
+            {
+                #if DEBUG_ENABLE == 1
+                    os_trace("MITSUBISHI_HEAVY_160: 0x ");
+                    for(uint8_t i = 0; i < kMitsubishiHeavy160StateLength; i++) {
+                        os_trace("%02X-", capture.state[i]);
+                    }
+                    os_trace("\r\n");
+                #endif
+                MitsubishiHeavy160_setInfo(capture.state, &ir_state_recv);
             }
 
             /***************************************************************************************/

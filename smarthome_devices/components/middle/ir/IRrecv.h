@@ -297,6 +297,9 @@ bool decodeMitsubishi112(decode_results *results, uint16_t offset,
 #if DECODE_MITSUBISHIHEAVY
 bool decodeMitsubishiHeavy(decode_results* results, uint16_t offset,
                                    const uint16_t nbits, const bool strict);
+                    
+bool decodeMitsubishiHeavy160(decode_results* results, uint16_t offset,
+                                   const uint16_t nbits, const bool strict);
 #endif
 
 #if DECODE_MIDEA
@@ -676,6 +679,7 @@ void HitachiAc296_setRaw(const uint8_t new_code[], const uint16_t length, state_
 void GoodweatherAc_setRaw(const uint64_t state, state_ir_t *ir_state);
 void Casper2024Ac_setInfo(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
 void SaijoDenki_setInfo(const uint8_t state[], state_ir_t *ir_state);
+void MitsubishiHeavy160_setInfo(const uint8_t state[], state_ir_t *ir_state);
 
 // void enableIRIn(const bool pullup);
 void ir_loop(void);
