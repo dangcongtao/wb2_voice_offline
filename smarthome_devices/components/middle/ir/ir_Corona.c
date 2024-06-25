@@ -152,7 +152,7 @@ static void sendCoronaAc(const uint8_t data[],
   if (nbytes < kCoronaAcSectionBytes) return;
   if (kCoronaAcSectionBytes < nbytes &&
       nbytes < kCoronaAcStateLength) return;
-  vTaskEnterCritical();
+
   for (uint16_t r = 0; r <= repeat; r++) {
     uint16_t pos = 0;
     // Data Section #1 - 3 loop
@@ -174,7 +174,7 @@ static void sendCoronaAc(const uint8_t data[],
         break;
     }
   }
-  vTaskExitCritical();
+
 }
 
 void Corona_send(state_ir_t state_ir)
@@ -212,7 +212,7 @@ void Corona_send(state_ir_t state_ir)
     case kCoronaAcModeFan:
     case kCoronaAcModeHeat:
       _.Mode = state_ir.mode;
-      return;
+      break;
     default:
       _.Mode = kCoronaAcModeCool;
   }
@@ -225,6 +225,16 @@ void Corona_send(state_ir_t state_ir)
     _.sections[i].Data0Inv = ~_.sections[i].Data0;
     _.sections[i].Data1Inv = ~_.sections[i].Data1;
   }
-
+  vTaskEnterCritical();
   sendCoronaAc(_.raw, kCoronaAcStateLength, kNoRepeat);
+  _.PowerButton = true;
+  for (uint8_t i = 0; i < kCoronaAcSections; i++) {
+    _.sections[i].Header0 = kCoronaAcSectionHeader0;
+    _.sections[i].Header1 = kCoronaAcSectionHeader1;
+    _.sections[i].Label = getSectionByte(i);
+    _.sections[i].Data0Inv = ~_.sections[i].Data0;
+    _.sections[i].Data1Inv = ~_.sections[i].Data1;
+  }
+  sendCoronaAc(_.raw, kCoronaAcStateLength, kNoRepeat);
+  vTaskExitCritical();
 }
