@@ -1159,7 +1159,8 @@ bool decode_for(decode_results *results, uint8_t max_skip)
 #endif
 
 #if DECODE_CARRIER_AC64
-    os_trace_rcv("Attempting CarrierAC64 AC\r\n");
+    os_trace_rcv("Attempting CarrierAC AC\r\n");
+    if (decodeCarrierAC(results, offset, kCarrierAcBits, true)) return true;
     if (decodeCarrierAC64(results, offset, kCarrierAc64Bits, true)) return true;
 #endif
 
@@ -2100,6 +2101,10 @@ void m_ir_task(void *param)
             else if (SAIJODENKI == capture.decode_type)
             {
                 SaijoDenki_setInfo(capture.state, &ir_state_recv);
+            }
+            else if (CARRIER_AC == capture.decode_type)
+            {
+                IRCarrierAc32_setInfo(capture.value, &ir_state_recv);
             }
             else if (MITSUBISHI_HEAVY_160 == capture.decode_type)
             {

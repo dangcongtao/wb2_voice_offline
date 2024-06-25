@@ -73,4 +73,6 @@ void resultToRawArray(const decode_results * const decode, uint16_t* result);
                const uint32_t data);
   void setBitsU64(uint64_t * const dst, const uint8_t offset, const uint8_t nbits,
                const uint64_t data);
+
+uint64_t invertBits(const uint64_t data, const uint16_t nbits);
 #endif

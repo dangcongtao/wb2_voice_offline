@@ -278,8 +278,6 @@ static bool IRMitsubishiHeavy160Ac_validChecksum(const uint8_t *state,
 bool decodeMitsubishiHeavy160(decode_results* results, uint16_t offset,
                                    const uint16_t nbits, const bool strict) {
   
-  os_trace("%s start decode\r\n", __func__);
-
   uint16_t used;
 
   used = matchGenericStateLimit(results->rawbuf + offset, results->state,
@@ -296,7 +294,6 @@ bool decodeMitsubishiHeavy160(decode_results* results, uint16_t offset,
 
   if (strict) {
     if (!IRMitsubishiHeavy160Ac_validChecksum(results->state, kMitsubishiHeavy160StateLength)) {
-      os_trace("%s checksum failed\r\n", __func__);
       return false;
     }
   }

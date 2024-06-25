@@ -393,6 +393,9 @@ bool decodeSanyoAc152(decode_results *results, uint16_t offset,
 #if DECODE_CARRIER_AC64
 bool decodeCarrierAC64(decode_results *results, uint16_t offset,
                            const uint16_t nbits, const bool strict);
+
+bool decodeCarrierAC(decode_results *results, uint16_t offset,
+                             const uint16_t nbits, const bool strict);
 #endif
 
 #if DECODE_HAIER_AC
@@ -680,6 +683,7 @@ void GoodweatherAc_setRaw(const uint64_t state, state_ir_t *ir_state);
 void Casper2024Ac_setInfo(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
 void SaijoDenki_setInfo(const uint8_t state[], state_ir_t *ir_state);
 void MitsubishiHeavy160_setInfo(const uint8_t state[], state_ir_t *ir_state);
+void IRCarrierAc32_setInfo(const uint64_t state, state_ir_t *ir_state);
 
 // void enableIRIn(const bool pullup);
 void ir_loop(void);

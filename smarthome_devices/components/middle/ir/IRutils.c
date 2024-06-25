@@ -312,3 +312,14 @@ void setBitU8(uint8_t * const data, const uint8_t position, const bool on) {
     // Merge in the data.
     *dst |= ((data & mask) << offset);
   }
+
+
+uint64_t invertBits(const uint64_t data, const uint16_t nbits) {
+  // No change if we are asked to invert no bits.
+  if (nbits == 0) return data;
+  uint64_t result = ~data;
+  // If we are asked to invert all the bits or more than we have, it's simple.
+  if (nbits >= sizeof(data) * 8) return result;
+  // Mask off any unwanted bits and return the result.
+  return (result & ((1ULL << nbits) - 1));
+}

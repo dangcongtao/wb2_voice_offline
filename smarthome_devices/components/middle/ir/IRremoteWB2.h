@@ -228,6 +228,9 @@ typedef enum {
 #define kCarrierAc64Bits  64
 #define kCarrierAc64MinRepeat  kNoRepeat
 
+#define kCarrierAcBits  32
+#define kCarrierAcMinRepeat  kNoRepeat
+
 /* hitachi */
 #define kHitachiAcStateLength     28
 #define kHitachiAcBits            kHitachiAcStateLength*8

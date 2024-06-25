@@ -61,5 +61,31 @@ const uint8_t kCarrierAc64MaxTemp = 30;  // Celsius
 const uint8_t kCarrierAc64TimerMax = 9;  // Hours.
 const uint8_t kCarrierAc64TimerMin = 1;  // Hours.
 
+typedef struct
+{
+    union
+    {
+        uint32_t raw;  ///< The state of the IR remote.
+        struct {
+            // Byte 0
+            uint32_t :8;
+            // Byte 1
+            uint32_t :4;
+            uint32_t  :4;
+            // Byte 2
+            uint32_t :1;
+            uint32_t Power:3;
+            uint32_t Temp:4;
+            // Byte 3
+            uint32_t Fan:4;
+            uint32_t :1;
+            uint32_t :1;
+            uint32_t :2;
+        };
+    };
+} Carrier32Protocol;
+
+const uint8_t kCarrierAc32PowerOn = 0b010;  // Hours.
+const uint8_t kCarrierAc32PowerOff = 0b101;  // Hours.
 
 #endif
