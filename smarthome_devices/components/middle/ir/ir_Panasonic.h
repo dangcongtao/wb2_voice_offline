@@ -47,6 +47,7 @@ const uint8_t kPanasonicAcSwingHRight = 0xB;      // 0b1011
 const uint8_t kPanasonicAcSwingHFullRight = 0xC;  // 0b1100
 const uint8_t kPanasonicAcSwingHAuto = 0xD;       // 0b1101
 const uint8_t kPanasonicAcChecksumInit = 0xF4;
+const uint8_t kPanasonicAc2ChecksumInit = 0xF2;
 const uint8_t kPanasonicAcOnTimerOffset = 1;
 const uint8_t kPanasonicAcOffTimerOffset = 2;
 const uint8_t kPanasonicAcTimeSize = 11;  // Bits

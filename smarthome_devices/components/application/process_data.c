@@ -171,6 +171,7 @@ wswitch_handler_t array_ir_control_handler[] = {
     {AC_Hitachi424_Callback, 93} ,
     {AC_Hitachi_Callback, 21},
     {AC_PanasonicAC_Callback, 106},
+    {AC_PanasonicAC_Callback, 129},
     {AC_PanasonicAC32_Callback, 107},
     {AC_ElectraAC_Callback, 16}, // casper
     {AC_FujitsuAC_Callback, FUJITSU_AC},
@@ -3481,6 +3482,7 @@ static void AC_PanasonicAC_Callback(cJSON *jsRoot)
     state_ir.degrees = (float)temp;
     state_ir.mode = mode;
     state_ir.fanspeed = fan;
+    state_ir.protocol = brand;
 
     cJSON *jsSwingV = NULL, *jsSwingH = NULL;
     jsSwingV = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGV);

@@ -1933,7 +1933,7 @@ void m_ir_task(void *param)
                 HitachiAC424_setRaw(capture.state, kHitachiAc424StateLength, &ir_state);
                 HitachiAC424_setInfo(capture.state, kHitachiAc424StateLength, &ir_state_recv);
             }
-            else if (PANASONIC_AC == capture.decode_type)
+            else if (PANASONIC_AC == capture.decode_type || PANASONIC_AC_2 == capture.decode_type)
             {
                 PanasonicAC_setInfo(capture.state, &ir_state_recv);
             }

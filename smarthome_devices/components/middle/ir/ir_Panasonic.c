@@ -29,11 +29,16 @@ static bool pre_ion_enable = false;
 static panasonic_ac_remote_model_t pre_model = kPanasonicUnknown;
 
 
-
 bool IRPanasonicAc_validChecksum(const uint8_t *state, const uint16_t length) {
   if (length < 2) return false;  // 1 byte of data can't have a checksum.
   return (state[length - 1] ==
           sumBytesState(state, length - 1, kPanasonicAcChecksumInit));
+}
+
+bool IRPanasonicAc_validChecksum_2(const uint8_t *state, const uint16_t length) {
+  if (length < 2) return false;  // 1 byte of data can't have a checksum.
+  return (state[length - 1] ==
+          sumBytesState(state, length - 1, kPanasonicAc2ChecksumInit));
 }
 
 bool decodePanasonicAC(decode_results *results, uint16_t offset,
@@ -53,8 +58,8 @@ bool decodePanasonicAC(decode_results *results, uint16_t offset,
   used = matchGenericStateLimit(results->rawbuf + offset, results->state,
                       results->rawlen - offset, kPanasonicAcSection1Length * 8,
                       kPanasonicHdrMark - 456, kPanasonicHdrMark + 456, kPanasonicHdrSpace - 400, kPanasonicHdrSpace + 400,
-                      kPanasonicBitMark - 332, kPanasonicBitMark + 368, kPanasonicOneSpace - 496, kPanasonicOneSpace + 504,
-                      kPanasonicBitMark - 332, kPanasonicBitMark + 368, kPanasonicZeroSpace - 332, kPanasonicZeroSpace + 368,
+                      kPanasonicBitMark - 332, kPanasonicBitMark + 368, kPanasonicOneSpace - 495, kPanasonicOneSpace + 504,
+                      kPanasonicBitMark - 332, kPanasonicBitMark + 368, kPanasonicZeroSpace - 332, kPanasonicZeroSpace + 300,
                       kPanasonicBitMark - 332, kPanasonicBitMark + 368, kPanasonicAcSectionGap - 2500, kPanasonicAcSectionGap + 2500, true,
                       kPanasonicAcTolerance, kPanasonicAcExcess, false);
   if (!used) return false;
@@ -66,8 +71,8 @@ bool decodePanasonicAC(decode_results *results, uint16_t offset,
                     results->rawlen - offset,
                     nbits - kPanasonicAcSection1Length * 8,
                     kPanasonicHdrMark - 456, kPanasonicHdrMark + 456, kPanasonicHdrSpace - 400, kPanasonicHdrSpace + 400,
-                    kPanasonicBitMark - 332, kPanasonicBitMark + 368, kPanasonicOneSpace - 496, kPanasonicOneSpace + 504,
-                    kPanasonicBitMark - 332, kPanasonicBitMark + 368, kPanasonicZeroSpace - 332, kPanasonicZeroSpace + 368,
+                    kPanasonicBitMark - 332, kPanasonicBitMark + 368, kPanasonicOneSpace - 495, kPanasonicOneSpace + 504,
+                    kPanasonicBitMark - 332, kPanasonicBitMark + 368, kPanasonicZeroSpace - 332, kPanasonicZeroSpace + 300,
                     kPanasonicBitMark - 332, kPanasonicBitMark + 368, kPanasonicAcMessageGap - 25000, kPanasonicAcMessageGap + 25000, true,
                     kPanasonicAcTolerance, kPanasonicAcExcess, false))
     return false;
@@ -77,16 +82,26 @@ bool decodePanasonicAC(decode_results *results, uint16_t offset,
     if (results->state[0] != 0x02 || results->state[1] != 0x20 ||
         results->state[8] != 0x02 || results->state[9] != 0x20)
       return false;
-    if (!IRPanasonicAc_validChecksum(results->state, nbits / 8)){
+    
+    os_trace("PANASONIC: 0x ");
+    for(uint8_t i = 0; i < nbits/8; i++) {
+        os_trace("%02X-", results->state[i]);
+    }
+    os_trace("\r\n");
+
+    if (IRPanasonicAc_validChecksum(results->state, nbits / 8)){
+      results->decode_type = PANASONIC_AC;
+    } else if (IRPanasonicAc_validChecksum_2(results->state, nbits / 8)) {
+      results->decode_type = PANASONIC_AC_2;
+    } else {
       os_trace("%s invalid checksum\r\n", __func__);
       return false;
     }
   }
-
-  os_trace("%s success\r\n", __func__);
+  os_trace("%s success type %u\r\n", __func__, results->decode_type);
 
   // Success
-  results->decode_type = PANASONIC_AC;
+  
   results->bits = nbits;
   return true;
 }
@@ -149,10 +164,21 @@ static uint8_t IRPanasonicAc_calcChecksum(const uint8_t *state,
   return sumBytesState(state, length - 1, kPanasonicAcChecksumInit);
 }
 
+static uint8_t IRPanasonicAc_calcChecksum2(const uint8_t *state,
+                                    const uint16_t length) {
+  return sumBytesState(state, length - 1, kPanasonicAc2ChecksumInit);
+}
+
 /// Calculate and set the checksum values for the internal state.
 /// @param[in] length The size/length of the state.
-static void IRPanasonicAc_fixChecksum(uint8_t* remote_state, const uint16_t length) {
-  remote_state[length - 1] = IRPanasonicAc_calcChecksum(remote_state, length);
+static void IRPanasonicAc_fixChecksum(uint8_t* remote_state, const uint16_t length, int brand) {
+  if (brand == PANASONIC_AC) {
+    os_trace("old pana\r\n");
+    remote_state[length - 1] = IRPanasonicAc_calcChecksum(remote_state, length);
+  } else if (brand == PANASONIC_AC_2) {
+    os_trace("new pana\r\n");
+    remote_state[length - 1] = IRPanasonicAc_calcChecksum2(remote_state, length);
+  }
 }
 
 static void IRPanasonicAc_setTemp(uint8_t* remote_state, const uint8_t celsius, const bool remember) {
@@ -345,7 +371,7 @@ void PanasonicAC_send(state_ir_t state_ir)
     }
 
     // check sum
-    IRPanasonicAc_fixChecksum(remote_state, kPanasonicAcStateLength);
+    IRPanasonicAc_fixChecksum(remote_state, kPanasonicAcStateLength, state_ir.protocol);
     sendPanasonicAC(remote_state, kPanasonicAcStateLength, kPanasonicAcDefaultRepeat);
 }
 
