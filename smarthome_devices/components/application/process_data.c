@@ -40,6 +40,7 @@ static void app_request_ota(cJSON *jsRoot);
 static void app_set_static_ip(cJSON *jsRoot);
 static void app_remove_device(cJSON *jsRoot);
 static void app_start_cyclic_timer(cJSON *jsRoot);
+static void app_start_cyclic_timer_with_timestamp(cJSON *jsRoot);
 static void app_stop_cyclic_timer(cJSON *jsRoot);
 static void app_backup_db(cJSON *jsRoot);
 static void app_accept_cbct_link_device(cJSON *jsRoot);
@@ -66,6 +67,7 @@ static void ble_config_step2(cJSON *jsRoot);
 wswitch_handler_t array_handler[] = {
     {app_control_pin, 0},        
     {app_start_cyclic_timer, 64},
+    {app_start_cyclic_timer_with_timestamp, 66},
     {app_stop_cyclic_timer, 65}, 
 
 #if PROJECT_SHOCK
@@ -843,7 +845,7 @@ static void app_start_cyclic_timer(cJSON *jsRoot)
 
     /* implement here */
     uint32_t time_act2 = time_cycle - time_act1;
-    start_cylcic_timer(action, time_act1, time_act2);
+    start_cylcic_timer(action, time_act1, time_act2, 0);
     result = 1;
 
 RESPONSE:
@@ -853,6 +855,75 @@ RESPONSE:
             "{\"%s\":%ld, \"u\":%ld, \"action\": %ld, \"t_act\": %ld, \"t_c\": %ld, "
             "\"result\": %d}",
             gs_dev_type[device_type], type, uid, action, time_act1, time_cycle,
+            result);
+    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
+}
+
+static void app_start_cyclic_timer_with_timestamp(cJSON *jsRoot)
+{
+    uint8_t result = 0;
+    cJSON *jsType, *jsU, *jsAction, *jsTact, *jsTc, *jsTimeStamp;
+    uint32_t type = 0, uid = 0, action = 0, time_act1 = 0, time_cycle = 0, time_stamp = 0;
+
+    jsType = cJSON_GetObjectItem(jsRoot, gs_dev_type[device_type]);
+    if (jsType == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    type = jsType->valueint;
+
+    jsU = cJSON_GetObjectItem(jsRoot, CJSON_KEY_USER_ID);
+    if (jsType == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    uid = jsU->valueint;
+
+    jsAction = cJSON_GetObjectItem(jsRoot, CJSON_KEY_ACTION);
+    if (jsAction == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    action = jsAction->valueint;
+
+    jsTact = cJSON_GetObjectItem(jsRoot, CJSON_KEY_T_ACT);
+    if (jsTact == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    time_act1 = jsTact->valueint;
+
+    jsTc = cJSON_GetObjectItem(jsRoot, CJSON_KEY_T_C);
+    if (jsTc == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    time_cycle = jsTc->valueint;
+
+    jsTimeStamp = cJSON_GetObjectItem(jsRoot, CJSON_KEY_TIMESTAMP);
+    if (jsTimeStamp == NULL)
+    {
+        os_trace("Get JSON jsTimeStamp mqtt message fail\n");
+        goto RESPONSE;
+    }
+    time_stamp = jsTimeStamp->valueint;
+
+    /* implement here */
+    uint32_t time_act2 = time_cycle - time_act1;
+    result = start_cylcic_timer(action, time_act1, time_act2, time_stamp);
+
+RESPONSE:
+    /* respond server here */
+    memset(respond, 0, sizeof(respond));
+    sprintf(respond,
+            "{\"%s\":%ld,\"u\":%ld,\"action\":%ld,\"t_act\":%ld,\"t_c\":%ld,\"timestamp\":%lu,"
+            "\"result\":%d}",
+            gs_dev_type[device_type], type, uid, action, time_act1, time_cycle, time_stamp,
             result);
     m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
 }

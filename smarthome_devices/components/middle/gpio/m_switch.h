@@ -99,11 +99,12 @@ typedef enum {
 
 typedef struct {
     uint8_t enable;
+	uint32_t time_stamp;
     uint32_t time_on;
     uint32_t time_off;
 } cyclic_event_switch_t;
 
-void start_cylcic_timer(switch_action_t action, uint32_t time_act1, uint32_t time_act2);
+uint8_t start_cylcic_timer(switch_action_t action, uint32_t time_act1, uint32_t time_act2, uint32_t time_stamp);
 void stop_cylcic_timer(uint32_t channel_index);
 void set_user_trigger_press_event(uint8_t channel_index, bool set_event, uint32_t action);
 void m_switch_cyclic_timer_loop(void);

@@ -8,9 +8,20 @@ static uint32_t step_toggle[MAX_NUM_SWITCH] = {0};
 static uint32_t time_diff = 0;
 
 /************** START CONTROL SWITCH WITH CYCLIC TIMER **************/
-void start_cylcic_timer(switch_action_t action, uint32_t time_act1, uint32_t time_act2)
+uint8_t start_cylcic_timer(switch_action_t action, uint32_t time_act1, uint32_t time_act2, uint32_t time_stamp)
 {
     uint8_t channel_index = (action - 1) / 2;
+
+    if (channel_index < m_switch_get_instance().max_number_channel) {
+        os_trace("%s out of range number channel\r\n", __func__);
+        return 0;
+    }
+
+    if (!(cyclic_timer_arr[time_stamp].time_stamp && cyclic_timer_arr[time_stamp].time_stamp != time_stamp)) {
+        os_trace("%s same timestamp\r\n", __func__);
+        return 0;
+    }
+    cyclic_timer_arr[time_stamp].time_stamp = time_stamp;
 
     if (action % 2 == 0)
     { /* off */
@@ -32,6 +43,7 @@ void start_cylcic_timer(switch_action_t action, uint32_t time_act1, uint32_t tim
     step_toggle[channel_index] = 0;
 
     cyclic_timer_arr[channel_index].enable = 1;
+    return 1;
 }
 
 void stop_cylcic_timer(uint32_t channel_index)
@@ -42,6 +54,7 @@ void stop_cylcic_timer(uint32_t channel_index)
     cyclic_timer_arr[index].enable = 0;
     cyclic_timer_arr[index].time_on = 0;
     cyclic_timer_arr[index].time_off = 0;
+    cyclic_timer_arr[index].time_stamp = 0;
 }
 
 /* just use for reset factory database */
