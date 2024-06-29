@@ -800,8 +800,8 @@ RESPONSE:
 static void app_start_cyclic_timer(cJSON *jsRoot)
 {
     uint8_t result = 0;
-    cJSON *jsType, *jsU, *jsAction, *jsTact, *jsTc;
-    uint32_t type = 0, uid = 0, action = 0, time_act1 = 0, time_cycle = 0;
+    cJSON *jsType, *jsU, *jsAction, *jsTact, *jsTc, *jsTimeStamp;
+    uint32_t type = 0, uid = 0, action = 0, time_act1 = 0, time_cycle = 0, time_stamp = 0;
 
     jsType = cJSON_GetObjectItem(jsRoot, gs_dev_type[device_type]);
     if (jsType == NULL)
@@ -843,18 +843,25 @@ static void app_start_cyclic_timer(cJSON *jsRoot)
     }
     time_cycle = jsTc->valueint;
 
+    jsTimeStamp = cJSON_GetObjectItem(jsRoot, CJSON_KEY_TIMESTAMP);
+    if (jsTimeStamp != NULL)
+    {
+        time_stamp = jsTimeStamp->valueint;
+    }
+    
+
     /* implement here */
     uint32_t time_act2 = time_cycle - time_act1;
-    start_cylcic_timer(action, time_act1, time_act2, 0);
+    start_cylcic_timer(action, time_act1, time_act2, time_stamp);
     result = 1;
 
 RESPONSE:
     /* respond server here */
     memset(respond, 0, sizeof(respond));
     sprintf(respond,
-            "{\"%s\":%ld, \"u\":%ld, \"action\": %ld, \"t_act\": %ld, \"t_c\": %ld, "
-            "\"result\": %d}",
-            gs_dev_type[device_type], type, uid, action, time_act1, time_cycle,
+            "{\"%s\":%ld,\"u\":%ld,\"action\":%ld,\"t_act\":%ld,\"t_c\":%ld,\"timestamp\":%lu,"
+            "\"result\":%d}",
+            gs_dev_type[device_type], type, uid, action, time_act1, time_cycle, time_stamp,
             result);
     m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
 }
