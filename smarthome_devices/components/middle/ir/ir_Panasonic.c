@@ -182,6 +182,7 @@ static void IRPanasonicAc_fixChecksum(uint8_t* remote_state, const uint16_t leng
 }
 
 static void IRPanasonicAc_setTemp(uint8_t* remote_state, const uint8_t celsius, const bool remember) {
+  os_trace("%s %u\r\n", __func__, celsius);
   uint8_t temperature;
   temperature = max(celsius, kPanasonicAcMinTemp);
   temperature = min(temperature, kPanasonicAcMaxTemp);
@@ -231,58 +232,165 @@ void PanasonicAC_send(state_ir_t state_ir)
 {
     os_trace("%s\r\n", __func__);
     uint8_t remote_state[kPanasonicAcStateLength];
-    memcpy(remote_state, kPanasonicKnownGoodState, kPanasonicAcStateLength);
+    if (state_ir.protocol == PANASONIC_AC) {
+      memcpy(remote_state, kPanasonicKnownGoodState, kPanasonicAcStateLength);
 
-    if (pre_model != kPanasonicUnknown) {
-      switch (pre_model) {
-        case kPanasonicDke:
-        case kPanasonicJke:
-        case kPanasonicLke:
-        case kPanasonicNke:
-        case kPanasonicCkp:
-        case kPanasonicRkr: break;
-        // Only proceed if we know what to do.
-        default: break;;
-      }
-      // clear & set the various bits and bytes.
-      remote_state[13] &= 0xF0;
-      remote_state[17] = 0x00;
-      remote_state[21] &= 0b11101111;
-      remote_state[23] = 0x81;
-      remote_state[25] = 0x00;
+      if (pre_model != kPanasonicUnknown) {
+        switch (pre_model) {
+          case kPanasonicDke:
+          case kPanasonicJke:
+          case kPanasonicLke:
+          case kPanasonicNke:
+          case kPanasonicCkp:
+          case kPanasonicRkr: break;
+          // Only proceed if we know what to do.
+          default: break;
+        }
+        // clear & set the various bits and bytes.
+        remote_state[13] &= 0xF0;
+        remote_state[17] = 0x00;
+        remote_state[21] &= 0b11101111;
+        remote_state[23] = 0x81;
+        remote_state[25] = 0x00;
 
-      switch (pre_model) {
-        case kPanasonicLke:
-          remote_state[13] |= 0x02;
-          remote_state[17] = 0x06;
+        switch (pre_model) {
+          case kPanasonicLke:
+            remote_state[13] |= 0x02;
+            remote_state[17] = 0x06;
+            break;
+          case kPanasonicDke:
+            remote_state[23] = 0x01;
+            remote_state[25] = 0x06;
+            // Has to be done last as setSwingHorizontal has model check built-in
+            // setSwingHorizontal(_swingh);
+            break;
+          case kPanasonicNke:
+            remote_state[17] = 0x06;
+            break;
+          case kPanasonicJke:
+            break;
+          case kPanasonicCkp:
+            remote_state[21] |= 0x10;
+            remote_state[23] = 0x01;
+            break;
+          case kPanasonicRkr:
+            remote_state[13] |= 0x08;
+            remote_state[23] = 0x89;
+          default:
+            break;
+        }
+        // Reset the Ion filter.
+        // setIon(getIon());
+      }
+
+      // set power
+      setBitU8(&remote_state[13], kPanasonicAcPowerOffset, state_ir.power);
+      // set mode
+      uint8_t desired = (uint8_t)state_ir.mode;
+      uint8_t mode = kPanasonicAcAuto;  // Default to Auto mode.
+      switch (desired) {
+          case kPanasonicAcFan:
+          // Allegedly Fan mode has a temperature of 27.
+          IRPanasonicAc_setTemp(remote_state, kPanasonicAcFanModeTemp, false);
+          mode = desired;
           break;
-        case kPanasonicDke:
-          remote_state[23] = 0x01;
-          remote_state[25] = 0x06;
-          // Has to be done last as setSwingHorizontal has model check built-in
-          // setSwingHorizontal(_swingh);
-          break;
-        case kPanasonicNke:
-          remote_state[17] = 0x06;
-          break;
-        case kPanasonicJke:
-          break;
-        case kPanasonicCkp:
-          remote_state[21] |= 0x10;
-          remote_state[23] = 0x01;
-          break;
-        case kPanasonicRkr:
-          remote_state[13] |= 0x08;
-          remote_state[23] = 0x89;
-        default:
+          case kPanasonicAcAuto:
+          case kPanasonicAcCool:
+          case kPanasonicAcHeat:
+          case kPanasonicAcDry:
+          mode = desired;
+          // Set the temp to the saved temp, just incase our previous mode was Fan.
+          // IRPanasonicAc_setTemp(remote_state, 25, true);
+          // setTemp(_temp);
           break;
       }
-      // Reset the Ion filter.
-      // setIon(getIon());
+      remote_state[13] &= 0x0F;  // Clear the previous mode bits.
+      setBitsU8(&remote_state[13], kHighNibble, kModeBitsSize, mode);
+
+      // set fan
+      switch ((uint8_t)state_ir.fanspeed) {
+          case kPanasonicAcFanMin:
+          case kPanasonicAcFanLow:
+          case kPanasonicAcFanMed:
+          case kPanasonicAcFanHigh:
+          case kPanasonicAcFanMax:
+          case kPanasonicAcFanAuto:
+          setBitsU8(&remote_state[16], kHighNibble, kNibbleSize,
+                  (uint8_t)state_ir.fanspeed + kPanasonicAcFanDelta);
+          break;
+          default: setBitsU8(&remote_state[16], kHighNibble, kNibbleSize,
+                  kPanasonicAcFanAuto + kPanasonicAcFanDelta);
+      }
+      // set temp
+      IRPanasonicAc_setTemp(remote_state, (uint8_t)state_ir.degrees, true);
+
+      if (state_ir.swingv != swingv_kOff) {
+        // set swing vertical
+        uint8_t elevation = state_ir.swingv;
+        if (elevation != kPanasonicAcSwingVAuto) {
+          if (elevation > kPanasonicAcSwingVLowest || elevation < kPanasonicAcSwingVHighest) {
+            elevation = kPanasonicAcSwingVAuto;
+          }
+        }
+        setBitsU8(&remote_state[16], kLowNibble, kNibbleSize, elevation);
+      }
+
+      // set swing horizontal
+      if (state_ir.swingh != swingh_kOff) {
+        switch ((uint8_t)state_ir.swingh) {
+          case kPanasonicAcSwingHAuto:
+          case kPanasonicAcSwingHMiddle:
+          case kPanasonicAcSwingHFullLeft:
+          case kPanasonicAcSwingHLeft:
+          case kPanasonicAcSwingHRight:
+          case kPanasonicAcSwingHFullRight: 
+            break;
+          // Ignore anything that isn't valid.
+          default: 
+            state_ir.swingh = kPanasonicAcSwingHAuto;
+            
+          break;
+        }
+        uint8_t direction = (uint8_t)state_ir.swingh;
+        switch (IRPanasonicAc_getModel(remote_state)) {
+          case kPanasonicDke:
+          case kPanasonicRkr:
+            setBitsU8(&remote_state[17], kLowNibble, kNibbleSize, direction);
+            break;
+          case kPanasonicNke:
+          case kPanasonicLke:
+            direction = kPanasonicAcSwingHMiddle;
+            setBitsU8(&remote_state[17], kLowNibble, kNibbleSize, direction);
+            break;
+          default:  // Ignore everything else.
+            break;
+        }
+      }
+
+      if (pre_ion_enable) {
+        setBitU8(&remote_state[kPanasonicAcIonFilterByte],
+            kPanasonicAcIonFilterOffset, pre_ion_enable);
+      }
+    } else {
+      memcpy(remote_state, kPanasonic2KnownGoodState, kPanasonicAcStateLength);
+      // setPower
+      setBitU8(&remote_state[13], kPanasonicAcPowerOffset, state_ir.power);
+
+      // set Temp
+      IRPanasonicAc_setTemp(remote_state, (uint8_t)state_ir.degrees, true);
+
+      if (state_ir.swingv != swingv_kOff) {
+        // set swing vertical
+        uint8_t elevation = state_ir.swingv;
+        if (elevation != kPanasonicAcSwingVAuto) {
+          if (elevation > kPanasonicAcSwingVLowest || elevation < kPanasonicAcSwingVHighest) {
+            elevation = kPanasonicAcSwingVAuto;
+          }
+        }
+        setBitsU8(&remote_state[16], kLowNibble, kNibbleSize, elevation);
+      }
     }
 
-    // set power
-    setBitU8(&remote_state[13], kPanasonicAcPowerOffset, state_ir.power);
     // set mode
     uint8_t desired = (uint8_t)state_ir.mode;
     uint8_t mode = kPanasonicAcAuto;  // Default to Auto mode.
@@ -298,7 +406,7 @@ void PanasonicAC_send(state_ir_t state_ir)
         case kPanasonicAcDry:
         mode = desired;
         // Set the temp to the saved temp, just incase our previous mode was Fan.
-        IRPanasonicAc_setTemp(remote_state, 25, true);
+        // IRPanasonicAc_setTemp(remote_state, 25, true);
         // setTemp(_temp);
         break;
     }
@@ -319,59 +427,16 @@ void PanasonicAC_send(state_ir_t state_ir)
         default: setBitsU8(&remote_state[16], kHighNibble, kNibbleSize,
                 kPanasonicAcFanAuto + kPanasonicAcFanDelta);
     }
-    // set temp
-    IRPanasonicAc_setTemp(remote_state, (uint8_t)state_ir.degrees, true);
-
-    if (state_ir.swingv != swingv_kOff) {
-      // set swing vertical
-      uint8_t elevation = state_ir.swingv;
-      if (elevation != kPanasonicAcSwingVAuto) {
-        if (elevation > kPanasonicAcSwingVLowest || elevation < kPanasonicAcSwingVHighest) {
-          elevation = kPanasonicAcSwingVAuto;
-        }
-      }
-      setBitsU8(&remote_state[16], kLowNibble, kNibbleSize, elevation);
-    }
-
-    // set swing horizontal
-    if (state_ir.swingh != swingh_kOff) {
-      switch ((uint8_t)state_ir.swingh) {
-        case kPanasonicAcSwingHAuto:
-        case kPanasonicAcSwingHMiddle:
-        case kPanasonicAcSwingHFullLeft:
-        case kPanasonicAcSwingHLeft:
-        case kPanasonicAcSwingHRight:
-        case kPanasonicAcSwingHFullRight: 
-          break;
-        // Ignore anything that isn't valid.
-        default: 
-          state_ir.swingh = kPanasonicAcSwingHAuto;
-          
-        break;
-      }
-      uint8_t direction = (uint8_t)state_ir.swingh;
-      switch (IRPanasonicAc_getModel(remote_state)) {
-        case kPanasonicDke:
-        case kPanasonicRkr:
-          setBitsU8(&remote_state[17], kLowNibble, kNibbleSize, direction);
-          break;
-        case kPanasonicNke:
-        case kPanasonicLke:
-          direction = kPanasonicAcSwingHMiddle;
-          setBitsU8(&remote_state[17], kLowNibble, kNibbleSize, direction);
-          break;
-        default:  // Ignore everything else.
-          break;
-      }
-    }
-
-    if (pre_ion_enable) {
-      setBitU8(&remote_state[kPanasonicAcIonFilterByte],
-           kPanasonicAcIonFilterOffset, pre_ion_enable);
-    }
 
     // check sum
     IRPanasonicAc_fixChecksum(remote_state, kPanasonicAcStateLength, state_ir.protocol);
+    #if DEBUG_ENABLE == 1
+        os_trace("PanasonicAc: 0x ");
+        for(uint8_t i = 0; i < kPanasonicAcStateLength; i++) {
+            os_trace("%02X-", remote_state[i]);
+        }
+        os_trace("\r\n");
+    #endif
     sendPanasonicAC(remote_state, kPanasonicAcStateLength, kPanasonicAcDefaultRepeat);
 }
 
