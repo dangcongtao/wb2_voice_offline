@@ -114,9 +114,9 @@ static uint8_t IRPanasonicAc_getMode(const uint8_t* remote_state) {
   return GETBITS8(remote_state[13], kHighNibble, kModeBitsSize);
 }
 
-static uint8_t IRPanasonicAc_getTemp(const uint8_t* remote_state) {
-  return GETBITS8(remote_state[14], kPanasonicAcTempOffset,
-                  kPanasonicAcTempSize);
+static float IRPanasonicAc_getTemp(const uint8_t* remote_state) {
+  return (float)(GETBITS8(remote_state[14], kPanasonicAcTempOffset,
+                  kPanasonicAcTempSize)) / 2;
 }
 
 static uint8_t IRPanasonicAc_getFan(const uint8_t* remote_state) {
@@ -188,7 +188,7 @@ static void IRPanasonicAc_setTemp(uint8_t* remote_state, const uint8_t celsius, 
   temperature = min(temperature, kPanasonicAcMaxTemp);
 //   if (remember) _temp = 25;
   setBitsU8(&remote_state[14], kPanasonicAcTempOffset, kPanasonicAcTempSize,
-          temperature);
+          temperature * 2);
 }
 
 void PanasonicAC_setInfo(const uint8_t* newState, state_ir_t *ir_state)
@@ -285,6 +285,8 @@ void PanasonicAC_send(state_ir_t state_ir)
 
       // set power
       setBitU8(&remote_state[13], kPanasonicAcPowerOffset, state_ir.power);
+      // set temp
+      IRPanasonicAc_setTemp(remote_state, (uint8_t)state_ir.degrees, true);
       // set mode
       uint8_t desired = (uint8_t)state_ir.mode;
       uint8_t mode = kPanasonicAcAuto;  // Default to Auto mode.
@@ -321,8 +323,6 @@ void PanasonicAC_send(state_ir_t state_ir)
           default: setBitsU8(&remote_state[16], kHighNibble, kNibbleSize,
                   kPanasonicAcFanAuto + kPanasonicAcFanDelta);
       }
-      // set temp
-      IRPanasonicAc_setTemp(remote_state, (uint8_t)state_ir.degrees, true);
 
       if (state_ir.swingv != swingv_kOff) {
         // set swing vertical

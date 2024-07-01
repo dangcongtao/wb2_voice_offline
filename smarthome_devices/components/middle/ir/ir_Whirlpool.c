@@ -127,7 +127,7 @@ void IRWhirlpoolAc_setRaw(const uint8_t new_code[], const uint16_t length, state
     ir_state->power = pre_power;
     ir_state->mode = _.Mode;
     ir_state->fanspeed = _.Fan;
-    ir_state->degrees = _.Temp + kWhirlpoolAcMinTemp + getTempOffset(ir_state->model);
+    ir_state->degrees = _.Temp + kWhirlpoolAcMinTemp; // + getTempOffset(ir_state->model);
     ir_state->swingv = (_.Swing1 && _.Swing2);
 
 }
@@ -191,7 +191,8 @@ void Whirlpool_send(state_ir_t state_ir)
       return;
   }
   // if (mode == kWhirlpoolAcAuto) _.Cmd = kWhirlpoolAcCommand6thSense;
-  int8_t offset = getTempOffset(state_ir.model);
+  // int8_t offset = getTempOffset(state_ir.model);
+  int8_t offset = 0;
   uint8_t newtemp = max((uint8_t)(kWhirlpoolAcMinTemp + offset), (uint8_t)state_ir.degrees);
   newtemp = min((uint8_t)(kWhirlpoolAcMaxTemp + offset), newtemp);
   _.Temp = newtemp - (kWhirlpoolAcMinTemp + offset);
