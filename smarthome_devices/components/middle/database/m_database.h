@@ -62,6 +62,7 @@ typedef struct {
 #if PROJECT_SHOCK
     uint8_t disable_anti_shock;
 #endif
+    uint32_t version;
 } m_device_t;
 
 typedef struct {

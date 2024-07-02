@@ -32,7 +32,6 @@ void main_loop(void)
     while (true)
     {
         m_event_loop(delay_ms);
-        bl_wdt_feed();
 
         // old += 1;
         // if (old > 20) {
@@ -61,7 +60,7 @@ void main(void)
     bl_sys_logall_enable();
 #endif
     // hw_switch_cfg(0);
-    bl_wdt_init(60000);
+    bl_wdt_init(30000);
 
     easyflash_init();
     tcpip_init(NULL, NULL);
@@ -87,7 +86,7 @@ void main(void)
 
     xTaskCreate(main_loop,  /* Function that implements the task. */
                 "main_loop", /* Text name for the task. */
-                1024 * 2,          /* Stack size in words, not bytes. */
+                1024 * 3,          /* Stack size in words, not bytes. */
                 NULL,              /* Parameter passed into the task. */
                 4,                 /* Priority at which the task is created. */
                 NULL);

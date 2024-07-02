@@ -204,10 +204,16 @@ void m_mqtt_start(void)
 
     axk_mqtt_client_config_t mqtt_cfg;
     memset(&mqtt_cfg, 0, sizeof(mqtt_cfg));
-    mqtt_cfg.uri = s_mqtt_obj.mqtt_info.server;
-    mqtt_cfg.username = s_mqtt_obj.mqtt_info.username;
-    mqtt_cfg.password = s_mqtt_obj.mqtt_info.passwd;
-    mqtt_cfg.port = s_mqtt_obj.mqtt_info.port;
+    
+    if (s_mqtt_obj.mqtt_info.servers[s_mqtt_obj.mqtt_info.broker_in_used].type == 1) {
+        mqtt_cfg.uri = s_mqtt_obj.mqtt_info.servers[s_mqtt_obj.mqtt_info.broker_in_used].server;
+    } else {
+        mqtt_cfg.transport = MQTT_TRANSPORT_OVER_TCP;
+        mqtt_cfg.host = s_mqtt_obj.mqtt_info.servers[s_mqtt_obj.mqtt_info.broker_in_used].server;
+    }
+    mqtt_cfg.username = s_mqtt_obj.mqtt_info.servers[s_mqtt_obj.mqtt_info.broker_in_used].username;
+    mqtt_cfg.password = s_mqtt_obj.mqtt_info.servers[s_mqtt_obj.mqtt_info.broker_in_used].passwd;
+    mqtt_cfg.port = s_mqtt_obj.mqtt_info.servers[s_mqtt_obj.mqtt_info.broker_in_used].port;
     mqtt_cfg.keepalive = 10;
     mqtt_cfg.lwt_msg = last_will_msg;
     mqtt_cfg.lwt_msg_len = strlen(last_will_msg);
@@ -220,8 +226,9 @@ void m_mqtt_start(void)
     sprintf(client_id, "%s_%s_%s", BRAND, gs_dev_type[device_type], m_db_get_instance()->_get_dev_id());
     mqtt_cfg.client_id = client_id;
 
-    os_trace("mqtt start\r\n");
+    os_trace("mqtt start, index: %u, type: %u\r\n", s_mqtt_obj.mqtt_info.broker_in_used, s_mqtt_obj.mqtt_info.servers[s_mqtt_obj.mqtt_info.broker_in_used].type);
     os_trace("\tserver: %s\r\n", mqtt_cfg.uri);
+    os_trace("\thost: %s\r\n", mqtt_cfg.host);
     os_trace("\tport: %d\r\n", mqtt_cfg.port);
     os_trace("\tusername: %s\r\n", mqtt_cfg.username);
     os_trace("\tpasswd: %s\r\n", mqtt_cfg.password);
@@ -230,6 +237,7 @@ void m_mqtt_start(void)
 
     if (client != NULL)
     {
+        os_trace("%s destroy client now\r\n");
         axk_mqtt_client_destroy(client);
         vTaskDelay(1000);
         client = NULL;

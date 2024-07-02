@@ -12,7 +12,7 @@
 #include "m_wf_ble_cfg.h"
 #include "hardware.h"
 #include "easyflash_common.h"
-
+#include "base64.h"
 
 
 #include "aes_cbc128.h"
@@ -43,6 +43,7 @@ static void app_start_cyclic_timer(cJSON *jsRoot);
 static void app_start_cyclic_timer_with_timestamp(cJSON *jsRoot);
 static void app_stop_cyclic_timer(cJSON *jsRoot);
 static void app_backup_db(cJSON *jsRoot);
+static void app_set_mqtt_info(cJSON *jsRoot);
 static void app_accept_cbct_link_device(cJSON *jsRoot);
 static void app_change_delay_cbct(cJSON *jsRoot);
 static void app_set_active_cbct(cJSON *jsRoot);
@@ -85,6 +86,7 @@ wswitch_handler_t array_handler[] = {
     {app_set_static_ip, 132},    
     {app_set_lock, 133},
     {app_backup_db, 151},
+    {app_set_mqtt_info, 990},
     {app_accept_cbct_link_device, 314},
     {app_get_list_cbct, 310},
     {app_remove_link_device_by_mac, 311},
@@ -157,12 +159,12 @@ static void app_startup_message(void)
         sprintf(respond,
                 "{\"%s\":100,\"reason\":%lu,\"u\":0,\"id\":\"%s\",\"ver\":%s,\"extras\":%d,"
                 "\"ssid\":\"%s\",\"pass\":\"%s\",\"streng\":%d,"
-                "\"ip\":\"%s\",\"mac_bt\":\"%02x:%02x:%02x:%02x:%02x:%02x\",\"po\":[",
+                "\"ip\":\"%s\",\"mac_bt\":\"%02x:%02x:%02x:%02x:%02x:%02x\",\"vermqtt\":%lu,\"po\":[",
                 gs_dev_type[device_type], num_send * 100U + last_reason_reset * 10U + (uint32_t)bl_sys_rstinfo_get_hun(), // hang chuc: flash_reason reset, hang don vi: BL_RST_REASON_E
                 m_db_get_instance()->_get_dev_id(), FIRMWARE_VERSION, EXTRAS,
                 app_databse._wifi_info->_ssid, app_databse._wifi_info->_passwd,
                 app_databse._wifi_info->_rssi, app_databse._wifi_info->_ip,
-                mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+                mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], app_databse._mqtt_info->vermqtt);
 
     num_send++;
     /* default state value */
@@ -304,12 +306,12 @@ static void app_get_info(cJSON *jsRoot)
         sprintf(respond,
                 "{\"%s\":%ld,\"u\":0,\"id\":\"%s\",\"ver\":%s,"
                 "\"extras\":%d,\"ssid\":\"%s\",\"pass\":\"%s\",\"streng\":%d,"
-                "\"ip\":\"%s\",\"mac_bt\":\"%02x:%02x:%02x:%02x:%02x:%02x\",\"po\":[",
+                "\"ip\":\"%s\",\"mac_bt\":\"%02x:%02x:%02x:%02x:%02x:%02x\",\"vermqtt\":%lu,\"po\":[",
                 gs_dev_type[device_type], type,
                 m_db_get_instance()->_get_dev_id(), FIRMWARE_VERSION, EXTRAS,
                 app_databse._wifi_info->_ssid, app_databse._wifi_info->_passwd,
                 app_databse._wifi_info->_rssi, app_databse._wifi_info->_ip, 
-                mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+                mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], app_databse._mqtt_info->vermqtt);
 
     /* default state value */
     for (i = 0; i < m_db_get_number_channel(); i++)
@@ -1024,6 +1026,66 @@ RESPONSE:
             gs_dev_type[device_type], type, uid, backup, result);
     m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
 }
+
+extern bool save_mqtt_info(char *json);
+static void app_set_mqtt_info(cJSON *js_Root)
+{
+    char temp1[512];
+    char temp2[512];
+    uint8_t result = 0;
+    cJSON *jsType;
+    uint32_t type = 990;
+
+    if (!js_Root)
+    {
+        return;
+    }
+
+    jsType = cJSON_GetObjectItem(js_Root, gs_dev_type[device_type]);
+    if (jsType == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    type = jsType->valueint;
+
+    cJSON *jsGetObject = cJSON_GetObjectItem(js_Root, "data");
+    if (!jsGetObject)
+    {
+        os_trace("Get JSON data message fail\n");
+        goto RESPONSE;
+    }
+    memset(temp1, 0, sizeof(temp1));
+    snprintf(temp1, sizeof(temp1), "%s", jsGetObject->valuestring);
+
+    /* Decode base64: @temp1: input-data, @temp2: output-data */
+    uint16_t base64_len;
+    memset(temp2, 0, sizeof(temp2));
+    base64_len = b64_decode((uint8_t *)temp1, strlen(temp1), (uint8_t*)temp2);
+
+    /* Decode AES:  @temp2: input-data, @temp1: output-data */
+    size_t real_msg_len = 0;
+    memset(temp1, 0, sizeof(temp1));
+    // aes_cbc128_init((uint8_t*)DEF_AES_KEY, (uint8_t*)DEF_AES_IV);
+    aes_cbc128_init((uint8_t *)key, (uint8_t *)iv);
+    if (aes_cbc128_decrypt((uint8_t *)temp2, base64_len, (uint8_t *)temp1, &real_msg_len) != AES_SUCCESS) {
+        goto RESPONSE;
+    }
+
+    /* save */
+    printf("mqtt_info[%d]: [%s]\r\n", strlen(temp1), temp1);
+    if (save_mqtt_info(temp1))
+    {
+        result = 1;
+    }
+
+RESPONSE:
+    /* respond server here */
+    memset(respond, 0, sizeof(respond));
+    sprintf(respond, "{\"%s\":%ld, \"result\":%d}", gs_dev_type[device_type], type, result);
+    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
+}
+
 
 static void app_link_device(cJSON *jsRoot)
 {

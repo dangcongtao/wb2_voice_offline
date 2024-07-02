@@ -75,71 +75,90 @@ json_parse_fail:
     return 0;
 }
 
-/*
-{"server":"mqtt2.hunonicpro.com","port":"1883","user":"bestbug","pass":"bigbugdmm",
-"key":"n1vXZIQ4b1CpWJNH6E03wg==","iv":"qViTR+hNN8KJ4QtG5RW62w=="} 
-*/
+
 bool save_mqtt_info(char *json)
 {
-    os_trace("apconfig_parse_wifi_info\r\n");
-    
-    cJSON *js_Root, *jsGetObject;
-    char temp[256];
-    uint32_t mqtt_port = 0;
+    os_trace("%s\r\n");
+
+    int serverCount = 0;
     m_mqtt_t mqtt = m_mqtt_get_instance();
+    cJSON *brokers, *broker, *server, *port, *user, *pass, *sermqtt;
 
-    js_Root = cJSON_Parse(json);
-    if (!js_Root)
+    cJSON *js_Root = cJSON_Parse(json);
+    if (js_Root != NULL)
+    {
+        sermqtt = cJSON_GetObjectItem(js_Root, "vermqtt");
+        mqtt.set_ver_mqtt(sermqtt->valueint);
+        /* 0 */
+        brokers = cJSON_GetObjectItem(js_Root, "broker");
+        if (brokers != NULL)
+        {
+            if (brokers->type == cJSON_Array)
+            {
+                serverCount = cJSON_GetArraySize(brokers);
+                os_trace("serverCount: %d\r\n", serverCount);
+                mqtt.set_num_mqtt_broker(serverCount);
+
+                for (int i = 0; i < serverCount; i++)
+                {
+                    broker = cJSON_GetArrayItem(brokers, i);
+                    if (broker != NULL)
+                    {
+                        server = cJSON_GetObjectItem(broker, "server");
+                        port = cJSON_GetObjectItem(broker, "port");
+                        user = cJSON_GetObjectItem(broker, "user");
+                        pass = cJSON_GetObjectItem(broker, "pass");
+
+                        if ((server != NULL) && (port != NULL) && (user != NULL) && (pass != NULL))
+                        {
+                            m_mqtt_server_t server_inf;
+                            memset(&server_inf, 0, sizeof(m_mqtt_server_t));
+                            memcpy(server_inf.server, server->valuestring, strlen(server->valuestring));
+                            memcpy(server_inf.username, user->valuestring, strlen(user->valuestring));
+                            memcpy(server_inf.passwd, pass->valuestring, strlen(pass->valuestring));
+                            uint32_t mqtt_port = atoi(port->valuestring);
+                            server_inf.port = mqtt_port;
+                            
+                            m_mqtt_get_instance().set_server_info(i, &server_inf);
+                        }
+                        else
+                        {
+                            os_trace("%s Data is NULL\r\n", __func__);
+                        }
+                    }
+                    else
+                    {
+                        os_trace("broker NULL\r\n");
+                        cJSON_Delete(js_Root);
+                        return false;
+                    }
+                }
+            }
+            else
+            {
+                os_trace("broker is not array\r\n");
+                cJSON_Delete(js_Root);
+                return false;
+            }
+        }
+        else
+        {
+            os_trace("brokers NULL\r\n");
+            cJSON_Delete(js_Root);
+            return false;
+        }
+    }
+    else
+    {
+        os_trace("%s cJSON_Parse fail\r\n", __func__);
         return false;
+    }
 
-    /* get server url */
-    jsGetObject = cJSON_GetObjectItem(js_Root, CJSON_KEY_SERVER);
-    if (!jsGetObject)
-        goto json_parse_fail;
-    memset(temp, 0, sizeof(temp));
-    snprintf(temp, sizeof(temp), "mqtt://%s", jsGetObject->valuestring);
-    mqtt.set_mqtt_server(temp, strlen(temp));
-    os_trace("set_mqtt_server\r\n");
-
-    /* get server port */
-    jsGetObject = cJSON_GetObjectItem(js_Root, CJSON_KEY_S_PORT);
-    if (!jsGetObject)
-        goto json_parse_fail;
-    char *p_port = jsGetObject->valuestring;
-    mqtt_port = atoi(p_port);
-    mqtt.set_mqtt_port(mqtt_port);
-    os_trace("set_mqtt_port\r\n");
-
-    /* get user name */
-    jsGetObject = cJSON_GetObjectItem(js_Root, CJSON_KEY_S_USER);
-    if (!jsGetObject)
-        goto json_parse_fail;
-    memset(temp, 0, sizeof(temp));
-    snprintf(temp, sizeof(temp), "%s", jsGetObject->valuestring);
-    mqtt.set_mqtt_user(temp, strlen(temp));
-    os_trace("set_mqtt_user\r\n");
-
-    /* get password */
-    jsGetObject = cJSON_GetObjectItem(js_Root, CJSON_KEY_S_PASS);
-    if (!jsGetObject)
-        goto json_parse_fail;
-    memset(temp, 0, sizeof(temp));
-    snprintf(temp, sizeof(temp), "%s", jsGetObject->valuestring);
-    mqtt.set_mqtt_passwd(temp, strlen(temp));
-    os_trace("set_mqtt_passwd\r\n");
-
+    /* sync */
     m_db_get_instance()->_request_sync_db(BIT_FLAG_SYNC_MQTT);
     vTaskDelay(pdMS_TO_TICKS(2000));
-
     cJSON_Delete(js_Root);
-
-    // signal_post(SIG_MQTT_GOT_INFO);
-
     return true;
-
-json_parse_fail:
-    cJSON_Delete(js_Root);
-    return false;
 }
 
 void m_ble_cfg_clear_state(void)

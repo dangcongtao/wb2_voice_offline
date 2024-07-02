@@ -17,6 +17,7 @@
 #include "event_driven.h"
 
 #include "m_beacon.h"
+#include "bl_wdt.h"
 
 #define TIME_OUT_RESET_TS04_WITHOUT_PRESS   2400
 
@@ -196,6 +197,7 @@ static void button_scan_task(void *param)
     os_trace("button_scan_task\n");
     while (true)
     {
+        bl_wdt_feed();
 #if PROJECT_SHOCK
     if (is_shock_device(device_type)) {
         hw_read_leak_loop();

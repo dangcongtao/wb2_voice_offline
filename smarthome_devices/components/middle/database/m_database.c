@@ -257,12 +257,19 @@ static void m_load_databse(void)
     os_trace("ssid: %s\r\n", s_m_database._m_device._wifi_info->_ssid);
     os_trace("pass: %s\r\n", s_m_database._m_device._wifi_info->_passwd);
 
-    os_trace("server: %s\r\n", s_m_database._m_device._mqtt_info->server);
-    os_trace("port: %ld\r\n", s_m_database._m_device._mqtt_info->port);
-    os_trace("username: %s\r\n", s_m_database._m_device._mqtt_info->username);
-    os_trace("passwd: %s\r\n", s_m_database._m_device._mqtt_info->passwd);
     os_trace("topic_pub: %s\r\n", s_m_database._m_device._mqtt_info->topic_pub);
     os_trace("topic_sub: %s\r\n", s_m_database._m_device._mqtt_info->topic_sub);
+
+    os_trace("vermqtt: %d\r\n", s_m_database._m_device._mqtt_info->vermqtt);
+    os_trace("num broker: %d\r\n", s_m_database._m_device._mqtt_info->num_broker);
+    os_trace("broker_in_used: %d\r\n", s_m_database._m_device._mqtt_info->broker_in_used);
+    for (int i = 0; i < s_m_database._m_device._mqtt_info->num_broker; i++)
+    {
+        os_trace("server: %s\r\n", s_m_database._m_device._mqtt_info->servers[i].server);
+        os_trace("port: %ld\r\n", s_m_database._m_device._mqtt_info->servers[i].port);
+        os_trace("username: %s\r\n", s_m_database._m_device._mqtt_info->servers[i].username);
+        os_trace("passwd: %s\r\n", s_m_database._m_device._mqtt_info->servers[i].passwd);
+    }
 
     os_trace("default state: %u %u %u %u\r\n",
              s_m_database._m_device._switch_info->default_state[0],

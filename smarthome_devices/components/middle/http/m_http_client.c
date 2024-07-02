@@ -21,13 +21,14 @@
 #define WEB_PORT "80"
 #define WEB_PATH "/infomqtt/?device_id="
 
-#define HTTP_REQUEST_LEN    256
-#define HTTP_RESP_LEN       512
-#define MQTT_INFO_LEN       256
+#define HTTP_REQUEST_LEN    512
+#define HTTP_RESP_LEN       700
+#define MQTT_INFO_LEN       512
 
 extern char s_device_id[64];
 extern char *gs_dev_type[];
 extern uint32_t device_type;
+extern char key[16], iv[16];
 
 extern bool save_mqtt_info(char *json);
 
@@ -126,18 +127,19 @@ void http_get(char *url, char* output)
 uint8_t get_mqtt_info(void)
 {
     uint8_t result = 0;
-    char url[HTTP_REQUEST_LEN];
-    memset(url, 0, sizeof(url));
-    sprintf(url, "http://api.hunonicpro.com/infomqtt/?device_id=%s&type=%s", 
-            s_device_id, gs_dev_type[device_type]);
+    char temp1[HTTP_REQUEST_LEN];
+    char temp2[HTTP_REQUEST_LEN];
 
-    char output[MQTT_INFO_LEN];
-    memset(output, 0, sizeof(output));
-    http_get(url, output);
-    printf("output \n[%s]\n", output);
+    memset(temp1, 0, sizeof(temp1));
+    sprintf(temp1, "/HardwareAPI/getInfoMqtt.php?device_id=%s&type=%s&dev=%d", 
+            s_device_id, gs_dev_type[device_type], BUILD_TEST);
+
+    memset(temp2, 0, sizeof(temp2));
+    http_get(temp1, temp2);
+    os_trace("output \n[%s]\n", temp2);
 
     cJSON *js_Root;
-    js_Root = cJSON_Parse(output);
+    js_Root = cJSON_Parse(temp2);
     if (!js_Root) {
         return 0;
     }
@@ -146,27 +148,24 @@ uint8_t get_mqtt_info(void)
     if (!jsGetObject)
         goto json_parse_fail;
     
-    char mqtt_info[MQTT_INFO_LEN];
-    memset(mqtt_info, 0, sizeof(mqtt_info));
-    snprintf(mqtt_info, sizeof(mqtt_info), "%s", jsGetObject->valuestring);
+    memset(temp1, 0, sizeof(temp1));
+    snprintf(temp1, sizeof(temp1), "%s", jsGetObject->valuestring);
 
     /* Decode base 64 */
     uint16_t base64_len;
-    uint8_t base64_data[MQTT_INFO_LEN];
-    memset(base64_data, 0, sizeof(base64_data));
-    base64_len = b64_decode((uint8_t *)mqtt_info, strlen(mqtt_info), base64_data);
+    memset(temp2, 0, sizeof(temp2));
+    base64_len = b64_decode((uint8_t *)temp1, strlen(temp1), (uint8_t*)temp2);
 
     /* Decode AES */
-    char real_msg[MQTT_INFO_LEN];
     size_t real_msg_len = 0;
-    memset(real_msg, 0, sizeof(real_msg));
-    aes_cbc128_init((uint8_t*)DEF_AES_KEY, (uint8_t*)DEF_AES_IV);
-    if (aes_cbc128_decrypt((uint8_t *)base64_data, base64_len, (uint8_t *)real_msg, &real_msg_len) != AES_SUCCESS) {
+    memset(temp1, 0, sizeof(temp1));
+    aes_cbc128_init((uint8_t*)key, (uint8_t*)iv);
+    if (aes_cbc128_decrypt((uint8_t *)temp2, base64_len, (uint8_t *)temp1, &real_msg_len) != AES_SUCCESS) {
         goto json_parse_fail;
     }
 
     /* {"server":"mqtt2.hunonicpro.com","port":"1883","user":"bestbug","pass":"bigbugdmm"} */
-    save_mqtt_info(real_msg);
+    save_mqtt_info(temp1);
     result = 1;
 
 json_parse_fail:

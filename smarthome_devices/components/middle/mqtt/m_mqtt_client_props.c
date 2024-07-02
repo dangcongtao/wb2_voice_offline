@@ -26,45 +26,26 @@ extern void m_mqtt_publish(char *data, uint32_t length);
 extern void m_mqtt_publish_directly(char *data, uint32_t length);
 extern void m_mqtt_task_loop(void);
 
-void set_mqtt_server(char* data, uint32_t len)
+static void set_mqtt_server_info(int index, m_mqtt_server_t *p_server_info)
 {
-    if (len > sizeof(s_mqtt_obj.mqtt_info.server)) {
+    if (index >= MAX_NUMBER_MQTT_BROKER) {
         os_trace("fail to set mqtt server, len data too long\r\n");
         return;
     }
 
-    memset(s_mqtt_obj.mqtt_info.server, 0, sizeof(s_mqtt_obj.mqtt_info.server));
-    memcpy(s_mqtt_obj.mqtt_info.server, data, len);
+    memset(&s_mqtt_obj.mqtt_info.servers[index], 0, sizeof(m_mqtt_server_t));
+    memcpy(&s_mqtt_obj.mqtt_info.servers[index], p_server_info, sizeof(m_mqtt_server_t));
 }
-
-void set_mqtt_port(uint32_t num)
+static m_mqtt_server_t* get_mqtt_server_info(void)
 {
-    s_mqtt_obj.mqtt_info.port = num;
-}
-
-void set_mqtt_user(char* data, uint32_t len)
-{
-    if (len > sizeof(s_mqtt_obj.mqtt_info.username)) {
-        os_trace("fail to set mqtt user, len data too long\r\n");
-        return;
+    if (s_mqtt_obj.mqtt_info.broker_in_used >= MAX_NUMBER_MQTT_BROKER) {
+        os_trace("fail to set mqtt server, out of range %u\r\n", s_mqtt_obj.mqtt_info.broker_in_used);
+        return NULL;
     }
-
-    memset(s_mqtt_obj.mqtt_info.username, 0, sizeof(s_mqtt_obj.mqtt_info.username));
-    memcpy(s_mqtt_obj.mqtt_info.username, data, len);
+    return &s_mqtt_obj.mqtt_info.servers[s_mqtt_obj.mqtt_info.broker_in_used];
 }
 
-void set_mqtt_passwd(char* data, uint32_t len)
-{
-    if (len > sizeof(s_mqtt_obj.mqtt_info.passwd)) {
-        os_trace("fail to set mqtt passwd, len data too long\r\n");
-        return;
-    }
-
-    memset(s_mqtt_obj.mqtt_info.passwd, 0, sizeof(s_mqtt_obj.mqtt_info.passwd));
-    memcpy(s_mqtt_obj.mqtt_info.passwd, data, len);
-}
-
-void set_mqtt_topic_sub(char* data, uint32_t len)
+static void set_mqtt_topic_sub(char* data, uint32_t len)
 {
     if (len > sizeof(s_mqtt_obj.mqtt_info.topic_sub)) {
         os_trace("fail to set mqtt topic_sub, len data too long\r\n");
@@ -75,7 +56,7 @@ void set_mqtt_topic_sub(char* data, uint32_t len)
     memcpy(s_mqtt_obj.mqtt_info.topic_sub, data, len);
 }
 
-void set_mqtt_topic_pub(char* data, uint32_t len)
+static void set_mqtt_topic_pub(char* data, uint32_t len)
 {
     if (len > sizeof(s_mqtt_obj.mqtt_info.topic_pub)) {
         os_trace("fail to set mqtt topic_sub, len data too long\r\n");
@@ -85,6 +66,45 @@ void set_mqtt_topic_pub(char* data, uint32_t len)
     memset(s_mqtt_obj.mqtt_info.topic_pub, 0, sizeof(s_mqtt_obj.mqtt_info.topic_pub));
     memcpy(s_mqtt_obj.mqtt_info.topic_pub, data, len);
 }
+
+
+static void set_num_mqtt_broker(int num)
+{
+    s_mqtt_obj.mqtt_info.num_broker = num;
+}
+
+static uint32_t get_num_mqtt_broker(void)
+{
+    return s_mqtt_obj.mqtt_info.num_broker;
+}
+
+static void set_ver_mqtt(uint32_t version)
+{
+    s_mqtt_obj.mqtt_info.vermqtt = version;
+}
+
+static uint8_t num_broker_change = 0;
+static int update_mqtt_broker(void)
+{
+    uint32_t new_index = (s_mqtt_obj.mqtt_info.broker_in_used + 1) % s_mqtt_obj.mqtt_info.num_broker;
+    s_mqtt_obj.mqtt_info.broker_in_used = new_index;
+
+    num_broker_change++;
+    if (num_broker_change == s_mqtt_obj.mqtt_info.num_broker)
+    {
+        memset(s_mqtt_obj.mqtt_info.servers, 0, sizeof(s_mqtt_obj.mqtt_info.servers));
+
+        s_mqtt_obj.mqtt_info.num_broker = 0;
+        s_mqtt_obj.mqtt_info.broker_in_used = 0;
+        s_mqtt_obj.mqtt_info.vermqtt = 0;
+
+        num_broker_change = 0;
+        return 0;
+    }
+
+    return 1;
+}
+
 
 bool mqtt_init_queue(void)
 {
@@ -118,12 +138,16 @@ void m_mqtt_init(void)
     s_mqtt_obj._mqtt_stop = m_mqtt_stop;
     s_mqtt_obj._mqtt_loop = m_mqtt_task_loop;
 
-    s_mqtt_obj.set_mqtt_server = set_mqtt_server;
-    s_mqtt_obj.set_mqtt_port = set_mqtt_port;
-    s_mqtt_obj.set_mqtt_user = set_mqtt_user;
-    s_mqtt_obj.set_mqtt_passwd = set_mqtt_passwd;
+    
+    s_mqtt_obj.set_server_info = set_mqtt_server_info;
+    s_mqtt_obj.get_server_info = get_mqtt_server_info;
     s_mqtt_obj.set_mqtt_topic_sub = set_mqtt_topic_sub;
     s_mqtt_obj.set_mqtt_topic_pub = set_mqtt_topic_pub;
+
+    s_mqtt_obj.update_mqtt_broker = update_mqtt_broker;
+    s_mqtt_obj.set_num_mqtt_broker = set_num_mqtt_broker;
+    s_mqtt_obj.get_num_mqtt_broker = get_num_mqtt_broker;
+    s_mqtt_obj.set_ver_mqtt = set_ver_mqtt;
 
     /* inti queue */
     mqtt_init_queue();
