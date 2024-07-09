@@ -12,16 +12,16 @@ uint8_t start_cylcic_timer(switch_action_t action, uint32_t time_act1, uint32_t 
 {
     uint8_t channel_index = (action - 1) / 2;
 
-    if (channel_index < m_switch_get_instance().max_number_channel) {
+    if (channel_index >= m_switch_get_instance().max_number_channel) {
         os_trace("%s out of range number channel\r\n", __func__);
         return 0;
     }
 
-    if (!(cyclic_timer_arr[time_stamp].time_stamp && cyclic_timer_arr[time_stamp].time_stamp != time_stamp)) {
+    if (cyclic_timer_arr[channel_index].time_stamp && cyclic_timer_arr[channel_index].time_stamp == time_stamp) {
         os_trace("%s same timestamp\r\n", __func__);
         return 0;
     }
-    cyclic_timer_arr[time_stamp].time_stamp = time_stamp;
+    cyclic_timer_arr[channel_index].time_stamp = time_stamp;
 
     if (action % 2 == 0)
     { /* off */

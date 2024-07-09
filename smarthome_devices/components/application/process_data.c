@@ -854,8 +854,7 @@ static void app_start_cyclic_timer(cJSON *jsRoot)
 
     /* implement here */
     uint32_t time_act2 = time_cycle - time_act1;
-    start_cylcic_timer(action, time_act1, time_act2, time_stamp);
-    result = 1;
+    result = start_cylcic_timer(action, time_act1, time_act2, time_stamp);
 
 RESPONSE:
     /* respond server here */
