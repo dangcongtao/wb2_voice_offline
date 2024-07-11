@@ -223,7 +223,7 @@ static void button_scan_task(void *param)
                     os_trace("reset ts04 every 2 minutes\r\n");
                     hw_ts04_write(TS04_IDLE_LEVEL);
 
-                    vTaskDelay(pdMS_TO_TICKS(100));
+                    vTaskDelay(pdMS_TO_TICKS(150));
 
                     hw_ts04_write(TS04_ACTIVE_LEVEL);
                 }
