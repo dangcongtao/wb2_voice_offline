@@ -556,3 +556,94 @@ void Funiki_send(state_ir_t state_ir)
 
     sendFunikiAc(_.data.raw, kFunikiAcStateLength, 0);
 }
+
+const uint16_t kFunikiAC144HdrMark = 9600;   // kDaikinBitMark * 8
+const uint16_t kFunikiAC144HdrSpace = 4500;  // kDaikinBitMark * 4
+const uint16_t kFunikiAC144BitMark = 428;
+const uint16_t kFunikiAC144ZeroSpace = 428;
+const uint16_t kFunikiAC144OneSpace = 1620;  
+const uint16_t kFunikiAC144HeaderLength = 10;
+
+bool decodeFunikiAC144(decode_results *results, uint16_t offset, const uint16_t nbits, const bool strict) 
+{
+
+    // if (results->rawlen < (2 * (nbits + kDaikinHeaderLength) +
+    //                      kDaikinSections * (kHeader + kFooter) + kFooter - 1) +
+    //                      offset) 
+    // {
+    //     return false;
+    // }
+
+    // Compliance
+    if (strict && nbits != kFuniki104Bits) {
+        return false;
+    }
+
+    match_result_t data_result;
+
+    // Header #1 - Doesn't count as data.
+    data_result = matchDataLimit(&(results->rawbuf[offset]), kFunikiAC144HeaderLength,
+                            kFunikiAC144BitMark - 328, kFunikiAC144BitMark + 328, kFunikiAC144OneSpace - 500, kFunikiAC144OneSpace + 500,
+                            kFunikiAC144BitMark - 328, kFunikiAC144BitMark + 328, kFunikiAC144ZeroSpace - 328, kFunikiAC144ZeroSpace + 328,
+                            25, 50, false, true);
+    
+
+    if (data_result.success == false) {
+        data_result = matchDataLimit(&(results->rawbuf[offset]), kFunikiAC144HeaderLength-1,
+                            kFunikiAC144BitMark - 328, kFunikiAC144BitMark + 328, kFunikiAC144OneSpace - 500, kFunikiAC144OneSpace + 500,
+                            kFunikiAC144BitMark - 328, kFunikiAC144BitMark + 328, kFunikiAC144ZeroSpace - 328, kFunikiAC144ZeroSpace + 328,
+                            25, 50, false, true);
+        if (data_result.success == false) {                 
+            os_trace("%s Fail\r\n", __func__);
+            return false;  // Fail
+        }
+    }
+
+    offset += data_result.used;
+
+    if (data_result.data) {
+        os_trace("%s The header bits should be zero.\r\n", __func__);
+        return false;  // The header bits should be zero.
+    }
+
+    uint16_t used = matchGenericStateLimit(results->rawbuf + offset, results->state,
+                        results->rawlen - offset, kFuniki104Bits,
+                        kFunikiAC144HdrMark-2000, kFunikiAC144HdrMark+2000, kFunikiAC144HdrSpace-1000, kFunikiAC144HdrSpace+1000,
+                        kFunikiAC144BitMark - 328, kFunikiAC144BitMark + 328, kFunikiAC144OneSpace - 500, kFunikiAC144OneSpace + 500,
+                        kFunikiAC144BitMark - 328, kFunikiAC144BitMark + 328, kFunikiAC144ZeroSpace - 328, kFunikiAC144ZeroSpace + 328,
+                        kFunikiAC144BitMark-328, kFunikiAC144BitMark+400, 75000, 125000,
+                        true,
+                        45, 50, false);
+
+    if (used == 0) {
+        os_trace("%s used == 0\r\n", __func__);
+        return false;
+    }
+
+
+
+    results->decode_type = FUNIKIAC104;
+    results->bits = nbits;
+
+    // don set it to 0, It states will be 0
+    // results->command = 0;
+    // results->address = 0;
+
+
+    os_trace("%s success\r\n", __func__);
+    return true;
+}
+
+void FunikiAc104_setInfo(const uint8_t* newState, state_ir_t *ir_state) 
+{
+  os_trace("%s\r\n", __func__);
+  FunikiAC104Protocol _;
+  memcpy(_.raw, newState, kFuniki104StateLength);
+
+  ir_state->protocol = FUNIKIAC104;
+  ir_state->power = _.Power;
+//   ir_state->mode = _.Mode;
+//   ir_state->fanspeed = _.Fan;
+  ir_state->degrees = _.Temp + 16;
+}
+

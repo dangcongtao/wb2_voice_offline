@@ -133,6 +133,7 @@ typedef enum {
   SAIJODENKI,
   MITSUBISHI_HEAVY_160,
   PANASONIC_AC_2,
+  FUNIKIAC104,
   // Add new entries before this one, and update it to point to the last entry.
   kLastDecodeType = LG,
   MIDEA = 1934,
@@ -374,5 +375,9 @@ typedef enum {
 #define kSaijoDenkiBits  72
 #define kSaijoDenkiStateLength  9
 #define kSaijoDenkiDefaultRepeat  kNoRepeat
+
+#define kFuniki104Bits  104
+#define kFuniki104StateLength  13
+#define kFuniki104DefaultRepeat  kNoRepeat
 
 #endif

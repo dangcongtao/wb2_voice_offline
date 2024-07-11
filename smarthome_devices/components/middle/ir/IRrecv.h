@@ -41,6 +41,7 @@
 #define DECODE_SAMSUNG 1
 #define DECODE_SAMSUNG_AC 1
 #define DECODE_FUNIKI 1
+#define DECODE_FUNIKIAC104 1
 #define DECODE_CASPER   1
 #define DECODE_TOSHIBA  1
 #define DECODE_DAIKIN   1
@@ -227,6 +228,10 @@ bool decodeSamsungAC(decode_results *results, uint16_t offset,
 #if DECODE_FUNIKI
 bool decodeFunikiAC(decode_results *results, uint16_t offset,
                              const uint16_t nbits, const bool strict);
+#endif
+
+#if DECODE_FUNIKIAC104
+bool decodeFunikiAC144(decode_results *results, uint16_t offset, const uint16_t nbits, const bool strict);
 #endif
 
 #if DECODE_CASPER
@@ -684,6 +689,7 @@ void Casper2024Ac_setInfo(const uint8_t new_code[], const uint16_t length, state
 void SaijoDenki_setInfo(const uint8_t state[], state_ir_t *ir_state);
 void MitsubishiHeavy160_setInfo(const uint8_t state[], state_ir_t *ir_state);
 void IRCarrierAc32_setInfo(const uint64_t state, state_ir_t *ir_state);
+void FunikiAc104_setInfo(const uint8_t* newState, state_ir_t *ir_state);
 
 // void enableIRIn(const bool pullup);
 void ir_loop(void);

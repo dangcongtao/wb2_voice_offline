@@ -66,4 +66,44 @@ typedef struct
 
 
 
+typedef struct
+{
+    union
+    {
+        uint8_t raw[kFuniki104StateLength]; ///< State in code form.
+        struct
+        { // Standard message map
+            // Byte 0
+            uint8_t  : 3;
+            uint8_t Power : 1;
+            uint8_t : 4;
+            // Byte 1
+            uint8_t Temp : 4;
+            uint8_t : 4;
+            // Byte 2
+            uint8_t : 8;
+            // Byte 3
+            uint8_t : 8;
+            // Byte 4
+            uint8_t : 8;
+            // Byte 5
+            uint8_t : 8;
+            // Byte 6
+            uint8_t : 8;
+            // Byte 7
+            uint8_t : 8;
+            // Byte 8
+            uint8_t : 8;
+            // Byte 9
+            uint8_t : 8;
+            // Byte 10
+            uint8_t : 8;
+            // Byte 11
+            uint8_t : 8;
+            // Byte 12
+            uint8_t : 8;
+        };
+    };
+} FunikiAC104Protocol;
+
 #endif

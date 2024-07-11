@@ -1389,6 +1389,11 @@ bool decode_for(decode_results *results, uint8_t max_skip)
     if (decodeVestelAc(results, offset, kVestelAcBits, true)) return true;
 #endif
 
+#if DECODE_FUNIKIAC104
+    os_trace_rcv("Attempting decodeFunikiAC144 decode\r\n");
+    if (decodeFunikiAC144(results, offset, kFuniki104Bits, true)) return true;
+#endif
+
 #if DECODE_FUNIKI
     os_trace_rcv("Attempting decodeFunikiAC decode\r\n");
     if (decodeFunikiAC(results, offset, kFunikiAcBits, true)) return true;
@@ -2108,14 +2113,28 @@ void m_ir_task(void *param)
             }
             else if (MITSUBISHI_HEAVY_160 == capture.decode_type)
             {
+                MitsubishiHeavy160_setInfo(capture.state, &ir_state_recv);
+            }
+            else if (FUNIKIAC104 == capture.decode_type)
+            {
+                FunikiAc104_setInfo(capture.state, &ir_state_recv);
                 #if DEBUG_ENABLE == 1
-                    os_trace("MITSUBISHI_HEAVY_160: 0x ");
-                    for(uint8_t i = 0; i < kMitsubishiHeavy160StateLength; i++) {
+                    os_trace("FUNIKIAC104(%d): 0x ", capture.decode_type);
+                    for(uint8_t i = 0; i < capture.bits / 8; i++) {
                         os_trace("%02X-", capture.state[i]);
                     }
                     os_trace("\r\n");
                 #endif
-                MitsubishiHeavy160_setInfo(capture.state, &ir_state_recv);
+            }
+            else
+            {
+                #if DEBUG_ENABLE == 1
+                    os_trace("BRAND_ID(%d): 0x ", capture.decode_type);
+                    for(uint8_t i = 0; i < capture.bits / 8; i++) {
+                        os_trace("%02X-", capture.state[i]);
+                    }
+                    os_trace("\r\n");
+                #endif
             }
 
             /***************************************************************************************/
