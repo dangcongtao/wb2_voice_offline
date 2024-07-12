@@ -8,6 +8,7 @@
 #include "system_typedef.h"
 #include "m_database.h"
 #include "event_driven.h"
+#include "bl_sys.h"
 
 static m_switch_t s_switch_obj;
 static char respond_msg[256];
@@ -76,10 +77,10 @@ static uint8_t m_control_switch(uint32_t action, uint32_t act_id, uint32_t uid, 
     db_instance->_set_current_state_cb(channel_index, action);
     /* save current state if needed */
     uint8_t def_state = s_switch_obj._switch_info.default_state[channel_index] % 3;
-    if (def_state == SWITCH_ONE_KEEP_OLD_STATE)
-    {
+    // if (def_state == SWITCH_ONE_KEEP_OLD_STATE)
+    // {
         db_instance->_request_sync_db(BIT_FLAG_SYNC_SWITCH);
-    }
+    // }
 #if PROJECT_SHOCK
     if (m_mqtt_get_instance()._mqtt_state >= MQTT_INTIALIZED && is_shock_device(device_type))
     {
@@ -430,7 +431,7 @@ static void control_switch_default_state(void)
 
     uint8_t reason_reset = flash_read_rs_reason();
     os_trace("reason_reset: %u\r\n", reason_reset);
-    if (reason_reset)
+    if (reason_reset || bl_sys_rstinfo_get_hun() == 3)
     {
         for (channel = 0; channel < m_db_get_number_channel(); channel++)
         {
