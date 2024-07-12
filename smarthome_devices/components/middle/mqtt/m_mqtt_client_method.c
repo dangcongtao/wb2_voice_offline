@@ -238,6 +238,7 @@ void m_mqtt_start(void)
     if (client != NULL)
     {
         os_trace("%s destroy client now\r\n");
+        s_mqtt_obj._mqtt_state = MQTT_UNINTIALIZED;
         axk_mqtt_client_destroy(client);
         vTaskDelay(1000);
         client = NULL;
@@ -246,6 +247,7 @@ void m_mqtt_start(void)
     client = axk_mqtt_client_init(&mqtt_cfg);
     if (axk_mqtt_client_start(client) != AXK_OK){
         flash_set_rs_reason(10);
+        os_trace("%s RESET BY NOT ENOUGH MEMORY FOR MQTT START\r\n");
         vTaskDelay(2000);
         bl_sys_reset_por();
     }

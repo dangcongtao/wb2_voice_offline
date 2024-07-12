@@ -117,6 +117,11 @@ void http_get(char *url, char* output)
 		return;
 	}
 	raw_data += 4;
+    if (strlen(raw_data) >= HTTP_REQUEST_LEN) {
+        os_trace("--------> %s response is limit[%d]\r\n", __func__, strlen(raw_data));
+        close(s);
+        return;
+    }
 	memcpy(output, raw_data, strlen(raw_data));
 
 	printf("\n\r\n");
@@ -136,7 +141,25 @@ uint8_t get_mqtt_info(void)
 
     memset(temp2, 0, sizeof(temp2));
     http_get(temp1, temp2);
-    os_trace("output \n[%s]\n", temp2);
+
+#if DEBUG_ENABLE == 1
+    os_trace("\r\noutput[%d][\r\n", strlen(temp2));
+    for (int i = 0; i < strlen(temp2); i++) {
+        os_trace("%c", temp2[i]);
+        if (i == 300) {
+            vTaskDelay(pdMS_TO_TICKS(100));
+        }
+    }
+    os_trace("]\r\n");
+    // os_trace("\r\noutput[%d][%s]\r\n", strlen(temp2), temp2);
+#endif
+
+    if (strlen(temp2) >= HTTP_REQUEST_LEN) {
+        os_trace("%s output http get excceed length\r\n", __func__);
+        return 0;
+    }
+
+    // os_trace("output \n[%s]\n", temp2);
 
     cJSON *js_Root;
     js_Root = cJSON_Parse(temp2);
