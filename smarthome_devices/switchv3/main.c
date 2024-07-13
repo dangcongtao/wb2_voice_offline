@@ -60,7 +60,7 @@ void main(void)
     bl_sys_logall_enable();
 #endif
     // hw_switch_cfg(0);
-    bl_wdt_init(40000);
+    bl_wdt_init(120000);
 
     easyflash_init();
     tcpip_init(NULL, NULL);
