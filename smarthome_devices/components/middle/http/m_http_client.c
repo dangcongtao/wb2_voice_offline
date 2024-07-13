@@ -106,14 +106,15 @@ void http_get(char *url, char* output)
     do {
         r = read(s, recv_buf, sizeof(recv_buf) - 1);
     } while (r > 0);
-	for (int i = 0; i < strlen(recv_buf); i++) {
-		putchar(recv_buf[i]);
-	}
+	// for (int i = 0; i < strlen(recv_buf); i++) {
+	// 	putchar(recv_buf[i]);
+	// }
 
 	/* get raw data */
 	char *raw_data = strstr(recv_buf, "\r\n\r\n");
 	if (raw_data == NULL) {
 		os_trace("raw data not found\r\n");
+        close(s);
 		return;
 	}
 	raw_data += 4;
