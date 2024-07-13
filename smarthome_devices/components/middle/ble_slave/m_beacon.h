@@ -195,7 +195,7 @@ typedef struct
     } data;
 } ble_child_t;
 
-typedef struct
+typedef struct __attribute((packed))
 {
     uint8_t num_devices_link;
     uint8_t disallow_use_sensor[MAX_NUM_SWITCH];
