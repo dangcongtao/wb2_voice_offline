@@ -74,9 +74,10 @@ typedef struct
         struct
         { // Standard message map
             // Byte 0
-            uint8_t  : 3;
+            uint8_t Mode : 3;
             uint8_t Power : 1;
-            uint8_t : 4;
+            uint8_t Fan: 2;
+            uint8_t  : 2;
             // Byte 1
             uint8_t Temp : 4;
             uint8_t : 4;
@@ -85,7 +86,9 @@ typedef struct
             // Byte 3
             uint8_t : 8;
             // Byte 4
-            uint8_t : 8;
+            uint8_t : 6;
+            uint8_t Auto: 1;
+            uint8_t : 1;
             // Byte 5
             uint8_t : 8;
             // Byte 6

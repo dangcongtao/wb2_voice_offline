@@ -634,6 +634,7 @@ bool decodeFunikiAC144(decode_results *results, uint16_t offset, const uint16_t 
     return true;
 }
 
+
 void FunikiAc104_setInfo(const uint8_t* newState, state_ir_t *ir_state) 
 {
   os_trace("%s\r\n", __func__);
@@ -642,8 +643,9 @@ void FunikiAc104_setInfo(const uint8_t* newState, state_ir_t *ir_state)
 
   ir_state->protocol = FUNIKIAC104;
   ir_state->power = _.Power;
-//   ir_state->mode = _.Mode;
-//   ir_state->fanspeed = _.Fan;
+  ir_state->mode = _.Mode | (_.Auto << 2);
+  ir_state->fanspeed = _.Fan;
   ir_state->degrees = _.Temp + 16;
+  os_trace("%s auto: %u\r\n", __func__, _.Auto);
 }
 
