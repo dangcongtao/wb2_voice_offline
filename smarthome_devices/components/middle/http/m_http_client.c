@@ -125,7 +125,7 @@ void http_get(char *url, char* output)
     }
 	memcpy(output, raw_data, strlen(raw_data));
 
-	printf("\n\r\n");
+	// printf("\n\r\n");
     close(s);
 }
 

@@ -54,6 +54,7 @@ void main_loop(void)
 
 void main(void)
 {
+    bl_sys_init(); // if use ble ,must init
 #if DEBUG_ENABLE == 0
     bl_sys_logall_disable();
 #else

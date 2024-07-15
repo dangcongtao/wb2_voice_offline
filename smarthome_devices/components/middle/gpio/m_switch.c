@@ -282,12 +282,6 @@ void blink_switch_config_loop(void)
         }
         else if (3 == m_get_step_go_cfg(i))
         {
-            // if (2 == m_get_num_click_go_cfg(i))
-            // {
-            //     reset_data_blink_config(i);
-            //     signal_post(SIG_SMART_CFG);
-            //     return;
-            // }
             reset_data_blink_config(i);
         }
         else if (0 == m_get_step_go_cfg(i))

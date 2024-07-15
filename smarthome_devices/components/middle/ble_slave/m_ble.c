@@ -150,7 +150,6 @@ static void ble_task(void *pvParameters)
     uint32_t aes_encrypt_result = 0;
     m_ble_data_t message;
 
-    bl_sys_init(); // if use ble ,must init
     ble_user_init();
 
     memset(&message, 0, sizeof(message));
