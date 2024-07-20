@@ -99,6 +99,10 @@ bool save_mqtt_info(char *json)
                 os_trace("serverCount: %d\r\n", serverCount);
                 mqtt.set_num_mqtt_broker(serverCount);
 
+                if (serverCount > 0) {
+                    m_mqtt_get_info_reference()->broker_in_used = 0;
+                }
+
                 for (int i = 0; i < serverCount; i++)
                 {
                     broker = cJSON_GetArrayItem(brokers, i);
