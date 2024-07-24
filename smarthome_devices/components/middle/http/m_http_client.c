@@ -113,6 +113,7 @@ void http_get(char *url, char* output)
 	char *raw_data = strstr(recv_buf, "\r\n\r\n");
 	if (raw_data == NULL) {
 		os_trace("raw data not found\r\n");
+        close(s);
 		return;
 	}
 	raw_data += 4;
