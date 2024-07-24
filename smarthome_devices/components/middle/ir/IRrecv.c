@@ -14,6 +14,7 @@
 #include "base64.h"
 #include "m_mqtt.h"
 #include "m_led_stt.h"
+#include <hosal_timer.h>
 
 DRAM_ATTR irparams_t params;
 irparams_t *params_save;
@@ -25,8 +26,15 @@ uint8_t _tolerance;
 hosal_gpio_dev_t touch_gpio_pos;
 hosal_gpio_dev_t touch_gpio_neg;
 
-struct timer_adpt *timer3;
-
+static hosal_timer_dev_t timer3 = {
+    .config = {
+        .arg = NULL,
+        .cb = NULL,
+        .period = 100, /// 100us
+        .reload_mode = TIMER_RELOAD_ONCE,
+    },
+    .port = 0,
+};
 
 static decode_results capture;
 static uint32_t lastIrReceivedTime = 0;
@@ -39,9 +47,6 @@ static void timer3_cb(void *data)
 {
     if (params.rawlen)
         params.rcvstate = kStopState;
-    // os_trace("timer3_cb:start timer1 again and change timer cycle\r\n");
-    // uint32_t delay_ms=1000;           //cycle =1000ms
-    // bl_os_timer_start_periodic(timer1,(delay_ms / 1000),((delay_ms % 1000) * 1e6));
 }
 
 void Irrecv_pause(void)
@@ -96,9 +101,8 @@ IRAM_ATTR void gpio_intr_neg(void *param)
 
     start = now;
 
-    bl_os_timer_start_once(timer3, ((uint32_t)params.timeout / 1000), (((uint32_t)params.timeout % 1000) * 1e6));
-
-    
+    hosal_timer_stop(&timer3);
+    hosal_timer_start(&timer3);
 
     // #if defined(ESP8266)
     //   os_timer_arm(&timer, params.timeout, ONCE);
@@ -150,9 +154,8 @@ IRAM_ATTR void gpio_intr_pos(void *param)
 
     start = now;
 
-    bl_os_timer_start_once(timer3, ((uint32_t)params.timeout / 1000), (((uint32_t)params.timeout % 1000) * 1e6));
-
-    
+    hosal_timer_stop(&timer3);
+    hosal_timer_start(&timer3);
 
     // #if defined(ESP8266)
     //   os_timer_arm(&timer, params.timeout, ONCE);
@@ -1597,7 +1600,10 @@ static void enableIRIn(const bool pullup)
     // ESP32's seem to require explicitly setting the GPIO to INPUT etc.
     // This wasn't required on the ESP8266s, but it shouldn't hurt to make sure.
 
-    timer3 = bl_os_timer_create(timer3_cb, NULL);
+    timer3.config.cb = timer3_cb;
+    timer3.config.period = (uint32_t)params.timeout * 1000;
+
+    hosal_timer_init(&timer3);
 
     touch_gpio_neg.port = params.recvpin;
     touch_gpio_pos.port = IR_RX_POS;
@@ -1665,6 +1671,7 @@ void IRrecv_init(const uint32_t recvpin, const uint16_t bufsize,
     // Ensure we are going to be able to store all possible values in the
     // capture buffer.
     params.timeout = min(timeout, (uint8_t)kMaxTimeoutMs);
+    os_trace("%s timeout: %u(ms)", __func__, params.timeout);
     params.rawbuf = pvPortMalloc(sizeof(uint16_t) * bufsize);
     if (params.rawbuf == NULL)
     {
