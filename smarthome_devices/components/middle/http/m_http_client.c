@@ -17,7 +17,7 @@
 #include "bl_sys.h"
 #include "event_driven.h"
 
-#define WEB_SERVER "api.hunonicpro.com"
+#define WEB_SERVER "infoserver.hunonicpro.com"
 #define WEB_PORT "80"
 #define WEB_PATH "/infomqtt/?device_id="
 
