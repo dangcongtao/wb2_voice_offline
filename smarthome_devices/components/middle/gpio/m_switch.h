@@ -54,6 +54,7 @@ typedef struct {
 	bool send_self;
 	bool need_create_new_id;
 	uint8_t mac_source[6];
+	uint8_t mac_request_change[6];
 } m_ble_send_t;
 
 typedef void(*p_switch_cfg_t)(uint8_t _index);

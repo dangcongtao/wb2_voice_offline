@@ -165,7 +165,7 @@ void hw_read_leak_loop(void)
             m_mqtt_get_instance()._mqtt_publish(respond_msg, strlen(respond_msg));
 
             memset(respond_msg, 0, sizeof(respond_msg));
-            sprintf(respond_msg, "{\"%s\":%d, \"action\":%d, \"u\":%d, \"act_id\": %d}", gs_dev_type[device_type], 0, CH1_OFF, 0, SRC_ACTION_LEADK_CURR);
+            sprintf(respond_msg, "{\"%s\":%d, \"action\":%d, \"u\":%d, \"act_id\": %d}", gs_dev_type[device_type], 0, CH1_OFF, 0, SRC_ACTION_LEAK_CURR);
             m_mqtt_get_instance()._mqtt_publish(respond_msg, strlen(respond_msg));
             m_db_get_instance()->_set_current_state_cb(0, LOW);
         }

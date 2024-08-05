@@ -37,7 +37,7 @@ uint8_t start_cylcic_timer(switch_action_t action, uint32_t time_act1, uint32_t 
     ble_send.send_ble = true;
     ble_send.need_create_new_id = true;
     ble_send.send_self = true;
-    m_switch_get_instance()._control_switch_cb(action, 2, 0, true, false, ble_send);
+    m_switch_get_instance()._control_switch_cb(action, SRC_ACTION_CYCLIC, 0, true, false, ble_send);
     previous_cyclic_timer_active[channel_index] = sys_get_tick_ms();
 
     step_toggle[channel_index] = 0;
@@ -92,7 +92,7 @@ void m_switch_cyclic_timer_loop(void)
             {
                 if (time_diff >= cyclic_timer_arr[i].time_on * 1000)
                 {
-                    m_switch_get_instance()._control_switch_cb(CH1_OFF + 2 * i, 2, 0, true, false, ble_send);
+                    m_switch_get_instance()._control_switch_cb(CH1_OFF + 2 * i, SRC_ACTION_CYCLIC, 0, true, false, ble_send);
                     step_toggle[i] = !step_toggle[i]; /* 1 -> 0 , 0 -> 1 */
                     previous_cyclic_timer_active[i] = sys_get_tick_ms();
                 }
@@ -103,7 +103,7 @@ void m_switch_cyclic_timer_loop(void)
             {
                 if (time_diff >= cyclic_timer_arr[i].time_off * 1000)
                 {
-                    m_switch_get_instance()._control_switch_cb(CH1_ON + 2 * i, 2, 0, true, false, ble_send);
+                    m_switch_get_instance()._control_switch_cb(CH1_ON + 2 * i, SRC_ACTION_CYCLIC, 0, true, false, ble_send);
                     step_toggle[i] = !step_toggle[i]; /* 1 -> 0 , 0 -> 1 */
                     previous_cyclic_timer_active[i] = sys_get_tick_ms();
                 }
@@ -172,13 +172,13 @@ void m_switch_press_release_loop(void)
 
             if (mode == MODE_BOTH)
             {
-                m_switch_get_instance()._toggle_switch_cb(i, 3, true, false);
+                m_switch_get_instance()._toggle_switch_cb(i, SRC_ACTION_PRESS_MODE, true, false);
             }
             else
             {
                 if (current_state == mode)
                 {
-                    m_switch_get_instance()._toggle_switch_cb(i, 3, true, false);
+                    m_switch_get_instance()._toggle_switch_cb(i, SRC_ACTION_PRESS_MODE, true, false);
                 }
             }
         }

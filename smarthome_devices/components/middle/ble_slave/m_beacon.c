@@ -837,6 +837,7 @@ void m_ble_sync_state(void)
                         ble_send.need_create_new_id = false;
                         ble_send.send_self = true;
                         memcpy(ble_send.mac_source, s_ble_obj.check_mac_source, 6);
+                        memcpy(ble_send.mac_request_change, s_ble_obj.mac_request_state, 6);
 
                         if (temp == 1) {
                             if (s_ble_obj.time_cnt_startup || m_switch_get_instance()._read_switch_cb(my_channel_act) == 0) {
@@ -857,7 +858,6 @@ void m_ble_sync_state(void)
                 } else if (obj_ble.list_child[i].type == DEVICE_TYPE_CBCT) {
                     my_channel_act = (obj_ble.list_child[i].my_act - 1) / 2 ;
                     if (!memcmp(s_ble_obj.mac_request_state, obj_ble.list_child[i].mac, 6) && my_channel_act == j) {
-
                         os_trace("%s %u motion sensor detected, index: %u, time cnt_down: %lu\r\n", __func__, i, my_channel_act, s_ble_obj.cnt_down_light_off[my_channel_act]);
                         if (!s_ble_obj.cnt_down_light_off[my_channel_act]) {
                             os_trace("%s turn on light by motion sensor, index: %u\r\n", __func__, my_channel_act);
@@ -866,6 +866,7 @@ void m_ble_sync_state(void)
                             ble_send.need_create_new_id = false;
                             ble_send.send_self = true;
                             memcpy(ble_send.mac_source, s_ble_obj.check_mac_source, 6);
+                            memcpy(ble_send.mac_request_change, s_ble_obj.mac_request_state, 6);
                             m_switch_get_instance()._control_switch_cb(CH1_ON + my_channel_act * 2, SRC_ACTION_LINK_CBCT, 0, 1, 1, ble_send);
                         }
                         s_ble_obj.cnt_down_light_off[my_channel_act] = obj_ble.arr_ch_delay[my_channel_act] * 1000;
@@ -908,6 +909,13 @@ static uint8_t ble_db_add_child(uint8_t* mac, uint8_t type, uint8_t act)
     obj_ble.list_child[obj_ble.num_devices_link].type = type;
     obj_ble.list_child[obj_ble.num_devices_link].my_act = act;
     if (type == DEVICE_TYPE_CBCT) {
+        uint8_t index_ch = (act - 1) / 2;
+        if (index_ch >= max_number_channel) {
+            os_trace("%s invalid act\r\n", __func__);
+        } else if (obj_ble.arr_ch_delay[index_ch] == 0) {
+            obj_ble.arr_ch_delay[index_ch] = DEFAULT_DELAY_LIGHT_OFF_CBCT;
+        }
+        
         obj_ble.delay_cbct[obj_ble.num_devices_link] = DEFAULT_DELAY_LIGHT_OFF_CBCT;
         obj_ble.list_child[obj_ble.num_devices_link].data.info.battery = 100;
         obj_ble.list_child[obj_ble.num_devices_link].data.info.enable = 1;

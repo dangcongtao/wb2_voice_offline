@@ -58,7 +58,7 @@ void on_button_event_cb(int button_pin, int event, void *data)
     case APP_BTN_EVT_PRESSED:
     {
         if (device_type == SWMINI && button_pin < 2) {
-            m_switch_get_instance()._toggle_switch_cb(button_pin, 1, true, true);
+            m_switch_get_instance()._toggle_switch_cb(button_pin, SRC_ACTION_DEVICE, true, true);
         }
     }
     break;
@@ -96,7 +96,7 @@ void on_button_event_cb(int button_pin, int event, void *data)
 
         /* just support buttons, not support sensor */
         if (device_type != SWMINI || (device_type == SWMINI && button_pin < 2)) {
-            m_switch_get_instance()._toggle_switch_cb(button_pin, 1, true, true);
+            m_switch_get_instance()._toggle_switch_cb(button_pin, SRC_ACTION_DEVICE, true, true);
         }
 
         // if (button_pin == 3) {

@@ -277,6 +277,7 @@ RESPONSE:
     app_send_data(respond, strlen(respond));
 }
 
+static void _app_get_list_cbct(uint32_t index);
 /* 105 */
 static void app_get_info(cJSON *jsRoot)
 {
@@ -358,6 +359,8 @@ static void app_get_info(cJSON *jsRoot)
     }
 
     app_send_data(respond, strlen(respond));
+
+    _app_get_list_cbct(0);
 }
 
 /* {"TYPE":121, "po":po, "u":uid} */
@@ -1478,7 +1481,6 @@ static void app_set_use_cbct(cJSON *jsRoot)
     uint8_t result = 0;
     cJSON *jsType, *jsIndex, *jsMac, *jsDelayTime;
     uint32_t type = 0, index = 0, active = 0;
-    char mac_str[32];
 
     os_trace("%s\n", __func__);
 
@@ -1525,7 +1527,6 @@ static void app_set_delay_ch_cbct(cJSON *jsRoot)
     uint8_t result = 0;
     cJSON *jsType, *jsIndex, *jsMac, *jsDelayTime;
     uint32_t type = 0, index = 0, active = 0;
-    char mac_str[32];
 
     os_trace("%s\n", __func__);
 
@@ -1567,38 +1568,9 @@ RESPONSE:
     m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
 }
 
-static void app_get_list_cbct(cJSON *jsRoot)
+static void _app_get_list_cbct(uint32_t index)
 {
-    uint8_t result = 0;
-    cJSON *jsType, *jsU, *jsIndex, *jsMac;
-    uint32_t type = 0, uid = 0, index = 0;
-
-    os_trace("%s\n", __func__);
-
-    jsType = cJSON_GetObjectItem(jsRoot, gs_dev_type[device_type]);
-    if (jsType == NULL)
-    {
-        os_trace("Get JSON type mqtt message fail\n");
-        return;
-    }
-    type = jsType->valueint;
-
-    jsU = cJSON_GetObjectItem(jsRoot, CJSON_KEY_USER_ID);
-    if (jsU == NULL)
-    {
-        os_trace("Get JSON type mqtt message fail\n");
-        return;
-    }
-    uid = jsU->valueint;
-
-    jsIndex = cJSON_GetObjectItem(jsRoot, CJSON_KEY_INDEX);
-    if (jsIndex == NULL)
-    {
-        os_trace("Get JSON jsIndex mqtt message fail\n");
-        return;
-    }
-    index = jsIndex->valueint;
-
+    uint32_t type = 310, uid = 0;
     uint32_t buffer_seek = 0, i;
     memset(respond, 0, sizeof(respond));
     buffer_seek += sprintf(&respond[buffer_seek], "{\"%s\":%lu,\"u\":%lu,\"ch_en\":[", gs_dev_type[device_type], type, uid);
@@ -1642,6 +1614,41 @@ static void app_get_list_cbct(cJSON *jsRoot)
     buffer_seek += sprintf(&respond[buffer_seek], "]}");
 
     m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
+}
+
+static void app_get_list_cbct(cJSON *jsRoot)
+{
+    uint8_t result = 0;
+    cJSON *jsType, *jsU, *jsIndex, *jsMac;
+    uint32_t type = 0, uid = 0, index = 0;
+
+    os_trace("%s\n", __func__);
+
+    jsType = cJSON_GetObjectItem(jsRoot, gs_dev_type[device_type]);
+    if (jsType == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        return;
+    }
+    type = jsType->valueint;
+
+    jsU = cJSON_GetObjectItem(jsRoot, CJSON_KEY_USER_ID);
+    if (jsU == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        return;
+    }
+    uid = jsU->valueint;
+
+    jsIndex = cJSON_GetObjectItem(jsRoot, CJSON_KEY_INDEX);
+    if (jsIndex == NULL)
+    {
+        os_trace("Get JSON jsIndex mqtt message fail\n");
+        return;
+    }
+    index = jsIndex->valueint;
+
+    _app_get_list_cbct(index);
 }
 
 

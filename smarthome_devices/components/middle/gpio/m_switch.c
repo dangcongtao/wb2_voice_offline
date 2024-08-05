@@ -79,6 +79,7 @@ static uint8_t m_control_switch(uint32_t action, uint32_t act_id, uint32_t uid, 
     uint8_t def_state = s_switch_obj._switch_info.default_state[channel_index] % 3;
     // if (def_state == SWITCH_ONE_KEEP_OLD_STATE)
     // {
+    // It will restore to previos state when reset without active
         db_instance->_request_sync_db(BIT_FLAG_SYNC_SWITCH);
     // }
 #if PROJECT_SHOCK
@@ -97,10 +98,17 @@ static uint8_t m_control_switch(uint32_t action, uint32_t act_id, uint32_t uid, 
     {
         if (mqtt_obj._mqtt_state >= MQTT_INTIALIZED)
         {
+            uint32_t buffer_seek = 0;
             memset(respond_msg, 0, sizeof(respond_msg));
-            sprintf(respond_msg, "{\"%s\":%d,\"action\":%ld,"
-                                 "\"u\":%ld,\"act_id\":%d}",
+            buffer_seek += sprintf(respond_msg, "{\"%s\":%d,\"action\":%ld,"
+                                 "\"u\":%ld,\"act_id\":%d",
                     gs_dev_type[device_type], 0, action, uid, act_id);
+                
+            if ((act_id == SRC_ACTION_LINK_CBCT && state == HIGH)|| act_id == SRC_ACTION_LINK_STAIR)
+            {
+                buffer_seek += sprintf(&respond_msg[buffer_seek], ",\"src\":\"%02x:%02x:%02x:%02x:%02x:%02x\"", send_ble.mac_request_change[0], send_ble.mac_request_change[1], send_ble.mac_request_change[2], send_ble.mac_request_change[3], send_ble.mac_request_change[4], send_ble.mac_request_change[5]);
+            }
+            buffer_seek += sprintf(&respond_msg[buffer_seek], "}");
             mqtt_obj._mqtt_publish(respond_msg, strlen(respond_msg));
         }
         else

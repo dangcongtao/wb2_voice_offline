@@ -360,6 +360,10 @@ static void m_database_sync_task(void *param)
             memset(s_m_database._m_device._switch_info->current_state, 0, sizeof(s_m_database._m_device._switch_info->current_state));
             memcpy(s_m_database._m_device._switch_info->current_state, s_m_switch_info_backup.current_state, sizeof(s_m_database._m_device._switch_info->current_state));
             memset(&s_m_switch_info_backup, 0, sizeof(s_m_switch_info_backup));
+            s_m_database._m_device._ble_info->arr_ch_delay[0] = DEFAULT_DELAY_LIGHT_OFF_CBCT;
+            s_m_database._m_device._ble_info->arr_ch_delay[1] = DEFAULT_DELAY_LIGHT_OFF_CBCT;
+            s_m_database._m_device._ble_info->arr_ch_delay[2] = DEFAULT_DELAY_LIGHT_OFF_CBCT;
+            s_m_database._m_device._ble_info->arr_ch_delay[3] = DEFAULT_DELAY_LIGHT_OFF_CBCT;
 
             s_request_reset_db = 0;
             s_request_sync_db = 0xFF;
