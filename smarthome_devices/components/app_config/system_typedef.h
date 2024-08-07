@@ -93,8 +93,8 @@ typedef enum
     SRC_ACTION_ALARM_NORMAL = 4,
     SRC_ACTION_SCENSE = 5,
     SRC_ACTION_LEAK_CURR = 7,
-    SRC_ACTION_LINK_CBCT = 17,
-    SRC_ACTION_LINK_STAIR = 18,
+    SRC_ACTION_LINK_CBCT = 19,
+    SRC_ACTION_LINK_STAIR = 20,
 } src_action_t;
 
 typedef enum
