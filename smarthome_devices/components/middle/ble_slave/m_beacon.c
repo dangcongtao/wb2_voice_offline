@@ -625,8 +625,10 @@ void master_proc_rcv_request_link(uint8_t *data, uint8_t len)
         s_ble_obj.step = WAIT_CONFIG;
         // TODO: send to mqtt: has a device need to pair
         if (s_ble_obj.type_device_config == DEVICE_TYPE_CBCT) {
-            if (is_existed_in_db(s_ble_obj.mac))
+            if (-1 != is_existed_in_db(s_ble_obj.mac)) {
+                os_trace("%s one cbct existed in DB has doing config\r\n", __func__);
                 db_remove_child_by_mac(s_ble_obj.mac);
+            }
             s_ble_obj.flags.flag_need_send_device_wait_config = 1;
         }
     }
