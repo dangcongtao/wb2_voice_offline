@@ -10,7 +10,6 @@
 #include <queue.h>
 #include <timers.h>
 
-#include "m_switch.h"
 #include "m_led_stt.h"
 #include "m_wifi.h"
 #include "m_database.h"
@@ -42,19 +41,11 @@ void on_button_event_cb(int button_pin, int event, void *data)
 {
     os_trace("Button %d, event %s\r\n", button_pin, event_name[event]);
 
-    if (m_db_get_instance()->_m_device._switch_info->channel_lock_state[button_pin] == 1)
-        if (is_wifi_connected())
-            return;
-
     switch (event)
     {
     case APP_BTN_EVT_PRESSED:
     {
-        // extern void Funiki_test(void);
-        // Funiki_test();
-        if (device_type == SWMINI && button_pin < 2) {
-            m_switch_get_instance()._toggle_switch_cb(button_pin, 1, true, true);
-        }
+
     }
     break;
 
@@ -115,30 +106,6 @@ void on_button_event_cb(int button_pin, int event, void *data)
     }
     break;
 
-    case APP_BTN_EVT_HOLD_HONG_PHIM:
-    {
-        if (ignore_event_release[button_pin] == EVENT_BTN_HOLD_HONG_PHIM)
-            return;
-        hw_ts04_write(TS04_IDLE_LEVEL);
-
-        vTaskDelay(pdMS_TO_TICKS(100));
-
-        hw_ts04_write(TS04_ACTIVE_LEVEL);
-        ignore_event_release[button_pin] = EVENT_BTN_HOLD_HONG_PHIM;
-    }
-
-    case APP_BTN_EVT_DOUBLE_CLICK:
-    {
-        /* double click */
-    }
-    break;
-
-    case APP_BTN_EVT_TRIPLE_CLICK:
-    {
-        /* triplle click */
-    }
-    break;
-
     default:
         break;
     }
@@ -173,9 +140,6 @@ static void m_button_config(void)
     app_btn_register_callback(APP_BTN_EVT_RELEASED, on_button_event_cb, NULL);
     app_btn_register_callback(APP_BTN_EVT_HOLD, on_button_event_cb, NULL);
     app_btn_register_callback(APP_BTN_EVT_HOLD_SO_LONG, on_button_event_cb, NULL);
-    if (device_type == WSWITCH || is_shock_device(device_type)) {
-        app_btn_register_callback(APP_BTN_EVT_HOLD_HONG_PHIM, on_button_event_cb, NULL);
-    }
 }
 
 /* private */
@@ -185,45 +149,7 @@ static void button_scan_task(void *param)
     os_trace("button_scan_task\n");
     while (true)
     {
-#if PROJECT_SHOCK
-    if (is_shock_device(device_type)) {
-        hw_read_leak_loop();
-    }
-        if (!is_leakage_current())
-{
-#endif
-    if (device_type != IRWIFI) {
-        m_switch_press_release_loop();
-        m_switch_cyclic_timer_loop();
-    }
-#if PROJECT_SHOCK
-}
-#endif
         app_btn_scan(NULL);
-
-        if (device_type == WSWITCH || is_shock_device(device_type)) {
-            if (time_cnt_down_reset_TS04 == 0) {
-                uint8_t s_check = 0;
-                for (uint8_t i = 0; i < max_number_channel; i++)
-                {
-                    s_check += ignore_event_release[i];
-                }
-                if (s_check == 0) {
-                    os_trace("reset ts04 every 2 minutes\r\n");
-                    hw_ts04_write(TS04_IDLE_LEVEL);
-
-                    vTaskDelay(pdMS_TO_TICKS(100));
-
-                    hw_ts04_write(TS04_ACTIVE_LEVEL);
-                }
-                time_cnt_down_reset_TS04 = TIME_OUT_RESET_TS04_WITHOUT_PRESS;
-                os_trace("reset time count down ts04 reset\r\n");
-            } else{
-                time_cnt_down_reset_TS04--;
-            }
-        }
-
-        // blink_switch_config_loop();
 
         if (!dev_is_doing_config()) {
             if (is_ota == STATE_OTA_PROCESS) {
@@ -257,7 +183,6 @@ static void button_scan_task(void *param)
 /* public */
 void m_button_init(void)
 {
-    hw_btn_change_btn_pin();
     m_button_config();
     
     os_trace("m_button_init: %ld\r\n", max_number_channel);

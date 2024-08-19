@@ -15,19 +15,21 @@
 
 #define WIFI_INFO "wifi_info"
 #define MQTT_INFO "mqtt_info"
-#define SWITCH_INFO "switch_info"
 #define PAIR_STATE "pair_state"
+#define VERSION_INFO "ver"
 
 void flash_init(void)
 {
     easyflash_init();
 }
+
+extern uint16_t dfu_crc16(uint16_t crc, unsigned char *pD, int len);
 /*
     m_wifi_info_t*      _wifi_info;
     m_mqtt_info_t*      _mqtt_info;
     m_switch_info_t*    _switch_info;
  */
-void flash_write_database(m_device_t object_data)
+void flash_write_database(m_device_t object_data, uint8_t request_flag)
 {
     uint32_t size = 0;
 
@@ -36,9 +38,10 @@ void flash_write_database(m_device_t object_data)
     {
         os_trace("object_data._wifi_info NULL\r\n");
     }
-    else
+    else if (GET(request_flag, BIT_FLAG_SYNC_WIFI))
     {
         size = sizeof(m_wifi_info_t);
+        os_trace("sync wifi info %lu\r\n", size);
         ef_set_bytes(WIFI_INFO, (uint8_t *)object_data._wifi_info, size);
     }
 
@@ -46,24 +49,18 @@ void flash_write_database(m_device_t object_data)
     {
         os_trace("object_data._mqtt_info NULL\r\n");
     }
-    else
+    else if (GET(request_flag, BIT_FLAG_SYNC_MQTT))
     {
         size = sizeof(m_mqtt_info_t);
+        os_trace("sync mqtt info %lu\r\n", size);
         ef_set_bytes(MQTT_INFO, (uint8_t *)object_data._mqtt_info, size);
     }
 
-    // if (object_data._switch_info == NULL)
-    // {
-    //     os_trace("object_data._switch_info NULL\r\n");
-    // }
-    // else
-    // {
-    //     size = sizeof(m_switch_info_t);
-    //     ef_set_bytes(SWITCH_INFO, (uint8_t *)object_data._switch_info, size);
-    // }
-
     /* write state pair */
-    ef_set_u32(PAIR_STATE, object_data._device_is_paired);
+    if (GET(request_flag, BIT_FLAG_SYNC_PAIR)) {
+        os_trace("sync pair state info\r\n");
+        ef_set_u32(PAIR_STATE, object_data._device_is_paired);
+    }
 }
 
 void flash_read_database(m_device_t *object_data)
@@ -85,36 +82,51 @@ void flash_read_database(m_device_t *object_data)
         ef_get_bytes(WIFI_INFO, (uint8_t *)object_data->_wifi_info, size);
     }
 
-    if (object_data->_mqtt_info == NULL)
-    {
-        os_trace("object_data->_mqtt_info NULL\r\n");
-    }
-    else
-    {
-        /* read wifi info */
-        size = sizeof(m_mqtt_info_t);
-        ef_get_bytes(MQTT_INFO, (uint8_t *)object_data->_mqtt_info, size);
-    }
+    ef_get_bytes(VERSION_INFO, (uint8_t *)&(object_data->version), sizeof(uint32_t));
+    if (object_data->version > 0) {
+        if (object_data->_mqtt_info == NULL)
+        {
+            os_trace("object_data->_mqtt_info NULL\r\n");
+        }
+        else
+        {
+            /* read wifi info */
+            size = sizeof(m_mqtt_info_t);
+            ef_get_bytes(MQTT_INFO, (uint8_t *)object_data->_mqtt_info, size);
+        }
+    } else {
+        object_data->version = FIRMWARE_VERSION_NUMBER;
+        ef_set_bytes(VERSION_INFO, (uint8_t *)&(object_data->version), sizeof(uint32_t));
 
-    // if (object_data->_switch_info == NULL)
-    // {
-    //     os_trace("object_data->_switch_info NULL\r\n");
-    // }
-    // else
-    // {
-    //     /* read wifi info */
-    //     size = sizeof(m_switch_info_t);
-    //     ef_get_bytes(SWITCH_INFO, (uint8_t *)object_data->_switch_info, size);
-    // }
+        m_mqtt_info_old_t mqtt_old;
+        size = sizeof(m_mqtt_info_old_t);
+        ef_get_bytes(MQTT_INFO, (uint8_t *)&mqtt_old, size);
+
+        object_data->_mqtt_info->num_broker = 0;
+        object_data->_mqtt_info->broker_in_used = 0;
+
+        memset(object_data->_mqtt_info->topic_sub, 0, sizeof(object_data->_mqtt_info->topic_sub));
+        memset(object_data->_mqtt_info->topic_pub, 0, sizeof(object_data->_mqtt_info->topic_pub));
+
+        memcpy(object_data->_mqtt_info->topic_sub, mqtt_old.topic_sub, sizeof(object_data->_mqtt_info->topic_sub));
+        memcpy(object_data->_mqtt_info->topic_pub, mqtt_old.topic_pub, sizeof(object_data->_mqtt_info->topic_pub));
+
+        // use old server if cannot get mqtt server
+        object_data->_mqtt_info->broker_in_used = 0;
+        object_data->_mqtt_info->num_broker = 1;
+        memcpy(object_data->_mqtt_info->servers[0].server, mqtt_old.server, sizeof(object_data->_mqtt_info->servers[0].server));
+        memcpy(object_data->_mqtt_info->servers[0].username, mqtt_old.username, sizeof(object_data->_mqtt_info->servers[0].username));
+        memcpy(object_data->_mqtt_info->servers[0].passwd, mqtt_old.passwd, sizeof(object_data->_mqtt_info->servers[0].passwd));
+        object_data->_mqtt_info->servers[0].port = mqtt_old.port;
+        object_data->_mqtt_info->servers[0].type = 1;
+        m_db_get_instance()->_request_sync_db(BIT_FLAG_SYNC_MQTT);
+        
+    }
 
     /* read state pair */
     if ((ef_get_u32(PAIR_STATE, &(object_data->_device_is_paired)) == false) || (object_data->_device_is_paired == 0))
     {
         os_trace("Read flash: Device was not paired\r\n");
-        object_data->_switch_info->default_state[0] = SWITCH_ONE_DEFAULT_OFF;
-        object_data->_switch_info->default_state[1] = SWITCH_TWO_DEFAULT_OFF;
-        object_data->_switch_info->default_state[2] = SWITCH_THREE_DEFAULT_OFF;
-        object_data->_switch_info->default_state[3] = SWITCH_FOUR_DEFAULT_OFF;
     }
 }
 

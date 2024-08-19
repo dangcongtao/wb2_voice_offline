@@ -21,18 +21,19 @@ void get_mqtt_info_handler(void *arg)
 
     m_led_stt_get_instance()._set_led_stt_mqtt_disconnect_cb();
 
-    uint32_t port = m_mqtt_get_info_reference()->port;
-    char *server = m_mqtt_get_info_reference()->server;
-    char *user = m_mqtt_get_info_reference()->username;
-    char *passwd = m_mqtt_get_info_reference()->passwd;
+    m_mqtt_server_t *server_inf = m_mqtt_get_instance().get_server_info();
 
-    if (port != 0 && strlen(server) > 0 && strlen(user) > 0 && strlen(passwd) > 0)
+    if (server_inf != NULL && server_inf->port != 0 && strlen(server_inf->server) > 0 && strlen(server_inf->username) > 0 && strlen(server_inf->passwd) > 0 && server_inf->type == 0)
     {
         os_trace("Device had been actived ago\r\n");
     }
     else
     {
         if (!get_mqtt_info()) {
+            if (m_mqtt_get_instance().get_num_mqtt_broker() > 0) {
+                signal_post(SIG_MQTT_GOT_INFO);
+                return;
+            }
             set_timeout_reset();
             vTaskDelay(pdMS_TO_TICKS(1000));
             return;
@@ -46,6 +47,45 @@ m_state_transmit_t dev_get_mqtt = {
     .signal = SIG_WIFI_CONNECTED,
     .next_state = M_WIFI_CONN_MQTT,
     .signal_handler_cb = get_mqtt_info_handler};
+
+void get_mqtt_broker_handler(void)
+{
+    m_mqtt_t mqtt = m_mqtt_get_instance();
+    m_mqtt_server_t *server_inf = m_mqtt_get_instance().get_server_info();
+
+    if (server_inf != NULL && server_inf->port != 0 && strlen(server_inf->server) > 0 && strlen(server_inf->username) > 0 && strlen(server_inf->passwd) > 0 && server_inf->type == 0)
+    {
+        mqtt._mqtt_stop();
+        vTaskDelay(pdMS_TO_TICKS(3000));
+        if (mqtt.update_mqtt_broker())
+        {
+            mqtt._mqtt_start();
+        } 
+        else 
+        {
+            if (get_mqtt_info()) {
+                mqtt._mqtt_start();
+            } else {
+                os_trace("%s update mqtt broker fail\r\n", __func__);
+            }
+        }
+    }
+    else
+    {
+        os_trace("%s get new mqtt info\r\n", __func__);
+        mqtt._mqtt_stop();
+        if (!get_mqtt_info())
+        {
+            os_trace("Get MQTT Info Fail\r\n");
+        }
+        else
+        {
+            vTaskDelay(pdMS_TO_TICKS(1000));
+            os_trace("%s get new mqtt info success\r\n", __func__);
+            mqtt._mqtt_start();
+        }
+    }
+}
 
 void connect_mqtt_broker_handler(void *arg)
 {

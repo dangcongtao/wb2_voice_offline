@@ -90,8 +90,14 @@ typedef enum {
 typedef enum
 {
     SRC_ACTION_USER = 0,
-    SRC_ACTION_ALARM = 2,
-    SRC_ACTION_LEADK_CURR = 7
+    SRC_ACTION_DEVICE = 1,
+    SRC_ACTION_CYCLIC = 2,
+    SRC_ACTION_PRESS_MODE = 3,
+    SRC_ACTION_ALARM_NORMAL = 4,
+    SRC_ACTION_SCENSE = 5,
+    SRC_ACTION_LEAK_CURR = 7,
+    SRC_ACTION_LINK_CBCT = 19,
+    SRC_ACTION_LINK_STAIR = 20,
 } src_action_t;
 
 typedef enum
@@ -117,6 +123,7 @@ typedef enum
     TRANSMIT_INVALID = 0,
     BLE_MSG,
     MQTT_MSG,
+    BEACON_MSG
 } method_trasmit_t;
 
 #define DATA_MAX_LEN    2048

@@ -10,7 +10,6 @@ COMPONENT_PRIV_INCLUDEDIRS :=
 COMPONENT_SRCS := hardware.c \
                   button.c \
                   led.c \
-				  switch.c \
 				  
 COMPONENT_OBJS := $(patsubst %.c,%.o, $(COMPONENT_SRCS))
 

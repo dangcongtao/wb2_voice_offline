@@ -47,7 +47,7 @@ void m_wifi_sta_event_cb(input_event_t *event, void *private_data)
         break;
 
     case CODE_WIFI_ON_CONNECTED:
-        os_trace("wifi sta connected\r\n");
+        os_trace("wifi sta connectedddd\r\n");
         break;
 
     case CODE_WIFI_ON_DISCONNECT:

@@ -128,7 +128,8 @@ bool apconfig_parse_wifi_info(char *buf)
 
     // ========= SYNC ===========
     m_db_get_instance()->_set_dev_pair_state(true);
-    m_db_get_instance()->_request_sync_db();
+    m_db_get_instance()->_request_sync_db(BIT_FLAG_SYNC_WIFI);
+    m_db_get_instance()->_request_sync_db(BIT_FLAG_SYNC_MQTT);
     vTaskDelay(pdMS_TO_TICKS(2000));
 
     ap_cfg_get_data = 1;

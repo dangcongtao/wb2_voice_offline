@@ -7,6 +7,7 @@
 #define MAXIMUM_SIZE_MQTT_TOPIC                         324
 #define MAXIMUM_SIZE_MESSAGE							2048
 #define MAXIMUM_QUEUE_ITEM                              5
+#define MAX_NUMBER_MQTT_BROKER  5
 
 typedef struct {
 	// char topic_pub[MAXIMUM_SIZE_MQTT_TOPIC];
@@ -54,6 +55,25 @@ typedef struct {
     uint32_t port;
     char username[32];
     char passwd[32];
+} m_mqtt_info_old_t;
+
+typedef struct {
+    /* properties */
+    uint8_t type; // 1 is use uri, 0: use IP addr
+    char server[32];
+    uint32_t port;
+    char username[32];
+    char passwd[32];
+} m_mqtt_server_t;
+
+typedef struct {
+    /* properties */
+    uint32_t vermqtt;
+    uint8_t broker_in_used;
+    uint8_t num_broker;
+    char topic_sub[MAXIMUM_SIZE_MQTT_TOPIC];
+    char topic_pub[MAXIMUM_SIZE_MQTT_TOPIC];
+    m_mqtt_server_t servers[MAX_NUMBER_MQTT_BROKER];
 } m_mqtt_info_t;
 
 typedef struct  {
@@ -69,12 +89,14 @@ typedef struct  {
     p_mqtt_task_t       _mqtt_loop;
     p_mqtt_get_state_t  _mqtt_get_state_cb;
 
-    p_set_data_t set_mqtt_server;
-    p_set_num_t set_mqtt_port;
-    p_set_data_t set_mqtt_user;
-    p_set_data_t set_mqtt_passwd;
+    void (*set_server_info)(int index, m_mqtt_server_t *p_server_info);
+    m_mqtt_server_t* (*get_server_info)(void);
     p_set_data_t set_mqtt_topic_sub;
     p_set_data_t set_mqtt_topic_pub;
+    int (*update_mqtt_broker)(void);
+    void (*set_num_mqtt_broker)(int num);
+    uint32_t (*get_num_mqtt_broker)(void);
+    void (*set_ver_mqtt)(uint32_t version);
 
 /* private method */
     p_mqtt_handler_msg_t _mqtt_handler_msg;

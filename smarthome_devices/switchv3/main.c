@@ -15,7 +15,6 @@
 
 #include "hardware.h"
 #include "m_button.h"
-#include "m_switch.h"
 #include "m_led_stt.h"
 #include "m_database.h"
 #include "m_wifi.h"
@@ -59,14 +58,13 @@ void main_loop(void)
 
 void main(void)
 {
-    #if DEBUG_ENABLE == 0
-    bl_sys_logall_disable();
-    #else
-    bl_sys_logall_enable();
-    #endif
     bl_sys_init(); // if use ble ,must init
-    bl_wdt_init(40000);
-    // hw_switch_cfg(0);
+#if DEBUG_ENABLE == 0
+    bl_sys_logall_disable();
+#else
+    bl_sys_logall_enable();
+#endif
+    bl_wdt_init(120000);
 
     easyflash_init();
     tcpip_init(NULL, NULL);
@@ -80,12 +78,9 @@ void main(void)
     /* have to init gpio after init database, because gpio init need number_channel
     which initialized by database */
     m_button_init();
-    m_switch_init();
     m_led_stt_init();
 
     process_data_init();
-    // ble_init();
-    // ble_init_first();
     m_event_init();
 
 #if DEBUG_ENABLE == 1
@@ -94,11 +89,12 @@ void main(void)
 #endif
     
     /* start stack */
+
     xTaskCreate(main_loop,  /* Function that implements the task. */
                 "main_loop", /* Text name for the task. */
-                1024 * 2,          /* Stack size in words, not bytes. */
+                1024 * 3,          /* Stack size in words, not bytes. */
                 NULL,              /* Parameter passed into the task. */
                 4,                 /* Priority at which the task is created. */
                 NULL);
-    // main_loop();
+    vTaskDelete(NULL);
 }

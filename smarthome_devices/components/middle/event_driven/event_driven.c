@@ -19,6 +19,7 @@ m_state_transmit_t state_array[MAX_STATE_MACHINE] = {0};
 
 extern uint32_t time_count_reset;
 extern void get_mqtt_info_handler(void *arg);
+extern void get_mqtt_broker_handler(void);
 
 extern m_state_transmit_t not_cfg_to_ap_cfg;
 extern m_state_transmit_t not_cfg_to_smart_cfg;
@@ -139,6 +140,12 @@ void m_event_init(void)
         m_wifi_get_instance().wifi_sta_start_cb(ssid, pass);
         current_state = M_WIFI_CONNECTING;
     }
+    else
+    {
+        m_db_get_instance()->_reset_db_cb();
+        vTaskDelay(2000);
+        signal = SIG_SMART_CFG;
+    }
 }
 
 static m_signal_t old_signal;
@@ -238,29 +245,24 @@ void m_event_loop(uint32_t time_schedual_ms)
     else if (!is_ota && current_state == M_WIFI_MQTT_CONNECTING)
     {
         /* check timeout */
-        if (sys_get_tick_ms() - start_time_wait_mqtt >= 120000)
+        if (sys_get_tick_ms() - start_time_wait_mqtt >= 25000)
         {
             time_connect_mqtt_failed++;
             start_time_wait_mqtt = sys_get_tick_ms();
-            if (time_connect_mqtt_failed % 5 == 2) {
-                 m_wifi_get_instance().wifi_sta_stop_cb();
+            if (time_connect_mqtt_failed % 5 == 4) {
+                m_wifi_get_instance().wifi_sta_stop_cb();
+                start_time_wait_wifi = sys_get_tick_ms();
 
                 os_trace("%s M_WIFI_MQTT_CONNECTING try stop staion and re start station\r\n", __func__);
 
-                vTaskDelay(pdMS_TO_TICKS(10000));
+                vTaskDelay(pdMS_TO_TICKS(5000));
                 char *ssid = m_wifi_get_instance()._wifi_info._ssid;
                 char *pass = m_wifi_get_instance()._wifi_info._passwd;
                 /* re-try start station mode*/
                 m_wifi_get_instance().wifi_sta_start_cb(ssid, pass);
             } else {
-                /* stop mqtt */
-                m_mqtt_get_instance()._mqtt_stop();
-
-                os_trace("%s M_WIFI_MQTT_CONNECTING try stop mqtt and re start mqtt\r\n", __func__);
-
-                vTaskDelay(pdMS_TO_TICKS(10000));
-                /* re-try start mqtt*/
-                m_mqtt_get_instance()._mqtt_start();
+                os_trace("%s M_WIFI_MQTT_CONNECTING try get_mqtt_broker_handler\r\n", __func__);
+                get_mqtt_broker_handler();
             }
         }
     }

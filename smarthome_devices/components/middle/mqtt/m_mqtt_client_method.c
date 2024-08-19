@@ -27,10 +27,6 @@ extern bool request_send_command_online;
 
 axk_mqtt_client_handle_t client = NULL;
 
-static uint32_t time_disconnect_mqtt = 0;
-static uint8_t is_disconnected = 0;
-static const uint32_t TIMEOUT_DISCONNECTED_MS = 1000 * 60 * 5; // 5 minutes
-
 extern void signal_post(m_signal_t sig);
 extern void push_data_to_pqueue(m_data_t *message);
 
@@ -168,16 +164,6 @@ void m_mqtt_publish(char *data, uint32_t length)
 
 void m_mqtt_task_loop(void)
 {
-    // if (is_disconnected && time_disconnect_mqtt > 0)
-    // {
-    //     if ((xTaskGetTickCount() - time_disconnect_mqtt) >= pdMS_TO_TICKS(TIMEOUT_DISCONNECTED_MS))
-    //     {
-    //         flash_set_rs_reason(1);
-    //         vTaskDelay(pdMS_TO_TICKS(3000));
-    //         bl_sys_reset_por();
-    //     }
-    // }
-
     /* send message after online */
     if (request_send_command_online && s_mqtt_obj._mqtt_pub_startup_msg != NULL)
     {
@@ -228,10 +214,16 @@ void m_mqtt_start(void)
 
     axk_mqtt_client_config_t mqtt_cfg;
     memset(&mqtt_cfg, 0, sizeof(mqtt_cfg));
-    mqtt_cfg.uri = s_mqtt_obj.mqtt_info.server;
-    mqtt_cfg.username = s_mqtt_obj.mqtt_info.username;
-    mqtt_cfg.password = s_mqtt_obj.mqtt_info.passwd;
-    mqtt_cfg.port = s_mqtt_obj.mqtt_info.port;
+    
+    if (s_mqtt_obj.mqtt_info.servers[s_mqtt_obj.mqtt_info.broker_in_used].type == 1) {
+        mqtt_cfg.uri = s_mqtt_obj.mqtt_info.servers[s_mqtt_obj.mqtt_info.broker_in_used].server;
+    } else {
+        mqtt_cfg.transport = MQTT_TRANSPORT_OVER_TCP;
+        mqtt_cfg.host = s_mqtt_obj.mqtt_info.servers[s_mqtt_obj.mqtt_info.broker_in_used].server;
+    }
+    mqtt_cfg.username = s_mqtt_obj.mqtt_info.servers[s_mqtt_obj.mqtt_info.broker_in_used].username;
+    mqtt_cfg.password = s_mqtt_obj.mqtt_info.servers[s_mqtt_obj.mqtt_info.broker_in_used].passwd;
+    mqtt_cfg.port = s_mqtt_obj.mqtt_info.servers[s_mqtt_obj.mqtt_info.broker_in_used].port;
     mqtt_cfg.keepalive = 10;
     mqtt_cfg.lwt_msg = last_will_msg;
     mqtt_cfg.lwt_msg_len = strlen(last_will_msg);
@@ -245,8 +237,9 @@ void m_mqtt_start(void)
     sprintf(client_id, "%s_%s_%s", BRAND, gs_dev_type[device_type], m_db_get_instance()->_get_dev_id());
     mqtt_cfg.client_id = client_id;
 
-    os_trace("mqtt start\r\n");
+    os_trace("mqtt start, index: %u, type: %u\r\n", s_mqtt_obj.mqtt_info.broker_in_used, s_mqtt_obj.mqtt_info.servers[s_mqtt_obj.mqtt_info.broker_in_used].type);
     os_trace("\tserver: %s\r\n", mqtt_cfg.uri);
+    os_trace("\thost: %s\r\n", mqtt_cfg.host);
     os_trace("\tport: %d\r\n", mqtt_cfg.port);
     os_trace("\tusername: %s\r\n", mqtt_cfg.username);
     os_trace("\tpasswd: %s\r\n", mqtt_cfg.password);
@@ -255,6 +248,8 @@ void m_mqtt_start(void)
 
     if (client != NULL)
     {
+        os_trace("%s destroy client now\r\n");
+        s_mqtt_obj._mqtt_state = MQTT_UNINTIALIZED;
         axk_mqtt_client_destroy(client);
         vTaskDelay(1000);
         client = NULL;
@@ -263,6 +258,7 @@ void m_mqtt_start(void)
     client = axk_mqtt_client_init(&mqtt_cfg);
     if (axk_mqtt_client_start(client) != AXK_OK){
         flash_set_rs_reason(10);
+        os_trace("%s RESET BY NOT ENOUGH MEMORY FOR MQTT START\r\n");
         vTaskDelay(2000);
         bl_sys_reset_por();
     }
@@ -278,6 +274,7 @@ void m_mqtt_stop(void)
 
     if (client != NULL && s_mqtt_obj._mqtt_state != MQTT_UNINTIALIZED)
     {
+        s_mqtt_obj._mqtt_state = MQTT_UNINTIALIZED;
         axk_mqtt_client_disconnect(client);
         axk_mqtt_client_destroy(client);
         s_mqtt_obj._mqtt_state = MQTT_UNINTIALIZED;

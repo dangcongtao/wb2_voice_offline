@@ -48,13 +48,6 @@
 #define IR_RX_POS   1
 #define IRpin   11
 
-#if PROJECT_SHOCK
-    #define LED_SWSHOCK_SW_LEAK_WHITE   7
-    #define LED_SWSHOCK_SW_LEAK_YELLOW  16
-
-    #define LEAKAGE_CURRENT             1
-#endif
-
 extern uint32_t max_number_channel;
 extern uint32_t device_type;
 
@@ -65,27 +58,12 @@ uint32_t sys_get_tick_ms(void);
 void hw_button_config(uint32_t index);
 uint32_t hw_btn_read(uint32_t index);
 void hw_ts04_write(uint8_t value);
-void hw_btn_change_btn_pin(void);
 
 /* led */
 void hw_led_stt_cfg(void);
 void hw_led_stt_on(void);
 void hw_led_stt_off(void);
 void hw_toggle_led_stt(void);
-#if PROJECT_SHOCK
-void hw_led_sw_not_warning(void);
-void hw_led_sw_warning(void);
-
-void fake_current_leak(void);
-uint8_t is_leakage_current(void);
-void hw_read_leak_loop(void);
-void antishock_init(void);
-#endif
-
-inline uint8_t is_shock_device(uint8_t dev_type)
-{
-    return (dev_type == SWSHOCK || dev_type == SWSHOCK_HUN);
-}
 
 /* switch */
 void hw_switch_cfg(uint8_t index);

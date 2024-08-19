@@ -6,7 +6,7 @@
 #include "m_database.h"
 
 void flash_init(void);
-void flash_write_database(const m_device_t data);
+void flash_write_database(m_device_t data, uint8_t request_flag);
 void flash_read_database(m_device_t *object_data);
 
 void flash_read_device_id(void *object_data, uint32_t size);
