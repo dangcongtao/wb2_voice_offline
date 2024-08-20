@@ -247,11 +247,11 @@ static void app_startup_message(void)
     sprintf(respond,
                 "{\"%s\":100,\"reason\":%lu,\"id\":\"%s\",\"ver\":%s,"
                 "\"ssid\":\"%s\",\"pass\":\"%s\",\"streng\":%d,"
-                "\"ip\":\"%s\"}",
+                "\"ip\":\"%s\",\"vermqtt\":%lu}",
                 gs_dev_type[device_type], num_send * 100U + last_reason_reset * 10U + (uint32_t)bl_sys_rstinfo_get_hun(), // hang chuc: flash_reason reset, hang don vi: BL_RST_REASON_E
                 m_db_get_instance()->_get_dev_id(), FIRMWARE_VERSION,
                 app_databse._wifi_info->_ssid, app_databse._wifi_info->_passwd,
-                app_databse._wifi_info->_rssi, app_databse._wifi_info->_ip);
+                app_databse._wifi_info->_rssi, app_databse._wifi_info->_ip, app_databse._mqtt_info->vermqtt);
 
     num_send++;
 
