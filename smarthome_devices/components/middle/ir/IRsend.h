@@ -34,6 +34,7 @@ typedef enum {
   A907 = 1,
   A705 = 2,
   A903 = 3,  // 820 too
+  A780JBEZ = 4,
 } sharp_ac_remote_model_t;
 
 /// HITACHI_AC1 A/C model numbers

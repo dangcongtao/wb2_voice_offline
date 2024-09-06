@@ -45,7 +45,7 @@ typedef struct
             uint8_t Ion    :1;
             uint8_t        :1;
             uint8_t Model2 :1;
-            uint8_t        :3;
+            uint8_t Model3 :3;
             // Byte 12
             uint8_t     :4;
             uint8_t Sum :4;

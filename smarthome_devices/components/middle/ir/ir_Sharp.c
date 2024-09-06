@@ -20,45 +20,52 @@ const uint64_t kSharpToggleMask =
 const uint64_t kSharpAddressMask = ((uint64_t)1 << kSharpAddressBits) - 1;
 const uint64_t kSharpCommandMask = ((uint64_t)1 << kSharpCommandBits) - 1;
 
-
 static uint8_t _prev_on = true;
+static uint8_t _prev_model = A907;
 
-uint8_t IRSharpAccalcChecksum(uint8_t state[], const uint16_t length) {
+uint8_t IRSharpAccalcChecksum(uint8_t state[], const uint16_t length)
+{
   uint8_t xorsum = xorBytes(state, length - 1, 0);
   xorsum ^= GETBITS8(state[length - 1], kLowNibble, kNibbleSize);
   xorsum ^= GETBITS8(xorsum, kHighNibble, kNibbleSize);
   return GETBITS8(xorsum, kLowNibble, kNibbleSize);
 }
 
-bool IRSharpAcvalidChecksum(uint8_t state[], const uint16_t length) {
+bool IRSharpAcvalidChecksum(uint8_t state[], const uint16_t length)
+{
   return GETBITS8(state[length - 1], kHighNibble, kNibbleSize) ==
-      IRSharpAccalcChecksum(state, length);
+         IRSharpAccalcChecksum(state, length);
 }
 
 bool decodeSharpAc(decode_results *results, uint16_t offset,
-                           const uint16_t nbits, const bool strict) {
+                   const uint16_t nbits, const bool strict)
+{
   // Compliance
-  if (strict && nbits != kSharpAcBits) return false;
+  if (strict && nbits != kSharpAcBits)
+    return false;
 
   // Match Header + Data + Footer
   uint16_t used;
   used = matchGenericStateLimit(results->rawbuf + offset, results->state,
-                      results->rawlen - offset, nbits,
-                      kSharpAcHdrMark - 200, kSharpAcHdrMark + 200, kSharpAcHdrSpace - 200, kSharpAcHdrSpace + 200,
-                      kSharpAcBitMark - 320, kSharpAcBitMark + 430, kSharpAcOneSpace - 400, kSharpAcOneSpace + 300,
-                      kSharpAcBitMark - 320, kSharpAcBitMark + 430, kSharpAcZeroSpace - 350, kSharpAcZeroSpace + 350,
-                      kSharpAcBitMark - 320, kSharpAcBitMark + 430, kSharpAcGap - 25000, kSharpAcGap + 25000, true,
-                      45, kMarkExcess, false);
-  if (used == 0) {
+                                results->rawlen - offset, nbits,
+                                kSharpAcHdrMark - 200, kSharpAcHdrMark + 200, kSharpAcHdrSpace - 200, kSharpAcHdrSpace + 200,
+                                kSharpAcBitMark - 320, kSharpAcBitMark + 430, kSharpAcOneSpace - 400, kSharpAcOneSpace + 300,
+                                kSharpAcBitMark - 320, kSharpAcBitMark + 430, kSharpAcZeroSpace - 350, kSharpAcZeroSpace + 350,
+                                kSharpAcBitMark - 320, kSharpAcBitMark + 430, kSharpAcGap - 25000, kSharpAcGap + 25000, true,
+                                45, kMarkExcess, false);
+  if (used == 0)
+  {
     // os_trace("%s used failed\r\n", __func__);
     return false;
   }
   offset += used;
   // Compliance
-  if (strict) {
-    if (!IRSharpAcvalidChecksum(results->state, kSharpAcStateLength)) {
-        os_trace("%s invalid checksum\r\n", __func__);
-        return false;
+  if (strict)
+  {
+    if (!IRSharpAcvalidChecksum(results->state, kSharpAcStateLength))
+    {
+      os_trace("%s invalid checksum\r\n", __func__);
+      return false;
     }
   }
 
@@ -76,175 +83,243 @@ bool decodeSharpAc(decode_results *results, uint16_t offset,
 
 static sharp_ac_remote_model_t IRSharpAcgetModel(SharpProtocol _)
 {
-  if (_.Model2) {
+  if (_.Model2)
+  {
     if (_.Model)
       return A705;
+    else if (_.Model3 == 0b111)
+    {
+      return A780JBEZ;
+    }
     else
       return A903;
-  } else {
+  }
+  else
+  {
     return A907;
   }
 }
 
 static bool IRSharpAcgetPower(SharpProtocol _)
 {
-  switch (_.PowerSpecial) {
-    case kSharpAcPowerUnknown:
-    case kSharpAcPowerOff: return false;
-    default: return true;  // Everything else is "probably" on.
+  switch (_.PowerSpecial)
+  {
+  case kSharpAcPowerUnknown:
+  case kSharpAcPowerOff:
+    return false;
+  default:
+    return true; // Everything else is "probably" on.
   }
 }
 
 static opmode_t IRSharpActoCommonMode(const uint8_t mode, const sharp_ac_remote_model_t model)
 {
-  switch (mode) {
-    case kSharpAcCool: return opmode_kCool;
-    case kSharpAcHeat: return opmode_kHeat;
-    case kSharpAcDry:  return opmode_kDry;
-    case kSharpAcAuto:  // Also kSharpAcFan
-      switch (model) {
-        case A705: return opmode_kFan;
-        default:   return opmode_kAuto;
-      }
-      break;
-    default:           return opmode_kAuto;
+  switch (mode)
+  {
+  case kSharpAcCool:
+    return opmode_kCool;
+  case kSharpAcHeat:
+    return opmode_kHeat;
+  case kSharpAcDry:
+    return opmode_kDry;
+  case kSharpAcAuto: // Also kSharpAcFan
+    switch (model)
+    {
+    case A705:
+      return opmode_kFan;
+    default:
+      return opmode_kAuto;
+    }
+    break;
+  default:
+    return opmode_kAuto;
   }
 }
 
 fanspeed_t IRSharpActoCommonFanSpeed(const uint8_t speed, const sharp_ac_remote_model_t model)
 {
-  switch (model) {
-    case A705:
-    case A903:
-      switch (speed) {
-        case kSharpAcFanA705Low:  return fanspeed_kLow;
-        case kSharpAcFanA705Med:  return fanspeed_kMedium;
-      }
-      // FALL-THRU
+  switch (model)
+  {
+  case A705:
+  case A903:
+  case A780JBEZ:
+    switch (speed)
+    {
+    case kSharpAcFanA705Low:
+      return fanspeed_kLow;
+    case kSharpAcFanA705Med:
+      return fanspeed_kMedium;
+    }
+    // FALL-THRU
+  default:
+    switch (speed)
+    {
+    case kSharpAcFanMax:
+      return fanspeed_kMax;
+    case kSharpAcFanHigh:
+      return fanspeed_kHigh;
+    case kSharpAcFanMed:
+      return fanspeed_kMedium;
+    case kSharpAcFanMin:
+      return fanspeed_kMin;
     default:
-      switch (speed) {
-        case kSharpAcFanMax:  return fanspeed_kMax;
-        case kSharpAcFanHigh: return fanspeed_kHigh;
-        case kSharpAcFanMed:  return fanspeed_kMedium;
-        case kSharpAcFanMin:  return fanspeed_kMin;
-        default:              return fanspeed_kAuto;
-      }
+      return fanspeed_kAuto;
+    }
   }
 }
 
-void SharpAc_setRaw(const uint8_t* newState, const decode_type_t protocol, state_ir_t *ir_state) 
+void SharpAc_setRaw(const uint8_t *newState, const decode_type_t protocol, state_ir_t *ir_state)
 {
-    SharpProtocol _;
-    memcpy(_.raw, newState, kSharpAcStateLength);
+  SharpProtocol _;
+  memcpy(_.raw, newState, kSharpAcStateLength);
 
-    ir_state->protocol = SHARP_AC;
-    ir_state->model = IRSharpAcgetModel(_);
-    ir_state->power = IRSharpAcgetPower(_);
-    ir_state->mode = IRSharpActoCommonMode(_.Mode, (sharp_ac_remote_model_t)ir_state->model);
-    ir_state->degrees = _.Temp + kSharpAcMinTemp;
-    ir_state->fanspeed = IRSharpActoCommonFanSpeed(_.Fan, (sharp_ac_remote_model_t)ir_state->model);
+  ir_state->protocol = SHARP_AC;
+  ir_state->model = IRSharpAcgetModel(_);
+  ir_state->power = IRSharpAcgetPower(_);
+  ir_state->mode = IRSharpActoCommonMode(_.Mode, (sharp_ac_remote_model_t)ir_state->model);
+  ir_state->degrees = _.Temp + kSharpAcMinTemp;
+  ir_state->fanspeed = IRSharpActoCommonFanSpeed(_.Fan, (sharp_ac_remote_model_t)ir_state->model);
 }
 
-void SharpAc_setInfo(const uint8_t* newState, const decode_type_t protocol, state_ir_t *ir_state) 
+void SharpAc_setInfo(const uint8_t *newState, const decode_type_t protocol, state_ir_t *ir_state)
 {
-    SharpProtocol _;
-    memcpy(_.raw, newState, kSharpAcStateLength);
+  SharpProtocol _;
+  memcpy(_.raw, newState, kSharpAcStateLength);
 
-    ir_state->protocol = SHARP_AC;
-    ir_state->model = IRSharpAcgetModel(_);
-    ir_state->power = IRSharpAcgetPower(_);
-    _prev_on = ir_state->power;
-    ir_state->mode = _.Mode;
+  ir_state->protocol = SHARP_AC;
+  ir_state->model = IRSharpAcgetModel(_);
+  ir_state->power = IRSharpAcgetPower(_);
+  _prev_on = ir_state->power;
+  ir_state->mode = _.Mode;
+  _prev_model = ir_state->model;
+  switch (IRSharpAcgetModel(_))
+  {
+  case A780JBEZ:
+    ir_state->degrees = _.Temp + kSharpAcMinTemp + 2;
+    break;
+  default:
     ir_state->degrees = _.Temp + kSharpAcMinTemp;
-    ir_state->fanspeed = _.Fan;
+    break;
+  }
+  
+  ir_state->fanspeed = _.Fan;
 }
 
-static void IRSharpAcsetPowerSpecial(SharpProtocol *_, const uint8_t value) {
+static void IRSharpAcsetPowerSpecial(SharpProtocol *_, const uint8_t value)
+{
   _->PowerSpecial = value;
 }
 
-static void IRSharpAcclearPowerSpecial(SharpProtocol *_) {
+static void IRSharpAcclearPowerSpecial(SharpProtocol *_)
+{
   IRSharpAcsetPowerSpecial(_, _->PowerSpecial & kSharpAcPowerOn);
 }
 
-static void IRSharpAcsetTemp(SharpProtocol *_, const uint8_t temp) {
+static void IRSharpAcsetTemp(SharpProtocol *_, const uint8_t temp)
+{
   os_trace("%s temp: %u\r\n", __func__, temp);
-  switch (_->Mode) {
-    // Auto & Dry don't allow temp changes and have a special temp.
-    case kSharpAcAuto:
-    case kSharpAcDry:
-      _->raw[kSharpAcByteTemp] = 0;
-      return;
+  switch (_->Mode)
+  {
+  // Auto & Dry don't allow temp changes and have a special temp.
+  case kSharpAcAuto:
+  case kSharpAcDry:
+    _->raw[kSharpAcByteTemp] = 0;
+    return;
+  default:
+    switch (IRSharpAcgetModel(*_))
+    {
+    case A705:
+      _->raw[kSharpAcByteTemp] = 0xD0;
+      break;
     default:
-      switch (IRSharpAcgetModel(*_)) {
-        case A705:
-          _->raw[kSharpAcByteTemp] = 0xD0;
-          break;
-        default:
-          _->raw[kSharpAcByteTemp] = 0xC0;
-      }
+      _->raw[kSharpAcByteTemp] = 0xC0;
+    }
   }
-  uint8_t degrees = max(temp, kSharpAcMinTemp);
-  degrees = min(degrees, kSharpAcMaxTemp);
-  _->Temp = degrees - kSharpAcMinTemp;
+  uint8_t degrees;
+  //  = max(temp, kSharpAcMinTemp);
+  // degrees = min(degrees, kSharpAcMaxTemp);
+
+  switch (IRSharpAcgetModel(*_))
+  {
+  case A780JBEZ:
+    degrees = max(temp, kSharpAcMinTemp);
+    degrees = min(degrees, kSharpAcMaxTemp);
+    _->Temp = degrees - kSharpAcMinTemp;
+    break;
+
+  default:
+    degrees = max(temp, kSharpAcMinTemp);
+    degrees = min(degrees, kSharpAcMaxTemp);
+    _->Temp = degrees - kSharpAcMinTemp;
+    break;
+  }
   _->Special = kSharpAcSpecialTempEcono;
   IRSharpAcclearPowerSpecial(_);
 }
 
-static void IRSharpAcsetFan(SharpProtocol *_, const uint8_t speed) {
-  switch (speed) {
-    case kSharpAcFanAuto:
-    case kSharpAcFanMin:
-    case kSharpAcFanMed:
-    case kSharpAcFanHigh:
-    case kSharpAcFanMax:
-      _->Fan = speed;
-      // if (save) _fan = speed;
-      break;
-    default:
-      _->Fan = kSharpAcFanAuto;
-      // _fan = kSharpAcFanAuto;
+static void IRSharpAcsetFan(SharpProtocol *_, const uint8_t speed)
+{
+  switch (speed)
+  {
+  case kSharpAcFanAuto:
+  case kSharpAcFanMin:
+  case kSharpAcFanMed:
+  case kSharpAcFanHigh:
+  case kSharpAcFanMax:
+    _->Fan = speed;
+    // if (save) _fan = speed;
+    break;
+  default:
+    _->Fan = kSharpAcFanAuto;
+    // _fan = kSharpAcFanAuto;
   }
   _->Special = kSharpAcSpecialFan;
   IRSharpAcclearPowerSpecial(_);
 }
 
 static void IRSharpAcsetClean(SharpProtocol *_, const bool on);
-static void IRSharpAcsetPower(SharpProtocol *_, const bool on, const bool prev_on) {
+static void IRSharpAcsetPower(SharpProtocol *_, const bool on, const bool prev_on)
+{
   IRSharpAcsetPowerSpecial(_, on ? (prev_on ? kSharpAcPowerOn : kSharpAcPowerOnFromOff)
-                     : kSharpAcPowerOff);
+                                 : kSharpAcPowerOff);
   // Power operations are incompatible with clean mode.
-  if (_->Clean) IRSharpAcsetClean(_, false);
+  if (_->Clean)
+    IRSharpAcsetClean(_, false);
   _->Special = kSharpAcSpecialPower;
 }
 
-static void IRSharpAcsetMode(SharpProtocol *_, const uint8_t mode, const sharp_ac_remote_model_t model) {
+static void IRSharpAcsetMode(SharpProtocol *_, const uint8_t mode, const sharp_ac_remote_model_t model)
+{
   uint8_t realMode = mode;
-  if (mode == kSharpAcHeat) {
-    switch (model) {
-      case A705:
-      case A903:
-        // These models have no heat mode, use Fan mode instead.
-        realMode = kSharpAcFan;
-        break;
-      default:
-        break;
+  if (mode == kSharpAcHeat)
+  {
+    switch (model)
+    {
+    case A705:
+    case A903:
+    case A780JBEZ:
+      // These models have no heat mode, use Fan mode instead.
+      realMode = kSharpAcFan;
+      break;
+    default:
+      break;
     }
   }
 
-  switch (realMode) {
-    case kSharpAcAuto:  // Also kSharpAcFan
-    case kSharpAcDry:
-      // When Dry or Auto, Fan always 2(Auto)
-      IRSharpAcsetFan(_, kSharpAcFanAuto);
-      // FALLTHRU
-    case kSharpAcCool:
-    case kSharpAcHeat:
-      _->Mode = realMode;
-      break;
-    default:
-      IRSharpAcsetFan(_, kSharpAcFanAuto);
-      _->Mode = kSharpAcAuto;
+  switch (realMode)
+  {
+  case kSharpAcAuto: // Also kSharpAcFan
+  case kSharpAcDry:
+    // When Dry or Auto, Fan always 2(Auto)
+    IRSharpAcsetFan(_, kSharpAcFanAuto);
+    // FALLTHRU
+  case kSharpAcCool:
+  case kSharpAcHeat:
+    _->Mode = realMode;
+    break;
+  default:
+    IRSharpAcsetFan(_, kSharpAcFanAuto);
+    _->Mode = kSharpAcAuto;
   }
   // Dry/Auto have no temp setting. This step will enforce it.
   IRSharpAcsetTemp(_, _->Temp + kSharpAcMinTemp);
@@ -253,12 +328,16 @@ static void IRSharpAcsetMode(SharpProtocol *_, const uint8_t mode, const sharp_a
   IRSharpAcclearPowerSpecial(_);
 }
 
-static void IRSharpAcsetClean(SharpProtocol *_, const bool on) {
+static void IRSharpAcsetClean(SharpProtocol *_, const bool on)
+{
   // Clean mode appears to be just default dry mode, with an extra bit set.
-  if (on) {
+  if (on)
+  {
     IRSharpAcsetMode(_, kSharpAcDry, IRSharpAcgetModel(*_));
     IRSharpAcsetPower(_, true, false);
-  } else {
+  }
+  else
+  {
     // Restore the previous operation mode & fan speed.
     IRSharpAcsetMode(_, _->Mode, IRSharpAcgetModel(*_));
     IRSharpAcsetFan(_, _->Fan);
@@ -267,16 +346,36 @@ static void IRSharpAcsetClean(SharpProtocol *_, const bool on) {
   IRSharpAcclearPowerSpecial(_);
 }
 
+void IRSharpAcsetModel(SharpProtocol *_, const sharp_ac_remote_model_t model) {
+  switch (model) {
+    case A705:
+    case A903:
+      // _model = model;
+      _->Model = true;
+      break;
+    case A780JBEZ:
+      _->Model3 = 0b111;
+      break;
+    default:
+      // _model = A907;
+      _->Model = false;
+  }
+  _->Model2 = (model != A907);
+  // Redo the operating mode as some models don't support all modes.
+  // setMode(_.Mode);
+}
+
 void sendSharpAc(const unsigned char data[], const uint16_t nbytes,
-                         const uint16_t repeat) {
+                 const uint16_t repeat)
+{
   if (nbytes < kSharpAcStateLength)
-    return;  // Not enough bytes to send a proper message.
+    return; // Not enough bytes to send a proper message.
   vTaskEnterCritical();
   sendGenericBytes(kSharpAcHdrMark, kSharpAcHdrSpace,
-              kSharpAcBitMark, kSharpAcOneSpace,
-              kSharpAcBitMark, kSharpAcZeroSpace,
-              kSharpAcBitMark, kSharpAcGap,
-              data, nbytes, 38000, false, repeat, 50);
+                   kSharpAcBitMark, kSharpAcOneSpace,
+                   kSharpAcBitMark, kSharpAcZeroSpace,
+                   kSharpAcBitMark, kSharpAcGap,
+                   data, nbytes, 38000, false, repeat, 50);
   vTaskExitCritical();
 }
 
@@ -289,6 +388,7 @@ void SharpAc_send(state_ir_t state_ir)
   memcpy(_.raw, reset, kSharpAcStateLength);
 
   sharp_ac_remote_model_t my_model = IRSharpAcgetModel(_);
+  IRSharpAcsetModel(&_, _prev_model);
 
   IRSharpAcsetMode(&_, state_ir.mode, my_model);
   os_trace("%s set mode finished\r\n", __func__);
