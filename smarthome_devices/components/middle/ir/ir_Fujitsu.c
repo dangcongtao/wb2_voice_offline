@@ -58,6 +58,7 @@ bool decodeFujitsuAC(decode_results* results, uint16_t offset,
       case kFujitsuAcBits - 8:
       case kFujitsuAcMinBits:
       case kFujitsuAcMinBits + 8: break;
+      case kFujitsuAcLongBits: break;
       default: return false;  // Must be called with the correct nr. of bits.
     }
   }

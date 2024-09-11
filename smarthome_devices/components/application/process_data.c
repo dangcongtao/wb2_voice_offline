@@ -104,53 +104,53 @@ static void AC_Hitachi_Callback(cJSON *jsRoot);
 wswitch_handler_t array_handler[] = {
     {app_set_mqtt_info, 990},
     {app_get_info, 105},
-    // {app_set_power_on, 121},     
+    // {app_set_power_on, 121},
     {app_remove_device, 123},
     {app_set_wifi, 128},
     {app_request_ota, 129},
-    // {app_set_time_release, 130}, 
+    // {app_set_time_release, 130},
     // {app_get_time_release, 131},
-    {app_set_static_ip, 132},    
+    {app_set_static_ip, 132},
     // {app_set_lock, 133},
     {app_backup_db, 151},
 
-    {ir_control, 1}, 
-    {ir_start_learn, 2}, 
-    {ir_stop_learn, 4}, 
-    {ir_start_learn_auto, 15}, 
-    {ir_stop_learn_auto, 16}, 
+    {ir_control, 1},
+    {ir_start_learn, 2},
+    {ir_stop_learn, 4},
+    {ir_start_learn_auto, 15},
+    {ir_stop_learn_auto, 16},
 };
 
 wswitch_handler_t array_ble_handler[] = {
-    {ble_config_step1, 1}, 
-    {ble_config_step2, 3}, 
+    {ble_config_step1, 1},
+    {ble_config_step2, 3},
 };
 
 wswitch_handler_t array_ir_control_handler[] = {
-    {AC_Casper_Callback, 103}, // 102
+    {AC_Casper_Callback, 103},             // 102
     {AC_Whirlpool_Callback, WHIRLPOOL_AC}, // 34
-    {AC_Corona_Callback, CORONA_AC}, // 34
-    {AC_LG2_Callback, 23}, // 23
-    {AC_LG_Callback, 114}, // 23
-    {AC_Funiki_Callback, 104}, // 12
-    {AC_Samsung_Callback, 27} , //27 - 14 bytes
-    {AC_Toshiba_Callback, 108} , // 31 - 9 bytes
-    {AC_Daikin_Callback, DAIKIN} , // 14 - 35 bytes
-    {AC_Daikin2_Callback, 1} , // 14 - 35 bytes
-    {AC_Daikin64_Callback, DAIKIN64} , // 35 bytes
-    {AC_Daikin152_Callback, 6} , // 6 - 35 bytes
-    {AC_Daikin128_Callback, 5} , // 5 - 35 bytes
-    {AC_Daikin160_Callback, 4} , // 4 - 35 bytes
-    {AC_Daikin216_Callback, 2} , // 2 - 35 bytes
-    {AC_Daikin176_Callback, DAIKIN176} , // 2 - 35 bytes
-    {AC_Gree_Callback, 19} , // 19 - 8 bytes - Electrolux
-    {AC_Tcl_Callback, 29} , // 29 - 14 bytes
-    {AC_Mitshubishi112_Callback, 91} , // 91 - 14 bytes
-    {AC_Midea_Callback, 1934} , // 1934 - 14 bytes
-    {AC_Sharp_Callback, 28} , // 28 - 13 bytes
-    {AC_Hitachi1_Callback, 92} ,
-    {AC_Hitachi344_Callback, 94} ,
-    {AC_Hitachi424_Callback, 93} ,
+    {AC_Corona_Callback, CORONA_AC},       // 34
+    {AC_LG2_Callback, 23},                 // 23
+    {AC_LG_Callback, 114},                 // 23
+    {AC_Funiki_Callback, 104},             // 12
+    {AC_Samsung_Callback, 27},             // 27 - 14 bytes
+    {AC_Toshiba_Callback, 108},            // 31 - 9 bytes
+    {AC_Daikin_Callback, DAIKIN},          // 14 - 35 bytes
+    {AC_Daikin2_Callback, 1},              // 14 - 35 bytes
+    {AC_Daikin64_Callback, DAIKIN64},      // 35 bytes
+    {AC_Daikin152_Callback, 6},            // 6 - 35 bytes
+    {AC_Daikin128_Callback, 5},            // 5 - 35 bytes
+    {AC_Daikin160_Callback, 4},            // 4 - 35 bytes
+    {AC_Daikin216_Callback, 2},            // 2 - 35 bytes
+    {AC_Daikin176_Callback, DAIKIN176},    // 2 - 35 bytes
+    {AC_Gree_Callback, 19},                // 19 - 8 bytes - Electrolux
+    {AC_Tcl_Callback, 29},                 // 29 - 14 bytes
+    {AC_Mitshubishi112_Callback, 91},      // 91 - 14 bytes
+    {AC_Midea_Callback, 1934},             // 1934 - 14 bytes
+    {AC_Sharp_Callback, 28},               // 28 - 13 bytes
+    {AC_Hitachi1_Callback, 92},
+    {AC_Hitachi344_Callback, 94},
+    {AC_Hitachi424_Callback, 93},
     {AC_Hitachi_Callback, 21},
     {AC_PanasonicAC_Callback, 106},
     {AC_PanasonicAC_Callback, 129},
@@ -176,7 +176,10 @@ wswitch_handler_t array_ir_control_handler[] = {
     {Asanzo_Callback, GOODWEATHER},
     {AC_Daikin312_Callback, DAIKIN312},
     {AC_Casper2024_Callback, CASPER2024_AC},
+};
 
+irwifi_data_brand_handler_t array_ir_data_control_handler[] = {
+    {sendSaijoDenkiAC, SAIJODENKI}, // 127
 };
 
 QueueHandle_t pqueue;
@@ -185,17 +188,21 @@ QueueHandle_t pqueue_ble;
 
 bool pdata_queue_init(void)
 {
-    if (pqueue == NULL) {
+    if (pqueue == NULL)
+    {
         pqueue = xQueueCreate(MAXIMUM_QUEUE_ITEM, sizeof(m_data_t));
-        if(pqueue == NULL){
+        if (pqueue == NULL)
+        {
             os_trace("%s fail\r\n", __func__);
             exit(-1);
         }
     }
 
-    if (pqueue_ble == NULL) {
+    if (pqueue_ble == NULL)
+    {
         pqueue_ble = xQueueCreate(8, sizeof(m_ble_data_t));
-        if(pqueue_ble == NULL){
+        if (pqueue_ble == NULL)
+        {
             os_trace("%s ble fail\r\n", __func__);
             exit(-1);
         }
@@ -229,7 +236,7 @@ void app_send_data(char *data, uint32_t length)
 void app_send_offline_message(uint8_t src)
 {
     memset(respond, 0, sizeof(respond));
-    sprintf(respond,"{\"%s\":1000,\"offline\":\"device offline\", \"src\": %d}", gs_dev_type[device_type], src);
+    sprintf(respond, "{\"%s\":1000,\"offline\":\"device offline\", \"src\": %d}", gs_dev_type[device_type], src);
     m_mqtt_get_instance()._mqtt_publish_directly(respond, strlen(respond));
     vTaskDelay(pdMS_TO_TICKS(200));
 }
@@ -245,13 +252,13 @@ static void app_startup_message(void)
     memset(respond, 0, sizeof(respond));
 
     sprintf(respond,
-                "{\"%s\":100,\"reason\":%lu,\"id\":\"%s\",\"ver\":%s,"
-                "\"ssid\":\"%s\",\"pass\":\"%s\",\"streng\":%d,"
-                "\"ip\":\"%s\",\"vermqtt\":%lu}",
-                gs_dev_type[device_type], num_send * 100U + last_reason_reset * 10U + (uint32_t)bl_sys_rstinfo_get_hun(), // hang chuc: flash_reason reset, hang don vi: BL_RST_REASON_E
-                m_db_get_instance()->_get_dev_id(), FIRMWARE_VERSION,
-                app_databse._wifi_info->_ssid, app_databse._wifi_info->_passwd,
-                app_databse._wifi_info->_rssi, app_databse._wifi_info->_ip, app_databse._mqtt_info->vermqtt);
+            "{\"%s\":100,\"reason\":%lu,\"id\":\"%s\",\"ver\":%s,"
+            "\"ssid\":\"%s\",\"pass\":\"%s\",\"streng\":%d,"
+            "\"ip\":\"%s\",\"vermqtt\":%lu}",
+            gs_dev_type[device_type], num_send * 100U + last_reason_reset * 10U + (uint32_t)bl_sys_rstinfo_get_hun(), // hang chuc: flash_reason reset, hang don vi: BL_RST_REASON_E
+            m_db_get_instance()->_get_dev_id(), FIRMWARE_VERSION,
+            app_databse._wifi_info->_ssid, app_databse._wifi_info->_passwd,
+            app_databse._wifi_info->_rssi, app_databse._wifi_info->_ip, app_databse._mqtt_info->vermqtt);
 
     num_send++;
 
@@ -292,14 +299,15 @@ static void app_set_mqtt_info(cJSON *js_Root)
     /* Decode base64: @temp1: input-data, @temp2: output-data */
     uint16_t base64_len;
     memset(temp2, 0, sizeof(temp2));
-    base64_len = b64_decode((uint8_t *)temp1, strlen(temp1), (uint8_t*)temp2);
+    base64_len = b64_decode((uint8_t *)temp1, strlen(temp1), (uint8_t *)temp2);
 
     /* Decode AES:  @temp2: input-data, @temp1: output-data */
     size_t real_msg_len = 0;
     memset(temp1, 0, sizeof(temp1));
     // aes_cbc128_init((uint8_t*)DEF_AES_KEY, (uint8_t*)DEF_AES_IV);
     aes_cbc128_init((uint8_t *)key, (uint8_t *)iv);
-    if (aes_cbc128_decrypt((uint8_t *)temp2, base64_len, (uint8_t *)temp1, &real_msg_len) != AES_SUCCESS) {
+    if (aes_cbc128_decrypt((uint8_t *)temp2, base64_len, (uint8_t *)temp1, &real_msg_len) != AES_SUCCESS)
+    {
         goto RESPONSE;
     }
 
@@ -322,14 +330,14 @@ static void ir_send_data(cJSON *jsRoot)
     cJSON *jsData;
     uint16_t result_temp[750];
     uint32_t len_data_b64 = 0;
-    
+
     jsData = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_DATA);
     if (jsData == NULL)
     {
         os_trace("Get JSON jsData mqtt message fail\n");
         return;
     }
-    char* data_dec = jsData->valuestring;
+    char *data_dec = jsData->valuestring;
     len_data_b64 = strlen(data_dec);
     os_trace("%s len_base64_dec_data: %lu\r\n", __func__, len_data_b64);
     memset(result_temp, 0, sizeof(result_temp));
@@ -340,7 +348,7 @@ static void ir_send_data(cJSON *jsRoot)
 /*  {"irwifi":1,"type":1,"brand":102,"power":1,"temp":25,"mode":4,"fan":6,"act":0}  */
 static void ir_control(cJSON *jsRoot)
 {
-    cJSON *jsBrand, *jsTypeSend, *jsTemp, *jsMode, *jsFan, *jsU, *jsAct_ID;
+    cJSON *jsBrand, *jsTypeSend, *jsU, *jsAct_ID;
     uint32_t type = 0, brand = 0, typesend = 0, temp = 0, mode = 0, fan = 0, act_id = 0;
     uint8_t result = 0;
 
@@ -366,7 +374,8 @@ static void ir_control(cJSON *jsRoot)
     }
     typesend = jsTypeSend->valueint;
 
-    if (typesend == 1) {
+    if (typesend == 1)
+    {
         jsBrand = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_BRAND);
         if (jsBrand == NULL)
         {
@@ -388,7 +397,9 @@ static void ir_control(cJSON *jsRoot)
                 hw_led_stt_off();
                 // resume();
                 break;
-            } else if (arr_size - 1 == i) {
+            }
+            else if (arr_size - 1 == i)
+            {
                 memset(respond, 0, sizeof(respond));
                 sprintf(
                     respond,
@@ -397,7 +408,9 @@ static void ir_control(cJSON *jsRoot)
                 app_send_data(respond, strlen(respond));
             }
         }
-    } else if (typesend == 2) {
+    }
+    else if (typesend == 2)
+    {
         // send by time
         hw_led_stt_on();
         ir_send_data(jsRoot);
@@ -408,6 +421,62 @@ static void ir_control(cJSON *jsRoot)
             "{\"%s\":%ld,\"type\":2,\"result\": 1}",
             gs_dev_type[device_type], type);
         app_send_data(respond, strlen(respond));
+    }
+    else if (typesend == 3)
+    {
+        jsBrand = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_BRAND);
+        if (jsBrand == NULL)
+        {
+            os_trace("jsBrand NULL\n");
+            goto RESPONSE;
+        }
+        brand = jsBrand->valueint;
+
+        cJSON *jsData = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_DATA);
+        if (jsData == NULL)
+        {
+            os_trace("jsData NULL\n");
+            goto RESPONSE;
+        }
+        char *p_data = jsData->valuestring;
+
+        int len_str = (strlen(p_data) / 3) + 1;
+        uint8_t my_data[len_str];
+        for (uint8_t i = 0; i < len_str; i++)
+        {
+            unsigned int c;
+            sscanf(&p_data[3 * i], "%02X", &c);
+            my_data[i] = (uint8_t)c;
+        }
+
+        uint32_t arr_size = sizeof(array_ir_data_control_handler) / sizeof(array_ir_data_control_handler[0]);
+        os_trace("arr_size_ir_control: %lu\r\n", arr_size);
+        for (uint32_t i = 0; i < arr_size; i++)
+        {
+            if (array_ir_data_control_handler[i]._cmd_number == brand)
+            {
+                os_trace("ir brand control data: %ld\r\n", brand);
+                hw_led_stt_on();
+                result = array_ir_data_control_handler[i]._handler(my_data, len_str);
+                hw_led_stt_off();
+                memset(respond, 0, sizeof(respond));
+                sprintf(
+                    respond,
+                    "{\"%s\":%lu,\"type\":3,\"brand\":%lu,\"data\":\"%s\",\"result\":%u}",
+                    gs_dev_type[device_type], type, brand, p_data, result);
+                app_send_data(respond, strlen(respond));
+                break;
+            }
+            else if (arr_size - 1 == i)
+            {
+                memset(respond, 0, sizeof(respond));
+                sprintf(
+                    respond,
+                    "{\"%s\":%ld,\"type\":3,\"brand\":%lu,\"result\":0,\"err\":\"not support brand\"}",
+                    gs_dev_type[device_type], type, brand);
+                app_send_data(respond, strlen(respond));
+            }
+        }
     }
 
 RESPONSE:
@@ -625,7 +694,6 @@ static void AC_Casper_Callback(cJSON *jsRoot)
 
     result = 1;
 
-
 RESPONSE:
     /* respond server here */
     memset(respond, 0, sizeof(respond));
@@ -715,7 +783,6 @@ static void AC_Whirlpool_Callback(cJSON *jsRoot)
     Whirlpool_send(state_ir);
 
     result = 1;
-
 
 RESPONSE:
     /* respond server here */
@@ -807,7 +874,6 @@ static void AC_Corona_Callback(cJSON *jsRoot)
 
     result = 1;
 
-
 RESPONSE:
     /* respond server here */
     memset(respond, 0, sizeof(respond));
@@ -896,7 +962,6 @@ static void AC_LG_Callback(cJSON *jsRoot)
 
     result = 1;
 
-
 RESPONSE:
     /* respond server here */
     memset(respond, 0, sizeof(respond));
@@ -983,7 +1048,6 @@ static void AC_LG2_Callback(cJSON *jsRoot)
     LG2_send(state_ir);
 
     result = 1;
-
 
 RESPONSE:
     /* respond server here */
@@ -1073,7 +1137,6 @@ static void AC_Funiki_Callback(cJSON *jsRoot)
 
     result = 1;
 
-
 RESPONSE:
     /* respond server here */
     memset(respond, 0, sizeof(respond));
@@ -1153,7 +1216,6 @@ static void AC_Samsung_Callback(cJSON *jsRoot)
     }
     fan = jsFan->valueint;
 
-    
     state_ir.power = (power ? true : false);
     state_ir.degrees = (float)temp;
     state_ir.mode = mode;
@@ -1161,20 +1223,20 @@ static void AC_Samsung_Callback(cJSON *jsRoot)
 
     cJSON *jsSwingV = NULL, *jsSwingH = NULL;
     jsSwingV = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGV);
-    if (jsSwingV != NULL) {
+    if (jsSwingV != NULL)
+    {
         state_ir.swingv = jsSwingV->valueint;
     }
 
     jsSwingH = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGH);
-    if (jsSwingH != NULL) {
+    if (jsSwingH != NULL)
+    {
         state_ir.swingh = jsSwingH->valueint;
     }
-
 
     Samsung_send(state_ir);
 
     result = 1;
-
 
 RESPONSE:
     /* respond server here */
@@ -1264,7 +1326,6 @@ static void AC_Toshiba_Callback(cJSON *jsRoot)
 
     result = 1;
 
-
 RESPONSE:
     /* respond server here */
     memset(respond, 0, sizeof(respond));
@@ -1351,12 +1412,14 @@ static void AC_Daikin_Callback(cJSON *jsRoot)
 
     cJSON *jsSwingV = NULL, *jsSwingH = NULL;
     jsSwingV = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGV);
-    if (jsSwingV != NULL) {
+    if (jsSwingV != NULL)
+    {
         state_ir.swingv = jsSwingV->valueint;
     }
 
     jsSwingH = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGH);
-    if (jsSwingH != NULL) {
+    if (jsSwingH != NULL)
+    {
         state_ir.swingh = jsSwingH->valueint;
     }
 
@@ -1373,7 +1436,6 @@ RESPONSE:
         gs_dev_type[device_type], type, brand, power, temp, mode, fan, state_ir.swingv, state_ir.swingh, act_id, result);
     app_send_data(respond, strlen(respond));
 }
-
 
 static void AC_Daikin2_Callback(cJSON *jsRoot)
 {
@@ -1452,7 +1514,6 @@ static void AC_Daikin2_Callback(cJSON *jsRoot)
     Daikin2_send(state_ir);
 
     result = 1;
-
 
 RESPONSE:
     /* respond server here */
@@ -1542,7 +1603,6 @@ static void AC_Daikin312_Callback(cJSON *jsRoot)
 
     result = 1;
 
-
 RESPONSE:
     /* respond server here */
     memset(respond, 0, sizeof(respond));
@@ -1629,12 +1689,14 @@ static void AC_Daikin152_Callback(cJSON *jsRoot)
 
     cJSON *jsSwingV = NULL, *jsSwingH = NULL;
     jsSwingV = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGV);
-    if (jsSwingV != NULL) {
+    if (jsSwingV != NULL)
+    {
         state_ir.swingv = jsSwingV->valueint;
     }
 
     jsSwingH = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGH);
-    if (jsSwingH != NULL) {
+    if (jsSwingH != NULL)
+    {
         state_ir.swingh = jsSwingH->valueint;
     }
 
@@ -1728,12 +1790,14 @@ static void AC_Daikin64_Callback(cJSON *jsRoot)
 
     cJSON *jsSwingV = NULL, *jsSwingH = NULL;
     jsSwingV = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGV);
-    if (jsSwingV != NULL) {
+    if (jsSwingV != NULL)
+    {
         state_ir.swingv = jsSwingV->valueint;
     }
 
     jsSwingH = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGH);
-    if (jsSwingH != NULL) {
+    if (jsSwingH != NULL)
+    {
         state_ir.swingh = jsSwingH->valueint;
     }
 
@@ -1827,12 +1891,14 @@ static void AC_Daikin176_Callback(cJSON *jsRoot)
 
     cJSON *jsSwingV = NULL, *jsSwingH = NULL;
     jsSwingV = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGV);
-    if (jsSwingV != NULL) {
+    if (jsSwingV != NULL)
+    {
         state_ir.swingv = jsSwingV->valueint;
     }
 
     jsSwingH = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGH);
-    if (jsSwingH != NULL) {
+    if (jsSwingH != NULL)
+    {
         state_ir.swingh = jsSwingH->valueint;
     }
 
@@ -2114,7 +2180,6 @@ RESPONSE:
     app_send_data(respond, strlen(respond));
 }
 
-
 static void AC_Gree_Callback(cJSON *jsRoot)
 {
     cJSON *jsBrand, *jsPower, *jsTemp, *jsMode, *jsFan, *jsU, *jsAct_ID;
@@ -2191,19 +2256,20 @@ static void AC_Gree_Callback(cJSON *jsRoot)
 
     cJSON *jsSwingV = NULL, *jsSwingH = NULL;
     jsSwingV = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGV);
-    if (jsSwingV != NULL) {
+    if (jsSwingV != NULL)
+    {
         state_ir.swingv = jsSwingV->valueint;
     }
 
     jsSwingH = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGH);
-    if (jsSwingH != NULL) {
+    if (jsSwingH != NULL)
+    {
         state_ir.swingh = jsSwingH->valueint;
     }
 
     Gree_send(state_ir);
 
     result = 1;
-
 
 RESPONSE:
     /* respond server here */
@@ -2215,14 +2281,12 @@ RESPONSE:
     app_send_data(respond, strlen(respond));
 }
 
-
 static void AC_Tcl_Callback(cJSON *jsRoot)
 {
     cJSON *jsBrand, *jsPower, *jsTemp, *jsMode, *jsFan, *jsU, *jsAct_ID;
     uint32_t type = 0, brand = 0, power = 0, temp = 0, mode = 0, fan = 0, act_id = 0;
     uint8_t result = 0;
     state_ir_t state_ir = {UNKNOWN, -1, false, opmode_kOff, 25, true, fanspeed_kAuto, swingv_kOff, swingh_kOff, false, false, false, false, false, false, false, -1, -1, kControlCommand, false, kNoTempValue};
-
 
     if (jsRoot == NULL)
     {
@@ -2293,19 +2357,20 @@ static void AC_Tcl_Callback(cJSON *jsRoot)
 
     cJSON *jsSwingV = NULL, *jsSwingH = NULL;
     jsSwingV = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGV);
-    if (jsSwingV != NULL) {
+    if (jsSwingV != NULL)
+    {
         state_ir.swingv = jsSwingV->valueint;
     }
 
     jsSwingH = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGH);
-    if (jsSwingH != NULL) {
+    if (jsSwingH != NULL)
+    {
         state_ir.swingh = jsSwingH->valueint;
     }
 
     Tcl112_send(state_ir);
 
     result = 1;
-
 
 RESPONSE:
     /* respond server here */
@@ -2395,7 +2460,6 @@ static void AC_Mitshubishi112_Callback(cJSON *jsRoot)
 
     result = 1;
 
-
 RESPONSE:
     /* respond server here */
     memset(respond, 0, sizeof(respond));
@@ -2405,7 +2469,6 @@ RESPONSE:
         gs_dev_type[device_type], type, brand, power, temp, mode, fan, act_id, result);
     app_send_data(respond, strlen(respond));
 }
-
 
 static void AC_Midea_Callback(cJSON *jsRoot)
 {
@@ -2484,7 +2547,6 @@ static void AC_Midea_Callback(cJSON *jsRoot)
     Midea_send(state_ir);
 
     result = 1;
-
 
 RESPONSE:
     /* respond server here */
@@ -2573,7 +2635,6 @@ static void AC_Sharp_Callback(cJSON *jsRoot)
     SharpAc_send(state_ir);
 
     result = 1;
-
 
 RESPONSE:
     /* respond server here */
@@ -2933,7 +2994,6 @@ RESPONSE:
     app_send_data(respond, strlen(respond));
 }
 
-
 static void HitachiAc264_Callback(cJSON *jsRoot)
 {
     cJSON *jsBrand, *jsPower, *jsTemp, *jsMode, *jsFan, *jsU, *jsAct_ID;
@@ -3271,12 +3331,14 @@ static void Nagakawa_Callback(cJSON *jsRoot)
 
     cJSON *jsSwingV = NULL, *jsSwingH = NULL;
     jsSwingV = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGV);
-    if (jsSwingV != NULL) {
+    if (jsSwingV != NULL)
+    {
         state_ir.swingv = jsSwingV->valueint;
     }
 
     jsSwingH = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGH);
-    if (jsSwingH != NULL) {
+    if (jsSwingH != NULL)
+    {
         state_ir.swingh = jsSwingH->valueint;
     }
 
@@ -3369,12 +3431,14 @@ static void Asanzo_Callback(cJSON *jsRoot)
 
     cJSON *jsSwingV = NULL, *jsSwingH = NULL;
     jsSwingV = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGV);
-    if (jsSwingV != NULL) {
+    if (jsSwingV != NULL)
+    {
         state_ir.swingv = jsSwingV->valueint;
     }
 
     jsSwingH = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGH);
-    if (jsSwingH != NULL) {
+    if (jsSwingH != NULL)
+    {
         state_ir.swingh = jsSwingH->valueint;
     }
 
@@ -3390,7 +3454,6 @@ RESPONSE:
         gs_dev_type[device_type], type, brand, power, temp, mode, fan, state_ir.swingv, state_ir.swingh, act_id, result);
     app_send_data(respond, strlen(respond));
 }
-
 
 static void AC_PanasonicAC_Callback(cJSON *jsRoot)
 {
@@ -3469,12 +3532,14 @@ static void AC_PanasonicAC_Callback(cJSON *jsRoot)
 
     cJSON *jsSwingV = NULL, *jsSwingH = NULL;
     jsSwingV = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGV);
-    if (jsSwingV != NULL) {
+    if (jsSwingV != NULL)
+    {
         state_ir.swingv = jsSwingV->valueint;
     }
 
     jsSwingH = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGH);
-    if (jsSwingH != NULL) {
+    if (jsSwingH != NULL)
+    {
         state_ir.swingh = jsSwingH->valueint;
     }
 
@@ -3567,12 +3632,14 @@ static void AC_PanasonicAC32_Callback(cJSON *jsRoot)
 
     cJSON *jsSwingV = NULL, *jsSwingH = NULL;
     jsSwingV = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGV);
-    if (jsSwingV != NULL) {
+    if (jsSwingV != NULL)
+    {
         state_ir.swingv = jsSwingV->valueint;
     }
 
     jsSwingH = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGH);
-    if (jsSwingH != NULL) {
+    if (jsSwingH != NULL)
+    {
         state_ir.swingh = jsSwingH->valueint;
     }
 
@@ -3665,12 +3732,14 @@ static void AC_ElectraAC_Callback(cJSON *jsRoot)
 
     cJSON *jsSwingV = NULL, *jsSwingH = NULL;
     jsSwingV = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGV);
-    if (jsSwingV != NULL) {
+    if (jsSwingV != NULL)
+    {
         state_ir.swingv = jsSwingV->valueint;
     }
 
     jsSwingH = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGH);
-    if (jsSwingH != NULL) {
+    if (jsSwingH != NULL)
+    {
         state_ir.swingh = jsSwingH->valueint;
     }
 
@@ -4038,7 +4107,6 @@ RESPONSE:
     app_send_data(respond, strlen(respond));
 }
 
-
 static void AC_Sanyo_Callback(cJSON *jsRoot)
 {
     cJSON *jsBrand, *jsPower, *jsTemp, *jsMode, *jsFan, *jsU, *jsAct_ID;
@@ -4125,7 +4193,6 @@ RESPONSE:
         gs_dev_type[device_type], type, brand, power, temp, mode, fan, act_id, result);
     app_send_data(respond, strlen(respond));
 }
-
 
 static void AC_MitsubishiHeavy88_Callback(cJSON *jsRoot)
 {
@@ -4562,7 +4629,6 @@ RESPONSE:
     app_send_data(respond, strlen(respond));
 }
 
-
 static void HaierACYRW02_Callback(cJSON *jsRoot)
 {
     cJSON *jsBrand, *jsPower, *jsTemp, *jsMode, *jsFan, *jsU, *jsAct_ID;
@@ -4639,12 +4705,14 @@ static void HaierACYRW02_Callback(cJSON *jsRoot)
 
     cJSON *jsSwingV = NULL, *jsSwingH = NULL;
     jsSwingV = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGV);
-    if (jsSwingV != NULL) {
+    if (jsSwingV != NULL)
+    {
         state_ir.swingv = jsSwingV->valueint;
     }
 
     jsSwingH = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGH);
-    if (jsSwingH != NULL) {
+    if (jsSwingH != NULL)
+    {
         state_ir.swingh = jsSwingH->valueint;
     }
 
@@ -4737,7 +4805,8 @@ static void AC_MitsubishiHeavy160_Callback(cJSON *jsRoot)
 
     cJSON *jsSwingV = NULL, *jsSwingH = NULL;
     jsSwingV = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGV);
-    if (jsSwingV != NULL) {
+    if (jsSwingV != NULL)
+    {
         state_ir.swingv = jsSwingV->valueint;
     }
 
@@ -4830,12 +4899,14 @@ static void Teco_Callback(cJSON *jsRoot)
 
     cJSON *jsSwingV = NULL, *jsSwingH = NULL;
     jsSwingV = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGV);
-    if (jsSwingV != NULL) {
+    if (jsSwingV != NULL)
+    {
         state_ir.swingv = jsSwingV->valueint;
     }
 
     jsSwingH = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGH);
-    if (jsSwingH != NULL) {
+    if (jsSwingH != NULL)
+    {
         state_ir.swingh = jsSwingH->valueint;
     }
 
@@ -4928,12 +4999,14 @@ static void MirageAc_Callback(cJSON *jsRoot)
 
     cJSON *jsSwingV = NULL, *jsSwingH = NULL;
     jsSwingV = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGV);
-    if (jsSwingV != NULL) {
+    if (jsSwingV != NULL)
+    {
         state_ir.swingv = jsSwingV->valueint;
     }
 
     jsSwingH = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGH);
-    if (jsSwingH != NULL) {
+    if (jsSwingH != NULL)
+    {
         state_ir.swingh = jsSwingH->valueint;
     }
 
@@ -4949,7 +5022,6 @@ RESPONSE:
         gs_dev_type[device_type], type, brand, power, temp, mode, fan, state_ir.swingv, state_ir.swingh, act_id, result);
     app_send_data(respond, strlen(respond));
 }
-
 
 /* 105 */
 static void app_get_info(cJSON *jsRoot)
@@ -4974,13 +5046,13 @@ static void app_get_info(cJSON *jsRoot)
     memset(respond, 0, sizeof(respond));
 
     sprintf(respond,
-                "{\"%s\":%ld,\"u\":0,\"id\":\"%s\",\"ver\":%s,"
-                "\"extras\":%d,\"ssid\":\"%s\",\"pass\":\"%s\",\"streng\":%d,"
-                "\"ip\":\"%s\"}",
-                gs_dev_type[device_type], type,
-                m_db_get_instance()->_get_dev_id(), FIRMWARE_VERSION, EXTRAS,
-                app_databse._wifi_info->_ssid, app_databse._wifi_info->_passwd,
-                app_databse._wifi_info->_rssi, app_databse._wifi_info->_ip);
+            "{\"%s\":%ld,\"u\":0,\"id\":\"%s\",\"ver\":%s,"
+            "\"extras\":%d,\"ssid\":\"%s\",\"pass\":\"%s\",\"streng\":%d,"
+            "\"ip\":\"%s\"}",
+            gs_dev_type[device_type], type,
+            m_db_get_instance()->_get_dev_id(), FIRMWARE_VERSION, EXTRAS,
+            app_databse._wifi_info->_ssid, app_databse._wifi_info->_passwd,
+            app_databse._wifi_info->_rssi, app_databse._wifi_info->_ip);
 
     app_send_data(respond, strlen(respond));
 }
@@ -5222,8 +5294,8 @@ RESPONSE:
     m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
 }
 
-/* 
-    @jsRoot: will be NULL, not required 
+/*
+    @jsRoot: will be NULL, not required
 */
 static void ble_config_step1(cJSON *jsRoot)
 {
@@ -5243,7 +5315,7 @@ static void ble_config_step2(cJSON *jsRoot)
 extern void ble_loop(void);
 extern void ble_init_first(void);
 
-void app_handler_msg_task(void * arg)
+void app_handler_msg_task(void *arg)
 {
     // m_data_t msg;
     m_data_t message_rcv_mqtt;
@@ -5256,9 +5328,9 @@ void app_handler_msg_task(void * arg)
     cJSON *jsRoot = NULL, *jsType = NULL;
     ble_init_first();
 
-    while (1) 
+    while (1)
     {
-        if (xQueueReceive(pqueue, &message_rcv_mqtt, 1) == pdPASS) 
+        if (xQueueReceive(pqueue, &message_rcv_mqtt, 1) == pdPASS)
         {
             // os_trace("raw_data received: %s\r\n", msg.data);
 
@@ -5270,13 +5342,15 @@ void app_handler_msg_task(void * arg)
                 os_trace("Can not decrypt message\r\n");
                 continue;
             }
-            if (raw_len < 450) {
+            if (raw_len < 450)
+            {
                 printf("\r\ndecoded[%lu]: %s\r\n", raw_len, raw_data);
             }
 
             /* find handler of data */
             jsRoot = cJSON_Parse(raw_data);
-            if (!jsRoot) {
+            if (!jsRoot)
+            {
                 os_trace("Parse Json Fail\r\n");
                 continue;
             }
@@ -5296,7 +5370,6 @@ void app_handler_msg_task(void * arg)
             }
             uint32_t cmd = jsType->valueint;
 
-            
             uint32_t arr_size = sizeof(array_handler) / sizeof(array_handler[0]);
             os_trace("arr_size_mqtt: %lu\r\n", arr_size);
             for (uint32_t i = 0; i < arr_size; i++)
@@ -5310,8 +5383,8 @@ void app_handler_msg_task(void * arg)
             }
 
             cJSON_Delete(jsRoot);
-        } 
-        else if (xQueueReceive(pqueue_ble, &msg_ble, 1) == pdPASS) 
+        }
+        else if (xQueueReceive(pqueue_ble, &msg_ble, 1) == pdPASS)
         {
             os_trace("raw_data ble received[%lu]: %s\r\n", msg_ble.length, msg_ble.data);
 
@@ -5323,13 +5396,15 @@ void app_handler_msg_task(void * arg)
                 os_trace("Can not decrypt message\r\n");
                 continue;
             }
-            if (raw_len < 450) {
+            if (raw_len < 450)
+            {
                 printf("\r\ndecoded[%lu]: %s\r\n", raw_len, raw_data);
             }
 
             /* find handler of data */
             jsRoot = cJSON_Parse(raw_data);
-            if (!jsRoot) {
+            if (!jsRoot)
+            {
                 os_trace("Parse Json Fail\r\n");
                 continue;
             }
@@ -5348,7 +5423,6 @@ void app_handler_msg_task(void * arg)
                 }
             }
             uint32_t cmd = jsType->valueint;
-
 
             uint32_t arr_size = sizeof(array_ble_handler) / sizeof(array_ble_handler[0]);
             os_trace("arr_size_ble: %lu\r\n", arr_size);
@@ -5364,7 +5438,7 @@ void app_handler_msg_task(void * arg)
 
             cJSON_Delete(jsRoot);
         }
-        else 
+        else
         {
             ble_loop();
             m_mqtt_get_instance()._mqtt_loop();
