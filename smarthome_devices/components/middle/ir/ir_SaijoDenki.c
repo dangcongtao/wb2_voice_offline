@@ -78,12 +78,14 @@ uint8_t sendSaijoDenkiAC(const uint8_t data[], const uint16_t nbytes)
   }
   vTaskEnterCritical();
   for (uint16_t r = 0; r <= kSaijoDenkiDefaultRepeat; r++)
+  {
     sendGenericBytes(kSaijoDenkiHdrMark, kSaijoDenkiHdrSpace, kSaijoDenkiBitMark,
                      kSaijoDenkiOneSpace, kSaijoDenkiBitMark, kSaijoDenkiZeroSpace,
                      kSaijoDenkiBitMark, kDefaultMessageGap, data, nbytes,
                      38000, // Complete guess of the modulation frequency.
                      false, // Send data in LSB order per byte
                      0, 50);
+  }
   vTaskExitCritical();
   return 1;
 }

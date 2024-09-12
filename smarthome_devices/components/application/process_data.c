@@ -180,6 +180,7 @@ wswitch_handler_t array_ir_control_handler[] = {
 
 irwifi_data_brand_handler_t array_ir_data_control_handler[] = {
     {sendSaijoDenkiAC, SAIJODENKI}, // 127
+    {sendFunikiAc104AC, FUNIKIAC104},
 };
 
 QueueHandle_t pqueue;

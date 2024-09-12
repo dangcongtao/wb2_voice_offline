@@ -258,6 +258,7 @@ void MitsubishiHeavy160_send(state_ir_t state_ir);
 
 /*==============================SEND_DATA_BYTES========================================*/
 uint8_t sendSaijoDenkiAC(const uint8_t data[], const uint16_t nbytes);
+uint8_t sendFunikiAc104AC(const uint8_t data[], const uint16_t nbytes);
 
 /* end */
 
