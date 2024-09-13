@@ -2208,7 +2208,7 @@ void m_ir_task(void *param)
             }
         }
 
-        vTaskDelay(pdMS_TO_TICKS(50));
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
 static uint8_t is_init = 0;
@@ -2232,7 +2232,7 @@ void m_ir_init(void)
                 "m_ir_task", /* Text name for the task. */
                 1024*4,        /* Stack size in words, not bytes. */
                 NULL,        /* Parameter passed into the task. */
-                1,           /* Priority at which the task is created. */
+                5,           /* Priority at which the task is created. */
                 &xHandle);
 }
 

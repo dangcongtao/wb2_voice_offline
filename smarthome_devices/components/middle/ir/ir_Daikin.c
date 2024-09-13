@@ -2346,7 +2346,7 @@ static void sendDaikin312(const unsigned char data[], const uint16_t nbytes,
                            const uint16_t repeat) {
   if (nbytes < kDaikin312Section1Length)
     return;  // Not enough bytes to send a partial message.
-
+  vTaskEnterCritical();
   for (uint16_t r = 0; r <= repeat; r++) {
     // Send the header, 0b00000
     sendGeneric(0, 0,  // No header for the header
@@ -2369,6 +2369,7 @@ static void sendDaikin312(const unsigned char data[], const uint16_t nbytes,
                 nbytes - kDaikin312Section1Length,
                 kDaikin2Freq, false, 0, kDutyDefault);
   }
+  vTaskExitCritical();
 }
 
 
@@ -2436,12 +2437,12 @@ void Daikin312_send(state_ir_t state_ir)
     IRDaikin2setPower(&_, state_ir.power);
     IRDaikin2setTemp(&_, state_ir.degrees);
 
-    float temp = max(
-      (_.Mode == kDaikinCool) ? (float)kDaikin312MinCoolTemp : (float)kDaikinMinTemp,
-      state_ir.degrees);
-    _.Temp = min((float)kDaikinMaxTemp, temp)  * 2.0;
-    // If the humidity setting is in use, the temp is a fixed value.
-    if (_.HumidOn) _.Temp = kDaikinMaxTemp * 2.0;
+    // float temp = max(
+    //   (_.Mode == kDaikinCool) ? (float)kDaikin312MinCoolTemp : (float)kDaikinMinTemp,
+    //   state_ir.degrees);
+    // _.Temp = min((float)kDaikinMaxTemp, temp)  * 2.0;
+    // // If the humidity setting is in use, the temp is a fixed value.
+    // if (_.HumidOn) _.Temp = kDaikinMaxTemp * 2.0;
 
     IRDaikin2checksum(&_);
 
