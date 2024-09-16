@@ -2317,6 +2317,10 @@ bool decodeDaikin312(decode_results *results, uint16_t offset,
   // Compliance
   if (strict) {
     if (pos * 8 != kDaikin312Bits) return false;
+      if (!IRDaikin2validChecksum(results->state, kDaikin312StateLength)) {
+        os_trace("%s invalid checksum\r\n", __func__);
+        return false;
+      }
   }
 
   // Success
@@ -2381,16 +2385,16 @@ static void Daikin312stateReset(Daikin2Protocol *_) {
  _->raw[2] = 0x27;
  _->raw[3] = 0x00;
  _->raw[4] = 0x02;
- _->raw[5] = 0x58;
- _->raw[6] = 0x64;
- _->raw[7] = 0x58;
- _->raw[8] = 0x64;
- _->raw[9] = 0x3D;
+ _->raw[5] = 0x00;
+ _->raw[6] = 0x00;
+ _->raw[7] = 0x00;
+ _->raw[8] = 0x00;
+ _->raw[9] = 0x0E;
  _->raw[10] = 0x00;
  _->raw[11] = 0x00;
  _->raw[12] = 0x01;
  _->raw[13] = 0x00;
- _->raw[14] = 0x00;
+ _->raw[14] = 0x40;
  _->raw[15] = 0x00;
  _->raw[16] = 0x00;
  _->raw[17] = 0x00;
@@ -2402,23 +2406,19 @@ static void Daikin312stateReset(Daikin2Protocol *_) {
  _->raw[23] = 0x00;
  _->raw[24] = 0x00;
  _->raw[25] = 0x39;
- _->raw[26] = 0x2C;
+ _->raw[26] = 0x30;
  _->raw[27] = 0x00;
  _->raw[28] = 0xAF;
  _->raw[29] = 0x0F;
  _->raw[30] = 0x00;
  _->raw[31] = 0x06;
  _->raw[32] = 0x60;
- _->raw[33] = 0x20;
+ _->raw[33] = 0x00;
  _->raw[34] = 0x00;
- _->raw[35] = 0xC5;
+ _->raw[35] = 0xC3;
  _->raw[36] = 0x00;
- _->raw[37] = 0x08;
+ _->raw[37] = 0x00;
   // _.raw[38] is a checksum byte, it will be set by checksum().
-  IRDaikin2disableOnTimer(&_);
-  IRDaikin2disableOffTimer(&_);
-  IRDaikin2disableOnTimer(&_);
-  IRDaikin2checksum(&_);
 }
 
 
@@ -2427,24 +2427,24 @@ void Daikin312_send(state_ir_t state_ir)
     os_trace("%s\r\n", __func__);
 
     Daikin2Protocol _;
-    IRDaikin2stateReset(&_);
-
-    // _.SwingV = kDaikin2SwingVAuto;
-    // _.SwingH = kDaikin2SwingHAuto;
+    Daikin312stateReset(&_);
 
     IRDaikin2setMode(&_, state_ir.mode);
-    IRDaikin2setFan(&_, state_ir.fanspeed);
+    _.Fan = state_ir.fanspeed;
+    // IRDaikin2setFan(&_, state_ir.fanspeed);
     IRDaikin2setPower(&_, state_ir.power);
     IRDaikin2setTemp(&_, state_ir.degrees);
 
-    // float temp = max(
-    //   (_.Mode == kDaikinCool) ? (float)kDaikin312MinCoolTemp : (float)kDaikinMinTemp,
-    //   state_ir.degrees);
-    // _.Temp = min((float)kDaikinMaxTemp, temp)  * 2.0;
-    // // If the humidity setting is in use, the temp is a fixed value.
-    // if (_.HumidOn) _.Temp = kDaikinMaxTemp * 2.0;
-
     IRDaikin2checksum(&_);
+
+#if DEBUG_ENABLE == 1
+  os_trace("%s[%u]: 0x ", __func__, kDaikin312StateLength);
+  for (uint8_t i = 0; i < kDaikin312StateLength; i++)
+  {
+    os_trace("%02X-", _.raw[i]);
+  }
+  os_trace("\r\n");
+#endif
 
     sendDaikin312(_.raw, kDaikin312StateLength, kDaikin2DefaultRepeat); 
 }
