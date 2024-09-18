@@ -145,6 +145,7 @@ wswitch_handler_t array_ir_control_handler[] = {
     {AC_Daikin176_Callback, DAIKIN176},    // 2 - 35 bytes
     {AC_Gree_Callback, 19},                // 19 - 8 bytes - Electrolux
     {AC_Tcl_Callback, 29},                 // 29 - 14 bytes
+    {AC_Tcl_Callback, AKITO},                 // 29 - 14 bytes
     {AC_Mitshubishi112_Callback, 91},      // 91 - 14 bytes
     {AC_Midea_Callback, 1934},             // 1934 - 14 bytes
     {AC_Sharp_Callback, 28},               // 28 - 13 bytes
@@ -2444,6 +2445,7 @@ static void AC_Tcl_Callback(cJSON *jsRoot)
     state_ir.degrees = (float)temp;
     state_ir.mode = mode;
     state_ir.fanspeed = fan;
+    state_ir.protocol = brand;
 
     cJSON *jsSwingV = NULL, *jsSwingH = NULL;
     jsSwingV = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGV);

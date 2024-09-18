@@ -134,6 +134,7 @@ typedef enum {
   MITSUBISHI_HEAVY_160,
   PANASONIC_AC_2,
   FUNIKIAC104,
+  AKITO,
   // Add new entries before this one, and update it to point to the last entry.
   kLastDecodeType = LG,
   MIDEA = 1934,

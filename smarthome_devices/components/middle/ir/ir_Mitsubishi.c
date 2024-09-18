@@ -158,7 +158,7 @@ bool decodeMitsubishi112(decode_results *results, uint16_t offset,
 #endif
 #if (DECODE_TCL112AC || DECODE_TEKNOPOINT)
   if (typeguess == UNKNOWN &&  // We didn't match Mitsubishi112
-      matchLimit(results->rawbuf[offset], kTcl112AcHdrMark - 100, kTcl112AcHdrMark + 150)) 
+      matchLimit(results->rawbuf[offset], kTcl112AcHdrMark - 100, kTcl112AcHdrMark + 250)) 
     {
         os_trace("%s guess tcl112ac\r\n", __func__);
         typeguess = TCL112AC;
@@ -175,7 +175,7 @@ bool decodeMitsubishi112(decode_results *results, uint16_t offset,
         bitmark_upper = bitmark + 400;
         onespace_lower = onespace - 350;
         onespace_upper = onespace + 400;
-        zerospace_lower = zerospace - 225;
+        zerospace_lower = zerospace - 315;
         zerospace_upper = zerospace + 300;
     }
 #endif  // (DECODE_TCL112AC || DECODE_TEKNOPOINT)
@@ -218,6 +218,15 @@ bool decodeMitsubishi112(decode_results *results, uint16_t offset,
   }
   // Success
   results->decode_type = typeguess;
+  // if (typeguess == TCL112AC)
+  // {
+  //   if (results->state[12] >> 4 == 0xA)
+  //   {
+  //     results->decode_type = AKITO; // akito
+  //     os_trace("%s success, type: akito\r\n", __func__);
+
+  //   }
+  // }
   results->bits = nbits;
   os_trace("%s success, typeguess: %u\r\n", __func__, typeguess);
   // No need to record the state as we stored it as we decoded it.

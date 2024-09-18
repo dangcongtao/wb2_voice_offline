@@ -2019,6 +2019,10 @@ void m_ir_task(void *param)
 #endif
                     Tcl112_setRaw((uint8_t *)capture.state, capture.decode_type, &ir_state);
                     Tcl112_setInfo((uint8_t *)capture.state, capture.decode_type, &ir_state_recv);
+                    if (ir_state_recv.protocol == AKITO)
+                    {
+                        capture.decode_type = AKITO;
+                    }
                 }
                 else if (capture.decode_type == MIDEA)
                 {

@@ -59,7 +59,7 @@ typedef struct
             uint8_t                 :1;
             uint8_t HalfDegree      :1;
             uint8_t                 :1;
-            uint8_t isTcl           :1;
+            uint8_t isAkito           :1;
             // Byte 13
             uint8_t Sum             :8;
         };
