@@ -397,6 +397,7 @@ void Samsung_send(state_ir_t state_ir)
 
   checksum(&_);
 
+#if DEBUG_ENABLE == 1
   os_trace("SAMSUNG_SEND: 0x");
   for (uint8_t i = 0; i < 14; i++) {
       if (i == 7) {
@@ -407,6 +408,7 @@ void Samsung_send(state_ir_t state_ir)
       os_trace("%02x", _.raw[i]);
   }
   os_trace("\r\n");
+#endif
 
   // state_ir_t my_state_ir;
 

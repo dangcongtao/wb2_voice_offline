@@ -346,11 +346,162 @@ static void ir_send_data(cJSON *jsRoot)
     sendRaw(result_temp, (uint16_t)((len_data_b64 * 3) / 8), 38);
 }
 
+static void ir_control_type_3(cJSON *jsRoot)
+{
+    cJSON *jsBrand, *jsTypeSend, *jsU, *jsAct_ID, *jsPower, *jsTemp, *jsMode, *jsFan;
+    cJSON *jsSwingV = NULL, *jsSwingH = NULL;
+    uint32_t brand = 0, typesend = 0, power = 0, temp = 0, mode = 0, fan = 0, act_id = 0;
+    uint8_t result = 0;
+    uint8_t *my_data = NULL;
+    int swingv = -1, swingh = -1;
+
+    jsBrand = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_BRAND);
+    if (jsBrand == NULL)
+    {
+        os_trace("jsBrand NULL\n");
+        goto CASE_FAILED;
+    }
+    brand = jsBrand->valueint;
+
+    if (jsRoot == NULL)
+    {
+        os_trace("jsRoot NULL\n");
+        goto CASE_FAILED;
+    }
+
+    jsAct_ID = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_ACT);
+    if (jsAct_ID == NULL)
+    {
+        os_trace("jsAct_ID NULL\n");
+        goto CASE_FAILED;
+    }
+    act_id = jsAct_ID->valueint;
+
+    jsBrand = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_BRAND);
+    if (jsBrand == NULL)
+    {
+        os_trace("jsBrand NULL\n");
+        goto CASE_FAILED;
+    }
+    brand = jsBrand->valueint;
+
+    jsPower = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_POWER);
+    if (jsPower == NULL)
+    {
+        os_trace("jsPower NULL\n");
+        goto CASE_FAILED;
+    }
+    power = jsPower->valueint;
+
+    jsTemp = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_TEMP);
+    if (jsTemp == NULL)
+    {
+        os_trace("jsTemp NULL\n");
+        goto CASE_FAILED;
+    }
+    temp = jsTemp->valueint;
+
+    jsMode = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_MODE);
+    if (jsMode == NULL)
+    {
+        os_trace("jsMode NULL\n");
+        goto CASE_FAILED;
+    }
+    mode = jsMode->valueint;
+
+    jsFan = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_FAN);
+    if (jsFan == NULL)
+    {
+        os_trace("jsFan NULL\n");
+        goto CASE_FAILED;
+    }
+    fan = jsFan->valueint;
+
+    jsSwingV = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGV);
+    if (jsSwingV != NULL)
+    {
+        swingv = jsSwingV->valueint;
+    }
+
+    jsSwingH = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGH);
+    if (jsSwingH != NULL)
+    {
+        swingh = jsSwingH->valueint;
+    }
+
+    // RESPONSE:
+    //     /* respond server here */
+    //     memset(respond, 0, sizeof(respond));
+    //     sprintf(
+    //         respond,
+    //         "{\"%s\":%lu,\"type\":1,\"brand\":%lu,\"power\":%lu,\"temp\":%lu,\"mode\":%lu,\"fan\":%lu,\"swingv\":%d,\"swingh\":%d,\"act\":%lu,\"result\":%d}",
+    //         gs_dev_type[device_type], type, brand, power, temp, mode, fan, state_ir.swingv, state_ir.swingh, act_id, result);
+    //     app_send_data(respond, strlen(respond));
+
+    cJSON *jsData = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_DATA);
+    if (jsData == NULL)
+    {
+        os_trace("jsData NULL\n");
+        goto CASE_FAILED;
+    }
+    char *p_data = jsData->valuestring;
+
+    int len_str = (strlen(p_data) / 3) + 1;
+    my_data = (uint8_t *)malloc(len_str * sizeof(uint8_t));
+
+    if (!my_data)
+    {
+        os_trace("Memory allocation failed\n");
+        goto CASE_FAILED;
+    }
+
+    for (uint8_t i = 0; i < len_str; i++)
+    {
+        unsigned int c;
+        sscanf(&p_data[3 * i], "%02X", &c);
+        my_data[i] = (uint8_t)c;
+    }
+
+    uint32_t arr_size = sizeof(array_ir_data_control_handler) / sizeof(array_ir_data_control_handler[0]);
+    os_trace("arr_size_ir_data_control: %lu\r\n", arr_size);
+    for (uint32_t i = 0; i < arr_size; i++)
+    {
+        if (array_ir_data_control_handler[i]._cmd_number == brand)
+        {
+            os_trace("ir brand control data: %ld\r\n", brand);
+            hw_led_stt_on();
+            result = array_ir_data_control_handler[i]._handler(my_data, len_str);
+            hw_led_stt_off();
+            memset(respond, 0, sizeof(respond));
+            sprintf(
+                respond,
+                "{\"%s\":1,\"type\":3,\"brand\":%lu,\"power\":%lu,\"temp\":%lu,\"mode\":%lu,\"fan\":%lu,\"swingv\":%d,\"swingh\":%d,\"data\":\"%s\",\"act\":%lu,\"result\":%u}",
+                gs_dev_type[device_type], brand, power, temp, mode, fan, swingv, swingh, p_data, act_id, result);
+            app_send_data(respond, strlen(respond));
+            free(my_data);
+            my_data = NULL;
+            return;
+        }
+    }
+CASE_FAILED:
+    if (!my_data)
+    {
+        free(my_data);
+        my_data = NULL;
+    }
+    memset(respond, 0, sizeof(respond));
+    sprintf(
+        respond,
+        "{\"%s\":1,\"type\":3,\"brand\":%lu,\"result\":0,\"err\":\"params error\"}",
+        gs_dev_type[device_type], brand);
+    app_send_data(respond, strlen(respond));
+}
+
 /*  {"irwifi":1,"type":1,"brand":102,"power":1,"temp":25,"mode":4,"fan":6,"act":0}  */
 static void ir_control(cJSON *jsRoot)
 {
-    cJSON *jsBrand, *jsTypeSend, *jsU, *jsAct_ID;
-    uint32_t type = 0, brand = 0, typesend = 0, temp = 0, mode = 0, fan = 0, act_id = 0;
+    cJSON *jsBrand, *jsTypeSend;
+    uint32_t brand = 0, typesend = 0;
     uint8_t result = 0;
 
     if (jsRoot == NULL)
@@ -358,14 +509,6 @@ static void ir_control(cJSON *jsRoot)
         os_trace("jsRoot NULL\n");
         goto RESPONSE;
     }
-
-    cJSON *jsType = cJSON_GetObjectItem(jsRoot, gs_dev_type[device_type]);
-    if (jsType == NULL)
-    {
-        os_trace("Get JSON type mqtt message fail\n");
-        goto RESPONSE;
-    }
-    type = jsType->valueint;
 
     jsTypeSend = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_TYPE_SEND);
     if (jsTypeSend == NULL)
@@ -392,11 +535,9 @@ static void ir_control(cJSON *jsRoot)
             if (array_ir_control_handler[i]._cmd_number == brand)
             {
                 os_trace("ir brand: %ld\r\n", brand);
-                // Irrecv_pause();
                 hw_led_stt_on();
                 array_ir_control_handler[i]._handler(jsRoot);
                 hw_led_stt_off();
-                // resume();
                 break;
             }
             else if (arr_size - 1 == i)
@@ -404,8 +545,8 @@ static void ir_control(cJSON *jsRoot)
                 memset(respond, 0, sizeof(respond));
                 sprintf(
                     respond,
-                    "{\"%s\":%ld,\"type\":1,\"result\":0,\"err\":\"not support brand\"}",
-                    gs_dev_type[device_type], type);
+                    "{\"%s\":1,\"type\":1,\"brand\":%lu,\"result\":0,\"err\":\"not support brand\"}",
+                    gs_dev_type[device_type], brand);
                 app_send_data(respond, strlen(respond));
             }
         }
@@ -419,65 +560,13 @@ static void ir_control(cJSON *jsRoot)
         memset(respond, 0, sizeof(respond));
         sprintf(
             respond,
-            "{\"%s\":%ld,\"type\":2,\"result\": 1}",
-            gs_dev_type[device_type], type);
+            "{\"%s\":1,\"type\":2,\"result\": 1}",
+            gs_dev_type[device_type]);
         app_send_data(respond, strlen(respond));
     }
     else if (typesend == 3)
     {
-        jsBrand = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_BRAND);
-        if (jsBrand == NULL)
-        {
-            os_trace("jsBrand NULL\n");
-            goto RESPONSE;
-        }
-        brand = jsBrand->valueint;
-
-        cJSON *jsData = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_DATA);
-        if (jsData == NULL)
-        {
-            os_trace("jsData NULL\n");
-            goto RESPONSE;
-        }
-        char *p_data = jsData->valuestring;
-
-        int len_str = (strlen(p_data) / 3) + 1;
-        uint8_t my_data[len_str];
-        for (uint8_t i = 0; i < len_str; i++)
-        {
-            unsigned int c;
-            sscanf(&p_data[3 * i], "%02X", &c);
-            my_data[i] = (uint8_t)c;
-        }
-
-        uint32_t arr_size = sizeof(array_ir_data_control_handler) / sizeof(array_ir_data_control_handler[0]);
-        os_trace("arr_size_ir_control: %lu\r\n", arr_size);
-        for (uint32_t i = 0; i < arr_size; i++)
-        {
-            if (array_ir_data_control_handler[i]._cmd_number == brand)
-            {
-                os_trace("ir brand control data: %ld\r\n", brand);
-                hw_led_stt_on();
-                result = array_ir_data_control_handler[i]._handler(my_data, len_str);
-                hw_led_stt_off();
-                memset(respond, 0, sizeof(respond));
-                sprintf(
-                    respond,
-                    "{\"%s\":%lu,\"type\":3,\"brand\":%lu,\"data\":\"%s\",\"result\":%u}",
-                    gs_dev_type[device_type], type, brand, p_data, result);
-                app_send_data(respond, strlen(respond));
-                break;
-            }
-            else if (arr_size - 1 == i)
-            {
-                memset(respond, 0, sizeof(respond));
-                sprintf(
-                    respond,
-                    "{\"%s\":%ld,\"type\":3,\"brand\":%lu,\"result\":0,\"err\":\"not support brand\"}",
-                    gs_dev_type[device_type], type, brand);
-                app_send_data(respond, strlen(respond));
-            }
-        }
+        ir_control_type_3(jsRoot);
     }
 
 RESPONSE:
@@ -5331,7 +5420,7 @@ void app_handler_msg_task(void *arg)
 
     while (1)
     {
-        if (xQueueReceive(pqueue, &message_rcv_mqtt, 1) == pdPASS)
+        if (xQueueReceive(pqueue, &message_rcv_mqtt, 0) == pdPASS)
         {
             // os_trace("raw_data received: %s\r\n", msg.data);
 
@@ -5385,7 +5474,7 @@ void app_handler_msg_task(void *arg)
 
             cJSON_Delete(jsRoot);
         }
-        else if (xQueueReceive(pqueue_ble, &msg_ble, 1) == pdPASS)
+        else if (xQueueReceive(pqueue_ble, &msg_ble, 0) == pdPASS)
         {
             os_trace("raw_data ble received[%lu]: %s\r\n", msg_ble.length, msg_ble.data);
 

@@ -13,7 +13,7 @@
 #define os_trace_rcv if (DEBUG_IR_RCV_ENABLE == 1) printf
 
 #define MS_TO_USEC(x) ((x) * 1000U)  // Convert milli-Seconds to micro-Seconds.
-
+#define MAX_SIZE_BUFFER 1024
 
 #define kSamsungBits  32
 #define kSamsung36Bits  36
@@ -127,6 +127,14 @@ typedef struct {
   uint8_t overflow;  // Buffer overflow indicator.
   uint8_t timeout;   // Nr. of milliSeconds before we give up.
 } irparams_t;
+
+typedef struct {
+  uint16_t rawbuf[MAX_SIZE_BUFFER];  // raw data
+  // uint16_t is used for rawlen as it saves 3 bytes of iram in the interrupt
+  // handler. Don't ask why, I don't know. It just does.
+  uint16_t rawlen;   // counter of entries in rawbuf.
+  uint8_t overflow;  // Buffer overflow indicator.
+} ir_recv_params_t;
 
 typedef struct {
   bool success;   // Was the match successful?
@@ -696,7 +704,6 @@ void ir_loop(void);
 void IRrecv_init(const uint32_t recvpin, const uint16_t bufsize,
                  const uint8_t timeout, const bool save_buffer);
 
-void Irrecv_pause(void);
 void resume(void);
 
 void m_ir_init(void);

@@ -43,7 +43,7 @@ bool decodeHaierAC(decode_results *results, uint16_t offset,
                               kHaierAcHdr - 750, kHaierAcHdr + 750, kHaierAcHdrGap - 1075, kHaierAcHdrGap + 1075,
                               kHaierAcBitMark - 420, kHaierAcBitMark + 420, kHaierAcOneSpace - 550, kHaierAcOneSpace + 550,
                               kHaierAcBitMark - 420, kHaierAcBitMark + 420, kHaierAcZeroSpace - 420, kHaierAcZeroSpace + 420,
-                              kHaierAcBitMark - 420, kHaierAcBitMark + 420, kHaierAcMinGap - 37500, kHaierAcMinGap + 37500, true,
+                              kHaierAcBitMark - 420, kHaierAcBitMark + 420, kHaierAcMinGap - 100000, kHaierAcMinGap + 37500, true,
                               _tolerance, kMarkExcess, true))
     return false;
 

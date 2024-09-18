@@ -333,6 +333,7 @@ void Casper_test_send_ir(void)
 
     uint8_t dataa[21];
     hash_code(dataa, &ir_state);
+#if DEBUG_ENABLE == 1
     os_trace("CASPER_HASH: 0x");
     for (uint8_t i = 0; i < 21; i++) {
         if (i == 6 || i == 14) {
@@ -341,6 +342,7 @@ void Casper_test_send_ir(void)
         os_trace("%02x", dataa[i]);
     }
     os_trace("\r\n");
+#endif
     sendCasperAc(dataa, kCasperAcStateLength, 0);
 }
 

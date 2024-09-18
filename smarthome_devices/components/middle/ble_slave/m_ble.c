@@ -157,7 +157,7 @@ void ble_init_first(void)
 
 void ble_loop(void)
 {
-    if (is_inited && xQueueReceive(ble_tx_queue, &message, 1) == pdPASS)
+    if (is_inited && xQueueReceive(ble_tx_queue, &message, 0) == pdPASS)
     {
         printf("[%s]:\r\n", message.data);
 
