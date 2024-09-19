@@ -255,6 +255,7 @@ void Casper2024Ac_send(state_ir_t state_ir);
 void Whirlpool_send(state_ir_t state_ir);
 void Corona_send(state_ir_t state_ir);
 void MitsubishiHeavy160_send(state_ir_t state_ir);
+void FunikiAc83_send(state_ir_t state_ir);
 
 /*==============================SEND_DATA_BYTES========================================*/
 uint8_t sendSaijoDenkiAC(const uint8_t data[], const uint16_t nbytes);

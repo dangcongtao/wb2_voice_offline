@@ -11,7 +11,7 @@ Model: TYPE: RG10B(E)/BGEF
 
 #define kFunikiBits (kFunikiAcStateLength * 8)
 
-#define kFunikiAcSectionLength     6
+#define kFunikiAcSectionLength 6
 
 // #define kFunikiAcBitMark   (2200U)
 // #define kFunikiAcHdrSpace kFunikiAcBitMark
@@ -31,9 +31,9 @@ typedef struct
             uint8_t : 8;
             // Byte 3
             uint8_t fan : 3;
-            uint8_t  : 2;
+            uint8_t : 2;
             uint8_t power : 1;
-            uint8_t  : 2;
+            uint8_t : 2;
             // Byte 4
             uint8_t : 8;
             // Byte 5
@@ -60,11 +60,9 @@ typedef struct
     } data;
 } FunikiProtocol;
 
-#define CMD_TURBO   0xAD52AF5045BA
-#define CMD_SWING   0x4DB2D62907F8
-#define CMD_LED     0xAD52AF50A55A
-
-
+#define CMD_TURBO 0xAD52AF5045BA
+#define CMD_SWING 0x4DB2D62907F8
+#define CMD_LED 0xAD52AF50A55A
 
 typedef struct
 {
@@ -76,8 +74,8 @@ typedef struct
             // Byte 0
             uint8_t Mode : 3;
             uint8_t Power : 1;
-            uint8_t Fan: 2;
-            uint8_t  : 2;
+            uint8_t Fan : 2;
+            uint8_t : 2;
             // Byte 1
             uint8_t Temp : 4;
             uint8_t : 4;
@@ -87,7 +85,51 @@ typedef struct
             uint8_t : 8;
             // Byte 4
             uint8_t : 6;
-            uint8_t Auto: 1;
+            uint8_t Auto : 1;
+            uint8_t : 1;
+            // Byte 5
+            uint8_t SwingV: 3;
+            uint8_t : 1;
+            uint8_t : 4;
+            // Byte 6
+            uint8_t : 8;
+            // Byte 7
+            uint8_t : 8;
+            // Byte 8
+            uint8_t hh : 8;
+            // Byte 9
+            uint8_t mm : 8;
+            // Byte 10
+            uint8_t : 8;
+            // Byte 11
+            uint8_t : 8;
+            // Byte 12
+            uint8_t : 8;
+        };
+    };
+} FunikiAC104Protocol;
+
+typedef struct
+{
+    union
+    {
+        uint8_t raw[kFuniki80StateLength]; ///< State in code form.
+        struct
+        { // Standard message map
+            // Byte 0
+            uint8_t : 3;
+            uint8_t Power : 1;
+            uint8_t : 4;
+            // Byte 1
+            uint8_t Temp : 4;
+            uint8_t : 4;
+            // Byte 2
+            uint8_t : 8;
+            // Byte 3
+            uint8_t : 8;
+            // Byte 4
+            uint8_t : 6;
+            uint8_t Auto : 1;
             uint8_t : 1;
             // Byte 5
             uint8_t : 8;
@@ -100,13 +142,12 @@ typedef struct
             // Byte 9
             uint8_t : 8;
             // Byte 10
-            uint8_t : 8;
-            // Byte 11
-            uint8_t : 8;
-            // Byte 12
-            uint8_t : 8;
+            uint8_t footer : 3;
+            uint8_t : 5;
         };
     };
-} FunikiAC104Protocol;
+} FunikiAC83Protocol;
+
+const uint8_t kFunikiAC83MinTemp = 16;
 
 #endif

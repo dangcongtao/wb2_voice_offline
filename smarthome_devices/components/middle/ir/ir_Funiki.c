@@ -688,3 +688,140 @@ uint8_t sendFunikiAc104AC(const uint8_t data[], const uint16_t nbytes)
     vTaskExitCritical();
     return 1;
 }
+
+const uint16_t kFunikiAC83HdrMark = 9000;  // kDaikinBitMark * 8
+const uint16_t kFunikiAC83HdrSpace = 4500; // kDaikinBitMark * 4
+const uint16_t kFunikiAC83BitMark = 560;
+const uint16_t kFunikiAC83ZeroSpace = 600;
+const uint16_t kFunikiAC83OneSpace = 1600;
+bool decodeFunikiAC83(decode_results *results, uint16_t offset,
+                      const uint16_t nbits, const bool strict)
+{
+    uint16_t idx = results->rawlen;
+    for (uint16_t i = 0; i < 5; i++)
+    {
+    }
+
+    // Header + Data + Footer
+    uint16_t my_offset = matchGenericStateLimit(results->rawbuf + offset, results->state,
+                                                results->rawlen - offset, nbits - 3,
+                                                kFunikiAC83HdrMark - 2000, kFunikiAC83HdrMark + 2000, kFunikiAC83HdrSpace - 1000, kFunikiAC83HdrSpace + 1000,
+                                                kFunikiAC83BitMark - 400, kFunikiAC83BitMark + 350, kFunikiAC83OneSpace - 500, kFunikiAC83OneSpace + 500,
+                                                kFunikiAC83BitMark - 400, kFunikiAC83BitMark + 350, kFunikiAC83ZeroSpace - 400, kFunikiAC83ZeroSpace + 400,
+                                                0, 0, 0, 0,
+                                                true, kUseDefTol, kMarkExcess, false);
+    if (!my_offset)
+    {
+        os_trace("%s match state failed\r\n", __func__);
+        return false;
+    }
+
+    offset += my_offset;
+
+    match_result_t data_result = matchDataLimit(&(results->rawbuf[offset]), 3,
+                                                kFunikiAC83BitMark - 400, kFunikiAC83BitMark + 350, kFunikiAC83OneSpace - 500, kFunikiAC83OneSpace + 500,
+                                                kFunikiAC83BitMark - 400, kFunikiAC83BitMark + 350, kFunikiAC83ZeroSpace - 400, kFunikiAC83ZeroSpace + 400,
+                                                25, 50, false, true);
+    if (data_result.success == false)
+    {
+        os_trace("%s Fail\r\n", __func__);
+        return false; // Fail
+    }
+
+    results->state[kFuniki80StateLength - 1] = (uint8_t)data_result.data;
+
+    // Compliance
+    //   if (strict)
+    //     if (!IRSanyoAc_validChecksum(results->state, nbits / 8)) return false;
+
+    os_trace("%s success\r\n", __func__);
+    // Success
+    results->decode_type = FUNIKIAC83;
+    results->bits = nbits;
+    // No need to record the state as we stored it as we decoded it.
+    // As we use result->state, we don't record value, address, or command as it
+    // is a union data type.
+    return true;
+}
+
+void FunikiAC83_setInfo(const uint8_t *newState, state_ir_t *ir_state)
+{
+    os_trace("%s\r\n", __func__);
+    FunikiAC104Protocol _;
+    memcpy(_.raw, newState, kFuniki80StateLength);
+
+    ir_state->protocol = FUNIKIAC83;
+    ir_state->power = _.Power;
+    ir_state->mode = _.Mode | (_.Auto << 2);
+    ir_state->fanspeed = _.Fan;
+    ir_state->degrees = _.Temp + kFunikiAC83MinTemp;
+    os_trace("%s SwingV: %u\r\n", __func__, _.SwingV);
+}
+
+static uint8_t sendFunikiAc83(const uint8_t data[])
+{
+    vTaskEnterCritical();
+    for (uint16_t r = 0; r <= kFuniki80DefaultRepeat; r++)
+    {
+
+        sendGenericBytes(kFunikiAC83HdrMark, kFunikiAC83HdrSpace, kFunikiAC83BitMark,
+                         kFunikiAC83OneSpace, kFunikiAC83BitMark, kFunikiAC83ZeroSpace,
+                         0, 0, data, kFuniki80StateLength - 1,
+                         38000, // Complete guess of the modulation frequency.
+                         false, // Send data in LSB order per byte
+                         0, 50);
+
+        sendGeneric(0, 0, // No header for the header
+                    kFunikiAC83BitMark, kFunikiAC83OneSpace, kFunikiAC83BitMark,
+                    kFunikiAC83ZeroSpace, kFunikiAC83BitMark, kDefaultMessageGap,
+                    (uint64_t)data[10], 3, 38, false, 0, 50); // len footer: 3
+    }
+    vTaskExitCritical();
+    return 1;
+}
+
+void FunikiAc83_send(state_ir_t state_ir)
+{
+    FunikiAC104Protocol _;
+    memset(&_, 0, sizeof(FunikiAC104Protocol));
+
+    // state reset
+    _.raw[3] = 0x60;
+    _.raw[10] = 0x05;
+    _.SwingV = 0x1;
+
+    // settings
+    _.Power = state_ir.power;
+    _.Temp = (uint8_t)state_ir.degrees - 16;
+
+    switch ((uint8_t)state_ir.mode)
+    {
+    case 3:
+    case 1:
+        _.Temp = 0;
+    case 0:
+    case 2:
+        _.Mode = state_ir.mode;
+        break;
+    case 4:
+        _.Temp = 0;
+        _.Mode = 0;
+        _.Auto = 1;
+        break;
+
+    default:
+        _.Mode = 0; // cool
+        break;
+    }
+
+    _.Fan = state_ir.fanspeed;
+#if DEBUG_ENABLE == 1
+    os_trace("%s: 0x ", __func__);
+    for (uint8_t i = 0; i < kFuniki80StateLength; i++)
+    {
+        os_trace("%02X-", _.raw[i]);
+    }
+    os_trace("\r\n");
+#endif
+    sendFunikiAc83(_.raw);
+}

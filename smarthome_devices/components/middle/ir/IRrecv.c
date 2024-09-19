@@ -1514,6 +1514,12 @@ bool decode_for(decode_results *results, uint8_t max_skip)
             return true;
 #endif
 
+#if DECODE_FUNIKIAC83
+        os_trace_rcv("Attempting DECODE_FUNIKIAC83 decode\r\n");
+        if (decodeFunikiAC83(results, offset, kFuniki80Bits, true))
+            return true;
+#endif
+
 #if DECODE_FUNIKI
         os_trace_rcv("Attempting decodeFunikiAC decode\r\n");
         if (decodeFunikiAC(results, offset, kFunikiAcBits, true))
@@ -2236,6 +2242,18 @@ void m_ir_task(void *param)
                     FunikiAc104_setInfo(capture.state, &ir_state_recv);
 #if DEBUG_ENABLE == 1
                     os_trace("FUNIKIAC104(%d): 0x ", capture.decode_type);
+                    for (uint8_t i = 0; i < capture.bits / 8; i++)
+                    {
+                        os_trace("%02X-", capture.state[i]);
+                    }
+                    os_trace("\r\n");
+#endif
+                }
+                else if (FUNIKIAC83 == capture.decode_type)
+                {
+                    FunikiAC83_setInfo(capture.state, &ir_state_recv);
+#if DEBUG_ENABLE == 1
+                    os_trace("FUNIKIAC83(%d): 0x ", capture.decode_type);
                     for (uint8_t i = 0; i < capture.bits / 8; i++)
                     {
                         os_trace("%02X-", capture.state[i]);
