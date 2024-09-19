@@ -54,6 +54,7 @@
 #define DECODE_DAIKIN176  1
 #define DECODE_DAIKIN64  1
 #define DECODE_DAIKIN312  1
+#define DECODE_DAIKIN200  1
 #define DECODE_GREE   1
 #define DECODE_MITSUBISHI112  1
 #define DECODE_MITSUBISHIHEAVY  1
@@ -296,6 +297,10 @@ bool decodeDaikin176(decode_results *results, uint16_t offset,
 bool decodeDaikin312(decode_results *results, uint16_t offset,
                              const uint16_t nbits,
                              const bool strict);
+#endif
+#if DECODE_DAIKIN200
+bool decodeDaikin200(decode_results *results, uint16_t offset,
+                     const uint16_t nbits, const bool strict);
 #endif
 
 #if DECODE_KELVINATOR
@@ -705,6 +710,7 @@ void MitsubishiHeavy160_setInfo(const uint8_t state[], state_ir_t *ir_state);
 void IRCarrierAc32_setInfo(const uint64_t state, state_ir_t *ir_state);
 void FunikiAc104_setInfo(const uint8_t* newState, state_ir_t *ir_state);
 void FunikiAC83_setInfo(const uint8_t *newState, state_ir_t *ir_state);
+void Daikin200_setInfo(const uint8_t *newState, state_ir_t *ir_state);
 
 // void enableIRIn(const bool pullup);
 void ir_loop(void);

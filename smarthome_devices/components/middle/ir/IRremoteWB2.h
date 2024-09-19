@@ -136,8 +136,9 @@ typedef enum {
   FUNIKIAC104,
   AKITO,
   FUNIKIAC83,
+  DAIKIN200,
   // Add new entries before this one, and update it to point to the last entry.
-  kLastDecodeType = LG,
+  kLastDecodeType = FUNIKIAC83,
   MIDEA = 1934,
 } decode_type_t;
 

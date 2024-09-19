@@ -96,6 +96,7 @@ DRAM_ATTR uint32_t start = 0;
 IRAM_ATTR void gpio_intr_neg(void *param)
 {
     uint32_t now = bl_timer_now_us();
+    hosal_timer_stop(&timer3);
 
     // Grab a local copy of rawlen to reduce instructions used in IRAM.
     // This is an ugly premature optimisation code-wise, but we do everything we
@@ -134,13 +135,13 @@ IRAM_ATTR void gpio_intr_neg(void *param)
 
     start = now;
 
-    hosal_timer_stop(&timer3);
     hosal_timer_start(&timer3);
 }
 
 IRAM_ATTR void gpio_intr_pos(void *param)
 {
     uint32_t now = bl_timer_now_us();
+    hosal_timer_stop(&timer3);
 
     // Grab a local copy of rawlen to reduce instructions used in IRAM.
     // This is an ugly premature optimisation code-wise, but we do everything we
@@ -180,7 +181,7 @@ IRAM_ATTR void gpio_intr_pos(void *param)
 
     start = now;
 
-    hosal_timer_stop(&timer3);
+    
     hosal_timer_start(&timer3);
 
     // #if defined(ESP8266)
@@ -722,12 +723,12 @@ uint16_t _matchGenericLimit(volatile uint16_t *data_ptr,
     // Header
     if (hdrmarkLower && !matchLimit(*(data_ptr + offset++), hdrmarkLower, hdrmarkUpper))
     {
-        os_trace_rcv("%s hdr upper failed: %lu, %lu %lu\r\n", __func__, *(data_ptr + offset - 1) * 2, hdrmarkLower, hdrmarkUpper);
+        os_trace_rcv("%s hdr mark failed: %u, %u %u\r\n", __func__, *(data_ptr + offset - 1) * 2, hdrmarkLower, hdrmarkUpper);
         return 0;
     }
     if (hdrspaceLower && !matchLimit(*(data_ptr + offset++), hdrspaceLower, hdrspaceUpper))
     {
-        os_trace_rcv("%s hdr lower failed: %lu, %lu %lu\r\n", __func__, *(data_ptr + offset - 1) * 2, hdrmarkLower, hdrmarkUpper);
+        os_trace_rcv("%s hdr space failed: %u, %u %u\r\n", __func__, *(data_ptr + offset - 1) * 2, hdrspaceLower, hdrspaceUpper);
         return 0;
     }
 
@@ -1544,6 +1545,12 @@ bool decode_for(decode_results *results, uint8_t max_skip)
             return true;
 #endif
 
+#if DECODE_DAIKIN200
+        os_trace_rcv("Attempting decodeDaikin200 decode\r\n");
+        if (decodeDaikin200(results, offset, kDaikin200Bits, true))
+            return true;
+#endif
+
 #if DECODE_MIDEA
         os_trace_rcv("Attempting decodeMidea decode\r\n");
         if (decodeMidea(results, offset, kMideaBits, true))
@@ -1724,7 +1731,7 @@ static void enableIRIn(const bool pullup)
     touch_gpio_pos.port = IR_RX_POS;
 
     bl_gpio_enable_input(params.recvpin, 1, 0);
-    bl_gpio_enable_input(IR_RX_POS, 0, 1);
+    bl_gpio_enable_input(IR_RX_POS, 1, 0);
 
     resume();
 
@@ -2260,6 +2267,10 @@ void m_ir_task(void *param)
                     }
                     os_trace("\r\n");
 #endif
+                }
+                else if (DAIKIN200 == capture.decode_type)
+                {
+                    Daikin200_setInfo(capture.state, &ir_state_recv);
                 }
                 else
                 {

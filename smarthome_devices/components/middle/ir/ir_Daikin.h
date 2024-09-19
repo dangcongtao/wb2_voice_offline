@@ -777,6 +777,70 @@ typedef struct
 } Daikin312Protocol;
 
 
+typedef struct
+{
+    union
+    {
+        uint8_t raw[kDaikin200StateLength];  ///< The state of the IR remote.
+        struct {
+            // Byte 0~2
+            uint8_t      :8;
+            uint8_t      :8;
+            uint8_t      :8;
+            // Byte 3
+            uint8_t Id1  :1;
+            uint8_t      :7;
+            // Byte 4
+            uint8_t      :8;
+            // Byte 5
+            uint8_t      :8;
+            // Byte 6
+            uint8_t Sum1 :8;
+            // Byte 7-9
+            uint8_t      :8;
+            uint8_t      :8;
+            uint8_t      :8;
+            // Byte 10
+            uint8_t Id2  :1;
+            uint8_t      :7;
+            // Byte 11
+            uint8_t      :8;
+            // Byte 12
+            uint8_t         :4;
+            uint8_t AltMode :3;
+            uint8_t         :1;
+            // Byte 13
+            uint8_t ModeButton  :8;
+            // Byte 14
+            uint8_t Power :1;
+            uint8_t       :3;
+            uint8_t Mode  :3;
+            uint8_t       :1;
+            // Byte 15~16
+            uint8_t pad2[2];
+            // Byte 17
+            uint8_t       :1;
+            uint8_t Temp  :6;
+            uint8_t       :1;
+            // Byte 18
+            uint8_t SwingV  :4;
+            uint8_t Fan     :4;
+            // Byte 19~20
+            uint8_t pad3[2];
+            // Byte 21
+            uint8_t   :8;
+            // Byte 22
+            uint8_t   :8;
+            // Byte 23
+            uint8_t   :8;
+            // Byte 24
+            uint8_t Sum2  :8;
+        };
+    };
+} Daikin200Protocol;
+
+
+
 const uint16_t kDaikin312Freq = 36700;  // Modulation Frequency in Hz.
 const uint16_t kDaikin312LeaderMark = 10024;
 const uint16_t kDaikin312LeaderSpace = 25180;
@@ -835,5 +899,19 @@ const uint8_t kDaikin312HumidityAuto       = 0xFF;
 
 const uint8_t kDaikin312MinCoolTemp = 18;  // Min temp (in C) when in Cool mode.
 
+const uint16_t kDaikin200Freq = 38000;  // Modulation Frequency in Hz.
+const uint16_t kDaikin200HdrMark = 4920;
+const uint16_t kDaikin200HdrSpace = 2230;
+const uint16_t kDaikin200BitMark = 290;
+const uint16_t kDaikin200OneSpace = 1850;
+const uint16_t kDaikin200ZeroSpace = 780;
+const uint16_t kDaikin200Gap = 29400;
+const uint16_t kDaikin200Sections = 2;
+const uint16_t kDaikin200Section1Length = 7;
+const uint16_t kDaikin200Section2Length = kDaikin200StateLength -
+                                          kDaikin200Section1Length;
+
+
+const uint8_t kDaikin200DryFanTemp = 9;
 
 #endif
