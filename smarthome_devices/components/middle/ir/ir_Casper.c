@@ -79,9 +79,9 @@ bool decodeCasperAC(decode_results *results, uint16_t offset, const uint16_t nbi
         used = matchGenericStateLimit(results->rawbuf + offset, (uint8_t*)(&results->state[pos]),
                             results->rawlen - offset, temp_nbits * 8,
                             0, 0, 0, 0,
-                            502-350, 502+350, 1740-550, 1740+550,
-                            502-350, 502+350, 600-450, 600+450,
-                            502-350, 502+350, 8000-2000, 8000+2000,
+                            502-400, 502+450, 1740-550, 1740+550,
+                            502-400, 502+450, 600-450, 600+550,
+                            502-400, 502+450, 8000-2000, 8000+2000,
                             pos + temp_nbits >= nbits / 8,
                             50, 0, false);
 

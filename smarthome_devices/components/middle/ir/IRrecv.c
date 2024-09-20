@@ -19,9 +19,9 @@
 
 static QueueHandle_t pqueue_ir_recv;
 
-DRAM_ATTR irparams_t params;
+IRAM_ATTR irparams_t params;
 irparams_t *params_save;
-DRAM_ATTR hosal_gpio_irq_trigger_t trigger_type = HOSAL_IRQ_TRIG_NEG_PULSE;
+IRAM_ATTR hosal_gpio_irq_trigger_t trigger_type = HOSAL_IRQ_TRIG_NEG_PULSE;
 
 static TaskHandle_t xHandle = NULL;
 uint8_t _tolerance;
@@ -36,7 +36,7 @@ static hosal_timer_dev_t timer3 = {
         .period = 100, /// 100us
         .reload_mode = TIMER_RELOAD_ONCE,
     },
-    .port = 0,
+    .port = 1,
 };
 
 static decode_results capture;
@@ -71,32 +71,42 @@ void ir_add_data(void)
     item.overflow = params.overflow;
 
     memcpy(item.rawbuf, params.rawbuf, sizeof(uint16_t) * item.rawlen);
-    if (xQueueSendFromISR(pqueue_ir_recv, &item, 4) != pdPASS)
+    if (xQueueSendFromISR(pqueue_ir_recv, &item, 4) == errQUEUE_FULL)
     {
-        os_trace("\t\t!!!!!!!!Push to pqueue_ir_recv fail\r\n");
+        // os_trace("\t\t!!!!!!!!Push to pqueue_ir_recv fail\r\n");
     }
     else
     {
-        os_trace("Push to pqueue_ir_recv success\r\n");
+        // os_trace("Push to pqueue_ir_recv success\r\n");
     }
     resume();
 }
 
+IRAM_ATTR uint32_t start = 0;
+
 static void timer3_cb(void *data)
 {
-    if (params.rawlen)
+    uint32_t now = bl_timer_now_us();
+    if (params.rcvstate != kStopState && now - start < 30000)
+    {
+        timer3.config.period = (uint32_t)params.timeout * 1000 - (now - start);
+        hosal_timer_stop(&timer3);
+        hosal_timer_start(&timer3);
+        // os_trace("____-------------%s retry start timer, period: %lu, rawlen: %u, now: %lu, start: %lu\r\n", __func__, timer3.config.period, params.rawlen, now, start);
+        return;
+    }
+    if (params.rawlen && params.rcvstate != kStopState)
     {
         params.rcvstate = kStopState;
+        hosal_timer_stop(&timer3);
         ir_add_data();
     }
 }
 
-DRAM_ATTR uint32_t start = 0;
 /// Interrupt handler for changes on the GPIO pin handling incoming IR messages.
 IRAM_ATTR void gpio_intr_neg(void *param)
 {
     uint32_t now = bl_timer_now_us();
-    hosal_timer_stop(&timer3);
 
     // Grab a local copy of rawlen to reduce instructions used in IRAM.
     // This is an ugly premature optimisation code-wise, but we do everything we
@@ -135,13 +145,13 @@ IRAM_ATTR void gpio_intr_neg(void *param)
 
     start = now;
 
+    hosal_timer_stop(&timer3);
     hosal_timer_start(&timer3);
 }
 
 IRAM_ATTR void gpio_intr_pos(void *param)
 {
     uint32_t now = bl_timer_now_us();
-    hosal_timer_stop(&timer3);
 
     // Grab a local copy of rawlen to reduce instructions used in IRAM.
     // This is an ugly premature optimisation code-wise, but we do everything we
@@ -181,7 +191,7 @@ IRAM_ATTR void gpio_intr_pos(void *param)
 
     start = now;
 
-    
+    hosal_timer_stop(&timer3);
     hosal_timer_start(&timer3);
 
     // #if defined(ESP8266)
@@ -1731,7 +1741,7 @@ static void enableIRIn(const bool pullup)
     touch_gpio_pos.port = IR_RX_POS;
 
     bl_gpio_enable_input(params.recvpin, 1, 0);
-    bl_gpio_enable_input(IR_RX_POS, 1, 0);
+    bl_gpio_enable_input(IR_RX_POS, 0, 1);
 
     resume();
 
@@ -1874,27 +1884,11 @@ void m_ir_task(void *param)
                 }
                 else if (capture.decode_type == FUNIKI)
                 {
-#if DEBUG_ENABLE == 1
-                    os_trace("FUNIKI: 0x ");
-                    for (uint8_t i = 0; i < 12; i++)
-                    {
-                        os_trace("%02X-", capture.state[i]);
-                    }
-                    os_trace("\r\n");
-#endif
                     Funiki_setRaw((uint8_t *)&capture.value, capture.decode_type, &ir_state);
                     Funiki_setInfo((uint8_t *)&capture.value, capture.decode_type, &ir_state_recv);
                 }
                 else if (capture.decode_type == CASPER)
                 {
-#if DEBUG_ENABLE == 1
-                    os_trace("CASPER: 0x ");
-                    for (uint8_t i = 0; i < kWhirlpoolAcStateLength; i++)
-                    {
-                        os_trace("%02X-", capture.state[i]);
-                    }
-                    os_trace("\r\n");
-#endif
                     Casper_setRaw((uint8_t *)&capture.value, capture.decode_type, &ir_state);
                     Casper_setInfo((uint8_t *)&capture.value, &ir_state_recv);
                 }
@@ -1977,14 +1971,6 @@ void m_ir_task(void *param)
                 else if (capture.decode_type == DAIKIN312)
                 {
                     extern void Daikin312_setInfo(const uint8_t *newState, const uint16_t length, state_ir_t *ir_state);
-#if DEBUG_ENABLE == 1
-                    os_trace("DAIKIN312: 0x ");
-                    for (uint8_t i = 0; i < kDaikin312StateLength; i++)
-                    {
-                        os_trace("%02X-", capture.state[i]);
-                    }
-                    os_trace("\r\n");
-#endif
                     Daikin312_setInfo((uint8_t *)capture.state, kDaikin312StateLength, &ir_state_recv);
                 }
                 else if (capture.decode_type == DAIKIN176)
@@ -2022,14 +2008,6 @@ void m_ir_task(void *param)
                 }
                 else if (capture.decode_type == TCL112AC)
                 {
-#if DEBUG_ENABLE == 1
-                    os_trace("TCL: 0x ");
-                    for (uint8_t i = 0; i < 14; i++)
-                    {
-                        os_trace("%02X-", capture.state[i]);
-                    }
-                    os_trace("\r\n");
-#endif
                     Tcl112_setRaw((uint8_t *)capture.state, capture.decode_type, &ir_state);
                     Tcl112_setInfo((uint8_t *)capture.state, capture.decode_type, &ir_state_recv);
                     if (ir_state_recv.protocol == AKITO)
@@ -2098,13 +2076,6 @@ void m_ir_task(void *param)
                 {
                     if (capture.bits == kFujitsuAcLongBits)
                     {
-#if DEBUG_ENABLE == 1
-// os_trace("FUJITSU LONG: 0x ");
-// for(uint8_t i = 0; i < kFujitsuAcStateLengthLong; i++) {
-//     os_trace("%02X-", capture.state[i]);
-// }
-// os_trace("\r\n");
-#endif
                         IRFujitsuAC_setInfo(capture.state, kFujitsuAcStateLengthLong, &ir_state_recv);
                     }
                     else if (capture.bits == kFujitsuAcBits)
@@ -2179,13 +2150,6 @@ void m_ir_task(void *param)
                 }
                 else if (WHIRLPOOL_AC == capture.decode_type)
                 {
-#if DEBUG_ENABLE == 1
-// os_trace("WHIRLPOOL_AC: 0x ");
-// for(uint8_t i = 0; i < kWhirlpoolAcStateLength; i++) {
-//     os_trace("%02X-", capture.state[i]);
-// }
-// os_trace("\r\n");
-#endif
                     IRWhirlpoolAc_setRaw(capture.state, kWhirlpoolAcStateLength, &ir_state_recv);
                 }
                 else if (NEOCLIMA == capture.decode_type)
@@ -2247,26 +2211,10 @@ void m_ir_task(void *param)
                 else if (FUNIKIAC104 == capture.decode_type)
                 {
                     FunikiAc104_setInfo(capture.state, &ir_state_recv);
-#if DEBUG_ENABLE == 1
-                    os_trace("FUNIKIAC104(%d): 0x ", capture.decode_type);
-                    for (uint8_t i = 0; i < capture.bits / 8; i++)
-                    {
-                        os_trace("%02X-", capture.state[i]);
-                    }
-                    os_trace("\r\n");
-#endif
                 }
                 else if (FUNIKIAC83 == capture.decode_type)
                 {
                     FunikiAC83_setInfo(capture.state, &ir_state_recv);
-#if DEBUG_ENABLE == 1
-                    os_trace("FUNIKIAC83(%d): 0x ", capture.decode_type);
-                    for (uint8_t i = 0; i < capture.bits / 8; i++)
-                    {
-                        os_trace("%02X-", capture.state[i]);
-                    }
-                    os_trace("\r\n");
-#endif
                 }
                 else if (DAIKIN200 == capture.decode_type)
                 {
@@ -2357,7 +2305,7 @@ void m_ir_task(void *param)
             }
         }
 
-        vTaskDelay(pdMS_TO_TICKS(100));
+        vTaskDelay(pdMS_TO_TICKS(50));
     }
 }
 
@@ -2406,6 +2354,7 @@ void m_ir_deinit(void)
     if (pqueue_ir_recv != NULL) {
         while (xQueuePeek(pqueue_ir_recv, &message, (TickType_t)10) != pdFALSE)
         {
+            vTaskDelay(pdMS_TO_TICKS(10));
         }
     }
 

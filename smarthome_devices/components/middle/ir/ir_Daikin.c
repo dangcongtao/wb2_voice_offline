@@ -2349,10 +2349,10 @@ bool decodeDaikin176(decode_results *results, uint16_t offset,
     // Section Header + Section Data (7 bytes) + Section Footer
     used = matchGenericStateLimit(results->rawbuf + offset, results->state + pos,
                                   results->rawlen - offset, ksectionSize[section] * 8,
-                                  kDaikin176HdrMark - 1000, kDaikin176HdrMark + 1000, kDaikin176HdrSpace - 500, kDaikin176HdrSpace + 500,
-                                  kDaikin176BitMark - 270, kDaikin176BitMark + 330, kDaikin176OneSpace - 500, kDaikin176OneSpace + 500,
-                                  kDaikin176BitMark - 270, kDaikin176BitMark + 330, kDaikin176ZeroSpace - 500, kDaikin176ZeroSpace + 500,
-                                  kDaikin176BitMark - 270, kDaikin176BitMark + 330, kDaikin176Gap - 6000, kDaikin176Gap + 6000,
+                                  kDaikin176HdrMark - 1250, kDaikin176HdrMark + 1250, kDaikin176HdrSpace - 800, kDaikin176HdrSpace + 800,
+                                  kDaikin176BitMark - 360, kDaikin176BitMark + 330, kDaikin176OneSpace - 500, kDaikin176OneSpace + 500,
+                                  kDaikin176BitMark - 360, kDaikin176BitMark + 330, kDaikin176ZeroSpace - 500, kDaikin176ZeroSpace + 500,
+                                  kDaikin176BitMark - 360, kDaikin176BitMark + 330, kDaikin176Gap - 6000, kDaikin176Gap + 6000,
                                   section >= kDaikin176Sections - 1,
                                   kDaikinTolerance, kDaikinMarkExcess, false);
     if (used == 0)
