@@ -2313,6 +2313,24 @@ bool decodeDaikin176(decode_results *results, uint16_t offset,
                      const uint16_t nbits,
                      const bool strict)
 {
+  if (results->rawlen != 360)
+  {
+    os_trace("%s raw_len: %u\r\n", __func__, results->rawlen);
+    if (results->rawlen > 360 && results->rawlen - 360 < 7)
+    {
+      uint16_t len_missing = (results->rawlen - 360) / 2;
+      for (uint16_t i = 0; i < len_missing; i++)
+      {
+        results->rawbuf[117] += results->rawbuf[119 + 2 * i];
+        results->rawbuf[118] += results->rawbuf[120 + 2 * i];
+      }
+      for (uint16_t i = 119; i < 360; i++)
+      {
+        results->rawbuf[i] = results->rawbuf[i + 2];
+      }
+      results->rawlen = 360;
+    }
+  }
   if (results->rawlen < 2 * (nbits + kHeader + kFooter) - 1 + offset)
     return false;
 
