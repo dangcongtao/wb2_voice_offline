@@ -406,6 +406,47 @@ float IRFujitsuAC_getTemp(FujitsuProtocol *_)
   }
 }
 
+
+static bool updateUseLongOrShort(FujitsuProtocol *_)
+{
+  bool fullCmd = false;
+  switch (_cmd)
+  {
+  case kFujitsuAcCmdTurnOff:          // 0x02
+  case kFujitsuAcCmdEcono:            // 0x09
+  case kFujitsuAcCmdPowerful:         // 0x39
+  case kFujitsuAcCmdStepVert:         // 0x6C
+  case kFujitsuAcCmdToggleSwingVert:  // 0x6D
+  case kFujitsuAcCmdStepHoriz:        // 0x79
+  case kFujitsuAcCmdToggleSwingHoriz: // 0x7A
+    _->Cmd = _cmd;
+    //   _rawstatemodified = true;
+    break;
+  default:
+    switch (_model)
+    {
+    case ARRY4:
+    case ARRAH2E:
+    case ARREB1E:
+    case ARREW4E:
+    case ARRFH2J:
+      _->Cmd = 0xFE;
+      //   _rawstatemodified = true;
+      break;
+    case ARDB1:
+    case ARJW2:
+      _->Cmd = 0xFC;
+      //   _rawstatemodified = true;
+      break;
+    default:
+      break;
+    }
+    fullCmd = true;
+    break;
+  }
+  return fullCmd;
+}
+
 bool IRFujitsuAC_setInfo(const uint8_t newState[], const uint16_t length, state_ir_t *ir_state)
 {
   FujitsuProtocol _;
@@ -419,14 +460,20 @@ bool IRFujitsuAC_setInfo(const uint8_t newState[], const uint16_t length, state_
     else
       _.longcode[i] = 0;
   }
+  os_trace("%s cmd: %u\r\n", __func__, _.Cmd);
+  if (length == 6 && _.Cmd != kFujitsuAcCmdTurnOff)
+  {
+    os_trace("%s SHORT CODE\r\n", __func__);
+    return false;
+  }
   IRFujitsuAC_buildFromState(&_, length);
-  os_trace("%s cmd: %u\r\n", __func__, _cmd);
+
   ir_state->model = _model;
   ir_state->power = _cmd != kFujitsuAcCmdTurnOff;
   pre_power_fujitsu = ir_state->power;
   ir_state->mode = _.Mode;
   ir_state->fanspeed = ((_model == ARRFH2J) ? _.Fan_new : _.Fan);
-  ir_state->degrees = IRFujitsuAC_getTemp(&_);
+  ir_state->degrees = ir_state->power ? IRFujitsuAC_getTemp(&_) : 25;
   ir_state->command = _cmd;
   return true;
 }
@@ -483,46 +530,6 @@ static void setTemp(FujitsuProtocol *_, const float temp, const bool useCelsius)
   setCmd(kFujitsuAcCmdStayOn); // No special command involved.
 }
 
-static bool updateUseLongOrShort(FujitsuProtocol *_)
-{
-  bool fullCmd = false;
-  switch (_cmd)
-  {
-  case kFujitsuAcCmdTurnOff:          // 0x02
-  case kFujitsuAcCmdEcono:            // 0x09
-  case kFujitsuAcCmdPowerful:         // 0x39
-  case kFujitsuAcCmdStepVert:         // 0x6C
-  case kFujitsuAcCmdToggleSwingVert:  // 0x6D
-  case kFujitsuAcCmdStepHoriz:        // 0x79
-  case kFujitsuAcCmdToggleSwingHoriz: // 0x7A
-    _->Cmd = _cmd;
-    //   _rawstatemodified = true;
-    break;
-  default:
-    switch (_model)
-    {
-    case ARRY4:
-    case ARRAH2E:
-    case ARREB1E:
-    case ARREW4E:
-    case ARRFH2J:
-      _->Cmd = 0xFE;
-      //   _rawstatemodified = true;
-      break;
-    case ARDB1:
-    case ARJW2:
-      _->Cmd = 0xFC;
-      //   _rawstatemodified = true;
-      break;
-    default:
-      break;
-    }
-    fullCmd = true;
-    break;
-  }
-  return fullCmd;
-}
-
 static void sendFujitsuAC(const unsigned char data[], const uint16_t nbytes,
                           const uint16_t repeat)
 {
@@ -563,7 +570,7 @@ void FujitsuAC_send(state_ir_t state_ir)
   os_trace("%s\r\n", __func__);
   FujitsuProtocol _;
   setModel(state_ir.model);
-  for (size_t i = 0; i < kFujitsuAcStateLength; i++)
+  for (size_t i = 0; i < kFujitsuAcStateLengthLong; i++)
   {
     _.longcode[i] = 0;
   }
@@ -644,8 +651,8 @@ void FujitsuAC_send(state_ir_t state_ir)
       break;
     case ARRFH2J:
       _.Protocol = 0x41;
-      _.longcode[15] = 0x1A;
-      _.longcode[16] = 0x07;
+      _.longcode[15] = 0x12;
+      _.longcode[16] = 0x03;
       break;
     default:
       _.Protocol = 0x30;
@@ -731,7 +738,7 @@ void FujitsuAC_send(state_ir_t state_ir)
     }; // We don't need to do anything for the others.
     }
   }
-  os_trace("%s send cmd: %u\r\n", __func__, _cmd);
+  os_trace("%s send cmd: %u, _.cmd: %u\r\n", __func__, _cmd, _.Cmd);
   //   _rawstatemodified = true;
   sendFujitsuAC(getRaw(&_), getStateLength(&_), kFujitsuAcMinRepeat);
 }

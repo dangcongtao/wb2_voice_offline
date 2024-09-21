@@ -208,27 +208,4 @@ const uint8_t kFujitsuAcOffTimer =                         0b10;  // 2
 const uint8_t kFujitsuAcOnTimer =                          0b11;  // 3
 const uint16_t kFujitsuAcTimerMax = 12 * 60;  ///< Minutes.
 
-// Legacy defines.
-#define FUJITSU_AC_MODE_AUTO kFujitsuAcModeAuto
-#define FUJITSU_AC_MODE_COOL kFujitsuAcModeCool
-#define FUJITSU_AC_MODE_DRY kFujitsuAcModeDry
-#define FUJITSU_AC_MODE_FAN kFujitsuAcModeFan
-#define FUJITSU_AC_MODE_HEAT kFujitsuAcModeHeat
-#define FUJITSU_AC_CMD_STAY_ON kFujitsuAcCmdStayOn
-#define FUJITSU_AC_CMD_TURN_ON kFujitsuAcCmdTurnOn
-#define FUJITSU_AC_CMD_TURN_OFF kFujitsuAcCmdTurnOff
-#define FUJITSU_AC_CMD_STEP_HORIZ kFujitsuAcCmdStepHoriz
-#define FUJITSU_AC_CMD_STEP_VERT kFujitsuAcCmdStepVert
-#define FUJITSU_AC_FAN_AUTO kFujitsuAcFanAuto
-#define FUJITSU_AC_FAN_HIGH kFujitsuAcFanHigh
-#define FUJITSU_AC_FAN_MED kFujitsuAcFanMed
-#define FUJITSU_AC_FAN_LOW kFujitsuAcFanLow
-#define FUJITSU_AC_FAN_QUIET kFujitsuAcFanQuiet
-#define FUJITSU_AC_MIN_TEMP kFujitsuAcMinTemp
-#define FUJITSU_AC_MAX_TEMP kFujitsuAcMaxTemp
-#define FUJITSU_AC_SWING_OFF kFujitsuAcSwingOff
-#define FUJITSU_AC_SWING_VERT kFujitsuAcSwingVert
-#define FUJITSU_AC_SWING_HORIZ kFujitsuAcSwingHoriz
-#define FUJITSU_AC_SWING_BOTH kFujitsuAcSwingBoth
-
 #endif

@@ -2315,8 +2315,8 @@ bool decodeDaikin176(decode_results *results, uint16_t offset,
 {
   if (results->rawlen != 360)
   {
-    os_trace("%s raw_len: %u\r\n", __func__, results->rawlen);
-    if (results->rawlen > 360 && results->rawlen - 360 < 7)
+    // os_trace("%s raw_len: %u\r\n", __func__, results->rawlen);
+    if (results->rawlen > 360 && results->rawlen - 360 < 5)
     {
       uint16_t len_missing = (results->rawlen - 360) / 2;
       for (uint16_t i = 0; i < len_missing; i++)
@@ -2711,7 +2711,7 @@ bool decodeDaikin200(decode_results *results, uint16_t offset,
 {
   if (results->rawlen != 408)
   {
-    os_trace("%s raw_len: %u\r\n", __func__, results->rawlen);
+    // os_trace("%s raw_len: %u\r\n", __func__, results->rawlen);
     if (results->rawlen > 408 && results->rawlen - 408 < 5)
     {
       uint16_t len_missing = (results->rawlen - 408) / 2;

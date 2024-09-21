@@ -49,6 +49,12 @@ bool decodeWhirlpoolAC(decode_results *results, uint16_t offset,
   if (!matchLimit(results->rawbuf[offset++], kWhirlpoolAcHdrSpace-1125, kWhirlpoolAcHdrSpace+1125))
     return false;
 
+  if (results->rawlen == 688)
+  {
+    memcpy(results->rawbuf, &results->rawbuf[344], 344*sizeof(uint16_t));
+    results->rawlen = 344;
+  }
+
   // Data Sections
   uint16_t pos = 0;
   for (uint8_t section = 0; section < kWhirlpoolAcSections;

@@ -71,9 +71,21 @@ void ir_add_data(void)
     item.overflow = params.overflow;
 
     memcpy(item.rawbuf, params.rawbuf, sizeof(uint16_t) * item.rawlen);
-    if (xQueueSendFromISR(pqueue_ir_recv, &item, 4) == errQUEUE_FULL)
+    if (xQueueSendFromISR(pqueue_ir_recv, &item, 4) != pdPASS)
     {
-        // os_trace("\t\t!!!!!!!!Push to pqueue_ir_recv fail\r\n");
+        if (xQueueReceiveFromISR(pqueue_ir_recv, &item, NULL) == pdPASS)
+        {
+            item.rawlen = params.rawlen;
+            item.overflow = params.overflow;
+            memcpy(item.rawbuf, params.rawbuf, sizeof(uint16_t) * item.rawlen);
+            BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+            // Successfully removed an item, now try to add the new item again
+            if (xQueueSendFromISR(pqueue_ir_recv, &item, &xHigherPriorityTaskWoken) != pdPASS)
+            {
+                // Failed to add the new item even after removing an old one
+                // Handle this scenario, e.g., log an error or set a flag
+            }
+        }
     }
     else
     {
@@ -87,15 +99,20 @@ IRAM_ATTR uint32_t start = 0;
 static void timer3_cb(void *data)
 {
     uint32_t now = bl_timer_now_us();
-    if (params.rcvstate != kStopState && now - start < 30000)
+    if (params.rcvstate == kStopState)
+    {
+        return;
+    }
+    if (now - start < 85000)
     {
         timer3.config.period = (uint32_t)params.timeout * 1000 - (now - start);
         hosal_timer_stop(&timer3);
         hosal_timer_start(&timer3);
+        timer3.config.period = (uint32_t)params.timeout * 1000;
         // os_trace("____-------------%s retry start timer, period: %lu, rawlen: %u, now: %lu, start: %lu\r\n", __func__, timer3.config.period, params.rawlen, now, start);
         return;
     }
-    if (params.rawlen && params.rcvstate != kStopState)
+    if (params.rawlen)
     {
         params.rcvstate = kStopState;
         hosal_timer_stop(&timer3);
@@ -401,8 +418,8 @@ bool matchAtLeast(uint32_t measured, uint32_t desired,
     // If there is a legit case, then this should be removed.
     assert(ticksHigh(desired, tolerance, delta) >= desired);
 #endif // UNIT_TEST
-    // We really should never get a value of 0, except as the last value
-    // in the buffer. If that is the case, then assume infinity and return true.
+       // We really should never get a value of 0, except as the last value
+       // in the buffer. If that is the case, then assume infinity and return true.
     if (measured == 0)
         return true;
     return measured >= ticksLow(min(desired,
@@ -1238,18 +1255,6 @@ bool decode_for(decode_results *results, uint8_t max_skip)
             return true;
 #endif
 
-#if DECODE_WHIRLPOOL_AC
-        os_trace_rcv("Attempting Casper AC\r\n");
-        if (decodeWhirlpoolAC(results, offset, kWhirlpoolAcBits, true))
-            return true;
-#endif
-
-#if DECODE_CASPER
-        os_trace_rcv("Attempting Casper AC\r\n");
-        if (decodeCasperAC(results, offset, kCasperAcBits, true))
-            return true;
-#endif
-
 #if DECODE_DELONGHI_AC
         os_trace_rcv("Attempting CarrierAC64 AC\r\n");
         if (decodeDelonghiAc(results, offset, kDelonghiAcBits, true))
@@ -1305,12 +1310,6 @@ bool decode_for(decode_results *results, uint8_t max_skip)
 #if DECODE_DAIKIN216
         os_trace_rcv("Attempting Daikin 216 bit AC decode\r\n");
         if (decodeDaikin216(results, offset, kDaikin216Bits, true))
-            return true;
-#endif
-
-#if DECODE_DAIKIN176
-        os_trace_rcv("Attempting Daikin 176 bit AC decode\r\n");
-        if (decodeDaikin176(results, offset, kDaikin176Bits, true))
             return true;
 #endif
 
@@ -1555,12 +1554,6 @@ bool decode_for(decode_results *results, uint8_t max_skip)
             return true;
 #endif
 
-#if DECODE_DAIKIN200
-        os_trace_rcv("Attempting decodeDaikin200 decode\r\n");
-        if (decodeDaikin200(results, offset, kDaikin200Bits, true))
-            return true;
-#endif
-
 #if DECODE_MIDEA
         os_trace_rcv("Attempting decodeMidea decode\r\n");
         if (decodeMidea(results, offset, kMideaBits, true))
@@ -1621,6 +1614,30 @@ bool decode_for(decode_results *results, uint8_t max_skip)
 #if DECODE_SAIJODENKI
         os_trace_rcv("Attempting decodeSaijoDenki decode\r\n");
         if (decodeSaijoDenki(results, offset, kSaijoDenkiBits, true))
+            return true;
+#endif
+
+#if DECODE_WHIRLPOOL_AC
+        os_trace_rcv("Attempting Casper AC\r\n");
+        if (decodeWhirlpoolAC(results, offset, kWhirlpoolAcBits, true))
+            return true;
+#endif
+
+#if DECODE_CASPER
+        os_trace_rcv("Attempting Casper AC\r\n");
+        if (decodeCasperAC(results, offset, kCasperAcBits, true))
+            return true;
+#endif
+
+#if DECODE_DAIKIN176
+        os_trace_rcv("Attempting Daikin 176 bit AC decode\r\n");
+        if (decodeDaikin176(results, offset, kDaikin176Bits, true))
+            return true;
+#endif
+
+#if DECODE_DAIKIN200
+        os_trace_rcv("Attempting decodeDaikin200 decode\r\n");
+        if (decodeDaikin200(results, offset, kDaikin200Bits, true))
             return true;
 #endif
 
@@ -1700,8 +1717,8 @@ bool decode(decode_results *results, ir_recv_params_t *my_item,
 #if ENABLE_NOISE_FILTER_OPTION
     crudeNoiseFilter(results, noise_floor);
 #endif // ENABLE_NOISE_FILTER_OPTION
-    // Keep looking for protocols until we've run out of entries to skip or we
-    // find a valid protocol message.
+       // Keep looking for protocols until we've run out of entries to skip or we
+       // find a valid protocol message.
     if (decode_for(results, max_skip))
     {
         return true;
@@ -1721,9 +1738,9 @@ bool decode(decode_results *results, ir_recv_params_t *my_item,
         return true;
     }
 #endif // DECODE_HASH
-    // Throw away and start over
-    // if (!resumed) // Check if we have already resumed.
-    //     resume();
+       // Throw away and start over
+       // if (!resumed) // Check if we have already resumed.
+       //     resume();
     return false;
 }
 
@@ -2070,42 +2087,50 @@ void m_ir_task(void *param)
                 }
                 else if (FUJITSU_NEW_AC == capture.decode_type)
                 {
-                    IRFujitsuAC_setInfo(capture.state, kFujitsuAcStateLength, &ir_state_recv);
+                    IRFujitsuAC_setInfo(capture.state, (uint16_t)capture.bits / 8, &ir_state_recv);
                 }
                 else if (FUJITSU_AC == capture.decode_type)
                 {
-                    if (capture.bits == kFujitsuAcLongBits)
+                    if (!IRFujitsuAC_setInfo(capture.state, (uint16_t)capture.bits / 8, &ir_state_recv))
                     {
-                        IRFujitsuAC_setInfo(capture.state, kFujitsuAcStateLengthLong, &ir_state_recv);
+                        capture.decode_type = UNKNOWN;
                     }
-                    else if (capture.bits == kFujitsuAcBits)
+                    else
                     {
-                        IRFujitsuAC_setInfo(capture.state, kFujitsuAcStateLength, &ir_state_recv);
-                    }
-                    else if (capture.bits >= kFujitsuAcMinBits)
-                    {
-                        IRFujitsuAC_setInfo(capture.state, (uint16_t)capture.bits / 8, &ir_state_recv);
-                    }
 
-                    switch (ir_state_recv.model)
-                    {
-                    case ARRAH2E:
-                    case ARREB1E:
-                    case ARRY4:
-                    case ARREW4E:
-                        capture.decode_type = FUJITSU_AC;
-                        break;
+                        // if (capture.bits == kFujitsuAcLongBits)
+                        // {
+                        //     IRFujitsuAC_setInfo(capture.state, kFujitsuAcStateLengthLong, &ir_state_recv);
+                        // }
+                        // else if (capture.bits == kFujitsuAcBits)
+                        // {
+                        //     IRFujitsuAC_setInfo(capture.state, kFujitsuAcStateLength, &ir_state_recv);
+                        // }
+                        // else if (capture.bits >= kFujitsuAcMinBits)
+                        // {
+                        //     IRFujitsuAC_setInfo(capture.state, (uint16_t)capture.bits / 8, &ir_state_recv);
+                        // }
 
-                    case ARDB1:
-                    case ARJW2:
-                        capture.decode_type = FUJITSU2_AC;
-                        break;
-                    case ARRFH2J:
-                        capture.decode_type = FUJITSU_NEW_AC;
-                        break;
-                    default:
-                        capture.decode_type = FUJITSU_AC;
-                        break;
+                        switch (ir_state_recv.model)
+                        {
+                        case ARRAH2E:
+                        case ARREB1E:
+                        case ARRY4:
+                        case ARREW4E:
+                            capture.decode_type = FUJITSU_AC;
+                            break;
+
+                        case ARDB1:
+                        case ARJW2:
+                            capture.decode_type = FUJITSU2_AC;
+                            break;
+                        case ARRFH2J:
+                            capture.decode_type = FUJITSU_NEW_AC;
+                            break;
+                        default:
+                            capture.decode_type = FUJITSU_AC;
+                            break;
+                        }
                     }
                 }
                 else if (VESTEL_AC == capture.decode_type)
@@ -2305,7 +2330,7 @@ void m_ir_task(void *param)
             }
         }
 
-        vTaskDelay(pdMS_TO_TICKS(50));
+        vTaskDelay(pdMS_TO_TICKS(500));
     }
 }
 
@@ -2351,14 +2376,16 @@ void m_ir_deinit(void)
     disableIRin();
 
     ir_recv_params_t message;
-    if (pqueue_ir_recv != NULL) {
+    if (pqueue_ir_recv != NULL)
+    {
         while (xQueuePeek(pqueue_ir_recv, &message, (TickType_t)10) != pdFALSE)
         {
             vTaskDelay(pdMS_TO_TICKS(10));
         }
     }
 
-    if (pqueue_ir_recv != NULL) {
+    if (pqueue_ir_recv != NULL)
+    {
         vQueueDelete(pqueue_ir_recv);
         pqueue_ir_recv = NULL;
     }

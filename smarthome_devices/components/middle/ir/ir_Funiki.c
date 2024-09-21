@@ -712,7 +712,7 @@ bool decodeFunikiAC83(decode_results *results, uint16_t offset,
                                                 true, kUseDefTol, kMarkExcess, false);
     if (!my_offset)
     {
-        os_trace("%s match state failed\r\n", __func__);
+        // os_trace("%s match state failed\r\n", __func__);
         return false;
     }
 
