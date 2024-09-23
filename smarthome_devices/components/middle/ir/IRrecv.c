@@ -18,6 +18,7 @@
 #include <queue.h>
 
 static QueueHandle_t pqueue_ir_recv;
+static m_ac_info_t s_ac_info;
 
 IRAM_ATTR irparams_t params;
 irparams_t *params_save;
@@ -2283,7 +2284,10 @@ void m_ir_task(void *param)
                     char str[325];
                     int seek = 0;
                     memset(str, 0, 325);
-
+                    if (ir_state_recv.degrees < 10 || ir_state_recv.degrees > 40)
+                    {
+                        ir_state_recv.degrees = 25;
+                    }
                     seek += sprintf(str, "{\"%s\":10,\"type\":1,\"brand\":%d,\"model\":%d,\"power\":%u,\"mode\":%d,\"temp\":%.1f,\"fan\":%d,\"swingv\":%d,\"swingh\":%d,\"debug\":{\"nbits\":%u,\"data\":\"",
                                     gs_dev_type[device_type], capture.decode_type, ir_state_recv.model, ir_state_recv.power, ir_state_recv.mode, ir_state_recv.degrees, ir_state_recv.fanspeed, ir_state_recv.swingv, ir_state_recv.swingh, capture.bits);
                     uint8_t n_bytes = capture.bits / 8;
@@ -2392,4 +2396,9 @@ void m_ir_deinit(void)
 
     vTaskDelete(xHandle);
     xHandle = NULL;
+}
+
+m_ac_info_t* m_ac_info_get_reference(void)
+{
+    return &s_ac_info;
 }

@@ -94,11 +94,14 @@ void Casper2024Ac_setInfo(const uint8_t new_code[], const uint16_t length, state
   ElectraProtocol _;
   memset(&_, 0, sizeof(ElectraProtocol));
   memcpy(_.raw, new_code, min(length, kElectraAcStateLength));
-
+  os_trace("%s button: %u, silence: %u, turbo: %u, swingv: %u, swingh: %u\r\n", __func__, _.button, _.silence, _.turbo, _.SwingV2, _.SwingH2);
   ir_state->power = _.Power;
   ir_state->mode = _.Mode2;
-  ir_state->fanspeed = _.Fan2;
+  ir_state->fanspeed = _.Fan2 | ((_.silence | _.turbo) << 3); /*11: silence, 13: turbo*/
   ir_state->degrees = _.Temp2 + kElectraAcTempDelta;
+
+  ir_state->swingv = _.SwingV2;
+  ir_state->swingh = _.SwingH2;
 }
 
 static void sendElectraAC(const uint8_t data[], const uint16_t nbytes,
@@ -180,6 +183,10 @@ void ElectraAc_send(state_ir_t state_ir)
   sendElectraAC(_.raw, kElectraAcStateLength, kElectraAcMinRepeat);
 }
 
+#define SWINGV_AUTO 0
+#define SWINGV_OFF 7
+#define SWINGH_AUTO 0
+#define SWINGH_OFF 7
 void Casper2024Ac_send(state_ir_t state_ir)
 {
   os_trace("%s\r\n", __func__);
@@ -188,12 +195,14 @@ void Casper2024Ac_send(state_ir_t state_ir)
   for (uint8_t i = 0; i < kElectraAcStateLength - 1; i++)
     _.raw[i] = kState[i];
 
-  // if (state_ir.swingv != swingv_kOff) {
-  //   _.SwingV = ((state_ir.swingv == 1) ? kElectraAcSwingOn : kElectraAcSwingOff);
-  // }
-  // if (state_ir.swingh != swingh_kOff) {
-  //   _.SwingH = ((state_ir.swingh == 1) ? kElectraAcSwingOn : kElectraAcSwingOff);
-  // }
+  if (state_ir.swingv != swingv_kOff)
+  {
+    _.SwingV2 = state_ir.swingv;
+  }
+  if (state_ir.swingh != swingh_kOff)
+  {
+    _.SwingH2 = state_ir.swingh;
+  }
   // Power
   _.Power = state_ir.power;
   // set Temp
@@ -206,29 +215,36 @@ void Casper2024Ac_send(state_ir_t state_ir)
   case kCasperAcFanLow:
   case kCasperAcFanMed:
   case kCasperAcFanHigh:
+  case kCasperAcFanAuto:
     _.Fan2 = state_ir.fanspeed;
+    break;
+  case kCasperAcFanSilence:
+    _.Fan2 = kCasperAcFanLow;
+    _.silence = 1;
+    break;
+  case kCasperAcFanTurbo:
+    _.Fan2 = kCasperAcFanHigh;
+    _.turbo = 1;
     break;
   default:
     // If we get an unexpected speed, default to Auto.
-    _.Fan2 = kCasperAcFanHigh;
+    _.Fan2 = kCasperAcFanAuto;
   }
   // Mode
   switch ((uint8_t)state_ir.mode)
   {
   case kElectraAcFan:
-    _.raw[2] = 0xE0;
     _.Temp2 = 0;
-    _.Temp_disable = 0b111;
+    // _.Temp_disable = 0b111;
     _.Mode2 = kElectraAcFan;
     break;
   case kElectraAcAuto:
-    _.raw[2] = 0xE0;
     _.Temp2 = 0;
-    _.Temp_disable = 0b111;
-    _.Fan2 = 0b111;
+    // _.Temp_disable = 0b111;
     _.Mode2 = kElectraAcAuto;
     break;
   case kElectraAcDry:
+    _.Fan2 = kCasperAcFanLow;
   case kElectraAcCool:
   case kElectraAcHeat:
     _.Mode2 = state_ir.mode;
@@ -240,6 +256,13 @@ void Casper2024Ac_send(state_ir_t state_ir)
 
   // calculate checksum
   _.Sum = IRElectraAc_calcChecksum(_.raw, kElectraAcStateLength);
-
+#if DEBUG_ENABLE == 1
+  os_trace("%s: 0x ", __func__);
+  for (uint8_t i = 0; i < kElectraAcStateLength; i++)
+  {
+    os_trace("%02X-", _.raw[i]);
+  }
+  os_trace("\r\n");
+#endif
   sendElectraAC(_.raw, kElectraAcStateLength, kElectraAcMinRepeat);
 }

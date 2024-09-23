@@ -3527,6 +3527,19 @@ static void AC_Casper2024_Callback(cJSON *jsRoot)
     state_ir.mode = mode;
     state_ir.fanspeed = fan;
 
+    cJSON *jsSwingV = NULL, *jsSwingH = NULL;
+    jsSwingV = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGV);
+    if (jsSwingV != NULL)
+    {
+        state_ir.swingv = jsSwingV->valueint;
+    }
+
+    jsSwingH = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGH);
+    if (jsSwingH != NULL)
+    {
+        state_ir.swingh = jsSwingH->valueint;
+    }
+
     Casper2024Ac_send(state_ir);
     result = 1;
 

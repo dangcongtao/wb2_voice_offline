@@ -8,10 +8,12 @@
 
 #include "m_wifi.h"
 #include "m_mqtt.h"
+#include "IRrecv.h"
 
 #define BIT_FLAG_SYNC_WIFI      0
 #define BIT_FLAG_SYNC_MQTT      1
 #define BIT_FLAG_SYNC_PAIR      2
+#define BIT_FLAG_SYNC_AC        3
 
 #define SET(PIN,N) (PIN |=  (1<<N))
 #define CLR(PIN,N) (PIN &= ~(1<<N))
@@ -46,6 +48,7 @@ typedef struct {
     uint32_t            _device_is_paired;
     m_wifi_info_t*      _wifi_info;
     m_mqtt_info_t*      _mqtt_info;
+    m_ac_info_t*          _ac_info;
     uint32_t checksum_crc;
     uint32_t version;
 } m_device_t;

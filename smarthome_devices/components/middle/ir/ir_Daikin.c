@@ -2,6 +2,7 @@
 #include "IRutils.h"
 #include "system_typedef.h"
 #include "IRsend.h"
+#include "m_database.h"
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*---------------------------------------------------------Daikin----------------------------------------------------------------------------------------------*/
@@ -2179,7 +2180,6 @@ void Daikin64_setRaw(const uint64_t new_state, const decode_type_t protocol, sta
   ir_state->swingv = _.SwingV ? swingv_kAuto : swingv_kOff;
 }
 
-static bool daikin64_pre_power = true;
 void Daikin64_setInfo(const uint64_t new_state, const decode_type_t protocol, state_ir_t *ir_state)
 {
   os_trace("%s\r\n", __func__);
@@ -2189,9 +2189,10 @@ void Daikin64_setInfo(const uint64_t new_state, const decode_type_t protocol, st
   ir_state->protocol = DAIKIN64;
   if (_.Power)
   {
-    daikin64_pre_power = !daikin64_pre_power;
+    m_ac_info_get_reference()->pre_power_DAIKIN64 = !m_ac_info_get_reference()->pre_power_DAIKIN64;
+    m_db_get_instance()->_request_sync_db(BIT_FLAG_SYNC_AC);
   }
-  ir_state->power = daikin64_pre_power;
+  ir_state->power = m_ac_info_get_reference()->pre_power_DAIKIN64;
   ir_state->mode = _.Mode;
   ir_state->fanspeed = _.Fan;
 
@@ -2274,9 +2275,10 @@ void Daikin64_send(state_ir_t state_ir)
     _.SwingV = 1;
   }
 
-  if (state_ir.power != daikin64_pre_power)
+  if (state_ir.power != m_ac_info_get_reference()->pre_power_DAIKIN64)
   {
-    daikin64_pre_power = !daikin64_pre_power;
+    m_ac_info_get_reference()->pre_power_DAIKIN64 = !m_ac_info_get_reference()->pre_power_DAIKIN64;
+    m_db_get_instance()->_request_sync_db(BIT_FLAG_SYNC_AC);
     _.Power = 1;
   }
   else

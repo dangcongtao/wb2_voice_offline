@@ -291,6 +291,7 @@ void m_database_init(void)
 
     s_m_database._m_device._mqtt_info = m_mqtt_get_info_reference();
     s_m_database._m_device._wifi_info = m_wifi_get_info_reference();
+    s_m_database._m_device._ac_info = m_ac_info_get_reference();
 
     s_m_database._set_dev_pair_state = m_db_dev_set_pair;
     s_m_database._get_dev_pair_state = m_db_dev_get_pair;
