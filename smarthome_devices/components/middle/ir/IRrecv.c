@@ -1231,12 +1231,6 @@ bool decode_for(decode_results *results, uint8_t max_skip)
             return true;
 #endif
 
-#if DECODE_HAIER_AC_YRW02
-        os_trace_rcv("Attempting Aqua AC\r\n");
-        if (decodeHaierACYRW02(results, offset, kHaierACYRW02Bits, true))
-            return true;
-#endif
-
 #if DECODE_HAIER_AC176
         os_trace_rcv("Attempting Aqua AC\r\n");
         if (decodeHaierAC176(results, offset, kHaierAC176Bits, true))
@@ -1614,6 +1608,12 @@ bool decode_for(decode_results *results, uint8_t max_skip)
 #if DECODE_SAIJODENKI
         os_trace_rcv("Attempting decodeSaijoDenki decode\r\n");
         if (decodeSaijoDenki(results, offset, kSaijoDenkiBits, true))
+            return true;
+#endif
+
+#if DECODE_HAIER_AC_YRW02
+        os_trace_rcv("Attempting Aqua AC\r\n");
+        if (decodeHaierACYRW02(results, offset, kHaierACYRW02Bits, true))
             return true;
 #endif
 

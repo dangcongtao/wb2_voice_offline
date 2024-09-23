@@ -99,6 +99,12 @@ bool decodeHaierACYRW02(decode_results *results, uint16_t offset,
       return false; // Not strictly a HAIER_AC_YRW02 message.
   }
 
+  if (results->rawlen == 460)
+  {
+    memcpy(results->rawbuf, &results->rawbuf[230], 230*sizeof(uint16_t));
+    results->rawlen = 230;
+  }
+
   // The protocol is almost exactly the same as HAIER_AC
   if (!decodeHaierAC(results, offset, nbits, false))
     return false;
