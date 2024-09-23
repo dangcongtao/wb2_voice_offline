@@ -223,6 +223,7 @@ bool _isNormal(void) {
   switch (_.data.raw) {
     case kLgAcOffCommand:
     case kLgAcLightToggle:
+    case kLgAcJetMode:
       return false;
   }
   if (isSwing()) return false;
@@ -430,9 +431,14 @@ void LG_setRaw(const uint32_t new_code, const decode_type_t protocol, state_ir_t
   os_trace("LG model: %u\r\n", getModel());
 }
 
-void LG_setInfo(const uint32_t new_code, const decode_type_t protocol, state_ir_t *ir_state) 
+uint8_t LG_setInfo(const uint32_t new_code, const decode_type_t protocol, state_ir_t *ir_state) 
 {
   _.data.raw = new_code;
+  if ((!_isNormal() || !getPower()) && new_code != kLgAcOffCommand)
+  {
+    os_trace("%s not normal\r\n", __func__);
+    return 0;
+  }
   ir_state->power = getPower();
   ir_state->mode = _.data.Mode;
   ir_state->celsius = true;
@@ -472,6 +478,7 @@ void LG_setInfo(const uint32_t new_code, const decode_type_t protocol, state_ir_
   ir_state->model = getModel();
   _temp = 15;  // Ensure there is a "sane" previous temp.
   _temp = getTemp();
+  return 1;
   // os_trace("LG model: %u\r\n", getModel());
 }
 

@@ -623,7 +623,6 @@ uint16_t matchManchester(volatile const uint16_t *data_ptr,
                          const bool MSBfirst,
                          const bool GEThomas);
 
-void LG_setRaw(const uint32_t new_code, const decode_type_t protocol, state_ir_t *ir_state);
 bool isValidLgAc(void);
 
 void Funiki_setRaw(const uint8_t *new_code, const decode_type_t protocol, state_ir_t *ir_state);
@@ -661,7 +660,7 @@ void HitachiAC344_setRaw(const uint8_t new_code[], const uint16_t length, state_
 void HitachiAC424_setRaw(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
 
 /*------------SET_INFO----------------*/
-void LG_setInfo(const uint32_t new_code, const decode_type_t protocol, state_ir_t *ir_state);
+uint8_t LG_setInfo(const uint32_t new_code, const decode_type_t protocol, state_ir_t *ir_state);
 void Casper_setInfo(const uint8_t *new_code, state_ir_t *ir_state);
 void Funiki_setInfo(const uint8_t *new_code, const decode_type_t protocol, state_ir_t *ir_state);
 void Samsung_setInfo(const uint8_t *new_code, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state);

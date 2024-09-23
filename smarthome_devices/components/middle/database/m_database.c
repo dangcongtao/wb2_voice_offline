@@ -18,6 +18,7 @@
 char key[16], iv[16];
 
 char s_device_id[64];
+uint8_t last_reason_reset = 0;
 static uint8_t s_request_sync_db = 0;
 static bool s_request_reset_db = false;
 static bool s_request_reset_db_without_sync = false;
@@ -135,6 +136,16 @@ static void generate_aes_key_iv(void)
     }
 }
 
+static void flash_proccess_reset_reason(void)
+{
+    uint8_t reason_reset = flash_read_rs_reason();
+    if (reason_reset)
+    {
+        last_reason_reset = reason_reset;
+        flash_set_rs_reason(0);
+    }
+}
+
 uint16_t dfu_crc16(uint16_t crc, unsigned char *pD, int len)
 {
     uint16_t poly[2] = {0, 0xa001}; // 0x8005 <==> 0xa001
@@ -158,6 +169,7 @@ static void m_load_databse(void)
 {
     m_db_read_device_id();
     flash_read_database(&s_m_database._m_device);
+    flash_proccess_reset_reason();
 
     // memset(s_m_database._m_device._ble_info, 0, sizeof(m_ble_info_t));
     // flash_ble_write_database(s_m_database._m_device);

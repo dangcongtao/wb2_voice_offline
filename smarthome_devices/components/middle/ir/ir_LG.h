@@ -50,6 +50,7 @@ typedef struct
 
 #define kLgAcOffCommand 0x88C0051
 #define kLgAcLightToggle 0x88C00A6
+#define kLgAcJetMode 0x8810089
 
 #define kLgAcSwingVToggle 0x8810001
 #define kLgAcSwingSignature 0x8813

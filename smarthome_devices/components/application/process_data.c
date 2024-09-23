@@ -247,12 +247,12 @@ void app_send_offline_message(uint8_t src)
     vTaskDelay(pdMS_TO_TICKS(200));
 }
 
+extern uint8_t last_reason_reset;
 static void app_startup_message(void)
 {
     m_device_t app_databse = m_db_get_instance()->_m_device;
     uint32_t i;
     static uint32_t num_send = 0;
-    uint8_t last_reason_reset = flash_read_rs_reason();
     m_wifi_get_instance().wifi_sync_rssi_cb();
     /* respond server here */
     memset(respond, 0, sizeof(respond));

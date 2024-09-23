@@ -1892,22 +1892,24 @@ void m_ir_task(void *param)
 
                 if (capture.decode_type == LG2)
                 {
-                    LG_setRaw(capture.value, capture.decode_type, &ir_state);
-                    LG_setInfo(capture.value, capture.decode_type, &ir_state_recv);
+                    if (!LG_setInfo(capture.value, capture.decode_type, &ir_state_recv))
+                    {
+                        capture.decode_type = UNKNOWN;
+                    }
                 }
                 else if (capture.decode_type == LG)
                 {
-                    LG_setRaw(capture.value, capture.decode_type, &ir_state);
-                    LG_setInfo(capture.value, capture.decode_type, &ir_state_recv);
+                    if (!LG_setInfo(capture.value, capture.decode_type, &ir_state_recv))
+                    {
+                        capture.decode_type = UNKNOWN;
+                    }
                 }
                 else if (capture.decode_type == FUNIKI)
                 {
-                    Funiki_setRaw((uint8_t *)&capture.value, capture.decode_type, &ir_state);
                     Funiki_setInfo((uint8_t *)&capture.value, capture.decode_type, &ir_state_recv);
                 }
                 else if (capture.decode_type == CASPER)
                 {
-                    Casper_setRaw((uint8_t *)&capture.value, capture.decode_type, &ir_state);
                     Casper_setInfo((uint8_t *)&capture.value, &ir_state_recv);
                 }
                 else if (capture.decode_type == SAMSUNG_AC)
@@ -1915,12 +1917,10 @@ void m_ir_task(void *param)
                     switch (capture.bits)
                     {
                     case kSamsungAcBits:
-                        Samsung_setRaw((uint8_t *)&capture.value, kSamsungAcStateLength, capture.decode_type, &ir_state);
                         Samsung_setInfo((uint8_t *)&capture.value, kSamsungAcStateLength, capture.decode_type, &ir_state_recv);
                         break;
 
                     case kSamsungAcExtendedBits:
-                        Samsung_setRaw((uint8_t *)&capture.value, kSamsungAcExtendedStateLength, capture.decode_type, &ir_state);
                         Samsung_setInfo((uint8_t *)&capture.value, kSamsungAcExtendedStateLength, capture.decode_type, &ir_state_recv);
                         break;
 
@@ -1933,17 +1933,14 @@ void m_ir_task(void *param)
                     switch (capture.bits)
                     {
                     case kToshibaACBits:
-                        Toshiba_setRaw((uint8_t *)capture.state, kToshibaACStateLength, capture.decode_type, &ir_state);
                         Toshiba_setInfo((uint8_t *)capture.state, kToshibaACStateLength, capture.decode_type, &ir_state_recv);
                         break;
 
                     case kToshibaACBitsShort:
-                        Toshiba_setRaw((uint8_t *)capture.state, kToshibaACStateLengthShort, capture.decode_type, &ir_state);
                         Toshiba_setInfo((uint8_t *)capture.state, kToshibaACStateLengthShort, capture.decode_type, &ir_state_recv);
                         break;
 
                     case kToshibaACBitsLong:
-                        Toshiba_setRaw((uint8_t *)capture.state, kToshibaACStateLengthLong, capture.decode_type, &ir_state);
                         Toshiba_setInfo((uint8_t *)capture.state, kToshibaACStateLengthLong, capture.decode_type, &ir_state_recv);
                         break;
 
@@ -1953,37 +1950,30 @@ void m_ir_task(void *param)
                 }
                 else if (capture.decode_type == DAIKIN)
                 {
-                    Daikin_setRaw((uint8_t *)capture.state, kDaikinStateLength, capture.decode_type, &ir_state);
                     Daikin_setInfo((uint8_t *)capture.state, kDaikinStateLength, capture.decode_type, &ir_state_recv);
                 }
                 else if (capture.decode_type == DAIKIN2)
                 {
-                    Daikin2_setRaw((uint8_t *)capture.state, kDaikin2StateLength, capture.decode_type, &ir_state);
                     Daikin2_setInfo((uint8_t *)capture.state, kDaikin2StateLength, capture.decode_type, &ir_state_recv);
                 }
                 else if (capture.decode_type == DAIKIN64)
                 {
-                    Daikin64_setRaw(capture.value, capture.decode_type, &ir_state);
                     Daikin64_setInfo(capture.value, capture.decode_type, &ir_state_recv);
                 }
                 else if (capture.decode_type == DAIKIN152)
                 {
-                    Daikin152_setRaw((uint8_t *)capture.state, kDaikin152StateLength, capture.decode_type, &ir_state);
                     Daikin152_setInfo((uint8_t *)capture.state, kDaikin152StateLength, capture.decode_type, &ir_state_recv);
                 }
                 else if (capture.decode_type == DAIKIN160)
                 {
-                    Daikin160_setRaw((uint8_t *)capture.state, kDaikin160StateLength, capture.decode_type, &ir_state);
                     Daikin160_setInfo((uint8_t *)capture.state, kDaikin160StateLength, capture.decode_type, &ir_state_recv);
                 }
                 else if (capture.decode_type == DAIKIN216)
                 {
-                    Daikin216_setRaw((uint8_t *)capture.state, kDaikin216StateLength, capture.decode_type, &ir_state);
                     Daikin216_setInfo((uint8_t *)capture.state, kDaikin216StateLength, capture.decode_type, &ir_state_recv);
                 }
                 else if (capture.decode_type == DAIKIN128)
                 {
-                    Daikin128_setRaw((uint8_t *)capture.state, kDaikin128StateLength, capture.decode_type, &ir_state);
                     Daikin128_setInfo((uint8_t *)capture.state, kDaikin128StateLength, capture.decode_type, &ir_state_recv);
                 }
                 else if (capture.decode_type == DAIKIN312)
@@ -1997,7 +1987,6 @@ void m_ir_task(void *param)
                 }
                 else if (capture.decode_type == GREE)
                 {
-                    Gree_setRaw((uint8_t *)capture.state, capture.decode_type, &ir_state);
                     Gree_setInfo((uint8_t *)capture.state, capture.decode_type, &ir_state_recv);
                 }
                 else if (capture.decode_type == KELVINATOR)
@@ -2011,7 +2000,6 @@ void m_ir_task(void *param)
                     //     os_trace("%02X-", capture.state[i]);
                     // }
                     // os_trace("\r\n");
-                    Mitsubishi112_setRaw((uint8_t *)capture.state, capture.decode_type, &ir_state);
                     Mitsubishi112_setInfo((uint8_t *)capture.state, capture.decode_type, &ir_state_recv);
                 }
                 else if (capture.decode_type == NAGAKAWA)
@@ -2021,12 +2009,10 @@ void m_ir_task(void *param)
                     //     os_trace("%02X-", capture.state[i]);
                     // }
                     // os_trace("\r\n");
-                    Nagakawa_setRaw((uint8_t *)capture.state, capture.decode_type, &ir_state);
                     Nagakawa_setInfo((uint8_t *)capture.state, capture.decode_type, &ir_state_recv);
                 }
                 else if (capture.decode_type == TCL112AC)
                 {
-                    Tcl112_setRaw((uint8_t *)capture.state, capture.decode_type, &ir_state);
                     Tcl112_setInfo((uint8_t *)capture.state, capture.decode_type, &ir_state_recv);
                     if (ir_state_recv.protocol == AKITO)
                     {
@@ -2035,27 +2021,22 @@ void m_ir_task(void *param)
                 }
                 else if (capture.decode_type == MIDEA)
                 {
-                    Midea_setRaw(capture.value, capture.decode_type, &ir_state);
                     Midea_setInfo(capture.value, capture.decode_type, &ir_state_recv);
                 }
                 else if (capture.decode_type == SHARP_AC)
                 {
-                    SharpAc_setRaw((uint8_t *)capture.state, capture.decode_type, &ir_state);
                     SharpAc_setInfo((uint8_t *)capture.state, capture.decode_type, &ir_state_recv);
                 }
                 else if (HITACHI_AC1 == capture.decode_type)
                 {
-                    HitachiAC1_setRaw(capture.state, kHitachiAc1StateLength, &ir_state);
                     HitachiAC1_setInfo(capture.state, kHitachiAc1StateLength, &ir_state_recv);
                 }
                 else if (HITACHI_AC344 == capture.decode_type)
                 {
-                    HitachiAC344_setRaw(capture.state, kHitachiAc344StateLength, &ir_state);
                     HitachiAC344_setInfo(capture.state, kHitachiAc344StateLength, &ir_state_recv);
                 }
                 else if (HITACHI_AC424 == capture.decode_type)
                 {
-                    HitachiAC424_setRaw(capture.state, kHitachiAc424StateLength, &ir_state);
                     HitachiAC424_setInfo(capture.state, kHitachiAc424StateLength, &ir_state_recv);
                 }
                 else if (PANASONIC_AC == capture.decode_type || PANASONIC_AC_2 == capture.decode_type)
