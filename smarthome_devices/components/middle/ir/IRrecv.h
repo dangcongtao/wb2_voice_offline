@@ -634,7 +634,6 @@ void Samsung_setRaw(const uint8_t *new_code, const uint16_t length, const decode
 
 void Toshiba_setRaw(const uint8_t *newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state);
 
-void Daikin_setRaw(const uint8_t *newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state);
 void Daikin2_setRaw(const uint8_t *newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state);
 void Daikin152_setRaw(const uint8_t *newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state);
 void Daikin160_setRaw(const uint8_t *newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state);
@@ -720,7 +719,7 @@ void GoodweatherAc_setRaw(const uint64_t state, state_ir_t *ir_state);
 void Casper2024Ac_setInfo(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
 void SaijoDenki_setInfo(const uint8_t state[], state_ir_t *ir_state);
 void MitsubishiHeavy160_setInfo(const uint8_t state[], state_ir_t *ir_state);
-void IRCarrierAc32_setInfo(const uint64_t state, state_ir_t *ir_state);
+void IRCarrierAc32_setInfo(uint64_t state, state_ir_t *ir_state);
 void FunikiAc104_setInfo(const uint8_t *newState, state_ir_t *ir_state);
 void FunikiAC83_setInfo(const uint8_t *newState, state_ir_t *ir_state);
 void Daikin200_setInfo(const uint8_t *newState, state_ir_t *ir_state);

@@ -99,6 +99,7 @@ static void Nagakawa_Callback(cJSON *jsRoot);
 static void Asanzo_Callback(cJSON *jsRoot);
 static void AC_Casper2024_Callback(cJSON *jsRoot);
 static void AC_Corona_Callback(cJSON *jsRoot);
+static void AC_Carrier32_Callback(cJSON *jsRoot);
 
 /* Hitachi */
 static void AC_Hitachi_Callback(cJSON *jsRoot);
@@ -181,6 +182,7 @@ wswitch_handler_t array_ir_control_handler[] = {
     {Asanzo_Callback, GOODWEATHER},
     {AC_Daikin312_Callback, DAIKIN312},
     {AC_Casper2024_Callback, CASPER2024_AC},
+    {AC_Carrier32_Callback, CARRIER_AC},
 };
 
 irwifi_data_brand_handler_t array_ir_data_control_handler[] = {
@@ -3541,6 +3543,100 @@ static void AC_Casper2024_Callback(cJSON *jsRoot)
     }
 
     Casper2024Ac_send(state_ir);
+    result = 1;
+
+RESPONSE:
+    /* respond server here */
+    memset(respond, 0, sizeof(respond));
+    sprintf(
+        respond,
+        "{\"%s\":%lu,\"type\":1,\"brand\":%lu,\"power\":%lu,\"temp\":%lu,\"mode\":%lu,\"fan\":%lu,\"act\":%lu,\"result\":%d}",
+        gs_dev_type[device_type], type, brand, power, temp, mode, fan, act_id, result);
+    app_send_data(respond, strlen(respond));
+}
+
+static void AC_Carrier32_Callback(cJSON *jsRoot)
+{
+    cJSON *jsBrand, *jsPower, *jsTemp, *jsMode, *jsFan, *jsU, *jsAct_ID;
+    uint32_t type = 0, brand = 0, power = 0, temp = 0, mode = 0, fan = 0, act_id = 0;
+    uint8_t result = 0;
+
+    if (jsRoot == NULL)
+    {
+        os_trace("jsRoot NULL\n");
+        goto RESPONSE;
+    }
+
+    cJSON *jsType = cJSON_GetObjectItem(jsRoot, gs_dev_type[device_type]);
+    if (jsType == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    type = jsType->valueint;
+
+    jsAct_ID = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_ACT);
+    if (jsAct_ID == NULL)
+    {
+        os_trace("jsAct_ID NULL\n");
+        goto RESPONSE;
+    }
+    act_id = jsAct_ID->valueint;
+
+    jsBrand = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_BRAND);
+    if (jsBrand == NULL)
+    {
+        os_trace("jsBrand NULL\n");
+        goto RESPONSE;
+    }
+    brand = jsBrand->valueint;
+
+    jsPower = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_POWER);
+    if (jsPower == NULL)
+    {
+        os_trace("jsPower NULL\n");
+        goto RESPONSE;
+    }
+    power = jsPower->valueint;
+
+    jsTemp = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_TEMP);
+    if (jsTemp == NULL)
+    {
+        os_trace("jsTemp NULL\n");
+        goto RESPONSE;
+    }
+    temp = jsTemp->valueint;
+
+    jsMode = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_MODE);
+    if (jsMode == NULL)
+    {
+        os_trace("jsMode NULL\n");
+        goto RESPONSE;
+    }
+    mode = jsMode->valueint;
+
+    jsFan = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_FAN);
+    if (jsFan == NULL)
+    {
+        os_trace("jsFan NULL\n");
+        goto RESPONSE;
+    }
+    fan = jsFan->valueint;
+
+    state_ir_t state_ir = {UNKNOWN, -1, false, opmode_kOff, 25, true, fanspeed_kAuto, swingv_kOff, swingh_kOff, false, false, false, false, false, false, false, -1, -1, kControlCommand, false, kNoTempValue};
+    state_ir.power = (power ? true : false);
+    state_ir.degrees = (float)temp;
+    state_ir.mode = mode;
+    state_ir.fanspeed = fan;
+
+    cJSON *jsSwingV = NULL, *jsSwingH = NULL;
+    jsSwingV = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGV);
+    if (jsSwingV != NULL)
+    {
+        state_ir.swingv = jsSwingV->valueint;
+    }
+
+    CarrierAc32_send(state_ir);
     result = 1;
 
 RESPONSE:

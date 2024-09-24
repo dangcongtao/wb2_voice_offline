@@ -58,9 +58,9 @@ bool decodePanasonicAC(decode_results *results, uint16_t offset,
   used = matchGenericStateLimit(results->rawbuf + offset, results->state,
                       results->rawlen - offset, kPanasonicAcSection1Length * 8,
                       kPanasonicHdrMark - 456, kPanasonicHdrMark + 456, kPanasonicHdrSpace - 400, kPanasonicHdrSpace + 400,
-                      kPanasonicBitMark - 332, kPanasonicBitMark + 368, kPanasonicOneSpace - 495, kPanasonicOneSpace + 504,
-                      kPanasonicBitMark - 332, kPanasonicBitMark + 368, kPanasonicZeroSpace - 332, kPanasonicZeroSpace + 300,
-                      kPanasonicBitMark - 332, kPanasonicBitMark + 368, kPanasonicAcSectionGap - 2500, kPanasonicAcSectionGap + 2500, true,
+                      kPanasonicBitMark - 382, kPanasonicBitMark + 368, kPanasonicOneSpace - 495, kPanasonicOneSpace + 504,
+                      kPanasonicBitMark - 382, kPanasonicBitMark + 368, kPanasonicZeroSpace - 382, kPanasonicZeroSpace + 368,
+                      kPanasonicBitMark - 382, kPanasonicBitMark + 368, kPanasonicAcSectionGap - 2500, kPanasonicAcSectionGap + 2500, true,
                       kPanasonicAcTolerance, kPanasonicAcExcess, false);
   if (!used) return false;
   offset += used;
@@ -71,9 +71,9 @@ bool decodePanasonicAC(decode_results *results, uint16_t offset,
                     results->rawlen - offset,
                     nbits - kPanasonicAcSection1Length * 8,
                     kPanasonicHdrMark - 456, kPanasonicHdrMark + 456, kPanasonicHdrSpace - 400, kPanasonicHdrSpace + 400,
-                    kPanasonicBitMark - 332, kPanasonicBitMark + 368, kPanasonicOneSpace - 495, kPanasonicOneSpace + 504,
-                    kPanasonicBitMark - 332, kPanasonicBitMark + 368, kPanasonicZeroSpace - 332, kPanasonicZeroSpace + 300,
-                    kPanasonicBitMark - 332, kPanasonicBitMark + 368, kPanasonicAcMessageGap - 25000, kPanasonicAcMessageGap + 25000, true,
+                    kPanasonicBitMark - 382, kPanasonicBitMark + 368, kPanasonicOneSpace - 495, kPanasonicOneSpace + 504,
+                    kPanasonicBitMark - 382, kPanasonicBitMark + 368, kPanasonicZeroSpace - 382, kPanasonicZeroSpace + 368,
+                    kPanasonicBitMark - 382, kPanasonicBitMark + 368, kPanasonicAcMessageGap - 25000, kPanasonicAcMessageGap + 25000, true,
                     kPanasonicAcTolerance, kPanasonicAcExcess, false))
     return false;
   // Compliance

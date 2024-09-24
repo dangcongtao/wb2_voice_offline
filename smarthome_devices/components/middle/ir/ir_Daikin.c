@@ -299,22 +299,6 @@ static void DaikinsetFan(DaikinProtocol *_, const uint8_t fan)
   _->Fan = fanset;
 }
 
-void Daikin_setRaw(const uint8_t *newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state)
-{
-  DaikinProtocol _;
-
-  uint8_t offset = 0;
-  if (length == kDaikinStateLengthShort)
-  { // Handle the "short" length case.
-    offset = kDaikinStateLength - kDaikinStateLengthShort;
-    IRDaikinstateReset(&_);
-  }
-  for (uint8_t i = 0; i < length && i < kDaikinStateLength; i++)
-    _.raw[i + offset] = newState[i];
-
-  Daikin_toCommon(_, ir_state);
-}
-
 void Daikin_setInfo(const uint8_t *newState, const uint16_t length, const decode_type_t protocol, state_ir_t *ir_state)
 {
   DaikinProtocol _;
