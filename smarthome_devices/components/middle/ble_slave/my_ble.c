@@ -228,15 +228,18 @@ void my_ble_deinit(void)
     
     bt_le_adv_stop();
 
-    int err = bt_disable();
-    if (err)
-    {
-        printf("Fail to disable bt, there is existed scan/adv/conn event\r\n");
-    }
-    else
-    {
-        printf("Disable bt successfully\r\n");
-    }
+/*
+    When receive ir data, I will call bt_disable, I will be reset MCU
+*/
+    // int err = bt_disable();
+    // if (err)
+    // {
+    //     printf("Fail to disable bt, there is existed scan/adv/conn event\r\n");
+    // }
+    // else
+    // {
+    //     printf("Disable bt successfully\r\n");
+    // }
 }
 
 void my_ble_set_name(char* name, uint8_t is_restart_adv)

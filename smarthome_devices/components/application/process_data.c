@@ -5538,9 +5538,9 @@ static void app_request_ota(cJSON *jsRoot)
         goto RESPONSE;
     }
     url = jsUrl->valuestring;
-
-    /* respond server here */
+    
     result = 1;
+
     memset(respond, 0, sizeof(respond));
     sprintf(respond, "{\"%s\":%ld, \"u\":%ld, \"result\": %d}",
             gs_dev_type[device_type], type, uid, result);

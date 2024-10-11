@@ -48,10 +48,10 @@ bool decodeSharpAc(decode_results *results, uint16_t offset,
   uint16_t used;
   used = matchGenericStateLimit(results->rawbuf + offset, results->state,
                                 results->rawlen - offset, nbits,
-                                kSharpAcHdrMark - 200, kSharpAcHdrMark + 200, kSharpAcHdrSpace - 200, kSharpAcHdrSpace + 200,
+                                kSharpAcHdrMark - 500, kSharpAcHdrMark + 500, kSharpAcHdrSpace - 200, kSharpAcHdrSpace + 200,
                                 kSharpAcBitMark - 320, kSharpAcBitMark + 430, kSharpAcOneSpace - 400, kSharpAcOneSpace + 300,
                                 kSharpAcBitMark - 320, kSharpAcBitMark + 430, kSharpAcZeroSpace - 350, kSharpAcZeroSpace + 350,
-                                kSharpAcBitMark - 320, kSharpAcBitMark + 430, kSharpAcGap - 25000, kSharpAcGap + 25000, true,
+                                kSharpAcBitMark - 320, kSharpAcBitMark + 430, kSharpAcGap - 97000, kSharpAcGap + 25000, true,
                                 45, kMarkExcess, false);
   if (used == 0)
   {
