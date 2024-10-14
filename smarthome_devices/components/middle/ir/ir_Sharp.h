@@ -18,7 +18,7 @@ typedef struct
             // Byte 4
             uint8_t Temp  :4;
             uint8_t Model :1;
-            uint8_t       :3;
+            uint8_t Model_temp :3;
             // Byte 5
             uint8_t       :4;
             uint8_t PowerSpecial  :4;

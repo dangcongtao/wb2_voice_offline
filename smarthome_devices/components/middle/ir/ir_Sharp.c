@@ -46,19 +46,27 @@ bool decodeSharpAc(decode_results *results, uint16_t offset,
 
   // Match Header + Data + Footer
   uint16_t used;
-  used = matchGenericStateLimit(results->rawbuf + offset, results->state,
-                                results->rawlen - offset, nbits,
-                                kSharpAcHdrMark - 500, kSharpAcHdrMark + 500, kSharpAcHdrSpace - 200, kSharpAcHdrSpace + 200,
-                                kSharpAcBitMark - 320, kSharpAcBitMark + 430, kSharpAcOneSpace - 400, kSharpAcOneSpace + 300,
-                                kSharpAcBitMark - 320, kSharpAcBitMark + 430, kSharpAcZeroSpace - 350, kSharpAcZeroSpace + 350,
-                                kSharpAcBitMark - 320, kSharpAcBitMark + 430, kSharpAcGap - 97000, kSharpAcGap + 25000, true,
-                                45, kMarkExcess, false);
-  if (used == 0)
+  do
   {
-    // os_trace("%s used failed\r\n", __func__);
-    return false;
-  }
-  offset += used;
+    used = matchGenericStateLimit(results->rawbuf + offset, results->state,
+                                  results->rawlen - offset, nbits,
+                                  kSharpAcHdrMark - 500, kSharpAcHdrMark + 500, kSharpAcHdrSpace - 200, kSharpAcHdrSpace + 200,
+                                  kSharpAcBitMark - 320, kSharpAcBitMark + 430, kSharpAcOneSpace - 400, kSharpAcOneSpace + 300,
+                                  kSharpAcBitMark - 320, kSharpAcBitMark + 430, kSharpAcZeroSpace - 350, kSharpAcZeroSpace + 350,
+                                  kSharpAcBitMark - 320, kSharpAcBitMark + 430, kSharpAcGap - 97000, kSharpAcGap + 25000, true,
+                                  45, kMarkExcess, false);
+    if (used == 0)
+    {
+      // os_trace("%s used failed\r\n", __func__);
+      if (offset > 10)
+      {
+        break;
+      }
+      return false;
+    }
+    offset += used;
+  } while (offset < results->rawlen);
+
   // Compliance
   if (strict)
   {
@@ -87,7 +95,7 @@ static sharp_ac_remote_model_t IRSharpAcgetModel(SharpProtocol _)
   {
     if (_.Model)
       return A705;
-    else if (_.Model3 == 0b111)
+    else if (_.Model3 == 0b111 && _.Model_temp != 0x6)
     {
       return A780JBEZ;
     }
@@ -201,7 +209,7 @@ void SharpAc_setInfo(const uint8_t *newState, const decode_type_t protocol, stat
     ir_state->degrees = _.Temp + kSharpAcMinTemp;
     break;
   }
-  
+
   ir_state->fanspeed = _.Fan;
 }
 
@@ -346,19 +354,21 @@ static void IRSharpAcsetClean(SharpProtocol *_, const bool on)
   IRSharpAcclearPowerSpecial(_);
 }
 
-void IRSharpAcsetModel(SharpProtocol *_, const sharp_ac_remote_model_t model) {
-  switch (model) {
-    case A705:
-    case A903:
-      // _model = model;
-      _->Model = true;
-      break;
-    case A780JBEZ:
-      _->Model3 = 0b111;
-      break;
-    default:
-      // _model = A907;
-      _->Model = false;
+void IRSharpAcsetModel(SharpProtocol *_, const sharp_ac_remote_model_t model)
+{
+  switch (model)
+  {
+  case A705:
+  case A903:
+    // _model = model;
+    _->Model = true;
+    break;
+  case A780JBEZ:
+    _->Model3 = 0b111;
+    break;
+  default:
+    // _model = A907;
+    _->Model = false;
   }
   _->Model2 = (model != A907);
   // Redo the operating mode as some models don't support all modes.
