@@ -136,7 +136,7 @@ wswitch_handler_t array_ir_control_handler[] = {
     {AC_LG2_Callback, 23},                 // 23
     {AC_LG_Callback, 114},                 // 23
     {AC_Funiki_Callback, 104},             // 12
-    {AC_Funiki80_Callback, FUNIKIAC83},             // 12
+    {AC_Funiki80_Callback, FUNIKIAC83},    // 12
     {AC_Samsung_Callback, 27},             // 27 - 14 bytes
     {AC_Toshiba_Callback, 108},            // 31 - 9 bytes
     {AC_Daikin_Callback, DAIKIN},          // 14 - 35 bytes
@@ -150,7 +150,7 @@ wswitch_handler_t array_ir_control_handler[] = {
     {AC_Daikin200_Callback, DAIKIN200},    // 2 - 35 bytes
     {AC_Gree_Callback, 19},                // 19 - 8 bytes - Electrolux
     {AC_Tcl_Callback, 29},                 // 29 - 14 bytes
-    {AC_Tcl_Callback, AKITO},                 // 29 - 14 bytes
+    {AC_Tcl_Callback, AKITO},              // 29 - 14 bytes
     {AC_Mitshubishi112_Callback, 91},      // 91 - 14 bytes
     {AC_Midea_Callback, 1934},             // 1934 - 14 bytes
     {AC_Sharp_Callback, 28},               // 28 - 13 bytes
@@ -1715,6 +1715,7 @@ static void AC_Daikin312_Callback(cJSON *jsRoot)
     cJSON *jsBrand, *jsPower, *jsTemp, *jsMode, *jsFan, *jsU, *jsAct_ID;
     uint32_t type = 0, brand = 0, power = 0, temp = 0, mode = 0, fan = 0, act_id = 0;
     uint8_t result = 0;
+    state_ir_t state_ir = {UNKNOWN, -1, false, opmode_kOff, 25, true, fanspeed_kAuto, swingv_kOff, swingh_kOff, false, false, false, false, false, false, false, -1, -1, kControlCommand, false, kNoTempValue};
 
     if (jsRoot == NULL)
     {
@@ -1778,11 +1779,23 @@ static void AC_Daikin312_Callback(cJSON *jsRoot)
     }
     fan = jsFan->valueint;
 
-    state_ir_t state_ir = {UNKNOWN, -1, false, opmode_kOff, 25, true, fanspeed_kAuto, swingv_kOff, swingh_kOff, false, false, false, false, false, false, false, -1, -1, kControlCommand, false, kNoTempValue};
     state_ir.power = (power ? true : false);
     state_ir.degrees = (float)temp;
     state_ir.mode = mode;
     state_ir.fanspeed = fan;
+
+    cJSON *jsSwingV = NULL, *jsSwingH = NULL;
+    jsSwingV = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGV);
+    if (jsSwingV != NULL)
+    {
+        state_ir.swingv = jsSwingV->valueint;
+    }
+
+    jsSwingH = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGH);
+    if (jsSwingH != NULL)
+    {
+        state_ir.swingh = jsSwingH->valueint;
+    }
 
     Daikin312_send(state_ir);
 
@@ -1793,8 +1806,8 @@ RESPONSE:
     memset(respond, 0, sizeof(respond));
     sprintf(
         respond,
-        "{\"%s\":%lu,\"type\":1,\"brand\":%lu,\"power\":%lu,\"temp\":%lu,\"mode\":%lu,\"fan\":%lu,\"act\":%lu,\"result\":%d}",
-        gs_dev_type[device_type], type, brand, power, temp, mode, fan, act_id, result);
+        "{\"%s\":%lu,\"type\":1,\"brand\":%lu,\"power\":%lu,\"temp\":%lu,\"mode\":%lu,\"fan\":%lu,\"swingv\":%d,\"swingh\":%d,\"act\":%lu,\"result\":%d}",
+        gs_dev_type[device_type], type, brand, power, temp, mode, fan, state_ir.swingv, state_ir.swingh, act_id, result);
     app_send_data(respond, strlen(respond));
 }
 
@@ -5538,7 +5551,7 @@ static void app_request_ota(cJSON *jsRoot)
         goto RESPONSE;
     }
     url = jsUrl->valuestring;
-    
+
     result = 1;
 
     memset(respond, 0, sizeof(respond));

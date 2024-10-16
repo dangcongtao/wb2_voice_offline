@@ -691,16 +691,19 @@ typedef struct
             uint64_t Clean        :1;
             uint64_t              :1;
             uint64_t FreshAirHigh :1;
-            // Byte 9~10
-            //		Byte  9: Always 0x3D
-            //		Byte 10: Always 0x00
-            uint64_t              :16;
+            // Byte 9
+            uint64_t              :4;
+            uint64_t              :1;
+            uint64_t              :3;
+            // Byte 10
+            uint64_t              :8;
             // Byte 11
             uint64_t              :8;
             // Byte 12
             uint64_t              :1;
             uint64_t Light		  :2;
-            uint64_t              :5;
+            uint64_t 		  :1;
+            uint64_t SwingV       :4;
 
             // Byte 13
             uint64_t          :7;
@@ -741,11 +744,11 @@ typedef struct
             // Byte 27
             uint64_t Humidity :8;
             // Byte 28
-            uint64_t SwingV :4;
+            uint64_t  :4;
             uint64_t Fan :4;
 
             // Byte 29
-            uint64_t SwingH   :4;
+            uint64_t   SwingH :4;
             uint64_t          :4;
             // Byte 30~32
             /// @see https://github.com/crankyoldgit/IRremoteESP8266/pull/1264
