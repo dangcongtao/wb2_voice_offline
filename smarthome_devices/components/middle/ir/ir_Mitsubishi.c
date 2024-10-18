@@ -199,7 +199,7 @@ bool decodeMitsubishi112(decode_results *results, uint16_t offset,
 
   if (typeguess == TCL112AC && results->rawlen >= 452 && results->rawlen <= 456)
   {
-    offset += kTcl112AcBits * 2 + 4;
+    offset += results->rawlen - (kTcl112AcBits * 2 + 4);
     uint16_t used = matchGenericStateLimit(results->rawbuf + offset, results->state,
                                            results->rawlen - offset, nbits,
                                            0, 0, // Skip the header as we matched it earlier.
@@ -209,7 +209,7 @@ bool decodeMitsubishi112(decode_results *results, uint16_t offset,
     if (!used)
     {
       os_trace("%s tcl repeat 1 matchGenericState failed\r\n", __func__);
-      return false;
+        return false;
     }
   }
   else
