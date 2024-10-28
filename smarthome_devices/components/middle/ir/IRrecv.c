@@ -1759,7 +1759,7 @@ static void enableIRIn(const bool pullup)
     touch_gpio_pos.port = IR_RX_POS;
 
     bl_gpio_enable_input(params.recvpin, 1, 0);
-    bl_gpio_enable_input(IR_RX_POS, 0, 1);
+    bl_gpio_enable_input(IR_RX_POS, 1, 0);
 
     resume();
 

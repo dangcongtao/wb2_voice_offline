@@ -2302,21 +2302,45 @@ bool decodeDaikin176(decode_results *results, uint16_t offset,
   if (results->rawlen != 360)
   {
     // os_trace("%s raw_len: %u\r\n", __func__, results->rawlen);
-    if (results->rawlen > 360 && results->rawlen - 360 < 5)
+    if (results->rawlen > 360)
     {
-      uint16_t len_missing = (results->rawlen - 360) / 2;
+      if (results->rawlen - 360 < 11)
+      {
+        uint16_t len_missing = (results->rawlen - 360) / 2;
+        for (uint16_t i = 0; i < len_missing; i++)
+        {
+          results->rawbuf[117] += results->rawbuf[119 + 2 * i];
+          results->rawbuf[118] += results->rawbuf[120 + 2 * i];
+        }
+        for (uint16_t i = 119; i < 360; i++)
+        {
+          results->rawbuf[i] = results->rawbuf[i + len_missing * 2];
+        }
+        results->rawlen = 360;
+      }
+    }
+    else if (360 - results->rawlen < 9)
+    {
+      uint16_t len_missing = (360 - results->rawlen) / 2;
+      uint8_t arr_data_missing[] = {1, 0, 0, 0, 1, 0};
+
+      for (uint16_t i = results->rawlen - 1; i > 118; i--)
+      {
+        results->rawbuf[i + 2 * len_missing] = results->rawbuf[i];
+      }
+
       for (uint16_t i = 0; i < len_missing; i++)
       {
-        results->rawbuf[117] += results->rawbuf[119 + 2 * i];
-        results->rawbuf[118] += results->rawbuf[120 + 2 * i];
+        results->rawbuf[119 + i * 2] = kDaikin176BitMark / 2;
+        results->rawbuf[119 + i * 2 + 1] = (arr_data_missing[i] > 0 ? (kDaikin176OneSpace / 2) : (kDaikin176ZeroSpace / 2));
+        results->rawbuf[117] -= results->rawbuf[119 + i * 2];
+        results->rawbuf[118] -= results->rawbuf[119 + i * 2 + 1];
       }
-      for (uint16_t i = 119; i < 360; i++)
-      {
-        results->rawbuf[i] = results->rawbuf[i + 2];
-      }
+
       results->rawlen = 360;
     }
   }
+
   if (results->rawlen < 2 * (nbits + kHeader + kFooter) - 1 + offset)
     return false;
 
@@ -2335,10 +2359,10 @@ bool decodeDaikin176(decode_results *results, uint16_t offset,
     // Section Header + Section Data (7 bytes) + Section Footer
     used = matchGenericStateLimit(results->rawbuf + offset, results->state + pos,
                                   results->rawlen - offset, ksectionSize[section] * 8,
-                                  kDaikin176HdrMark - 1250, kDaikin176HdrMark + 1250, kDaikin176HdrSpace - 800, kDaikin176HdrSpace + 800,
-                                  kDaikin176BitMark - 360, kDaikin176BitMark + 330, kDaikin176OneSpace - 500, kDaikin176OneSpace + 500,
-                                  kDaikin176BitMark - 360, kDaikin176BitMark + 330, kDaikin176ZeroSpace - 500, kDaikin176ZeroSpace + 500,
-                                  kDaikin176BitMark - 360, kDaikin176BitMark + 330, kDaikin176Gap - 6000, kDaikin176Gap + 6000,
+                                  (section > 0 ? (kDaikin176HdrMark - 3500) : (kDaikin176HdrMark - 1250)), kDaikin176HdrMark + 1500, (section > 0 ? (kDaikin176HdrSpace - 2000) : (kDaikin176HdrSpace - 800)), (section > 0 ? (kDaikin176HdrSpace + 3800) : (kDaikin176HdrSpace + 800)),
+                                  kDaikin176BitMark - 360, kDaikin176BitMark + 530, kDaikin176OneSpace - 500, kDaikin176OneSpace + 2700,
+                                  kDaikin176BitMark - 360, kDaikin176BitMark + 530, kDaikin176ZeroSpace - 500, kDaikin176ZeroSpace + 500,
+                                  kDaikin176BitMark - 360, kDaikin176BitMark + 530, kDaikin176Gap - 6000, kDaikin176Gap + 6000,
                                   section >= kDaikin176Sections - 1,
                                   kDaikinTolerance, kDaikinMarkExcess, false);
     if (used == 0)
@@ -2732,7 +2756,7 @@ bool decodeDaikin200(decode_results *results, uint16_t offset,
       }
       for (uint16_t i = 119; i < 408; i++)
       {
-        results->rawbuf[i] = results->rawbuf[i + 2];
+        results->rawbuf[i] = results->rawbuf[i + 2 * len_missing];
       }
       results->rawlen = 408;
     }
