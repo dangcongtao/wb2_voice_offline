@@ -30,15 +30,7 @@ uint8_t _tolerance;
 hosal_gpio_dev_t touch_gpio_pos;
 hosal_gpio_dev_t touch_gpio_neg;
 
-static hosal_timer_dev_t timer3 = {
-    .config = {
-        .arg = NULL,
-        .cb = NULL,
-        .period = 100, /// 100us
-        .reload_mode = TIMER_RELOAD_ONCE,
-    },
-    .port = 1,
-};
+struct timer_adpt *timer3;
 
 static decode_results capture;
 static uint32_t lastIrReceivedTime = 0;
@@ -53,11 +45,9 @@ void resume(void)
     params.overflow = false;
     // trigger_type = HOSAL_IRQ_TRIG_NEG_PULSE;
     // bl_set_gpio_intmod(params.recvpin, GLB_GPIO_INT_CONTROL_ASYNC, trigger_type);
-#if defined(ESP32)
-    timerAlarmDisable(timer);
-    gpio_intr_enable((gpio_num_t)params.recvpin);
-#endif // ESP32
 }
+
+ir_recv_params_t item;
 void ir_add_data(void)
 {
     if (params.rawlen <= 10)
@@ -65,21 +55,22 @@ void ir_add_data(void)
         resume();
         return;
     }
-    ir_recv_params_t item;
-    memset(&item, 0, sizeof(ir_recv_params_t));
+
+    // memset(&item, 0, sizeof(ir_recv_params_t));
 
     item.rawlen = params.rawlen;
     item.overflow = params.overflow;
 
     memcpy(item.rawbuf, params.rawbuf, sizeof(uint16_t) * item.rawlen);
-    if (xQueueSendFromISR(pqueue_ir_recv, &item, 4) != pdPASS)
+    BaseType_t xHigherPriorityTaskWoken;
+    if (xQueueSendFromISR(pqueue_ir_recv, &item, &xHigherPriorityTaskWoken != pdPASS))
     {
         if (xQueueReceiveFromISR(pqueue_ir_recv, &item, NULL) == pdPASS)
         {
             item.rawlen = params.rawlen;
             item.overflow = params.overflow;
             memcpy(item.rawbuf, params.rawbuf, sizeof(uint16_t) * item.rawlen);
-            BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
             // Successfully removed an item, now try to add the new item again
             if (xQueueSendFromISR(pqueue_ir_recv, &item, &xHigherPriorityTaskWoken) != pdPASS)
             {
@@ -104,19 +95,9 @@ static void timer3_cb(void *data)
     {
         return;
     }
-    if (now - start < 85000)
-    {
-        timer3.config.period = (uint32_t)params.timeout * 1000 - (now - start);
-        hosal_timer_stop(&timer3);
-        hosal_timer_start(&timer3);
-        timer3.config.period = (uint32_t)params.timeout * 1000;
-        // os_trace("____-------------%s retry start timer, period: %lu, rawlen: %u, now: %lu, start: %lu\r\n", __func__, timer3.config.period, params.rawlen, now, start);
-        return;
-    }
     if (params.rawlen)
     {
         params.rcvstate = kStopState;
-        hosal_timer_stop(&timer3);
         ir_add_data();
     }
 }
@@ -162,9 +143,7 @@ IRAM_ATTR void gpio_intr_neg(void *param)
     params.rawlen++;
 
     start = now;
-
-    hosal_timer_stop(&timer3);
-    hosal_timer_start(&timer3);
+    bl_os_timer_start_once(timer3, ((uint32_t)params.timeout / 1000), (((uint32_t)params.timeout % 1000) * 1e6));
 }
 
 IRAM_ATTR void gpio_intr_pos(void *param)
@@ -208,13 +187,7 @@ IRAM_ATTR void gpio_intr_pos(void *param)
     params.rawlen++;
 
     start = now;
-
-    hosal_timer_stop(&timer3);
-    hosal_timer_start(&timer3);
-
-    // #if defined(ESP8266)
-    //   os_timer_arm(&timer, params.timeout, ONCE);
-    // #endif  // ESP8266
+    bl_os_timer_start_once(timer3, ((uint32_t)params.timeout / 1000), (((uint32_t)params.timeout % 1000) * 1e6));
 }
 
 uint8_t _validTolerance(const uint8_t percentage)
@@ -1749,11 +1722,7 @@ static void enableIRIn(const bool pullup)
 {
     // ESP32's seem to require explicitly setting the GPIO to INPUT etc.
     // This wasn't required on the ESP8266s, but it shouldn't hurt to make sure.
-
-    timer3.config.cb = timer3_cb;
-    timer3.config.period = (uint32_t)params.timeout * 1000;
-
-    hosal_timer_init(&timer3);
+    timer3 = bl_os_timer_create(timer3_cb, NULL);
 
     touch_gpio_neg.port = params.recvpin;
     touch_gpio_pos.port = IR_RX_POS;
@@ -2315,7 +2284,7 @@ void m_ir_task(void *param)
             }
         }
 
-        vTaskDelay(pdMS_TO_TICKS(500));
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
 
@@ -2379,7 +2348,7 @@ void m_ir_deinit(void)
     xHandle = NULL;
 }
 
-m_ac_info_t* m_ac_info_get_reference(void)
+m_ac_info_t *m_ac_info_get_reference(void)
 {
     return &s_ac_info;
 }
