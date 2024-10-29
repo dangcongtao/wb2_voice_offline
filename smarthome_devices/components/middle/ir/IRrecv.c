@@ -62,7 +62,7 @@ void ir_add_data(void)
     item.overflow = params.overflow;
 
     memcpy(item.rawbuf, params.rawbuf, sizeof(uint16_t) * item.rawlen);
-    BaseType_t xHigherPriorityTaskWoken;
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     if (xQueueSendFromISR(pqueue_ir_recv, &item, &xHigherPriorityTaskWoken != pdPASS))
     {
         if (xQueueReceiveFromISR(pqueue_ir_recv, &item, NULL) == pdPASS)
