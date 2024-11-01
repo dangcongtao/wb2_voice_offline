@@ -678,6 +678,7 @@ void Gree_setInfo(const uint8_t *newState, const decode_type_t protocol, state_i
 void IRKelvinatorAC_setInfo(const uint8_t new_code[], state_ir_t *ir_state);
 void SharpAc_setInfo(const uint8_t *newState, const decode_type_t protocol, state_ir_t *ir_state);
 void HitachiAC1_setInfo(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
+void HitachiAC_setInfo(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
 void HitachiAC344_setInfo(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
 void HitachiAC424_setInfo(const uint8_t new_code[], const uint16_t length, state_ir_t *ir_state);
 void Nagakawa_setInfo(const uint8_t *newState, const decode_type_t protocol, state_ir_t *ir_state);

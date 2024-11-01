@@ -157,7 +157,7 @@ wswitch_handler_t array_ir_control_handler[] = {
     {AC_Hitachi1_Callback, 92},
     {AC_Hitachi344_Callback, 94},
     {AC_Hitachi424_Callback, 93},
-    {AC_Hitachi_Callback, 21},
+    {AC_Hitachi_Callback, HITACHI_AC},
     {AC_PanasonicAC_Callback, 106},
     {AC_PanasonicAC_Callback, 129},
     {AC_PanasonicAC32_Callback, 107},
@@ -476,9 +476,9 @@ static void ir_control_type_3(cJSON *jsRoot)
         if (array_ir_data_control_handler[i]._cmd_number == brand)
         {
             os_trace("ir brand control data: %ld\r\n", brand);
-            hw_led_stt_on();
-            result = array_ir_data_control_handler[i]._handler(my_data, len_str);
             hw_led_stt_off();
+            result = array_ir_data_control_handler[i]._handler(my_data, len_str);
+            hw_led_stt_on();
             memset(respond, 0, sizeof(respond));
             sprintf(
                 respond,
@@ -542,9 +542,9 @@ static void ir_control(cJSON *jsRoot)
             if (array_ir_control_handler[i]._cmd_number == brand)
             {
                 os_trace("ir brand: %ld\r\n", brand);
-                hw_led_stt_on();
-                array_ir_control_handler[i]._handler(jsRoot);
                 hw_led_stt_off();
+                array_ir_control_handler[i]._handler(jsRoot);
+                hw_led_stt_on();
                 break;
             }
             else if (arr_size - 1 == i)
@@ -561,9 +561,9 @@ static void ir_control(cJSON *jsRoot)
     else if (typesend == 2)
     {
         // send by time
-        hw_led_stt_on();
-        ir_send_data(jsRoot);
         hw_led_stt_off();
+        ir_send_data(jsRoot);
+        hw_led_stt_on();
         memset(respond, 0, sizeof(respond));
         sprintf(
             respond,
@@ -2952,6 +2952,8 @@ static void AC_Hitachi_Callback(cJSON *jsRoot)
     uint32_t type = 0, brand = 0, power = 0, temp = 0, mode = 0, fan = 0, act_id = 0;
     uint8_t result = 0;
 
+    state_ir_t state_ir = {UNKNOWN, -1, false, opmode_kOff, 25, true, fanspeed_kAuto, swingv_kOff, swingh_kOff, false, false, false, false, false, false, false, -1, -1, kControlCommand, false, kNoTempValue};
+
     if (jsRoot == NULL)
     {
         os_trace("jsRoot NULL\n");
@@ -3014,13 +3016,25 @@ static void AC_Hitachi_Callback(cJSON *jsRoot)
     }
     fan = jsFan->valueint;
 
-    state_ir_t state_ir = {UNKNOWN, -1, false, opmode_kOff, 25, true, fanspeed_kAuto, swingv_kOff, swingh_kOff, false, false, false, false, false, false, false, -1, -1, kControlCommand, false, kNoTempValue};
     state_ir.power = (power ? true : false);
     state_ir.degrees = (float)temp;
     state_ir.mode = mode;
     state_ir.fanspeed = fan;
 
-    Hitachi_AC_send(state_ir);
+    cJSON *jsSwingV = NULL, *jsSwingH = NULL;
+    jsSwingV = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGV);
+    if (jsSwingV != NULL)
+    {
+        state_ir.swingv = jsSwingV->valueint;
+    }
+
+    jsSwingH = cJSON_GetObjectItem(jsRoot, CJSON_KEY_IR_SWINGH);
+    if (jsSwingH != NULL)
+    {
+        state_ir.swingh = jsSwingH->valueint;
+    }
+
+    HitachiAC_send(state_ir);
     result = 1;
 
 RESPONSE:
@@ -3028,8 +3042,8 @@ RESPONSE:
     memset(respond, 0, sizeof(respond));
     sprintf(
         respond,
-        "{\"%s\":%lu,\"type\":1,\"brand\":%lu,\"power\":%lu,\"temp\":%lu,\"mode\":%lu,\"fan\":%lu,\"act\":%lu,\"result\":%d}",
-        gs_dev_type[device_type], type, brand, power, temp, mode, fan, act_id, result);
+        "{\"%s\":%lu,\"type\":1,\"brand\":%lu,\"power\":%lu,\"temp\":%lu,\"mode\":%lu,\"fan\":%lu,\"swingv\":%d,\"swingh\":%d,\"act\":%lu,\"result\":%d}",
+        gs_dev_type[device_type], type, brand, power, temp, mode, fan, state_ir.swingv, state_ir.swingh, act_id, result);
     app_send_data(respond, strlen(respond));
 }
 

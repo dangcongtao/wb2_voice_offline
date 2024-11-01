@@ -14,6 +14,7 @@ typedef enum {
    LED_STYLE_ON = 4,
    LED_STYLE_OFF = 5,
    LED_STYLE_UPDATE = 6,
+   LED_STYLE_WIFI_DISCONN = 7,
    LED_STYLE_MQTT_DISCONN,
 } led_stt_type_t;
 

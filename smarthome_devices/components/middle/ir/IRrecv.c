@@ -2000,6 +2000,10 @@ void m_ir_task(void *param)
                 {
                     HitachiAC1_setInfo(capture.state, kHitachiAc1StateLength, &ir_state_recv);
                 }
+                else if (HITACHI_AC == capture.decode_type)
+                {
+                    HitachiAC_setInfo(capture.state, kHitachiAcStateLength, &ir_state_recv);
+                }
                 else if (HITACHI_AC344 == capture.decode_type)
                 {
                     HitachiAC344_setInfo(capture.state, kHitachiAc344StateLength, &ir_state_recv);

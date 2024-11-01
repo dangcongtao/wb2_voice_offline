@@ -24,28 +24,20 @@ extern uint8_t is_ota;
 
 static void vTimerCallback(TimerHandle_t xTimer)
 {
-    if (is_power_up && (device_type == LHSWITCH))
+    if (is_power_up && (s_led_stt_obj._led_stt_type == LED_STYLE_NOT_CONFIGURED))
     {
         is_power_up = 0;
 
-        /* turn led off */
-        s_led_stt_obj._set_led_stt_off_cb();
-
         /* set time */
-        timeline_status[0] = 5000;
-        timeline_status[1] = 200;
-        s_led_stt_obj._led_handle_count = 0;
-        s_led_stt_obj._max_number_handle = TWO_PULSE_COUNT;
-        s_led_stt_obj._led_stt_type = LED_STYLE_NOT_CONFIGURED;
+        s_led_stt_obj._set_led_stt_wifi_not_connect_cb();
     }
     else
     {
         s_led_stt_obj._toggle_led_stt_cb();
         s_led_stt_obj._led_handle_count = (s_led_stt_obj._led_handle_count + 1) % s_led_stt_obj._max_number_handle;
+        m_stop_timer();
+        m_start_timer(timeline_status[s_led_stt_obj._led_handle_count]);
     }
-
-    m_stop_timer();
-    m_start_timer(timeline_status[s_led_stt_obj._led_handle_count]);
 }
 
 static void m_start_timer(uint32_t time_ms)
@@ -131,7 +123,7 @@ static void set_led_stt_update_ota(void)
 
 static void set_led_stt_not_config(void)
 {
-    if (device_type == WSWITCH  || device_type == IRWIFI  || device_type == SSWITCH || device_type == SWMINI)
+    if (device_type == WSWITCH || device_type == SSWITCH || device_type == SWMINI)
     {
         if (s_led_stt_obj._led_stt_type != LED_STYLE_ON)
         {
@@ -144,12 +136,12 @@ static void set_led_stt_not_config(void)
     }
     else
     {
-        if (s_led_stt_obj._led_stt_type != LED_STYLE_OFF)
+        if (s_led_stt_obj._led_stt_type != LED_STYLE_WIFI_DISCONN)
         {
             /* Stop timer */
             m_stop_timer();
 
-            if (is_power_up && (device_type == LHSWITCH))
+            if (is_power_up)
             {
                 /* turn led on */
                 s_led_stt_obj._set_led_stt_on_cb();
@@ -171,7 +163,7 @@ static void set_led_stt_not_config(void)
                 timeline_status[1] = 200;
                 s_led_stt_obj._led_handle_count = 0;
                 s_led_stt_obj._max_number_handle = TWO_PULSE_COUNT;
-                s_led_stt_obj._led_stt_type = LED_STYLE_NOT_CONFIGURED;
+                s_led_stt_obj._led_stt_type = LED_STYLE_WIFI_DISCONN;
             }
 
             /* start timer */
@@ -220,7 +212,7 @@ static void set_led_stt_disconnect_mqtt(void)
 static void set_led_stt_device_active(void)
 {
     os_trace("set_led_stt_device_active\r\n");
-    if (device_type == WSWITCH  || device_type == IRWIFI || device_type == SSWITCH || device_type == SWMINI)
+    if (device_type == WSWITCH || device_type == SSWITCH || device_type == SWMINI)
     {
         if (s_led_stt_obj._led_stt_type != LED_STYLE_OFF)
         {
