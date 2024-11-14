@@ -1738,6 +1738,8 @@ static void enableIRIn(const bool pullup)
 
 static void disableIRin(void)
 {
+    bl_os_timer_delete(timer3, 0);
+    timer3 = NULL;
     hosal_gpio_finalize(&touch_gpio_neg);
     hosal_gpio_finalize(&touch_gpio_pos);
 }
@@ -2326,10 +2328,17 @@ void m_ir_init(void)
                 NULL,        /* Parameter passed into the task. */
                 5,           /* Priority at which the task is created. */
                 &xHandle);
+    os_trace("%s finished\r\n", __func__);
 }
 
 void m_ir_deinit(void)
 {
+    if (!is_init)
+    {
+        os_trace("%s not inited\r\n", __func__);
+        return;
+    }
+    is_init = 0;
     os_trace("%s\r\n", __func__);
     disableIRin();
 

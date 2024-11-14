@@ -200,6 +200,8 @@ void dev_actived_to_ap_cfg_handler(void *arg)
     m_led_stt_get_instance()._set_led_stt_ap_config_cb();
     app_btn_on_hold_time_fire_event_ms = APP_BTN_HOLD_EVENT_5S;
 
+    m_ir_deinit();
+
     // stop mqtt
     m_mqtt_get_instance()._mqtt_stop();
 

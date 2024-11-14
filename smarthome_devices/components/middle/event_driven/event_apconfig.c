@@ -5,6 +5,7 @@
 #include "m_led_stt.h"
 #include "m_database.h"
 #include "m_http_server.h"
+#include "IRrecv.h"
 
 extern uint32_t app_btn_on_hold_time_fire_event_ms;
 
@@ -13,6 +14,7 @@ void wifi_not_cfg_to_ap_cfg_handler(void *arg)
 {
     clear_timeout_reset();
     m_led_stt_get_instance()._set_led_stt_ap_config_cb();
+    m_ir_deinit();
 
     /* ble rename */
     ble_set_name("Dungnt98", 1);
@@ -84,6 +86,8 @@ void smartconfig_to_apconfig_handler(void *arg)
 {
     os_trace("smartconfig_to_apconfig_handler\r\n");
 
+    m_ir_deinit();
+    
     m_led_stt_get_instance()._set_led_stt_ap_config_cb();
 
     /* ble rename */
