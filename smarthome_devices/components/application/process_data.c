@@ -151,7 +151,7 @@ wswitch_handler_t array_ir_control_handler[] = {
     {AC_Gree_Callback, 19},                // 19 - 8 bytes - Electrolux
     {AC_Tcl_Callback, 29},                 // 29 - 14 bytes
     {AC_Tcl_Callback, AKITO},              // 29 - 14 bytes
-    {AC_Mitshubishi112_Callback, 91},      // 91 - 14 bytes
+    {AC_Mitshubishi112_Callback, MITSUBISHI112},      // 91 - 14 bytes
     {AC_Midea_Callback, 1934},             // 1934 - 14 bytes
     {AC_Sharp_Callback, 28},               // 28 - 13 bytes
     {AC_Hitachi1_Callback, 92},

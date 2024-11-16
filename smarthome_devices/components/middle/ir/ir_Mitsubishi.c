@@ -337,8 +337,6 @@ void Mitsubishi112_setInfo(const uint8_t *newState, const decode_type_t protocol
   ir_state->fanspeed = _.Fan;
   ir_state->swingv = _.SwingV;
   ir_state->swingh = _.SwingH;
-
-  // Toshiba_toCommon(_, ir_state);
 }
 
 static void IRMitsubishi112stateReset(Mitsubishi112Protocol *_)
@@ -369,6 +367,16 @@ void Mitsubishi112_send(state_ir_t state_ir)
   IRMitsubishi112setTemp(&_, (uint8_t)state_ir.degrees);
 
   _.Power = state_ir.power;
+
+  if (state_ir.swingv != swingv_kOff)
+  {
+    _.SwingV = state_ir.swingv;
+  }
+
+  if (state_ir.swingh != swingh_kOff)
+  {
+    _.SwingH = state_ir.swingh;
+  }
 
   IRMitsubishi112checksum(&_);
 
