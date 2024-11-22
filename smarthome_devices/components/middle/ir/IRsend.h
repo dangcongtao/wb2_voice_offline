@@ -246,6 +246,7 @@ void MitsubishiAC_send(state_ir_t state_ir);
 void Mitsubishi136_send(state_ir_t state_ir);
 void KelvinatorAC_send(state_ir_t state_ir);
 void HaierACYRW02_send(state_ir_t state_ir);
+void HaierAC176_send(state_ir_t state_ir);
 void IRTecoAc_send(state_ir_t state_ir);
 void IRMirageAc_send(state_ir_t state_ir);
 void HitachiAC264_send(state_ir_t state_ir);

@@ -101,7 +101,7 @@ bool decodeHaierACYRW02(decode_results *results, uint16_t offset,
 
   if (results->rawlen == 460)
   {
-    memcpy(results->rawbuf, &results->rawbuf[230], 230*sizeof(uint16_t));
+    memcpy(results->rawbuf, &results->rawbuf[230], 230 * sizeof(uint16_t));
     results->rawlen = 230;
   }
 
@@ -177,7 +177,7 @@ void HaierACYRW02_send(state_ir_t state_ir)
   _.Model = kHaierAcYrw02ModelA;
   _.Prefix2 = kHaierAc176Prefix;
   // _.Health = true;
-
+  _.Mode = state_ir.mode;
   _.Temp = (uint8_t)state_ir.degrees - kHaierAcYrw02MinTempC;
   _.Fan = state_ir.fanspeed;
   _.Power = state_ir.power;
@@ -242,6 +242,65 @@ bool decodeHaierAC176(decode_results *results, uint16_t offset,
   // It looks correct, but we haven't check the checksum etc.
   results->decode_type = HAIER_AC176;
   return true;
+}
+
+void HaierAC176_setRaw(const uint8_t new_code[], state_ir_t *ir_state)
+{
+  HaierAc176Protocol _;
+  memset(&_, 0, sizeof(HaierAc176Protocol));
+  memcpy(_.raw, new_code, kHaierAC176StateLength);
+
+  ir_state->power = _.Power;
+  ir_state->mode = _.Mode;
+  ir_state->model = _.Model;
+  ir_state->fanspeed = _.Fan;
+  ir_state->degrees = _.Temp + kHaierAcYrw02MinTempC;
+  ir_state->swingv = _.SwingV;
+  ir_state->swingh = _.SwingH;
+}
+
+static void sendHaierAC176(const unsigned char data[], const uint16_t nbytes,
+                           const uint16_t repeat)
+{
+  if (nbytes >= kHaierAC176StateLength)
+    sendHaierAC(data, nbytes, repeat);
+}
+
+void HaierAC176_send(state_ir_t state_ir)
+{
+  HaierAc176Protocol _;
+  memset(&_, 0, sizeof(HaierAc176Protocol));
+  _.Model = kHaierAcYrw02ModelA;
+  _.Prefix2 = kHaierAc176Prefix;
+  _.Health = true;
+
+  _.Temp = (uint8_t)state_ir.degrees - kHaierAcYrw02MinTempC;
+  _.Mode = state_ir.mode;
+  _.Fan = state_ir.fanspeed;
+  _.Fan2 = (state_ir.fanspeed == kHaierAcYrw02FanAuto) ? 0 : state_ir.fanspeed;
+
+  _.Power = state_ir.power;
+  if (state_ir.swingv != swingv_kOff)
+    _.SwingV = state_ir.swingv;
+  if (state_ir.swingh != swingh_kOff)
+    _.SwingH = state_ir.swingh;
+  _.Button = kHaierAcYrw02ButtonPower;
+
+  // calc checksum
+  _.Sum = sumBytesState(_.raw, kHaierACYRW02StateLength - 1, 0);
+  _.Sum2 = sumBytesState(_.raw + kHaierACYRW02StateLength,
+                         kHaierAC176StateLength - kHaierACYRW02StateLength - 1, 0);
+
+#if DEBUG_ENABLE == 1
+  os_trace("%s: 0x ", __func__);
+  for (uint8_t i = 0; i < kHaierACYRW02StateLength; i++)
+  {
+    os_trace("%02X-", _.raw[i]);
+  }
+  os_trace("\r\n");
+#endif
+
+  sendHaierAC176(_.raw, kHaierAC176StateLength, kHaierAc176DefaultRepeat);
 }
 
 bool decodeHaierAC160(decode_results *results, uint16_t offset,

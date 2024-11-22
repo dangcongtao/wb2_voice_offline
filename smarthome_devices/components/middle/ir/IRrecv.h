@@ -699,6 +699,7 @@ void IRMitsubishi136_setInfo(const uint8_t *data, state_ir_t *ir_state);
 void IRCarrierAc64_setInfo(const uint64_t state, state_ir_t *ir_state);
 
 void IRHaierACYRW02_setRaw(const uint8_t new_code[], state_ir_t *ir_state);
+void HaierAC176_setRaw(const uint8_t new_code[], state_ir_t *ir_state);
 void IRHaierAC_setRaw(const uint8_t new_code[], state_ir_t *ir_state);
 void IRHaierAC_setRaw(const uint8_t new_code[], state_ir_t *ir_state);
 void IRTecoAc_setInfo(const uint64_t new_code, state_ir_t *ir_state);

@@ -2114,6 +2114,10 @@ void m_ir_task(void *param)
                 {
                     IRHaierACYRW02_setRaw(capture.state, &ir_state_recv);
                 }
+                else if (HAIER_AC176 == capture.decode_type)
+                {
+                    HaierAC176_setRaw(capture.state, &ir_state_recv);
+                }
                 else if (TECO == capture.decode_type)
                 {
                     IRTecoAc_setInfo(capture.value, &ir_state_recv);
