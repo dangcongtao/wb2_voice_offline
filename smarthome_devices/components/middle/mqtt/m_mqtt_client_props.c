@@ -19,6 +19,7 @@
 m_mqtt_t s_mqtt_obj;
 // QueueHandle_t mqtt_tx_queue;
 bool request_send_command_online;
+static uint8_t num_broker_change = 0;
 
 extern void m_mqtt_stop(void);
 extern void m_mqtt_start(void);
@@ -32,13 +33,14 @@ static void set_mqtt_server_info(int index, m_mqtt_server_t *p_server_info)
         os_trace("fail to set mqtt server, len data too long\r\n");
         return;
     }
-
+    num_broker_change = 0;
     memset(&s_mqtt_obj.mqtt_info.servers[index], 0, sizeof(m_mqtt_server_t));
     memcpy(&s_mqtt_obj.mqtt_info.servers[index], p_server_info, sizeof(m_mqtt_server_t));
 }
+
 static m_mqtt_server_t* get_mqtt_server_info(void)
 {
-    if (s_mqtt_obj.mqtt_info.broker_in_used >= MAX_NUMBER_MQTT_BROKER) {
+    if (num_broker_change >= MAX_NUMBER_MQTT_BROKER) {
         os_trace("fail to set mqtt server, out of range %u\r\n", s_mqtt_obj.mqtt_info.broker_in_used);
         return NULL;
     }
@@ -83,22 +85,21 @@ static void set_ver_mqtt(uint32_t version)
     s_mqtt_obj.mqtt_info.vermqtt = version;
 }
 
-static uint8_t num_broker_change = 0;
 static int update_mqtt_broker(void)
 {
     uint32_t new_index = (s_mqtt_obj.mqtt_info.broker_in_used + 1) % s_mqtt_obj.mqtt_info.num_broker;
     s_mqtt_obj.mqtt_info.broker_in_used = new_index;
 
     num_broker_change++;
-    if (num_broker_change == s_mqtt_obj.mqtt_info.num_broker)
+    if (num_broker_change >= s_mqtt_obj.mqtt_info.num_broker)
     {
-        memset(s_mqtt_obj.mqtt_info.servers, 0, sizeof(s_mqtt_obj.mqtt_info.servers));
+        // memset(s_mqtt_obj.mqtt_info.servers, 0, sizeof(s_mqtt_obj.mqtt_info.servers));
 
-        s_mqtt_obj.mqtt_info.num_broker = 0;
-        s_mqtt_obj.mqtt_info.broker_in_used = 0;
-        s_mqtt_obj.mqtt_info.vermqtt = 0;
+        // s_mqtt_obj.mqtt_info.num_broker = 0;
+        // s_mqtt_obj.mqtt_info.broker_in_used = 0;
+        // s_mqtt_obj.mqtt_info.vermqtt = 0;
 
-        num_broker_change = 0;
+        // num_broker_change = 0;
         return 0;
     }
 

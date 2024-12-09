@@ -13,6 +13,7 @@ extern uint32_t app_btn_on_hold_time_fire_event_ms;
 
 extern char s_device_id[64];
 extern void signal_post(m_signal_t sig);
+uint8_t use_server_prev = 1;
 
 void get_mqtt_info_handler(void *arg)
 {
@@ -23,14 +24,18 @@ void get_mqtt_info_handler(void *arg)
 
     m_mqtt_server_t *server_inf = m_mqtt_get_instance().get_server_info();
 
-    if (server_inf != NULL && server_inf->port != 0 && strlen(server_inf->server) > 0 && strlen(server_inf->username) > 0 && strlen(server_inf->passwd) > 0 && server_inf->type == 0)
+    if (use_server_prev && server_inf != NULL && server_inf->port != 0 && strlen(server_inf->server) > 0 && strlen(server_inf->username) > 0 && strlen(server_inf->passwd) > 0 && server_inf->type == 0)
     {
+        use_server_prev = 0;
         os_trace("Device had been actived ago\r\n");
     }
     else
     {
-        if (!get_mqtt_info()) {
-            if (m_mqtt_get_instance().get_num_mqtt_broker() > 0) {
+        use_server_prev = 0;
+        if (!get_mqtt_info())
+        {
+            if (m_mqtt_get_instance().get_num_mqtt_broker() > 0)
+            {
                 signal_post(SIG_MQTT_GOT_INFO);
                 return;
             }
@@ -60,12 +65,19 @@ void get_mqtt_broker_handler(void)
         if (mqtt.update_mqtt_broker())
         {
             mqtt._mqtt_start();
-        } 
-        else 
+        }
+        else
         {
-            if (get_mqtt_info()) {
+            if (get_mqtt_info())
+            {
                 mqtt._mqtt_start();
-            } else {
+            }
+            else if (m_mqtt_get_instance().get_num_mqtt_broker() > 0)
+            {
+                mqtt._mqtt_start();
+            }
+            else
+            {
                 os_trace("%s update mqtt broker fail\r\n", __func__);
             }
         }
@@ -77,10 +89,15 @@ void get_mqtt_broker_handler(void)
         if (!get_mqtt_info())
         {
             os_trace("Get MQTT Info Fail\r\n");
+            if (m_mqtt_get_instance().get_num_mqtt_broker() > 0)
+            {
+                vTaskDelay(pdMS_TO_TICKS(3000));
+                mqtt._mqtt_start();
+            }
         }
         else
         {
-            vTaskDelay(pdMS_TO_TICKS(1000));
+            vTaskDelay(pdMS_TO_TICKS(3000));
             os_trace("%s get new mqtt info success\r\n", __func__);
             mqtt._mqtt_start();
         }
@@ -117,8 +134,7 @@ m_state_transmit_t dev_actived = {
     .context = M_WIFI_MQTT_CONNECTING,
     .signal = SIG_MQTT_CONNECTED,
     .next_state = M_WIFI_DEV_ACTIVE,
-    .signal_handler_cb = device_active_handler
-};
+    .signal_handler_cb = device_active_handler};
 
 void device_disconnect_mqtt_handler(void *arg)
 {
@@ -130,8 +146,7 @@ m_state_transmit_t dev_actived_disconnect_mqtt = {
     .context = M_WIFI_DEV_ACTIVE,
     .signal = SIG_MQTT_DISCONNECTED,
     .next_state = M_WIFI_MQTT_CONNECTING,
-    .signal_handler_cb = device_disconnect_mqtt_handler
-};
+    .signal_handler_cb = device_disconnect_mqtt_handler};
 
 void device_disconnect_wifi_handler(void *arg)
 {
@@ -144,20 +159,17 @@ m_state_transmit_t dev_actived_disconnect_wifi = {
     .context = M_WIFI_DEV_ACTIVE,
     .signal = SIG_WIFI_DISCONNECT,
     .next_state = M_WIFI_CONNECTING,
-    .signal_handler_cb = device_disconnect_wifi_handler
-};
+    .signal_handler_cb = device_disconnect_wifi_handler};
 m_state_transmit_t dev_mqtt_connecting_to_disconnect_wifi = {
     .context = M_WIFI_MQTT_CONNECTING,
     .signal = SIG_WIFI_DISCONNECT,
     .next_state = M_WIFI_CONNECTING,
-    .signal_handler_cb = device_disconnect_wifi_handler
-};
+    .signal_handler_cb = device_disconnect_wifi_handler};
 m_state_transmit_t dev_get_mqtt_info_to_disconnect_wifi = {
     .context = M_WIFI_CONN_MQTT,
     .signal = SIG_WIFI_DISCONNECT,
     .next_state = M_WIFI_CONNECTING,
-    .signal_handler_cb = device_disconnect_wifi_handler
-};
+    .signal_handler_cb = device_disconnect_wifi_handler};
 
 /* device actived -> smart config */
 void dev_actived_to_smart_cfg_handler(void *arg)
@@ -176,11 +188,11 @@ void dev_actived_to_smart_cfg_handler(void *arg)
 
     // set led
     m_led_stt_get_instance()._set_led_stt_smart_config_cb();
-    
+
     // scan wifi
     m_wifi_get_instance().wifi_scan_cb();
 
-        // re-enable ble
+    // re-enable ble
     // ble_deinit();
     ble_set_name(s_device_id, 1);
     // ble_init();
@@ -227,11 +239,9 @@ m_state_transmit_t wifi_connecting_to_smart_config = {
     .context = M_WIFI_CONNECTING,
     .signal = SIG_SMART_CFG,
     .next_state = M_WIFI_SMARTCONFIG,
-    .signal_handler_cb = dev_actived_to_smart_cfg_handler
-};
+    .signal_handler_cb = dev_actived_to_smart_cfg_handler};
 m_state_transmit_t wifi_connecting_to_ap_config = {
     .context = M_WIFI_CONNECTING,
     .signal = SIG_AP_CFG,
     .next_state = M_WIFI_APCONFIG,
-    .signal_handler_cb = dev_actived_to_ap_cfg_handler
-};
+    .signal_handler_cb = dev_actived_to_ap_cfg_handler};
