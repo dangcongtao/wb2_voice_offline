@@ -132,9 +132,10 @@ void m_event_init(void)
     /* check pair state */
     if (m_db_get_instance()->_get_dev_pair_state())
     {
-        char *ssid = m_wifi_get_instance()._wifi_info._ssid;
-        char *pass = m_wifi_get_instance()._wifi_info._passwd;
-        m_wifi_get_instance().wifi_sta_start_cb(ssid, pass);
+        m_wifi_t wf = m_wifi_get_instance();
+        char *ssid = wf._wifi_info._ssid;
+        char *pass = wf._wifi_info._passwd;
+        wf.wifi_sta_start_cb(ssid, pass);
         current_state = M_WIFI_CONNECTING;
     }
     else
@@ -203,6 +204,7 @@ void m_event_loop(uint32_t time_schedual_ms)
             }
         }
     }
+    m_wifi_t wf = m_wifi_get_instance();
 
     if (current_state == M_WIFI_SMARTCONFIG)
     {
@@ -231,17 +233,17 @@ void m_event_loop(uint32_t time_schedual_ms)
         /* check timeout */
         if (sys_get_tick_ms() - start_time_wait_wifi >= 60000)
         {
-            start_time_wait_wifi = sys_get_tick_ms();
             /* stop sta mode */
-            m_wifi_get_instance().wifi_sta_stop_cb();
+            wf.wifi_sta_stop_cb();
 
             os_trace("%s M_WIFI_DISCONNECT try stop staion and re start station\r\n", __func__);
 
             vTaskDelay(pdMS_TO_TICKS(3000));
-            char *ssid = m_wifi_get_instance()._wifi_info._ssid;
-            char *pass = m_wifi_get_instance()._wifi_info._passwd;
+            char *ssid = wf._wifi_info._ssid;
+            char *pass = wf._wifi_info._passwd;
             /* re-try start station mode*/
-            m_wifi_get_instance().wifi_sta_start_cb(ssid, pass);
+            start_time_wait_wifi = sys_get_tick_ms();
+            wf.wifi_sta_start_cb(ssid, pass);
         }
     }
     else if (!is_ota && current_state == M_WIFI_MQTT_CONNECTING)
@@ -255,16 +257,16 @@ void m_event_loop(uint32_t time_schedual_ms)
             {
                 m_mqtt_get_instance()._mqtt_stop();
                 vTaskDelay(pdMS_TO_TICKS(2000));
-                m_wifi_get_instance().wifi_sta_stop_cb();
-                start_time_wait_wifi = sys_get_tick_ms();
+                wf.wifi_sta_stop_cb();
 
                 os_trace("%s M_WIFI_MQTT_CONNECTING try stop staion and re start station\r\n", __func__);
 
                 vTaskDelay(pdMS_TO_TICKS(3000));
-                char *ssid = m_wifi_get_instance()._wifi_info._ssid;
-                char *pass = m_wifi_get_instance()._wifi_info._passwd;
+                char *ssid = wf._wifi_info._ssid;
+                char *pass = wf._wifi_info._passwd;
                 /* re-try start station mode*/
-                m_wifi_get_instance().wifi_sta_start_cb(ssid, pass);
+                start_time_wait_wifi = sys_get_tick_ms();
+                wf.wifi_sta_start_cb(ssid, pass);
                 // current_state = M_WIFI_CONNECTING;
             }
             else
@@ -284,15 +286,15 @@ void m_event_loop(uint32_t time_schedual_ms)
 
             if (time_get_mqtt_info_failed % 5 == 1)
             {
-                m_wifi_get_instance().wifi_sta_stop_cb();
+                wf.wifi_sta_stop_cb();
 
                 os_trace("%s M_WIFI_CONN_MQTT try stop staion and re start station\r\n", __func__);
 
                 vTaskDelay(pdMS_TO_TICKS(3000));
-                char *ssid = m_wifi_get_instance()._wifi_info._ssid;
-                char *pass = m_wifi_get_instance()._wifi_info._passwd;
+                char *ssid = wf._wifi_info._ssid;
+                char *pass = wf._wifi_info._passwd;
                 /* re-try start station mode*/
-                m_wifi_get_instance().wifi_sta_start_cb(ssid, pass);
+                wf.wifi_sta_start_cb(ssid, pass);
             }
             else
             {

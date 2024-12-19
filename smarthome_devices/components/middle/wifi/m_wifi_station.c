@@ -188,6 +188,10 @@ static int wifi_sta_connect(char *ssid, char *pass)
 void m_wifi_sta_start(char *ssid, char *pass)
 {
     os_trace("m_wifi_sta_start\r\n");
+    if (strlen(ssid) > 32 || strlen(pass) > 64)
+    {
+        os_trace("\r\n\r\n wifi ssid or pass incorrect\r\n\r\n");
+    }
     wifi_sta_connect(ssid, pass);
 }
 

@@ -58,6 +58,7 @@ m_state_transmit_t get_mqtt_info_to_smartcfg = {
 
 void smartconfig_done_handler(void *arg)
 {
+    m_wifi_t wf = m_wifi_get_instance();
     os_trace("smartconfig_done_handler\r\n");
     
     vTaskDelay(pdMS_TO_TICKS(500));
@@ -69,14 +70,14 @@ void smartconfig_done_handler(void *arg)
     m_led_stt_get_instance()._set_led_stt_wifi_not_connect_cb();
 
     // stop wifi sta
-    m_wifi_get_instance().wifi_sta_stop_cb();
+    wf.wifi_sta_stop_cb();
 
     // wifi sta start
-    char *ssid = m_wifi_get_instance()._wifi_info._ssid;
-    char *pass = m_wifi_get_instance()._wifi_info._passwd;
+    char *ssid = wf._wifi_info._ssid;
+    char *pass = wf._wifi_info._passwd;
     if (m_db_get_instance()->_get_dev_pair_state()) {
         use_server_prev = 1;
-        m_wifi_get_instance().wifi_sta_start_cb(ssid, pass);
+        wf.wifi_sta_start_cb(ssid, pass);
     }
 }
 m_state_transmit_t smartconfig_done = {

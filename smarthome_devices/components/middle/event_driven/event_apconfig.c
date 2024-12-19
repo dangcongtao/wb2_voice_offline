@@ -13,6 +13,7 @@ extern uint8_t use_server_prev;
 // {M_WIFI_NOT_CFG, SIG_AP_CFG, M_WIFI_APCONFIG},
 void wifi_not_cfg_to_ap_cfg_handler(void *arg)
 {
+    m_wifi_t wf = m_wifi_get_instance();
     clear_timeout_reset();
     m_led_stt_get_instance()._set_led_stt_ap_config_cb();
     m_ir_deinit();
@@ -24,13 +25,13 @@ void wifi_not_cfg_to_ap_cfg_handler(void *arg)
     m_mqtt_get_instance()._mqtt_stop();
 
     // stop wifi sta
-    m_wifi_get_instance().wifi_sta_stop_cb();
+    wf.wifi_sta_stop_cb();
 
     // scan wifi
-    m_wifi_get_instance().wifi_scan_cb();
+    wf.wifi_scan_cb();
 
     // start ap
-    m_wifi_get_instance().wifi_ap_start_cb();
+    wf.wifi_ap_start_cb();
 
     // start http server
     m_http_server_start();
@@ -59,6 +60,7 @@ m_state_transmit_t get_mqtt_info_to_ap_config = {
 
 void ap_config_done_handler(void *arg)
 {
+    m_wifi_t wf = m_wifi_get_instance();
     // stop http server
     m_http_stop();
 
@@ -69,11 +71,11 @@ void ap_config_done_handler(void *arg)
     m_led_stt_get_instance()._set_led_stt_wifi_not_connect_cb();
 
     // wifi sta start
-    char *ssid = m_wifi_get_instance()._wifi_info._ssid;
-    char *pass = m_wifi_get_instance()._wifi_info._passwd;
+    char *ssid = wf._wifi_info._ssid;
+    char *pass = wf._wifi_info._passwd;
     if (m_db_get_instance()->_get_dev_pair_state()) {
         use_server_prev = 1;
-        m_wifi_get_instance().wifi_sta_start_cb(ssid, pass);
+        wf.wifi_sta_start_cb(ssid, pass);
     }
 }
 m_state_transmit_t ap_config_done = {
