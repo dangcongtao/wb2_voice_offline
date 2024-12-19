@@ -11,13 +11,13 @@ export PROJECT_PATH PROJECT_BOARD
 
 -include ./proj_config.mk
 
-BL60X_SDK_PATH = /home/huy/Ai-Thinker-WB2
-# ifeq ($(origin BL60X_SDK_PATH), undefined)
-# BL60X_SDK_PATH_GUESS ?= $(shell pwd)
-# BL60X_SDK_PATH ?= $(BL60X_SDK_PATH_GUESS)/../../..
-# $(info ****** Please SET BL60X_SDK_PATH ******)
-# $(info ****** Trying SDK PATH [$(BL60X_SDK_PATH)])
-# endif
+# BL60X_SDK_PATH = /home/huy/Ai-Thinker-WB2
+ifeq ($(origin BL60X_SDK_PATH), undefined)
+BL60X_SDK_PATH_GUESS ?= $(shell pwd)
+BL60X_SDK_PATH ?= $(BL60X_SDK_PATH_GUESS)/../../..
+$(info ****** Please SET BL60X_SDK_PATH ******)
+$(info ****** Trying SDK PATH [$(BL60X_SDK_PATH)])
+endif
 
 COMPONENTS_NETWORK := sntp dns_server
 COMPONENTS_BLSYS   := bltime blfdt blmtd blota bloop loopadc looprt loopset

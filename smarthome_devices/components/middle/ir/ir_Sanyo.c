@@ -349,6 +349,8 @@ void SanyoAc152_send(state_ir_t state_ir)
     _.is_clothes_mode = 1;
     _.Auto = 1;
     _.raw[6] = 0xAA;
+    _.raw[16] = 0x80;
+    _.raw[9] = 0x79;
     break;
   }
 
