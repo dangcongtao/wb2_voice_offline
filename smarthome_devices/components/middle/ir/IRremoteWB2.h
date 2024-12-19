@@ -15,7 +15,7 @@ typedef enum {
   AMCOR,
   COOLIX48,  // (10)
   CARRIER_AC64,
-  SANYO_AC152, // MIDEA - COMFEE 
+  UNKNOWN_94835, // MIDEA - COMFEE 
   CORONA_AC,
   DAIKIN,
   DELONGHI_AC,  // (15)
@@ -137,8 +137,9 @@ typedef enum {
   AKITO,
   FUNIKIAC83,
   DAIKIN200,
+  SANYO_AC152,
   // Add new entries before this one, and update it to point to the last entry.
-  kLastDecodeType = FUNIKIAC83,
+  kLastDecodeType = SANYO_AC152,
   MIDEA = 1934,
 } decode_type_t;
 

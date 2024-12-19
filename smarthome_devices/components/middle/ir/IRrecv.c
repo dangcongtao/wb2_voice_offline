@@ -2098,6 +2098,10 @@ void m_ir_task(void *param)
                 {
                     IRSanyoAc_setInfo(capture.state, &ir_state_recv);
                 }
+                else if (SANYO_AC152 == capture.decode_type)
+                {
+                    IRSanyo152Ac_setInfo(capture.state, &ir_state_recv);
+                }
                 else if (MITSUBISHI_AC == capture.decode_type)
                 {
                     IRMitsubishiAC_setInfo(capture.state, &ir_state_recv);
@@ -2246,6 +2250,7 @@ void m_ir_task(void *param)
                     memset(str, 0, 325);
                     if (ir_state_recv.degrees < 10 || ir_state_recv.degrees > 40)
                     {
+                        os_trace("%s invalid temperature %f\r\n", __func__, ir_state_recv.degrees);
                         ir_state_recv.degrees = 25;
                     }
                     seek += sprintf(str, "{\"%s\":10,\"type\":1,\"brand\":%d,\"model\":%d,\"power\":%u,\"mode\":%d,\"temp\":%.1f,\"fan\":%d,\"swingv\":%d,\"swingh\":%d,\"debug\":{\"nbits\":%u,\"data\":\"",
