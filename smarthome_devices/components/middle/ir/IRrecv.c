@@ -33,7 +33,6 @@ hosal_gpio_dev_t touch_gpio_neg;
 struct timer_adpt *timer3;
 
 static decode_results capture;
-static uint32_t lastIrReceivedTime = 0;
 static uint32_t irRecvCounter = 0;
 static uint32_t old_time_learn_ir = 0;
 static uint32_t old_time_learn_ir_auto = 0;

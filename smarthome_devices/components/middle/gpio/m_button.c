@@ -14,20 +14,22 @@
 #include "m_wifi.h"
 #include "m_database.h"
 #include "event_driven.h"
+#include "m_fan.h"
 #include "bl_sys.h"
 
-#define TIME_OUT_RESET_TS04_WITHOUT_PRESS   2400
+#define TIME_OUT_RESET_TS04_WITHOUT_PRESS 2400
 
-extern m_state_t current_state;;
+extern m_state_t current_state;
+;
 extern uint32_t max_number_channel;
 extern uint8_t is_ota;
 static m_button_t s_button_obj;
 static uint32_t time_cnt_down_reset_TS04 = TIME_OUT_RESET_TS04_WITHOUT_PRESS;
 uint32_t ignore_event_release[MAX_NUM_BUTTON] = {0, 0, 0, 0};
 
-#define EVENT_BTN_HOLD              1
-#define EVENT_BTN_HOLD_SO_LONG      2
-#define EVENT_BTN_HOLD_HONG_PHIM    3
+#define EVENT_BTN_HOLD 1
+#define EVENT_BTN_HOLD_SO_LONG 2
+#define EVENT_BTN_HOLD_HONG_PHIM 3
 
 static const char *event_name[] = {"pressed", "release",
                                    "hold", "hold so long", "hold hong phim",
@@ -37,6 +39,19 @@ static const char *event_name[] = {"pressed", "release",
 extern void app_send_offline_message(uint8_t src);
 extern int is_wifi_connected(void);
 
+uint8_t arr_seg_7[] = {
+    0b11000000, // 0 (0x40) - Các thanh 0,1,2,3,4,5 sáng (bit 0), thanh 6 tắt (bit 1)
+    0b11111001, // 1 (0x79) - Thanh 1,2 sáng
+    0b10100100, // 2 (0x24) - Thanh 0,1,6,4,3 sáng
+    0b10110000, // 3 (0x30) - Thanh 0,1,6,2,3 sáng
+    0b10011001, // 4 (0x19) - Thanh 1,2,5,6 sáng
+    0b10010010, // 5 (0x12) - Thanh 0,6,2,3,5 sáng
+    0b10000010, // 6 (0x02) - Thanh 0,6,2,3,4,5 sáng
+    0b11111000, // 7 (0x78) - Thanh 0,1,2 sáng
+    0b10000000, // 8 (0x00) - Tất cả sáng
+    0b10010000  // 9 (0x10) - Thanh 0,1,2,3,5,6 sáng
+};
+
 void on_button_event_cb(int button_pin, int event, void *data)
 {
     os_trace("Button %d, event %s\r\n", button_pin, event_name[event]);
@@ -45,7 +60,21 @@ void on_button_event_cb(int button_pin, int event, void *data)
     {
     case APP_BTN_EVT_PRESSED:
     {
-
+        static int val_7_seg = 0;
+        // val_7_seg = !val_7_seg;
+        os_trace("val_7_seg: %u\r\n", val_7_seg);
+        int my_data = 1 << val_7_seg;
+        // hw_74hc595_write_byte(~my_data);
+        hw_74hc595_write_byte(arr_seg_7[val_7_seg]);
+        val_7_seg = (val_7_seg + 1) % 10;
+        // if (val_7_seg)
+        // {
+        //     hw_74hc595_write_byte(0b10101010);
+        // }
+        // else
+        // {
+        //     hw_74hc595_write_byte(0b01010101);
+        // }
     }
     break;
 
@@ -73,7 +102,7 @@ void on_button_event_cb(int button_pin, int event, void *data)
         {
             app_send_offline_message(1);
             vTaskDelay(pdMS_TO_TICKS(100));
-            
+
             m_db_get_instance()->_reset_db_without_sync_cb();
             m_wifi_get_instance().start_ap_config_cb();
             ignore_event_release[button_pin] = 0;
@@ -84,13 +113,22 @@ void on_button_event_cb(int button_pin, int event, void *data)
         // if (device_type != SWMINI || (device_type == SWMINI && button_pin < 2)) {
         //     m_switch_get_instance()._toggle_switch_cb(button_pin, 1, true, true);
         // }
+        if (button_pin == 0) // speed
+        {
+            m_fan_toggle_speed();
+        }
+        else if (button_pin == 1)
+        {
+            m_fan_toogle_swing();
+        }
         ignore_event_release[button_pin] = 0;
     }
     break;
 
     case APP_BTN_EVT_HOLD:
     {
-        if (device_type != SWMINI || (device_type == SWMINI && button_pin == 2)) {
+        if (device_type != SWMINI || (device_type == SWMINI && button_pin == 2))
+        {
             m_led_stt_get_instance()._set_led_stt_smart_config_cb();
             ignore_event_release[button_pin] = EVENT_BTN_HOLD;
         }
@@ -99,7 +137,8 @@ void on_button_event_cb(int button_pin, int event, void *data)
 
     case APP_BTN_EVT_HOLD_SO_LONG:
     {
-        if (device_type != SWMINI || (device_type == SWMINI && button_pin == 2)) {
+        if (device_type != SWMINI || (device_type == SWMINI && button_pin == 2))
+        {
             m_led_stt_get_instance()._set_led_stt_ap_config_cb();
             ignore_event_release[button_pin] = EVENT_BTN_HOLD_SO_LONG;
         }
@@ -114,7 +153,7 @@ void on_button_event_cb(int button_pin, int event, void *data)
 static void m_button_config(void)
 {
     static app_btn_hw_config_t m_hw_button_initialize_value[MAX_NUM_BUTTON];
-    for (uint32_t i = 0; i < max_number_channel; i++)
+    for (uint32_t i = 0; i < 3; i++)
     {
         m_hw_button_initialize_value[i].idle_level = BTN_IDLE_LEVEL;
         m_hw_button_initialize_value[i].last_state = BTN_IDLE_LEVEL;
@@ -123,12 +162,14 @@ static void m_button_config(void)
 
     app_btn_config_t conf;
     conf.config = &m_hw_button_initialize_value[0];
-    conf.btn_count = max_number_channel;
+    conf.btn_count = 3;
     conf.get_tick_cb = sys_get_tick_ms;
     conf.btn_initialize = hw_button_config;
     conf.btn_read = hw_btn_read;
+    conf.btn_get_adc = hw_btn_read_adc;
 
-    if (device_type == SWMINI) {
+    if (device_type == SWMINI)
+    {
         conf.btn_count = max_number_channel + 1;
         m_hw_button_initialize_value[2].idle_level = BTN_IDLE_LEVEL;
         m_hw_button_initialize_value[2].last_state = BTN_IDLE_LEVEL;
@@ -151,29 +192,33 @@ static void button_scan_task(void *param)
     {
         app_btn_scan(NULL);
 
-        if (!dev_is_doing_config()) {
-            if (is_ota == STATE_OTA_PROCESS) {
-                if (tick_ota_led % 500 == 0) {
+        if (!dev_is_doing_config())
+        {
+            if (is_ota == STATE_OTA_PROCESS)
+            {
+                if (tick_ota_led % 500 == 0)
+                {
                     // tick_ota_led = 0;
                     m_led_stt_get_instance()._toggle_led_stt_cb();
                 }
                 tick_ota_led += 50;
-                if (tick_ota_led >= 180000) {
+                if (tick_ota_led >= 180000)
+                {
                     tick_ota_led = 0;
                     os_trace("ota timeout\r\n");
                     vTaskDelay(pdMS_TO_TICKS(2000));
                     bl_sys_reset_por();
                 }
-            } 
+            }
             else if (is_ota == STATE_OTA_SUCCESS)
             {
-                if (tick_ota_led >= 100) {
+                if (tick_ota_led >= 100)
+                {
                     tick_ota_led = 0;
                     m_led_stt_get_instance()._toggle_led_stt_cb();
                 }
                 tick_ota_led += 50;
             }
-            
         }
 
         vTaskDelay(pdMS_TO_TICKS(50));
@@ -184,7 +229,7 @@ static void button_scan_task(void *param)
 void m_button_init(void)
 {
     m_button_config();
-    
+
     os_trace("m_button_init: %ld\r\n", max_number_channel);
     xTaskCreate(button_scan_task,  /* Function that implements the task. */
                 "led_button_task", /* Text name for the task. */

@@ -54,6 +54,7 @@ typedef struct
 typedef uint32_t (*app_btn_get_tick_cb)(void);
 typedef void (*app_btn_initialize_cb)(uint32_t btn_num);
 typedef uint32_t (*app_btn_get_level_cb)(uint32_t btn_num);
+typedef void (*app_btn_get_adc)(void);
 
 typedef struct
 {
@@ -62,6 +63,7 @@ typedef struct
     app_btn_get_tick_cb get_tick_cb;        // Button task will call this function to get current system time in milisecond
     app_btn_initialize_cb btn_initialize;   // Button task call this function to initialize gpio
     app_btn_get_level_cb btn_read;          // Button task call this function to get current gpio level
+    app_btn_get_adc btn_get_adc;            // Button task call this function to get adc value
 } app_btn_config_t;
 
 

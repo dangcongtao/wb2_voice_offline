@@ -66,6 +66,9 @@ void main(void)
 #endif
     bl_wdt_init(120000);
 
+    hw_fan_init();
+    hw_74hc595_init();
+
     easyflash_init();
     tcpip_init(NULL, NULL);
     blog_set_level_log_component(BLOG_LEVEL_INFO, "hardware");

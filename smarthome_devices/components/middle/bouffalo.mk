@@ -34,6 +34,7 @@ COMPONENT_ADD_INCLUDEDIRS += 	database \
 								http \
 								event_driven \
 								ir \
+								fan \
 
 ## not be exported to project level
 COMPONENT_PRIV_INCLUDEDIRS :=
@@ -63,6 +64,7 @@ COMPONENT_SRCS := database/m_database.c \
 				  event_driven/event_smartconfig.c \
 				  event_driven/event_device_active.c \
 				  event_driven/event_driven.c \
+				  fan/m_fan.c \
 				  ir/IRrecv.c \
 				  ir/IRutils.c \
 				  ir/IRtimer.c \
