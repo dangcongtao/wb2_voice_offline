@@ -1747,6 +1747,7 @@ void IRrecv_init(const uint32_t recvpin, const uint16_t bufsize,
                  const uint8_t timeout, const bool save_buffer)
 {
     /// @endcond
+    os_trace("%s: free mem %d\r\n", __func__, xPortGetFreeHeapSize());
     params.recvpin = recvpin;
     params.bufsize = bufsize;
     // Ensure we are going to be able to store all possible values in the

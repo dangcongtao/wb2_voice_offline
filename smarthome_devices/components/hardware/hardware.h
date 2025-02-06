@@ -28,6 +28,10 @@
 #define BUTTON_ADC_PIN             11
 #define BUTTON_ADC_CHANNEL             10
 
+#define BUTTON_POWER_INDEX  0
+#define BUTTON_SWING_INDEX  1
+#define BUTTON_NATURAL_INDEX  2
+
 #define BTN_CFG_MINI    22
 #define BUTTON_SSW  4
 

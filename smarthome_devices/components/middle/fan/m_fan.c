@@ -24,6 +24,7 @@ void m_fan_set_number_led(uint8_t num)
 
 void m_fan_set_time_off(uint32_t time_set)
 {
+    os_trace("%s time_set: %u\r\n", __func__, time_set);
     s_fan_runtime.time_remain = time_set;
     s_fan_runtime.time_set = time_set;
 }
@@ -35,6 +36,7 @@ uint32_t m_fan_get_time_remain(void)
 
 void m_fan_set_speed(uint8_t mode_set, uint8_t speed_set)
 {
+    os_trace("%s mode: %u, speed: %u\r\n", __func__, mode_set, speed_set);
     s_fan_info.mode = mode_set;
     s_fan_info.speed = speed_set;
     if (s_fan_info.mode == M_FAN_MODE_ON)
@@ -42,18 +44,41 @@ void m_fan_set_speed(uint8_t mode_set, uint8_t speed_set)
         hw_fan_set_speed(s_fan_info.speed);
         m_fan_set_number_led(s_fan_info.speed);
     }
+    else if (s_fan_info.mode == M_FAN_MODE_OFF)
+    {
+        hw_fan_set_speed(M_FAN_SPEED_OFF);
+        m_fan_set_number_led(M_FAN_SPEED_OFF);
+    }
+    else if (s_fan_info.mode == M_FAN_MODE_NATURAL)
+    {
+        if (s_fan_info.speed == M_FAN_MODE_OFF)
+        {
+            s_fan_info.speed = M_FAN_SPEED_1;
+        }
+    }
 }
 
 void m_fan_toggle_speed(void)
 {
-    s_fan_info.speed = s_fan_info.speed + 1;
-    if (s_fan_info.speed > 3)
+    if (s_fan_info.mode == M_FAN_MODE_ON)
     {
-        s_fan_info.speed = 1;
+        s_fan_info.speed = s_fan_info.speed + 1;
+        if (s_fan_info.speed > 3)
+        {
+            s_fan_info.speed = 1;
+        }
+        os_trace("%s speed: %u\r\n", __func__, s_fan_info.speed);
+        hw_fan_set_speed(s_fan_info.speed);
+        m_fan_set_number_led(s_fan_info.speed);
     }
-    os_trace("%s speed: %u\r\n", __func__, s_fan_info.speed);
-    hw_fan_set_speed(s_fan_info.speed);
-    m_fan_set_number_led(s_fan_info.speed);
+    else if (s_fan_info.mode == M_FAN_MODE_OFF)
+    {
+        s_fan_info.mode = M_FAN_MODE_ON;
+        s_fan_info.speed = M_FAN_SPEED_1;
+        os_trace("%s speed: %u\r\n", __func__, s_fan_info.speed);
+        hw_fan_set_speed(s_fan_info.speed);
+        m_fan_set_number_led(s_fan_info.speed);
+    }
 }
 
 void m_fan_set_swing(uint8_t swing)
@@ -68,10 +93,42 @@ void m_fan_toogle_swing(void)
     hw_fan_set_swing(s_fan_info.swing);
 }
 
-void m_led_7_seg_loop(void)
+void m_fan_toggle_natural_mode(void)
+{
+    if (s_fan_info.mode != M_FAN_MODE_OFF)
+    {
+        if (s_fan_info.mode == M_FAN_MODE_NATURAL)
+        {
+            s_fan_info.mode = M_FAN_MODE_ON;
+            m_fan_set_speed(s_fan_info.mode, s_fan_info.speed);
+        }
+        else
+        {
+            s_fan_info.mode = M_FAN_MODE_NATURAL;
+            os_trace("%s mode_natural: %u\r\n", __func__, s_fan_info.mode);
+        }
+    }
+}
+
+static void m_fan_timer_loop(uint32_t delay_ms)
+{
+    if (s_fan_runtime.time_remain > 0)
+    {
+        s_fan_runtime.time_remain -= delay_ms;
+        if (s_fan_runtime.time_remain == 0)
+        {
+            m_fan_set_speed(M_FAN_MODE_OFF, M_FAN_SPEED_OFF);
+        }
+    }
+}
+
+void m_led_7_seg_loop(uint32_t delay_ms)
 {
     static uint8_t tick_10ms = 0;
     static uint8_t num_curr = 0;
+
+    m_fan_timer_loop(delay_ms);
+
     if (s_fan_runtime.step == 0)
     {
         bl_gpio_output_set(LED_COM_PIN, 0);
@@ -90,8 +147,8 @@ void m_led_7_seg_loop(void)
     if (tick_10ms >= 100)
     {
         tick_10ms = 0;
+        // s_fan_runtime.led_7_seg_data = arr_seg_7[num_curr % 10];
         num_curr++;
-        s_fan_runtime.led_7_seg_data = arr_seg_7[num_curr % 10];
         s_fan_runtime.led_stt_data = (~(0b1 << (num_curr % 7 + 1))) & 0b11111110;
     }
 }
@@ -102,6 +159,8 @@ void m_fan_loop(void)
 
 void m_fan_init(void)
 {
+    s_fan_runtime.led_stt_data = 0b11111110;
+    s_fan_runtime.led_7_seg_data = arr_seg_7[0];
 }
 
 m_fan_info_t *m_fan_get_instance(void)

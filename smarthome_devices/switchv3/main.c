@@ -30,12 +30,12 @@
 
 void main_loop(void)
 {
-    uint32_t delay_ms = 10/*, old = 0*/;
+    const uint32_t delay_ms = 10/*, old = 0*/;
 
     while (true)
     {
         m_event_loop(delay_ms);
-        m_led_7_seg_loop();
+        m_led_7_seg_loop(delay_ms);
 
         // old += 1;
         // if (old > 20) {
@@ -70,6 +70,7 @@ void main(void)
 
     hw_fan_init();
     hw_74hc595_init();
+    m_fan_init();
 
     easyflash_init();
     tcpip_init(NULL, NULL);

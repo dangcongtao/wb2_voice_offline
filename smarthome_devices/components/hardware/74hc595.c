@@ -12,7 +12,7 @@ void hw_74hc595_init(void)
     bl_gpio_output_set(SHCP_PIN, 0);
     bl_gpio_output_set(STCP_PIN, 0);
     bl_gpio_output_set(DS_PIN, 0);
-    bl_gpio_output_set(OE_PIN, 0);
+    bl_gpio_output_set(OE_PIN, 1);
 }
 
 void hw_74hc595_write_byte(uint8_t data)
@@ -29,5 +29,6 @@ void hw_74hc595_write_byte(uint8_t data)
     }
     bl_gpio_output_set(STCP_PIN, 1);
     bl_gpio_output_set(STCP_PIN, 0);
+    bl_gpio_output_set(OE_PIN, 0);
 }
 

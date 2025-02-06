@@ -28,8 +28,10 @@ void m_fan_set_speed(uint8_t mode_set, uint8_t speed_set);
 void m_fan_set_time_off(uint32_t time_set);
 void m_fan_toggle_speed(void);
 void m_fan_toogle_swing(void);
+void m_fan_toggle_natural_mode(void);
 uint32_t m_fan_get_time_remain(void);
-void m_led_7_seg_loop(void);
+void m_led_7_seg_loop(uint32_t delay_ms);
+void m_fan_init(void);
 m_fan_info_t *m_fan_get_instance(void);
 
 #endif /* _M_FAN_H_ */

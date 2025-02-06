@@ -6,7 +6,7 @@
 
 #define MAXIMUM_SIZE_MQTT_TOPIC                         324
 #define MAXIMUM_SIZE_MESSAGE							2048
-#define MAXIMUM_QUEUE_ITEM                              5
+#define MAXIMUM_QUEUE_ITEM                              4
 #define MAX_NUMBER_MQTT_BROKER  5
 
 typedef struct {

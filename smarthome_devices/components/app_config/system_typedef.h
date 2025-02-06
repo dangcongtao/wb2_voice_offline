@@ -183,6 +183,7 @@ typedef enum {
 } m_fan_mode_t;
 
 typedef enum {
+    M_FAN_SPEED_OFF = 0,
     M_FAN_SPEED_1 = 1,
     M_FAN_SPEED_2 = 2,
     M_FAN_SPEED_3 = 3,

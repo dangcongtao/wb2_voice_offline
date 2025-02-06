@@ -13,7 +13,7 @@
 #endif
 
 #ifndef APP_BTN_ON_HOLD_TIME_FIRE_EVENT_MS
-#define APP_BTN_ON_HOLD_TIME_FIRE_EVENT_MS       (5000) 
+#define APP_BTN_ON_HOLD_TIME_FIRE_EVENT_MS       (2000) 
 #endif
 
 #ifndef APP_BTN_HOLD_SO_LONG_TIME_MS
@@ -21,7 +21,7 @@
 #endif
 
 #ifndef APP_BTN_HOLD_HONG_PHIM_TIME_MS
-#define APP_BTN_HOLD_HONG_PHIM_TIME_MS           (10000)
+#define APP_BTN_HOLD_HONG_PHIM_TIME_MS           (5000)
 #endif
 
 
