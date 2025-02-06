@@ -176,6 +176,18 @@ typedef enum {
     SIG_MQTT_DISCONNECTED,
 } m_signal_t;
 
+typedef enum {
+    M_FAN_MODE_OFF = 0,
+    M_FAN_MODE_ON = 1,
+    M_FAN_MODE_NATURAL = 2,
+} m_fan_mode_t;
+
+typedef enum {
+    M_FAN_SPEED_1 = 1,
+    M_FAN_SPEED_2 = 2,
+    M_FAN_SPEED_3 = 3,
+} m_fan_speed_t;
+
 typedef struct {
 	m_state_t context;
 	m_signal_t signal;

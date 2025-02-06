@@ -8,6 +8,7 @@
 
 #include "m_wifi.h"
 #include "m_mqtt.h"
+#include "m_fan.h"
 #include "IRrecv.h"
 
 #define BIT_FLAG_SYNC_WIFI      0
@@ -49,6 +50,7 @@ typedef struct {
     m_wifi_info_t*      _wifi_info;
     m_mqtt_info_t*      _mqtt_info;
     m_ac_info_t*          _ac_info;
+    m_fan_info_t*       _fan_info;
     uint32_t checksum_crc;
     uint32_t version;
 } m_device_t;

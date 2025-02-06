@@ -26,14 +26,16 @@
 #include <bl_wdt.h>
 #include "IRrecv_test.h"
 #include "IRrecv.h"
+#include "m_fan.h"
 
 void main_loop(void)
 {
-    uint32_t delay_ms = 100, old = 0;
+    uint32_t delay_ms = 10/*, old = 0*/;
 
     while (true)
     {
         m_event_loop(delay_ms);
+        m_led_7_seg_loop();
 
         // old += 1;
         // if (old > 20) {

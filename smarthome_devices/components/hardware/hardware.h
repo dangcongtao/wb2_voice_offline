@@ -51,6 +51,7 @@
 #define IR_RX_POS   1
 #define IRpin   0xFF
 
+#define LED_COM_PIN 2
 #define SHCP_PIN    21
 #define STCP_PIN    20
 #define DS_PIN    22
