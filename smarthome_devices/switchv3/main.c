@@ -68,7 +68,6 @@ void main(void)
 #endif
     bl_wdt_init(120000);
 
-    hw_fan_init();
     hw_74hc595_init();
     m_fan_init();
 
@@ -100,7 +99,7 @@ void main(void)
                 "main_loop", /* Text name for the task. */
                 1024 * 3,          /* Stack size in words, not bytes. */
                 NULL,              /* Parameter passed into the task. */
-                4,                 /* Priority at which the task is created. */
+                10,                 /* Priority at which the task is created. */
                 NULL);
     vTaskDelete(NULL);
 }

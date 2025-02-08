@@ -62,6 +62,11 @@
 #define STATE_OTA_PROCESS   1
 #define STATE_OTA_SUCCESS   2
 
+#define LED_SPEED_NORMAL_IDX    1
+#define LED_SPEED_SWING_IDX     2
+#define LED_SPEED_NATURAL_IDX   3
+#define LED_STT_NETWORK_IDX     4
+
 typedef enum {
     WSWITCH = 0,    // công tắc âm tường cảm hứng
     LHSWITCH,       // công tắc lahu

@@ -95,10 +95,25 @@ void on_button_event_cb(int button_pin, int event, void *data)
         else if (button_pin == BUTTON_SWING_INDEX)
         {
             m_fan_toogle_swing();
+            // static uint8_t val = 0;
+            // os_trace("val %u\r\n", val);
+            // if (val == 0)
+            // {
+            //     bl_gpio_output_set(LED_COM_PIN, 1);
+            //     hw_74hc595_write_byte(0b00000000);
+            // }
+            // else
+            // {
+            //     bl_gpio_output_set(LED_COM_PIN, 1);
+            //     hw_74hc595_write_byte(0b11111111);
+            // }
+            // val = !val;
         }
         else if (button_pin == BUTTON_NATURAL_INDEX)
         {
             m_fan_toggle_natural_mode();
+            // extern void m_fan_set_relay(void);
+            // m_fan_set_relay();
         }
 
         ignore_event_release[button_pin] = 0;

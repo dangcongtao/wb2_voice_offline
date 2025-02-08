@@ -11,7 +11,7 @@
 #include "m_http_server.h"
 
 extern char s_device_id[64];
-extern uint32_t app_btn_on_hold_time_fire_event_ms;
+// extern uint32_t app_btn_on_hold_time_fire_event_ms;
 extern uint8_t use_server_prev;
 
 void wifi_not_cfg_to_smart_cfg_handler(void *arg)
@@ -33,7 +33,7 @@ void wifi_not_cfg_to_smart_cfg_handler(void *arg)
     ble_set_name(s_device_id, 1);
     // ble_init();
 
-    app_btn_on_hold_time_fire_event_ms = APP_BTN_HOLD_EVENT_5S;
+    // app_btn_on_hold_time_fire_event_ms = APP_BTN_HOLD_EVENT_5S;
 }
 m_state_transmit_t not_cfg_to_smart_cfg = {
     .context = M_WIFI_NOT_CFG,

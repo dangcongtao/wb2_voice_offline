@@ -13,6 +13,7 @@ typedef struct
     uint8_t step;
     uint8_t led_7_seg_data;
     uint8_t led_stt_data;
+    uint8_t switch_data_output;
 } m_fan_runtime_t;
 
 typedef struct

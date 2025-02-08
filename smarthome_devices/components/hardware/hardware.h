@@ -38,10 +38,10 @@
 #define MAX_NUM_SWITCH          4
 #define SWITCH_IDLE_LEVEL       0
 #define SWITCH_ACTIVE_LEVEL     1
-#define SWITCH1   14
-#define SWITCH2   17 
-#define SWITCH3    3
-#define SWITCH_SWING    12
+#define SWITCH1     0xFF
+#define SWITCH2     0xFF 
+#define SWITCH3     0xFF
+#define SWITCH_SWING    0xFF
 
 #define SWITCH1_MINI    3
 #define SWITCH2_MINI    14
@@ -60,6 +60,7 @@
 #define STCP_PIN    20
 #define DS_PIN    22
 #define OE_PIN    0
+#define OE_PIN_2    12
 
 extern uint32_t max_number_channel;
 extern uint32_t device_type;
@@ -85,13 +86,11 @@ uint8_t hw_read_switch_pin(uint8_t index);
 void hw_switch_change_pin_type(void);
 
 /* fan */
-void hw_fan_set_speed(uint8_t speed);
-void hw_fan_set_swing(uint8_t swing);
 void hw_fan_init(void);
 
 /* 7 seg*/
 void hw_74hc595_init(void);
-void hw_74hc595_write_byte(uint8_t data);
+void hw_74hc595_write_byte(uint16_t data, uint8_t num_hc595);
 
 /* hardware init. should call this api first */
 void gpio_set_output(int pin);

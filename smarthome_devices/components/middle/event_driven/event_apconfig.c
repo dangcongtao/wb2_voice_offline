@@ -7,7 +7,7 @@
 #include "m_http_server.h"
 #include "IRrecv.h"
 
-extern uint32_t app_btn_on_hold_time_fire_event_ms;
+// extern uint32_t app_btn_on_hold_time_fire_event_ms;
 extern uint8_t use_server_prev;
 
 // {M_WIFI_NOT_CFG, SIG_AP_CFG, M_WIFI_APCONFIG},
@@ -36,7 +36,7 @@ void wifi_not_cfg_to_ap_cfg_handler(void *arg)
     // start http server
     m_http_server_start();
 
-    app_btn_on_hold_time_fire_event_ms = APP_BTN_HOLD_EVENT_5S;
+    // app_btn_on_hold_time_fire_event_ms = APP_BTN_HOLD_EVENT_5S;
 }
 m_state_transmit_t not_cfg_to_ap_cfg = {
     .context = M_WIFI_NOT_CFG,

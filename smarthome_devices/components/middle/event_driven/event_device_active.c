@@ -9,7 +9,7 @@
 #include "m_mqtt.h"
 #include "IRrecv.h"
 
-extern uint32_t app_btn_on_hold_time_fire_event_ms;
+// extern uint32_t app_btn_on_hold_time_fire_event_ms;
 
 extern char s_device_id[64];
 extern void signal_post(m_signal_t sig);
@@ -140,7 +140,7 @@ void device_disconnect_mqtt_handler(void *arg)
 {
     os_trace("device_disconnect_mqtt_handler\r\n");
     m_led_stt_get_instance()._set_led_stt_mqtt_disconnect_cb();
-    app_btn_on_hold_time_fire_event_ms = APP_BTN_HOLD_EVENT_5S;
+    // app_btn_on_hold_time_fire_event_ms = APP_BTN_HOLD_EVENT_5S;
 }
 m_state_transmit_t dev_actived_disconnect_mqtt = {
     .context = M_WIFI_DEV_ACTIVE,
@@ -152,7 +152,7 @@ void device_disconnect_wifi_handler(void *arg)
 {
     os_trace("device_disconnect_wifi_handler\r\n");
     m_led_stt_get_instance()._set_led_stt_wifi_not_connect_cb();
-    app_btn_on_hold_time_fire_event_ms = APP_BTN_HOLD_EVENT_5S;
+    // app_btn_on_hold_time_fire_event_ms = APP_BTN_HOLD_EVENT_5S;
     m_mqtt_get_instance()._mqtt_stop();
 }
 m_state_transmit_t dev_actived_disconnect_wifi = {
@@ -178,7 +178,7 @@ void dev_actived_to_smart_cfg_handler(void *arg)
 
     // set led
     m_led_stt_get_instance()._set_led_stt_smart_config_cb();
-    app_btn_on_hold_time_fire_event_ms = APP_BTN_HOLD_EVENT_5S;
+    // app_btn_on_hold_time_fire_event_ms = APP_BTN_HOLD_EVENT_5S;
 
     // stop mqtt
     m_mqtt_get_instance()._mqtt_stop();
@@ -211,7 +211,7 @@ void dev_actived_to_ap_cfg_handler(void *arg)
 
     // set led
     m_led_stt_get_instance()._set_led_stt_ap_config_cb();
-    app_btn_on_hold_time_fire_event_ms = APP_BTN_HOLD_EVENT_5S;
+    // app_btn_on_hold_time_fire_event_ms = APP_BTN_HOLD_EVENT_5S;
 
     m_ir_deinit();
 
