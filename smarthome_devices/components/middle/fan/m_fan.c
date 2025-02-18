@@ -1,8 +1,10 @@
 #include "m_fan.h"
 #include "hardware.h"
+#include "m_mqtt.h"
 
 static m_fan_runtime_t s_fan_runtime;
 static m_fan_info_t s_fan_info;
+extern char respond[512];
 
 static const uint8_t arr_seg_7[] = {
     0b10000001, // 0 (0x40) - Các thanh 0,1,2,3,4,5 sáng (bit 0), thanh 6 tắt (bit 1)
@@ -72,6 +74,13 @@ void hw_fan_set_swing(uint8_t swing)
     }
 }
 
+void m_fan_respond_control(uint32_t uid, uint8_t act_id)
+{
+    memset(respond, 0, sizeof(respond));
+    sprintf(respond, "{\"%s\":%ld,\"mode\":%u,\"lv\":%u,\"swing\":%u,\"u\":%lu,\"act_id\":%lu}", gs_dev_type[device_type], 20, s_fan_info.mode, s_fan_info.speed, s_fan_info.swing, uid, act_id);
+    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
+}
+
 void m_fan_set_time_off(uint32_t time_set)
 {
     os_trace("%s time_set: %u\r\n", __func__, time_set);
@@ -116,6 +125,16 @@ void m_fan_set_speed(uint8_t mode_set, uint8_t speed_set)
         }
         hw_led_stt_set_stt(LED_SPEED_NATURAL_IDX, LED_STT_ON);
         hw_led_stt_set_stt(LED_SPEED_NORMAL_IDX, LED_STT_ON);
+    }
+}
+
+void m_fan_control(uint8_t mode_set, uint8_t speed_set, uint8_t swing_set, uint32_t uid, uint8_t act_id, uint8_t respond)
+{
+    m_fan_set_swing(swing_set);
+    m_fan_set_speed(mode_set, speed_set);
+    if (respond)
+    {
+        m_fan_respond_control(uid, act_id);
     }
 }
 
@@ -212,7 +231,6 @@ static void m_fan_timer_loop(uint32_t delay_ms)
     }
 }
 
-static uint8_t request_change_hc595_second = 0;
 static void m_fan_set_data_hc595(uint8_t data)
 {
     // if (request_change_hc595_second)
@@ -225,12 +243,6 @@ static void m_fan_set_data_hc595(uint8_t data)
     // hw_74hc595_write_byte(data, 1);
     hw_74hc595_write_byte((uint16_t)data | ((uint16_t)s_fan_runtime.switch_data_output << 8), 2);
     // }
-}
-
-void m_fan_set_relay(void)
-{
-    request_change_hc595_second = (request_change_hc595_second + 1) % 8;
-    os_trace("my_data: %u\r\n", request_change_hc595_second);
 }
 
 void m_led_7_seg_loop(uint32_t delay_ms)

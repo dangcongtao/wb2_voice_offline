@@ -28,12 +28,15 @@
 #define BUTTON_ADC_PIN             11
 #define BUTTON_ADC_CHANNEL             10
 
+#define TEMP_ADC_PIN             4
+#define TEMP_ADC_CHANNEL             1
+
 #define BUTTON_POWER_INDEX  0
 #define BUTTON_SWING_INDEX  1
 #define BUTTON_NATURAL_INDEX  2
 
 #define BTN_CFG_MINI    22
-#define BUTTON_SSW  4
+#define BUTTON_SSW  0xFF
 
 #define MAX_NUM_SWITCH          4
 #define SWITCH_IDLE_LEVEL       0
@@ -95,5 +98,9 @@ void hw_74hc595_write_byte(uint16_t data, uint8_t num_hc595);
 /* hardware init. should call this api first */
 void gpio_set_output(int pin);
 void gpio_set_input(int pin);
+
+/* Temperature */
+uint32_t hw_temp_read(void);
+void hw_temp_config(void);
 
 #endif

@@ -27,7 +27,7 @@
 #include "IRrecv.h"
 #include "hardware.h"
 
-static char respond[512];
+char respond[512];
 extern char key[16], iv[16];
 
 static void app_startup_message(void);
@@ -276,11 +276,12 @@ static void app_startup_message(void)
     sprintf(respond,
             "{\"%s\":100,\"reason\":%lu,\"id\":\"%s\",\"ver\":%s,"
             "\"ssid\":\"%s\",\"pass\":\"%s\",\"streng\":%d,"
-            "\"ip\":\"%s\",\"vermqtt\":%lu}",
+            "\"ip\":\"%s\",\"vermqtt\":%lu,\"mode\":%u,\"lv\":%u,\"swing\":%u,\"buzz\":%u,\"t\":%lu,\"temp\":%lu}",
             gs_dev_type[device_type], num_send * 100U + last_reason_reset * 10U + (uint32_t)bl_sys_rstinfo_get_hun(), // hang chuc: flash_reason reset, hang don vi: BL_RST_REASON_E
             m_db_get_instance()->_get_dev_id(), FIRMWARE_VERSION,
             app_databse._wifi_info->_ssid, app_databse._wifi_info->_passwd,
-            app_databse._wifi_info->_rssi, app_databse._wifi_info->_ip, app_databse._mqtt_info->vermqtt);
+            app_databse._wifi_info->_rssi, app_databse._wifi_info->_ip, app_databse._mqtt_info->vermqtt,
+            app_databse._fan_info->mode, app_databse._fan_info->speed, app_databse._fan_info->swing, app_databse._fan_info->buzz, m_fan_get_time_remain(), 240LU);
 
     num_send++;
 
@@ -350,8 +351,8 @@ RESPONSE:
 // {"type":20, "mode":1,"lv":1, "u":55519, "act_id":0}
 static void app_control_fan(cJSON *js_Root)
 {
-    cJSON *jsMode, *jsLevel, *jsU, *jsAct, *jsType;
-    uint8_t mode = 0, level = 0, result = 0;
+    cJSON *jsMode, *jsLevel, *jsU, *jsAct, *jsType, *jsSwing;
+    uint8_t mode = 0, level = 0, swing = 0, result = 0;
     uint32_t uid = 0, act_id = 0, type = 0;
 
     jsType = cJSON_GetObjectItem(js_Root, gs_dev_type[device_type]);
@@ -378,6 +379,14 @@ static void app_control_fan(cJSON *js_Root)
     }
     level = jsLevel->valueint;
 
+    jsSwing = cJSON_GetObjectItem(js_Root, "swing");
+    if (jsSwing == NULL)
+    {
+        os_trace("Get JSON jsSwing mqtt message fail\n");
+        goto RESPONSE;
+    }
+    swing = jsSwing->valueint;
+
     jsU = cJSON_GetObjectItem(js_Root, CJSON_KEY_USER_ID);
     if (jsU == NULL)
     {
@@ -386,13 +395,13 @@ static void app_control_fan(cJSON *js_Root)
     }
     uid = jsU->valueint;
 
-    m_fan_set_speed(mode, level);
+    m_fan_control(mode, level, swing, uid, act_id, 0);
 
     result = 1;
 RESPONSE:
     /* respond server here */
     memset(respond, 0, sizeof(respond));
-    sprintf(respond, "{\"%s\":%ld,\"mode\":%u,\"lv\":%u,\"u\":%lu,\"act_id\":%lu,\"result\":%d}", gs_dev_type[device_type], type, mode, level, uid, act_id, result);
+    sprintf(respond, "{\"%s\":%ld,\"mode\":%u,\"lv\":%u,\"swing\":%u,\"u\":%lu,\"act_id\":%lu,\"result\":%d}", gs_dev_type[device_type], type, mode, level, swing, uid, act_id, result);
     m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
 }
 

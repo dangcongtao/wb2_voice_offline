@@ -112,8 +112,6 @@ void on_button_event_cb(int button_pin, int event, void *data)
         else if (button_pin == BUTTON_NATURAL_INDEX)
         {
             m_fan_toggle_natural_mode();
-            // extern void m_fan_set_relay(void);
-            // m_fan_set_relay();
         }
 
         ignore_event_release[button_pin] = 0;
@@ -193,10 +191,18 @@ static void m_button_config(void)
 static void button_scan_task(void *param)
 {
     static uint32_t tick_ota_led = 0;
+    uint32_t val_temperature = 0;
     os_trace("button_scan_task\n");
     while (true)
     {
         app_btn_scan(NULL);
+
+        uint32_t temp = hw_temp_read();
+        if (temp)
+        {
+            val_temperature = temp;
+            os_trace("temp: %lu\r\n", val_temperature);
+        }
 
         if (!dev_is_doing_config())
         {
@@ -235,6 +241,7 @@ static void button_scan_task(void *param)
 void m_button_init(void)
 {
     m_button_config();
+    hw_temp_config();
 
     os_trace("m_button_init: %ld\r\n", max_number_channel);
     xTaskCreate(button_scan_task,  /* Function that implements the task. */

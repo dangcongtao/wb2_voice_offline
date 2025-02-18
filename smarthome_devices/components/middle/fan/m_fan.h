@@ -26,6 +26,7 @@ typedef struct
 
 void m_fan_set_swing(uint8_t swing);
 void m_fan_set_speed(uint8_t mode_set, uint8_t speed_set);
+void m_fan_control(uint8_t mode_set, uint8_t speed_set, uint8_t swing_set, uint32_t uid, uint8_t act_id, uint8_t respond);
 void m_fan_set_time_off(uint32_t time_set);
 void m_fan_toggle_speed(void);
 void m_fan_toogle_swing(void);
