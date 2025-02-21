@@ -84,17 +84,27 @@ void m_fan_respond_control(uint32_t uid, uint8_t act_id)
 void m_fan_set_time_off(uint32_t time_set)
 {
     os_trace("%s time_set: %u\r\n", __func__, time_set);
-    s_fan_runtime.time_remain = time_set;
-    s_fan_runtime.time_set = time_set;
+    s_fan_runtime.time_remain = time_set * 1000;
+    s_fan_runtime.time_set = time_set * 1000;
 }
 
 uint32_t m_fan_get_time_remain(void)
 {
-    return s_fan_runtime.time_remain;
+    return s_fan_runtime.time_remain / 1000;
+}
+
+uint32_t m_fan_get_time_set(void)
+{
+    return s_fan_runtime.time_set / 1000;
 }
 
 static void m_fan_start_natural_mode(void)
 {
+}
+
+void m_fan_set_buzz(uint8_t buzz_set)
+{
+    s_fan_info.buzz = buzz_set;
 }
 
 void m_fan_set_speed(uint8_t mode_set, uint8_t speed_set)
