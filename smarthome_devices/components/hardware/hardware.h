@@ -15,10 +15,10 @@
 #define LED_STT_SSW     1
 #define LED_STT_MINI    7
 
-#define LED_STT_ON      0
-#define LED_STT_OFF     1
+#define LED_STT_ON      1
+#define LED_STT_OFF     0
 
-#define MAX_NUM_BUTTON  4
+#define MAX_NUM_BUTTON  6
 #define BTN_IDLE_LEVEL  0
 #define BUTTON1    11
 #define BUTTON2    5
@@ -28,8 +28,8 @@
 #define BUTTON_ADC_PIN             11
 #define BUTTON_ADC_CHANNEL             10
 
-#define TEMP_ADC_PIN             4
-#define TEMP_ADC_CHANNEL             1
+#define TEMP_ADC_PIN             11
+#define TEMP_ADC_CHANNEL             10
 
 #define BUTTON_POWER_INDEX  0
 #define BUTTON_SWING_INDEX  1
@@ -46,7 +46,7 @@
 #define SWITCH3     0xFF
 #define SWITCH_SWING    0xFF
 
-#define SWITCH1_MINI    3
+#define SWITCH1_MINI    0xFF
 #define SWITCH2_MINI    14
 
 #define TS04    22
@@ -76,6 +76,7 @@ void hw_button_config(uint32_t index);
 uint32_t hw_btn_read(uint32_t index);
 void hw_btn_read_adc(void);
 void hw_ts04_write(uint8_t value);
+void hw_btn_set_val_button(uint8_t val);
 
 /* led */
 void hw_led_stt_cfg(void);

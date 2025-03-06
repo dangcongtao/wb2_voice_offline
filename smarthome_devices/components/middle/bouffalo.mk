@@ -65,6 +65,7 @@ COMPONENT_SRCS := database/m_database.c \
 				  event_driven/event_device_active.c \
 				  event_driven/event_driven.c \
 				  fan/m_fan.c \
+				  fan/m_ft62f28.c \
 				  ir/IRrecv.c \
 				  ir/IRutils.c \
 				  ir/IRtimer.c \

@@ -4,6 +4,7 @@
 #include "hosal_adc.h"
 
 static int val = 0;
+static uint8_t val_button = 0;
 
 static hosal_adc_dev_t adc_temperature = {
     .cb = NULL,
@@ -39,24 +40,15 @@ void hw_btn_read_adc(void)
     }
 }
 
+void hw_btn_set_val_button(uint8_t val)
+{
+    // os_trace("%s val: %u\r\n", __func__, val);
+    val_button = val;
+}
+
 uint32_t hw_btn_read(uint32_t index)
 {
     // int val = hosal_adc_value_get(&adc_temperature, BUTTON_ADC_CHANNEL, 100);
     // os_trace("%s idx: %lu, val_adc: %d\r\n", __func__, index, val);
-    if (val < 0)
-        return BTN_IDLE_LEVEL;
-    
-    if (index == 0)
-    {
-        return val > 2900;
-    }
-    else if (index == 1)
-    {
-        return val > 2100 && val < 2200;
-    }
-    else if (index == 2)
-    {
-        return val > 1550 && val < 1650;
-    }
-    return BTN_IDLE_LEVEL;
+    return (val_button >> index) & 1;
 }

@@ -37,7 +37,7 @@ static void steinhart_hart(unsigned int resistence, uint32_t *value)
 
     // Convert in Celsius
     temperature = temperature - 273.15;
-    os_trace("Temperature: %f\r\n", temperature);
+    // os_trace("Temperature: %f\r\n", temperature);
 
     *value = (uint32_t)temperature;
 }
@@ -60,7 +60,7 @@ uint32_t hw_temp_read(void)
     double voltage = (double)val / 1000;
     double resistance = (voltage * R1) / (VCC - voltage);
     steinhart_hart(resistance, &result);
-    os_trace("ADC value: %d, resistance: %lf, temp: %lu\r\n", val, resistance, result);
+    // os_trace("ADC value: %d, resistance: %lf, temp: %lu\r\n", val, resistance, result);
 
     return result;
 }

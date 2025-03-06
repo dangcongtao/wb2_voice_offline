@@ -65,7 +65,7 @@
 #define LED_SPEED_NORMAL_IDX    1
 #define LED_SPEED_SWING_IDX     2
 #define LED_SPEED_NATURAL_IDX   3
-#define LED_STT_NETWORK_IDX     4
+#define LED_STT_NETWORK_IDX     6
 
 typedef enum {
     WSWITCH = 0,    // công tắc âm tường cảm hứng
@@ -185,6 +185,7 @@ typedef enum {
     M_FAN_MODE_OFF = 0,
     M_FAN_MODE_ON = 1,
     M_FAN_MODE_NATURAL = 2,
+    M_FAN_MODE_INVALID = 0xFF
 } m_fan_mode_t;
 
 typedef enum {
@@ -192,6 +193,7 @@ typedef enum {
     M_FAN_SPEED_1 = 1,
     M_FAN_SPEED_2 = 2,
     M_FAN_SPEED_3 = 3,
+    M_FAN_SPEED_INVALID = 0xFF
 } m_fan_speed_t;
 
 typedef struct {

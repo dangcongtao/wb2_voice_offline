@@ -15,6 +15,7 @@
 #include "m_database.h"
 #include "event_driven.h"
 #include "m_fan.h"
+#include "hw_uart.h"
 #include "bl_sys.h"
 
 #define TIME_OUT_RESET_TS04_WITHOUT_PRESS 2400
@@ -54,66 +55,44 @@ void on_button_event_cb(int button_pin, int event, void *data)
     {
         time_cnt_down_reset_TS04 = TIME_OUT_RESET_TS04_WITHOUT_PRESS;
 
-        if (ignore_event_release[button_pin] == EVENT_BTN_HOLD)
+        if (button_pin == 0)
         {
-            if (button_pin == BUTTON_POWER_INDEX)
+            if (ignore_event_release[button_pin] == EVENT_BTN_HOLD)
             {
+                if (button_pin == BUTTON_POWER_INDEX)
+                {
+                    ignore_event_release[button_pin] = 0;
+                    return;
+                }
+            }
+            else if (ignore_event_release[button_pin] == EVENT_BTN_HOLD_SO_LONG)
+            {
+                app_send_offline_message(1);
+                vTaskDelay(pdMS_TO_TICKS(100));
+
+                m_db_get_instance()->_reset_db_without_sync_cb();
+                m_wifi_get_instance().start_smart_config_cb();
                 ignore_event_release[button_pin] = 0;
                 return;
             }
-        }
-        else if (ignore_event_release[button_pin] == EVENT_BTN_HOLD_SO_LONG)
-        {
-            app_send_offline_message(1);
-            vTaskDelay(pdMS_TO_TICKS(100));
 
-            m_db_get_instance()->_reset_db_without_sync_cb();
-            m_wifi_get_instance().start_smart_config_cb();
-            ignore_event_release[button_pin] = 0;
-            return;
-        }
+            else if (ignore_event_release[button_pin] == EVENT_BTN_HOLD_HONG_PHIM)
+            {
+                app_send_offline_message(1);
+                vTaskDelay(pdMS_TO_TICKS(100));
 
-        else if (ignore_event_release[button_pin] == EVENT_BTN_HOLD_HONG_PHIM)
-        {
-            app_send_offline_message(1);
-            vTaskDelay(pdMS_TO_TICKS(100));
-
-            m_db_get_instance()->_reset_db_without_sync_cb();
-            m_wifi_get_instance().start_ap_config_cb();
-            ignore_event_release[button_pin] = 0;
-            return;
+                m_db_get_instance()->_reset_db_without_sync_cb();
+                m_wifi_get_instance().start_ap_config_cb();
+                ignore_event_release[button_pin] = 0;
+                return;
+            }
         }
 
         /* just support buttons, not support sensor */
         // if (device_type != SWMINI || (device_type == SWMINI && button_pin < 2)) {
         //     m_switch_get_instance()._toggle_switch_cb(button_pin, 1, true, true);
         // }
-        if (button_pin == BUTTON_POWER_INDEX) // speed
-        {
-            m_fan_toggle_speed();
-        }
-        else if (button_pin == BUTTON_SWING_INDEX)
-        {
-            m_fan_toogle_swing();
-            // static uint8_t val = 0;
-            // os_trace("val %u\r\n", val);
-            // if (val == 0)
-            // {
-            //     bl_gpio_output_set(LED_COM_PIN, 1);
-            //     hw_74hc595_write_byte(0b00000000);
-            // }
-            // else
-            // {
-            //     bl_gpio_output_set(LED_COM_PIN, 1);
-            //     hw_74hc595_write_byte(0b11111111);
-            // }
-            // val = !val;
-        }
-        else if (button_pin == BUTTON_NATURAL_INDEX)
-        {
-            m_fan_toggle_natural_mode();
-        }
-
+        m_fan_process_button_event(button_pin);
         ignore_event_release[button_pin] = 0;
     }
     break;
@@ -132,7 +111,10 @@ void on_button_event_cb(int button_pin, int event, void *data)
     {
         if (device_type != SWMINI || (device_type == SWMINI && button_pin == 2))
         {
-            m_led_stt_get_instance()._set_led_stt_smart_config_cb();
+            if (button_pin == 0)
+            {
+                m_led_stt_get_instance()._set_led_stt_smart_config_cb();
+            }
             ignore_event_release[button_pin] = EVENT_BTN_HOLD_SO_LONG;
         }
     }
@@ -142,7 +124,10 @@ void on_button_event_cb(int button_pin, int event, void *data)
     {
         if (device_type != SWMINI || (device_type == SWMINI && button_pin == 2))
         {
-            m_led_stt_get_instance()._set_led_stt_ap_config_cb();
+            if (button_pin == 0)
+            {
+                m_led_stt_get_instance()._set_led_stt_ap_config_cb();
+            }
             ignore_event_release[button_pin] = EVENT_BTN_HOLD_HONG_PHIM;
         }
     }
@@ -156,7 +141,7 @@ void on_button_event_cb(int button_pin, int event, void *data)
 static void m_button_config(void)
 {
     static app_btn_hw_config_t m_hw_button_initialize_value[MAX_NUM_BUTTON];
-    for (uint32_t i = 0; i < 3; i++)
+    for (uint32_t i = 0; i < MAX_NUM_BUTTON; i++)
     {
         m_hw_button_initialize_value[i].idle_level = BTN_IDLE_LEVEL;
         m_hw_button_initialize_value[i].last_state = BTN_IDLE_LEVEL;
@@ -165,19 +150,11 @@ static void m_button_config(void)
 
     app_btn_config_t conf;
     conf.config = &m_hw_button_initialize_value[0];
-    conf.btn_count = 3;
+    conf.btn_count = MAX_NUM_BUTTON;
     conf.get_tick_cb = sys_get_tick_ms;
     conf.btn_initialize = hw_button_config;
     conf.btn_read = hw_btn_read;
     conf.btn_get_adc = hw_btn_read_adc;
-
-    if (device_type == SWMINI)
-    {
-        conf.btn_count = max_number_channel + 1;
-        m_hw_button_initialize_value[2].idle_level = BTN_IDLE_LEVEL;
-        m_hw_button_initialize_value[2].last_state = BTN_IDLE_LEVEL;
-        m_hw_button_initialize_value[2].pin = 2;
-    }
 
     app_btn_initialize(&conf);
     app_btn_register_callback(APP_BTN_EVT_PRESSED, on_button_event_cb, NULL);
@@ -196,8 +173,10 @@ static void button_scan_task(void *param)
     while (true)
     {
         app_btn_scan(NULL);
+        hw_uart_loop();
 
-        uint32_t temp = hw_temp_read();
+        uint32_t temp = 0;
+        //  = hw_temp_read();
         if (temp)
         {
             val_temperature = temp;

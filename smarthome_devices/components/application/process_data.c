@@ -43,6 +43,7 @@ static void app_set_mqtt_info(cJSON *jsRoot);
 static void app_set_time_release(cJSON *jsRoot);
 static void app_get_time_release(cJSON *jsRoot);
 static void app_control_fan(cJSON *js_Root);
+static void app_control_fan_with_one(cJSON *js_Root);
 static void app_control_swing(cJSON *js_Root);
 static void app_control_timer(cJSON *js_Root);
 static void app_set_buzz(cJSON *js_Root);
@@ -135,8 +136,9 @@ wswitch_handler_t array_handler[] = {
 
     // fan
     {app_control_fan, 20},
-    {app_control_swing, 21},
-    {app_control_timer, 22},
+    {app_control_fan_with_one, 21},
+    // {app_control_swing, 21},
+    // {app_control_timer, 22},
     {app_set_buzz, 24},
 };
 
@@ -463,6 +465,7 @@ static void app_control_fan(cJSON *js_Root)
     cJSON *jsMode, *jsLevel, *jsU, *jsAct, *jsType, *jsSwing;
     uint8_t mode = 0, level = 0, swing = 0, result = 0;
     uint32_t uid = 0, act_id = 0, type = 0;
+    m_fan_info_t *my_fan = m_fan_get_instance();
 
     jsType = cJSON_GetObjectItem(js_Root, gs_dev_type[device_type]);
     if (jsType == NULL)
@@ -518,7 +521,70 @@ static void app_control_fan(cJSON *js_Root)
 RESPONSE:
     /* respond server here */
     memset(respond, 0, sizeof(respond));
-    sprintf(respond, "{\"%s\":%ld,\"mode\":%u,\"lv\":%u,\"swing\":%u,\"u\":%lu,\"act_id\":%lu,\"result\":%d}", gs_dev_type[device_type], type, mode, level, swing, uid, act_id, result);
+    sprintf(respond, "{\"%s\":%ld,\"mode\":%u,\"lv\":%u,\"swing\":%u,\"u\":%lu,\"act_id\":%lu,\"result\":%d}", gs_dev_type[device_type], type, my_fan->mode, my_fan->speed, my_fan->swing, uid, act_id, result);
+    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
+}
+// {"type":21, "mode":1,"lv":1, "u":55519, "act_id":0}
+static void app_control_fan_with_one(cJSON *js_Root)
+{
+    cJSON *jsMode, *jsLevel, *jsU, *jsAct, *jsType, *jsSwing;
+    uint8_t mode = 0, level = 0, swing = 0, result = 0;
+    uint32_t uid = 0, act_id = 0, type = 0;
+    m_fan_info_t *my_fan = m_fan_get_instance();
+
+    jsType = cJSON_GetObjectItem(js_Root, gs_dev_type[device_type]);
+    if (jsType == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    type = jsType->valueint;
+
+    jsU = cJSON_GetObjectItem(js_Root, CJSON_KEY_USER_ID);
+    if (jsU == NULL)
+    {
+        os_trace("Get JSON jsU mqtt message fail\n");
+        goto RESPONSE;
+    }
+    uid = jsU->valueint;
+
+    jsAct = cJSON_GetObjectItem(js_Root, CJSON_KEY_ACT_ID);
+    if (jsAct == NULL)
+    {
+        os_trace("Get JSON jsAct mqtt message fail\n");
+        goto RESPONSE;
+    }
+    act_id = jsAct->valueint;
+
+    jsMode = cJSON_GetObjectItem(js_Root, "mode");
+    if (jsMode != NULL)
+    {
+        mode = jsMode->valueint;
+        os_trace("Get JSON jsMode mqtt message\n");
+        m_fan_set_speed(mode, M_FAN_SPEED_INVALID);
+    }
+
+    jsLevel = cJSON_GetObjectItem(js_Root, "lv");
+    if (jsLevel != NULL)
+    {
+        os_trace("Get JSON jsLevel mqtt message\n");
+        level = jsLevel->valueint;
+        m_fan_set_speed(M_FAN_MODE_INVALID, level);
+    }
+
+    jsSwing = cJSON_GetObjectItem(js_Root, "swing");
+    if (jsSwing != NULL)
+    {
+        os_trace("Get JSON jsSwing mqtt message\n");
+        swing = jsSwing->valueint;
+        m_fan_set_swing(swing);
+    }
+
+    result = 1;
+RESPONSE:
+    /* respond server here */
+    memset(respond, 0, sizeof(respond));
+    sprintf(respond, "{\"%s\":20,\"mode\":%u,\"lv\":%u,\"swing\":%u,\"u\":%lu,\"act_id\":%lu,\"result\":%d}", gs_dev_type[device_type], my_fan->mode, my_fan->speed, my_fan->swing, uid, act_id, result);
     m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
 }
 

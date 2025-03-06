@@ -13,6 +13,7 @@ COMPONENT_SRCS := hardware.c \
                   fan.c \
                   74hc595.c \
                   temp_10k.c \
+                  hw_uart.c \
 				  
 COMPONENT_OBJS := $(patsubst %.c,%.o, $(COMPONENT_SRCS))
 

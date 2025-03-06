@@ -69,25 +69,26 @@ void main(void)
     bl_wdt_init(120000);
 
     hw_74hc595_init();
-    m_fan_init();
-
+    
     easyflash_init();
     tcpip_init(NULL, NULL);
     blog_set_level_log_component(BLOG_LEVEL_INFO, "hardware");
-
+    
     /* have to init wifi and mqtt first. because database was built from them */
     m_wifi_init();
     m_mqtt_init();
     m_database_init();
-
+    
     /* have to init gpio after init database, because gpio init need number_channel
     which initialized by database */
     m_button_init();
     m_led_stt_init();
-
+    
     process_data_init();
     m_event_init();
-
+    
+    m_fan_init();
+    
 #if DEBUG_ENABLE == 1
     _tolerance = kTolerance;
     IRrecv_test_run();
