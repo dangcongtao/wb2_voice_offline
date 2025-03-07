@@ -699,7 +699,7 @@ static void app_set_buzz(cJSON *js_Root)
     }
     uid = jsU->valueint;
 
-    m_fan_set_buzz(buzz);
+    m_fan_set_buzz_enable(buzz);
 
     result = 1;
 RESPONSE:

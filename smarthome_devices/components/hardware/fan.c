@@ -12,6 +12,4 @@ void hw_fan_init(void)
     bl_gpio_output_set(SWITCH2, SWITCH_IDLE_LEVEL);
     bl_gpio_output_set(SWITCH3, SWITCH_IDLE_LEVEL);
     bl_gpio_output_set(SWITCH_SWING, SWITCH_IDLE_LEVEL);
-
-    hw_uart_init();
 }

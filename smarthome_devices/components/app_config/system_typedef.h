@@ -74,7 +74,10 @@ typedef enum {
     SSWITCH,        // ổ cắm SK01
     SWSHOCK,        // công tắc chống giật Datic
     SWSHOCK_HUN,     // công tắc chống giật Hunonic
-    IRWIFI
+    IRWIFI,
+    FANDC,      // Quạt DC có IR, có đèn
+    FANAC,      // Quạt AC ko có IR
+    FANACIR,    // Quạt AC có IR
 } device_type_t;
 
 extern uint32_t device_type;
@@ -101,6 +104,7 @@ typedef enum
     SRC_ACTION_ALARM_NORMAL = 4,
     SRC_ACTION_SCENSE = 5,
     SRC_ACTION_LEAK_CURR = 7,
+    SRC_ACTION_REMOTE = 12,
     SRC_ACTION_LINK_CBCT = 19,
     SRC_ACTION_LINK_STAIR = 20,
 } src_action_t;

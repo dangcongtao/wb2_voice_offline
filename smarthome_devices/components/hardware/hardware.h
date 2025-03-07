@@ -11,19 +11,22 @@
 #define gpio_get_level      bl_gpio_input_get_value
 #define gpio_set_level      bl_gpio_output_set
 
-#define LED_STT 5
+#define LED_STT 14
 #define LED_STT_SSW     1
-#define LED_STT_MINI    7
+#define LED_STT_MINI    0xFF
 
-#define LED_STT_ON      1
-#define LED_STT_OFF     0
+#define LED_STT_ON      0
+#define LED_STT_OFF     1
+
+#define LED_INDICATE_OFF 0
+#define LED_INDICATE_ON 1
 
 #define MAX_NUM_BUTTON  6
 #define BTN_IDLE_LEVEL  0
-#define BUTTON1    11
-#define BUTTON2    5
-#define BUTTON3   21
-#define BUTTON4   20
+#define BUTTON1    0xFF
+#define BUTTON2    0xFF
+#define BUTTON3   0xFF
+#define BUTTON4   0xFF
 
 #define BUTTON_ADC_PIN             11
 #define BUTTON_ADC_CHANNEL             10
@@ -49,21 +52,21 @@
 #define SWITCH1_MINI    0xFF
 #define SWITCH2_MINI    14
 
-#define TS04    22
-#define TS04_SWSHOCK    20
+#define TS04    0xFF
+#define TS04_SWSHOCK    0xFF
 #define TS04_IDLE_LEVEL     0
 #define TS04_ACTIVE_LEVEL   1
 
-#define IR_RX   7
+#define IR_RX   12
 #define IR_RX_POS   1
-#define IRpin   0xFF
+#define IRpin   5
 
 #define LED_COM_PIN 2
 #define SHCP_PIN    21
 #define STCP_PIN    20
 #define DS_PIN    22
 #define OE_PIN    0
-#define OE_PIN_2    12
+#define OE_PIN_2    0xFF
 
 extern uint32_t max_number_channel;
 extern uint32_t device_type;

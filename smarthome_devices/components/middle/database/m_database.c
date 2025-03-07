@@ -57,6 +57,18 @@ void m_db_read_device_id(void)
     {
         device_type = IRWIFI;
     }
+    else if (strstr(s_device_id, gs_dev_type[FANDC]) != NULL)
+    {
+        device_type = FANDC;
+    }
+    else if (strstr(s_device_id, gs_dev_type[FANAC]) != NULL)
+    {
+        device_type = FANAC;
+    }
+    else if (strstr(s_device_id, gs_dev_type[FANACIR]) != NULL)
+    {
+        device_type = FANACIR;
+    }
 
     os_trace("device_type: %s\r\n", gs_dev_type[device_type]);
 }

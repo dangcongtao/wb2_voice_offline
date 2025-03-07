@@ -1632,7 +1632,7 @@ bool decode_for(decode_results *results, uint8_t max_skip)
         // os_trace("Attempting NEC decode\r\n");
         if (decodeNEC(results, offset, kNECBits, true))
         {
-            os_trace("decode NEC success\r\n");
+            // os_trace("decode NEC success\r\n");
             return true;
         }
 #endif
@@ -1846,6 +1846,7 @@ static void learnIR(decode_results *results)
         m_mqtt_get_instance()._mqtt_publish(str, strlen(str));
 }
 
+extern void m_fan_process_remote_event(uint32_t button_data);
 void m_ir_task(void *param)
 {
     os_trace("%s init\r\n", __func__);
@@ -2209,6 +2210,11 @@ void m_ir_task(void *param)
                 else if (DAIKIN200 == capture.decode_type)
                 {
                     Daikin200_setInfo(capture.state, &ir_state_recv);
+                }
+                else if (NEC == capture.decode_type)
+                {
+                    m_fan_process_remote_event(capture.value);
+                    // Daikin200_setInfo(capture.state, &ir_state_recv);
                 }
                 else
                 {

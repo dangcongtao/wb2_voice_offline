@@ -10,19 +10,18 @@
 #define CMD_WIFI_SEND_STATE 0x02
 #define CMD_RECEIVE_RESET_TOUCH 0x03
 
-
 // TX
 typedef struct
 {
-    uint8_t speed;
-    uint8_t led_data;
-    uint8_t swing : 1;
-    uint8_t ligth : 1;
-    uint8_t : 2;
-    uint8_t change_led : 1;
-    uint8_t change_swing : 1;
+    uint8_t speed : 7;
     uint8_t change_speed : 1;
+    uint8_t led_data : 6;
+    uint8_t change_led : 1;
+    uint8_t swing : 1;
+    uint8_t change_swing : 1;
+    uint8_t ligth : 7;
     uint8_t change_light : 1;
+    uint8_t : 7;
 } cmd_data_receive_state_t;
 
 typedef struct
@@ -68,6 +67,5 @@ void m_ft62f28_send_led(void);
 void m_ft62f28_send_light(void);
 void m_ft62f28_check_send_change(void);
 void m_ft62f28_receive_data(uint8_t *data, uint32_t len);
-
 
 #endif // _M_FT62F28_H_

@@ -174,7 +174,7 @@ static void set_led_stt_not_config(void)
 
 static void set_led_stt_disconnect_mqtt(void)
 {
-    if (device_type == WSWITCH || device_type == LHSWITCH || device_type == IRWIFI || device_type == SSWITCH || device_type == SWMINI)
+    if (device_type == WSWITCH || device_type == LHSWITCH || device_type == IRWIFI || device_type == SSWITCH || device_type == SWMINI || device_type == FANDC || device_type == FANAC || device_type == FANACIR)
     {
         if (s_led_stt_obj._led_stt_type != LED_STYLE_MQTT_DISCONN)
         {

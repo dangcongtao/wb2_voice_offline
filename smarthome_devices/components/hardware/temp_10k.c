@@ -3,7 +3,7 @@
 #include <math.h>
 
 #define R1 10000       /* Ohm */
-#define VCC (float)3.2 /* V */
+#define VCC (float)3.1 /* V */
 
 static hosal_adc_dev_t adc_temperature = {
     .cb = NULL,
@@ -39,7 +39,7 @@ static void steinhart_hart(unsigned int resistence, uint32_t *value)
     temperature = temperature - 273.15;
     // os_trace("Temperature: %f\r\n", temperature);
 
-    *value = (uint32_t)temperature;
+    *value = (uint32_t)(temperature * 10);
 }
 
 uint32_t hw_temp_read(void)
@@ -47,7 +47,7 @@ uint32_t hw_temp_read(void)
     static uint32_t time_stamp;
     uint32_t result = 0;
 
-    if (sys_get_tick_ms() - time_stamp < 1000)
+    if (sys_get_tick_ms() - time_stamp < 10000)
     {
         return result;
     }
@@ -60,7 +60,7 @@ uint32_t hw_temp_read(void)
     double voltage = (double)val / 1000;
     double resistance = (voltage * R1) / (VCC - voltage);
     steinhart_hart(resistance, &result);
-    // os_trace("ADC value: %d, resistance: %lf, temp: %lu\r\n", val, resistance, result);
+    os_trace("ADC value: %d, resistance: %lf, temp: %lu\r\n", val, resistance, result);
 
     return result;
 }

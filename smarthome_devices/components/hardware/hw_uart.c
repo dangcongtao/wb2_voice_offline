@@ -25,10 +25,13 @@ static int __uart_rx_irq(void *p_arg)
 
 static void send_bytes(char *data, uint32_t len)
 {
+    hosal_uart_send(&this.hosal_uart, data, len);
+    return;
     m_data_uart_t msg;
     memset(&msg, 0, sizeof(msg));
     msg.length = len;
     memcpy(msg.data, data, len);
+
 
     if (this.tx_queue != NULL)
     {
@@ -72,82 +75,24 @@ void hw_uart_loop(void)
 
         if (this.rx_count > 0)
         {
+#if DEBUG_ENABLE == 1
                 os_trace("uart rx: %lu bytes\r\n", this.rx_count);
                 for (size_t i = 0; i < this.rx_count; i++)
                 {
                     os_trace("%02X-", this.rx_bytes[i]);
                 }
                 os_trace("\r\n");
-    
+#endif
             memset(&msg, 0, sizeof(msg));
             msg.length = this.rx_count;
             memcpy(msg.data, this.rx_bytes, this.rx_count);
             m_ft62f28_receive_data((uint8_t *)msg.data, msg.length);
 
             this.reset_rx_buffer();
-
-            // if (this.rx_queue != NULL)
-            // {
-            //     xQueueSend(this.rx_queue, &msg, pdMS_TO_TICKS(5));
-            // }
-        }
-    }
-
-    /* tx */
-    if (this.tx_queue != NULL)
-    {
-        memset(&msg, 0, sizeof(m_data_uart_t));
-        if (xQueueReceive(this.tx_queue, &msg, pdMS_TO_TICKS(0)) == pdPASS)
-        {
-            hosal_uart_send(&this.hosal_uart, msg.data, msg.length);
         }
     }
 
     m_ft62f28_check_send_change();
-}
-
-static void hw_uart_task(void *param)
-{
-    os_trace("%s running\r\n", __func__);
-
-    m_data_uart_t msg;
-
-    while (1)
-    {
-        /* rx */
-        if (((sys_get_tick_ms() - this.last_time_rx) > 100 && this.last_time_rx > 0) || this.rx_count > MAX_LEN_RX)
-        {
-            this.last_time_rx = 0;
-
-            if (this.rx_count > 0)
-            {
-                os_trace("uart rx: %lu bytes\r\n", this.rx_count);
-                memset(&msg, 0, sizeof(msg));
-                msg.length = this.rx_count;
-                memcpy(msg.data, this.rx_bytes, this.rx_count);
-                this.reset_rx_buffer();
-                if (this.rx_queue != NULL)
-                {
-                    xQueueSend(this.rx_queue, &msg, pdMS_TO_TICKS(5));
-                }
-            }
-        }
-
-        /* tx */
-        if (this.tx_queue != NULL)
-        {
-            memset(&msg, 0, sizeof(m_data_uart_t));
-            if (xQueueReceive(this.tx_queue, &msg, pdMS_TO_TICKS(5)) == pdPASS)
-            {
-                os_trace("%s tx_queue\r\n", __func__);
-                hosal_uart_send(&this.hosal_uart, msg.data, msg.length);
-            }
-        }
-
-        m_ft62f28_check_send_change();
-
-        vTaskDelay(pdMS_TO_TICKS(50));
-    }
 }
 
 void hw_uart_init(void)
@@ -188,8 +133,6 @@ void hw_uart_init(void)
     this.hosal_uart.rx_cb = __uart_rx_irq;
     this.hosal_uart.p_rxarg = NULL;
     hosal_uart_init(&this.hosal_uart);
-
-    // xTaskCreate(hw_uart_task, "hw_uart_task", 1024 * 1, NULL, 5, NULL);
 }
 
 hw_uart_t *hw_uart_get_instance(void)

@@ -6,7 +6,7 @@
 uint32_t device_type = 0;
 uint32_t max_number_channel = 0;
 /* refer to system_typedef.h/device_type_t */
-char *gs_dev_type[] = {"wswitch3v", "lhswitch3v", "swminiv2", "sswitch2v", "swshockv2", "swshohuv2", "fanoem"};
+char *gs_dev_type[] = {"wswitch3v", "lhswitch3v", "swminiv2", "sswitch2v", "swshockv2", "swshohuv2", "fanoem", "fandc", "fanac", "fanacir"};
 
 #define MAX_WIDTH   100
 #define MAX_LEN     512
@@ -32,7 +32,7 @@ void m_log(const char *fmt, ...)
 
 void gpio_set_output(int pin)
 {
-    bl_gpio_enable_output(pin, 0, 0);
+    bl_gpio_enable_output(pin, 1, 0);
 }
 
 void gpio_set_input(int pin)

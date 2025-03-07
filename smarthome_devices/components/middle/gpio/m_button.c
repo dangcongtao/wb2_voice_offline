@@ -101,7 +101,7 @@ void on_button_event_cb(int button_pin, int event, void *data)
     {
         if (button_pin == BUTTON_POWER_INDEX)
         {
-            m_fan_set_speed(M_FAN_MODE_OFF, M_FAN_SPEED_OFF);
+            m_fan_off(SRC_ACTION_DEVICE);
         }
         ignore_event_release[button_pin] = EVENT_BTN_HOLD;
     }
@@ -172,11 +172,10 @@ static void button_scan_task(void *param)
     os_trace("button_scan_task\n");
     while (true)
     {
-        app_btn_scan(NULL);
         hw_uart_loop();
+        app_btn_scan(NULL);
 
-        uint32_t temp = 0;
-        //  = hw_temp_read();
+        uint32_t temp = hw_temp_read();
         if (temp)
         {
             val_temperature = temp;
@@ -221,6 +220,7 @@ void m_button_init(void)
 {
     m_button_config();
     hw_temp_config();
+    hw_uart_init();
 
     os_trace("m_button_init: %ld\r\n", max_number_channel);
     xTaskCreate(button_scan_task,  /* Function that implements the task. */

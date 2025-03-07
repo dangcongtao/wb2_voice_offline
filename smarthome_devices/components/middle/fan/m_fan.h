@@ -7,7 +7,7 @@
 #define LED_STT_FAN_SWING           2
 #define LED_STT_FAN_MODE_NATURAL    3
 
-#define TIME_STEP_FAN_NATURAL_MODE_MS  3000
+#define TIME_STEP_FAN_NATURAL_MODE_MS  1000
 
 #define M_FAN_BUTTON_DECREASE_INDEX 0
 #define M_FAN_BUTTON_INCREASE_INDEX 1
@@ -17,6 +17,16 @@
 #define M_FAN_BUTTON_LIGHT_INDEX    5
 
 #define TIMEOUT_DISPLAY_TIME_OFF_MS  3000
+
+#define FAN_SPEED_LEVEL_1   10
+#define FAN_SPEED_LEVEL_2   50
+#define FAN_SPEED_LEVEL_3   100
+
+
+#define FAN_LIGHT_LEVEL_OFF 0
+#define FAN_LIGHT_LEVEL_1   0
+#define FAN_LIGHT_LEVEL_2   0
+#define FAN_LIGHT_LEVEL_3   0
 
 typedef struct
 {
@@ -58,10 +68,14 @@ void m_fan_increase_speed(void);
 void hw_fan_set_light(uint8_t light);
 void m_fan_toggle_light(void);
 
+void m_fan_set_buzz_enable(uint8_t enable_buzz);
+
+void m_fan_off(uint8_t src);
+
 void m_fan_control(uint8_t mode_set, uint8_t speed_set, uint8_t swing_set, uint32_t uid, uint8_t act_id, uint8_t respond);
 void m_fan_set_time_off(uint32_t time_set);
 void m_fan_toggle_natural_mode(void);
-void m_fan_set_buzz(uint8_t buzz_set);
+void hw_set_buzz(uint8_t buzz_set);
 
 uint8_t m_fan_get_led_stt(void);
 uint32_t m_fan_get_time_remain(void);
