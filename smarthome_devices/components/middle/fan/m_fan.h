@@ -24,9 +24,17 @@
 
 
 #define FAN_LIGHT_LEVEL_OFF 0
-#define FAN_LIGHT_LEVEL_1   0
-#define FAN_LIGHT_LEVEL_2   0
-#define FAN_LIGHT_LEVEL_3   0
+#define FAN_LIGHT_LEVEL_1   1
+#define FAN_LIGHT_LEVEL_2   2
+#define FAN_LIGHT_LEVEL_3   3
+
+#define BUTTON_DATA_DECREASE    0x1FE807F
+#define BUTTON_DATA_INCREASE    0x1FEC03F
+#define BUTTON_DATA_POWEROFF    0x1FE58A7
+#define BUTTON_DATA_SWING       0x1FE20DF
+#define BUTTON_DATA_TIMER       0x1FE609F
+#define BUTTON_DATA_NATURAL     0x1FEE01F
+#define BUTTON_DATA_LIGHT       0x1FE906F
 
 typedef struct
 {
@@ -45,6 +53,7 @@ typedef struct
     uint8_t led_stt_data;
     uint8_t switch_data_output;
     uint32_t last_tick_timer_toggle;
+    uint32_t last_tick_blink_led;
 
     m_fan_natural_mode_t natural_mode;
 
@@ -54,6 +63,7 @@ typedef struct
 {
     uint8_t mode;
     uint8_t speed;
+    uint8_t pcn;
     uint8_t swing;
     uint8_t buzz;
     uint8_t light;
@@ -72,7 +82,7 @@ void m_fan_set_buzz_enable(uint8_t enable_buzz);
 
 void m_fan_off(uint8_t src);
 
-void m_fan_control(uint8_t mode_set, uint8_t speed_set, uint8_t swing_set, uint32_t uid, uint8_t act_id, uint8_t respond);
+void m_fan_control(uint8_t mode_set, uint8_t speed_set, uint8_t pcn_set, uint8_t swing_set, uint32_t uid, uint8_t act_id, uint8_t respond);
 void m_fan_set_time_off(uint32_t time_set);
 void m_fan_toggle_natural_mode(void);
 void hw_set_buzz(uint8_t buzz_set);

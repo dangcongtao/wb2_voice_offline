@@ -42,25 +42,35 @@ static void steinhart_hart(unsigned int resistence, uint32_t *value)
     *value = (uint32_t)(temperature * 10);
 }
 
+#define DIFF(a, b) (a>b?(a-b):(b-a))
+
+uint32_t val_temperature = 0;
 uint32_t hw_temp_read(void)
 {
     static uint32_t time_stamp;
-    uint32_t result = 0;
+    static uint32_t last_time_send;
+    static uint32_t old_temp;
 
-    if (sys_get_tick_ms() - time_stamp < 10000)
+    if (time_stamp && sys_get_tick_ms() - time_stamp < 10000)
     {
-        return result;
+        return 0;
     }
     time_stamp = sys_get_tick_ms();
 
     int val = hosal_adc_value_get(&adc_temperature, TEMP_ADC_CHANNEL, 100);
     if (val < 0)
-        return result;
+        return 0;
 
     double voltage = (double)val / 1000;
     double resistance = (voltage * R1) / (VCC - voltage);
-    steinhart_hart(resistance, &result);
-    os_trace("ADC value: %d, resistance: %lf, temp: %lu\r\n", val, resistance, result);
+    steinhart_hart(resistance, &val_temperature);
+    // os_trace("ADC value: %d, resistance: %lf, temp: %lu\r\n", val, resistance, val_temperature);
 
-    return result;
+    if (DIFF(old_temp, val_temperature) > 5 || sys_get_tick_ms() - last_time_send > 60000)
+    {
+        last_time_send = sys_get_tick_ms();
+        old_temp = val_temperature;
+        return 1;
+    }
+    return 0;
 }

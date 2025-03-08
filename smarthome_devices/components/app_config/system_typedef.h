@@ -189,6 +189,7 @@ typedef enum {
     M_FAN_MODE_OFF = 0,
     M_FAN_MODE_ON = 1,
     M_FAN_MODE_NATURAL = 2,
+    M_FAN_MODE_PCN = 3,
     M_FAN_MODE_INVALID = 0xFF
 } m_fan_mode_t;
 

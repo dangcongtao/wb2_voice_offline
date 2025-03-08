@@ -62,6 +62,10 @@ void m_ft62f28_check_send_change(void)
             speed = m_fan_get_current_speed_natural();
             data_send.data.rcv.state.speed = speed;
         }
+        else if (fan_info->mode == M_FAN_MODE_PCN)
+        {
+            data_send.data.rcv.state.speed = fan_info->pcn;
+        }
         else
         {
             switch (speed)
@@ -84,7 +88,7 @@ void m_ft62f28_check_send_change(void)
             }
         }
 
-        // os_trace("send_speed: %u\r\n", data_send.data.rcv.state.speed);
+        os_trace("send_speed: %u\r\n", data_send.data.rcv.state.speed);
         
         flag_send_speed = 0;
     }

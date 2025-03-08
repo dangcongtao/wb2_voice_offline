@@ -168,19 +168,13 @@ static void m_button_config(void)
 static void button_scan_task(void *param)
 {
     static uint32_t tick_ota_led = 0;
-    uint32_t val_temperature = 0;
     os_trace("button_scan_task\n");
     while (true)
     {
         hw_uart_loop();
         app_btn_scan(NULL);
 
-        uint32_t temp = hw_temp_read();
-        if (temp)
-        {
-            val_temperature = temp;
-            os_trace("temp: %lu\r\n", val_temperature);
-        }
+        hw_temp_read();
 
         if (!dev_is_doing_config())
         {
