@@ -41,7 +41,7 @@ void m_db_read_device_id(void)
     uint32_t len_device_id = sizeof(s_device_id);
     memset(s_device_id, 0, sizeof(s_device_id));
 
-    // sprintf(s_device_id, "HUN174139503731fanacN1");
+    // sprintf(s_device_id, "HUN174140507180fanacirN1");
     // flash_write_device_id((void *)(&s_device_id), len_device_id);
 
     flash_read_device_id((void *)(&s_device_id), len_device_id);
@@ -61,13 +61,13 @@ void m_db_read_device_id(void)
     {
         device_type = FANDC;
     }
-    else if (strstr(s_device_id, gs_dev_type[FANAC]) != NULL)
-    {
-        device_type = FANAC;
-    }
     else if (strstr(s_device_id, gs_dev_type[FANACIR]) != NULL)
     {
         device_type = FANACIR;
+    }
+    else if (strstr(s_device_id, gs_dev_type[FANAC]) != NULL)
+    {
+        device_type = FANAC;
     }
 
     os_trace("device_type: %s\r\n", gs_dev_type[device_type]);

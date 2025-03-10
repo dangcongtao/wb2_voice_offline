@@ -99,7 +99,7 @@ void on_button_event_cb(int button_pin, int event, void *data)
 
     case APP_BTN_EVT_HOLD:
     {
-        if (button_pin == BUTTON_POWER_INDEX)
+        if (button_pin == BUTTON_POWER_INDEX && device_type == FANDC)
         {
             m_fan_off(SRC_ACTION_DEVICE);
         }

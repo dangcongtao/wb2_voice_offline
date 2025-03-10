@@ -56,40 +56,57 @@ void m_ft62f28_check_send_change(void)
     if (flag_send_speed)
     {
         data_send.data.rcv.state.change_speed = 1;
-        uint8_t speed = fan_info->speed;
-        if (fan_info->mode == M_FAN_MODE_NATURAL)
+        if (device_type == FANDC)
         {
-            speed = m_fan_get_current_speed_natural();
-            data_send.data.rcv.state.speed = speed;
-        }
-        else if (fan_info->mode == M_FAN_MODE_PCN)
-        {
-            data_send.data.rcv.state.speed = fan_info->pcn;
-        }
-        else
-        {
-            switch (speed)
+            uint8_t speed = fan_info->speed;
+            if (fan_info->mode == M_FAN_MODE_NATURAL)
             {
-            case M_FAN_SPEED_OFF:
-                data_send.data.rcv.state.speed = 0;
-                break;
-            case M_FAN_SPEED_1:
-                data_send.data.rcv.state.speed = FAN_SPEED_LEVEL_1;
-                break;
-            case M_FAN_SPEED_2:
-                data_send.data.rcv.state.speed = FAN_SPEED_LEVEL_2;
-                break;
-            case M_FAN_SPEED_3:
-                data_send.data.rcv.state.speed = FAN_SPEED_LEVEL_3;
-                break;
-
-            default:
-                break;
+                speed = m_fan_get_current_speed_natural();
+                data_send.data.rcv.state.speed = speed;
             }
+            else if (fan_info->mode == M_FAN_MODE_PCN)
+            {
+                data_send.data.rcv.state.speed = fan_info->pcn;
+            }
+            else
+            {
+                switch (speed)
+                {
+                case M_FAN_SPEED_OFF:
+                    data_send.data.rcv.state.speed = 0;
+                    break;
+                case M_FAN_SPEED_1:
+                    data_send.data.rcv.state.speed = FAN_SPEED_LEVEL_1;
+                    break;
+                case M_FAN_SPEED_2:
+                    data_send.data.rcv.state.speed = FAN_SPEED_LEVEL_2;
+                    break;
+                case M_FAN_SPEED_3:
+                    data_send.data.rcv.state.speed = FAN_SPEED_LEVEL_3;
+                    break;
+
+                default:
+                    break;
+                }
+            }
+            os_trace("send_speed: pcn %u\r\n", data_send.data.rcv.state.speed);
+        }
+        else if (device_type == FANACIR || device_type == FANACIR)
+        {
+            uint8_t speed = fan_info->speed;
+            if (fan_info->mode == M_FAN_MODE_NATURAL)
+            {
+                speed = m_fan_get_current_speed_natural();
+                data_send.data.rcv.state.speed = speed;
+            }
+            else
+            {
+                data_send.data.rcv.state.speed = fan_info->speed;
+            }
+
+            os_trace("send_speed: %u\r\n", data_send.data.rcv.state.speed);
         }
 
-        os_trace("send_speed: %u\r\n", data_send.data.rcv.state.speed);
-        
         flag_send_speed = 0;
     }
     else

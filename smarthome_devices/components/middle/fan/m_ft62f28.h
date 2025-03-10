@@ -24,6 +24,7 @@ typedef struct
     uint8_t : 7;
 } cmd_data_receive_state_t;
 
+
 typedef struct
 {
     uint8_t button_data;

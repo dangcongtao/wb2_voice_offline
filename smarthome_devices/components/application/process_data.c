@@ -48,6 +48,7 @@ static void app_control_fan_with_one(cJSON *js_Root);
 static void app_control_swing(cJSON *js_Root);
 static void app_control_timer(cJSON *js_Root);
 static void app_set_buzz(cJSON *js_Root);
+static void app_set_light(cJSON *js_Root);
 
 // IR
 static void ir_control(cJSON *jsRoot);
@@ -141,6 +142,7 @@ wswitch_handler_t array_handler[] = {
     // {app_control_swing, 21},
     // {app_control_timer, 22},
     {app_set_buzz, 24},
+    {app_set_light, 25},
 };
 
 wswitch_handler_t array_ble_handler[] = {
@@ -676,6 +678,7 @@ RESPONSE:
     sprintf(respond, "{\"%s\":%lu,\"time\":%lu,\"u\":%lu,\"act_id\":%lu,\"result\":%u}", gs_dev_type[device_type], type, time, uid, act_id, result);
     m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
 } 
+
 static void app_set_buzz(cJSON *js_Root)
 {
     cJSON *jsBuzz, *jsU, *jsAct, *jsType;
@@ -713,6 +716,46 @@ RESPONSE:
     /* respond server here */
     memset(respond, 0, sizeof(respond));
     sprintf(respond, "{\"%s\":%lu,\"buzz\":%lu,\"u\":%lu,\"act_id\":%lu,\"result\":%u}", gs_dev_type[device_type], type, buzz, uid, act_id, result);
+    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
+} 
+
+static void app_set_light(cJSON *js_Root)
+{
+    cJSON *jsBuzz, *jsU, *jsAct, *jsType;
+    uint8_t result = 0;
+    uint32_t uid = 0, act_id = 0, lamp = 0, type = 0;
+
+    jsType = cJSON_GetObjectItem(js_Root, gs_dev_type[device_type]);
+    if (jsType == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    type = jsType->valueint;
+
+    jsBuzz = cJSON_GetObjectItem(js_Root, "lamp");
+    if (jsBuzz == NULL)
+    {
+        os_trace("Get JSON jsBuzz mqtt message fail\n");
+        goto RESPONSE;
+    }
+    lamp = jsBuzz->valueint;
+
+    jsU = cJSON_GetObjectItem(js_Root, CJSON_KEY_USER_ID);
+    if (jsU == NULL)
+    {
+        os_trace("Get JSON jsU mqtt message fail\n");
+        goto RESPONSE;
+    }
+    uid = jsU->valueint;
+
+    m_fan_set_light(lamp);
+
+    result = 1;
+RESPONSE:
+    /* respond server here */
+    memset(respond, 0, sizeof(respond));
+    sprintf(respond, "{\"%s\":%lu,\"lamp\":%lu,\"u\":%lu,\"act_id\":%lu,\"result\":%u}", gs_dev_type[device_type], type, lamp, uid, act_id, result);
     m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
 } 
 
@@ -6362,7 +6405,7 @@ void app_handler_msg_task(void *arg)
                 jsType = cJSON_GetObjectItem(jsRoot, root_type);
                 if (jsType == NULL)
                 {
-                    os_trace("Parse JSON get type fail\n");
+                    os_trace("Parse JSON get type fail '%s'\n", root_type);
                     cJSON_Delete(jsRoot);
                     continue;
                 }
