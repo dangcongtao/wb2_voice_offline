@@ -2,11 +2,6 @@
 #define _M_FAN_H_
 #include <stdint.h>
 
-#define LED_STT_ORDER               0
-#define LED_STT_FAN_ON              1
-#define LED_STT_FAN_SWING           2
-#define LED_STT_FAN_MODE_NATURAL    3
-
 #define TIME_STEP_FAN_NATURAL_MODE_DC_MS  1000
 #define TIME_STEP_FAN_NATURAL_MODE_AC_MS  4000
 
@@ -75,6 +70,7 @@ void m_fan_set_swing(uint8_t swing);
 void m_fan_toogle_swing(void);
 
 void m_fan_set_speed(uint8_t mode_set, uint8_t speed_set);
+void m_fan_set_pcn(uint8_t pcn_set);
 void m_fan_increase_speed(void);
 
 void m_fan_set_light(uint8_t light);

@@ -140,6 +140,23 @@ void m_ft62f28_check_send_change(void)
     {
         data_send.data.rcv.state.change_light = 1;
         data_send.data.rcv.state.ligth = fan_info->light;
+        switch (fan_info->light)
+        {
+        case FAN_LIGHT_LEVEL_1:
+            data_send.data.rcv.state.ligth = 30;
+            break;
+
+        case FAN_LIGHT_LEVEL_2:
+            data_send.data.rcv.state.ligth = 60;
+            break;
+
+        case FAN_LIGHT_LEVEL_3:
+            data_send.data.rcv.state.ligth = 100;
+            break;
+
+        default:
+            break;
+        }
         flag_send_light = 0;
     }
     else
