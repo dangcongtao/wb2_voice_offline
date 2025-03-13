@@ -26,6 +26,7 @@
 #include "IRsend.h"
 #include "IRrecv.h"
 #include "hardware.h"
+#include "m_fan_event.h"
 
 char respond[512];
 extern char key[16], iv[16];
@@ -290,7 +291,7 @@ static void app_startup_message(void)
             m_db_get_instance()->_get_dev_id(), FIRMWARE_VERSION,
             app_databse._wifi_info->_ssid, app_databse._wifi_info->_passwd,
             app_databse._wifi_info->_rssi, app_databse._wifi_info->_ip, app_databse._mqtt_info->vermqtt,
-            app_databse._fan_info->mode, app_databse._fan_info->speed, app_databse._fan_info->pcn, app_databse._fan_info->swing, app_databse._fan_info->buzz, m_fan_get_time_remain(), val_temperature);
+            app_databse._fan_info->mode, app_databse._fan_info->speed, app_databse._fan_info->pcn, app_databse._fan_info->swing, !app_databse._fan_info->disable_buzz, m_fan_get_time_remain(), val_temperature);
 
     num_send++;
 
@@ -732,7 +733,7 @@ static void app_set_buzz(cJSON *js_Root)
     }
     uid = jsU->valueint;
 
-    m_fan_set_buzz_enable(buzz);
+    m_fan_set_buzz_disable(!buzz);
 
     result = 1;
 RESPONSE:
@@ -6117,7 +6118,7 @@ static void app_get_info(cJSON *jsRoot)
             m_db_get_instance()->_get_dev_id(), FIRMWARE_VERSION, EXTRAS,
             app_databse._wifi_info->_ssid, app_databse._wifi_info->_passwd,
             app_databse._wifi_info->_rssi, app_databse._wifi_info->_ip,
-            app_databse._fan_info->mode, app_databse._fan_info->speed, app_databse._fan_info->pcn, app_databse._fan_info->swing, app_databse._fan_info->buzz, m_fan_get_time_remain(), val_temperature);
+            app_databse._fan_info->mode, app_databse._fan_info->speed, app_databse._fan_info->pcn, app_databse._fan_info->swing, !app_databse._fan_info->disable_buzz, m_fan_get_time_remain(), val_temperature);
 
     app_send_data(respond, strlen(respond));
 }

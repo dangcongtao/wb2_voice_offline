@@ -27,6 +27,9 @@
 #include "IRrecv_test.h"
 #include "IRrecv.h"
 #include "m_fan.h"
+#include "hw_uart.h"
+#include "m_fan_control.h"
+#include "m_ft62f28.h"
 
 void main_loop(void)
 {
@@ -35,6 +38,9 @@ void main_loop(void)
     while (true)
     {
         m_event_loop(delay_ms);
+        hw_uart_loop();
+        buzz_loop();
+        m_ft62f28_check_send_change();
         m_led_7_seg_loop(delay_ms);
 
         // old += 1;
@@ -87,6 +93,7 @@ void main(void)
     process_data_init();
     m_event_init();
     
+    hw_uart_init();
     m_fan_init();
     
 #if DEBUG_ENABLE == 1

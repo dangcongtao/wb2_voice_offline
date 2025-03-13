@@ -3,167 +3,15 @@
 #include "m_mqtt.h"
 #include "app_fan.h"
 #include "m_ft62f28.h"
+#include "m_database.h"
+#include "m_fan_control.h"
+#include "m_fan_event.h"
 
-static m_fan_runtime_t s_fan_runtime;
 static m_fan_info_t s_fan_info;
 extern char respond[512];
-extern uint8_t need_buzz_off;
+extern uint8_t prevent_buzz;
 
 #define LED_7_SEG_OFF_INDEX 10
-
-static const uint8_t arr_seg_7[] = {
-    0b10000000, // 0 (0x40) - Các thanh 0,1,2,3,4,5 sáng (bit 0), thanh 6 tắt (bit 1)
-    0b11110010, // 1 (0x79) - Thanh 1,2 sáng
-    0b01001000, // 2 (0x24) - Thanh 0,1,6,4,3 sáng
-    0b01100000, // 3 (0x30) - Thanh 0,1,6,2,3 sáng
-    0b00110010, // 4 (0x19) - Thanh 1,2,5,6 sáng
-    0b00100100, // 5 (0x12) - Thanh 0,6,2,3,5 sáng
-    0b00000100, // 6 (0x02) - Thanh 0,6,2,3,4,5 sáng
-    0b11110000, // 7 (0x78) - Thanh 0,1,2 sáng
-    0b00000000, // 8 (0x00) - Tất cả sáng
-    0b00100000, // 9 (0x10) - Thanh 0,1,2,3,5,6 sáng
-    0b11111110, // 10 (0x00) - Tắt hết
-};
-
-static uint8_t fan_get_func_from_index(uint8_t my_func)
-{
-    if (device_type == FANDC)
-    {
-        return my_func;
-    }
-    else if (device_type == FANAC || device_type == FANACIR)
-    {
-        switch (my_func)
-        {
-        case 3:
-            return M_FAN_BUTTON_SWING_INDEX;
-            break;
-        case 2:
-            return M_FAN_BUTTON_TIMER_INDEX;
-            break;
-        case 1:
-            return M_FAN_BUTTON_INCREASE_INDEX;
-            break;
-        case 0:
-            return M_FAN_BUTTON_POWER_INDEX;
-            break;
-
-        default:
-            break;
-        }
-    }
-    return my_func;
-}
-
-static uint8_t fan_get_index_from_func(uint8_t my_func)
-{
-    if (device_type == FANDC)
-    {
-        return my_func;
-    }
-    else if (device_type == FANAC || device_type == FANACIR)
-    {
-        switch (my_func)
-        {
-        case M_FAN_BUTTON_SWING_INDEX:
-            return 3;
-            break;
-        case M_FAN_BUTTON_TIMER_INDEX:
-            return 2;
-            break;
-        case M_FAN_BUTTON_INCREASE_INDEX:
-            return 1;
-            break;
-        case M_FAN_BUTTON_POWER_INDEX:
-            return 0;
-            break;
-
-        default:
-            break;
-        }
-    }
-    return my_func;
-}
-
-void m_fan_set_number_led(uint8_t num)
-{
-    os_trace("%s num: %u\r\n", __func__, num);
-    s_fan_runtime.led_7_seg_data &= 0x01;
-    s_fan_runtime.led_7_seg_data |= arr_seg_7[num];
-    s_fan_runtime.need_send_hc595 = 1;
-}
-
-void hw_led_stt_set_stt(uint8_t index, uint8_t val)
-{
-    index = fan_get_index_from_func(index);
-    uint8_t old_val_stt = s_fan_runtime.led_stt_data;
-    s_fan_runtime.led_stt_data &= ~(1 << index);
-    s_fan_runtime.led_stt_data |= (val << index);
-    if (old_val_stt != s_fan_runtime.led_stt_data)
-    {
-        m_ft62f28_send_led();
-    }
-}
-
-void hw_led_stt_toggle_stt(uint8_t index)
-{
-    uint8_t current_val = (s_fan_runtime.led_stt_data >> index) & 1;
-    hw_led_stt_set_stt(index, !current_val);
-}
-
-void hw_fan_set_speed_pcn(uint8_t speed)
-{
-    if (speed <= 100)
-    {
-        m_ft62f28_send_speed();
-    }
-}
-
-void hw_fan_set_speed_level(uint8_t speed)
-{
-    os_trace("hw_fan_set_speed_level speed %u\r\n", speed);
-    switch (speed)
-    {
-    case M_FAN_SPEED_OFF:
-        m_ft62f28_send_speed();
-        break;
-    case M_FAN_SPEED_1:
-        // s_fan_runtime.switch_data_output &= 0b10010;
-        // s_fan_runtime.switch_data_output |= 0b10;
-        // hw_led_stt_set_stt(LED_SPEED_NORMAL_IDX, LED_INDICATE_ON);
-        m_ft62f28_send_speed();
-        break;
-    case M_FAN_SPEED_2:
-        // s_fan_runtime.switch_data_output &= 0b10100;
-        // s_fan_runtime.switch_data_output |= 0b100;
-        // hw_led_stt_set_stt(LED_SPEED_NORMAL_IDX, LED_INDICATE_ON);
-        m_ft62f28_send_speed();
-        break;
-    case M_FAN_SPEED_3:
-        // s_fan_runtime.switch_data_output &= 0b11000;
-        // s_fan_runtime.switch_data_output |= 0b1000;
-        // hw_led_stt_set_stt(LED_SPEED_NORMAL_IDX, LED_INDICATE_ON);
-        m_ft62f28_send_speed();
-        break;
-    default:
-        break;
-    }
-}
-
-void hw_fan_set_swing(uint8_t swing)
-{
-    if (swing)
-    {
-        s_fan_runtime.switch_data_output |= 0b10000;
-        hw_led_stt_set_stt(M_FAN_BUTTON_SWING_INDEX, LED_INDICATE_ON);
-    }
-    else
-    {
-        s_fan_runtime.switch_data_output &= 0b01111;
-        hw_led_stt_set_stt(M_FAN_BUTTON_SWING_INDEX, LED_INDICATE_OFF);
-    }
-    m_ft62f28_send_swing();
-}
 
 void m_fan_set_light(uint8_t light)
 {
@@ -172,69 +20,20 @@ void m_fan_set_light(uint8_t light)
     m_ft62f28_send_light();
 }
 
-void hw_set_buzz(uint8_t buzz_set)
-{
-    s_fan_runtime.led_7_seg_data &= 0xFE;
-    s_fan_runtime.led_7_seg_data |= (buzz_set ? 1 : 0);
-    s_fan_runtime.need_send_hc595 = 1;
-}
-
 void m_fan_toggle_light(void)
 {
-    s_fan_info.light = !s_fan_info.light;
+    s_fan_info.light++;
+    if (s_fan_info.light > 3)
+    {
+        s_fan_info.light = 0;
+    }
     m_fan_set_light(s_fan_info.light);
 }
 
-void m_fan_set_time_off(uint32_t time_set)
+void m_fan_set_buzz_disable(uint8_t disable_buzz)
 {
-    os_trace("%s time_set: %u\r\n", __func__, time_set);
-    s_fan_runtime.time_remain = time_set * 1000;
-    s_fan_runtime.time_set = time_set * 1000;
-    if (s_fan_runtime.time_remain > 0)
-    {
-        hw_led_stt_set_stt(M_FAN_BUTTON_TIMER_INDEX, LED_INDICATE_ON);
-    }
-    else
-    {
-        hw_led_stt_set_stt(M_FAN_BUTTON_TIMER_INDEX, LED_INDICATE_OFF);
-    }
-}
-
-uint32_t m_fan_get_time_remain(void)
-{
-    return s_fan_runtime.time_remain / 1000;
-}
-
-uint32_t m_fan_get_time_set(void)
-{
-    return s_fan_runtime.time_set / 1000;
-}
-
-static void m_fan_start_natural_mode(void)
-{
-    if (device_type == FANDC)
-    {
-        s_fan_runtime.natural_mode.speed_current = 10; // 10%
-    }
-    else if (device_type == FANAC || device_type == FANACIR)
-    {
-        s_fan_runtime.natural_mode.speed_current = M_FAN_SPEED_1;
-    }
-    m_ft62f28_send_speed();
-    s_fan_runtime.natural_mode.time_current = 0;
-}
-
-void m_fan_set_buzz_enable(uint8_t enable_buzz)
-{
-    s_fan_info.buzz = enable_buzz;
-}
-
-void m_fan_need_buzz(void)
-{
-    if (s_fan_info.buzz)
-    {
-        need_buzz_off = 1;
-    }
+    s_fan_info.disable_buzz = disable_buzz;
+    m_db_get_instance()->_request_sync_db(BIT_FLAG_SYNC_FAN);
 }
 
 void m_fan_set_pcn(uint8_t pcn_set)
@@ -262,7 +61,7 @@ void m_fan_set_speed(uint8_t mode_set, uint8_t speed_set)
             s_fan_info.speed = M_FAN_SPEED_1;
         }
         hw_fan_set_speed_level(s_fan_info.speed);
-        m_fan_set_number_led(s_fan_info.speed);
+        hw_74hc595_set_number(s_fan_info.speed);
         hw_led_stt_set_stt(M_FAN_BUTTON_NATURAL_INDEX, LED_INDICATE_OFF);
         m_ft62f28_send_speed();
     }
@@ -271,7 +70,7 @@ void m_fan_set_speed(uint8_t mode_set, uint8_t speed_set)
         m_fan_set_swing(M_FAN_MODE_OFF);
         m_fan_set_time_off(0);
         hw_fan_set_speed_level(M_FAN_SPEED_OFF);
-        m_fan_set_number_led(LED_7_SEG_OFF_INDEX);
+        hw_74hc595_set_number(LED_7_SEG_OFF_INDEX);
         hw_led_stt_set_stt(M_FAN_BUTTON_NATURAL_INDEX, LED_INDICATE_OFF);
         hw_led_stt_set_stt(M_FAN_BUTTON_DECREASE_INDEX, LED_INDICATE_OFF);
         hw_led_stt_set_stt(M_FAN_BUTTON_INCREASE_INDEX, LED_INDICATE_OFF);
@@ -289,13 +88,12 @@ void m_fan_off(uint8_t src)
 {
     m_fan_need_buzz();
     m_fan_set_speed(M_FAN_MODE_OFF, M_FAN_SPEED_OFF);
-    app_fan_respond_control(s_fan_info.mode, s_fan_info.speed, s_fan_info.pcn, s_fan_info.swing, 0, src);
+    app_fan_respond_control(s_fan_info.mode, s_fan_info.speed, s_fan_info.pcn, s_fan_info.swing, s_fan_info.light, 0, src);
 }
 
 void m_fan_control(uint8_t mode_set, uint8_t speed_set, uint8_t pcn_set, uint8_t swing_set, uint32_t uid, uint8_t act_id, uint8_t respond)
 {
     m_fan_need_buzz();
-    m_fan_set_swing(swing_set);
     if (mode_set == M_FAN_MODE_PCN)
     {
         m_fan_set_pcn(pcn_set);
@@ -304,9 +102,10 @@ void m_fan_control(uint8_t mode_set, uint8_t speed_set, uint8_t pcn_set, uint8_t
     {
         m_fan_set_speed(mode_set, speed_set);
     }
+    m_fan_set_swing(swing_set);
     if (respond)
     {
-        app_fan_respond_control(s_fan_info.mode, s_fan_info.speed, s_fan_info.pcn, s_fan_info.swing, uid, act_id);
+        app_fan_respond_control(s_fan_info.mode, s_fan_info.speed, s_fan_info.pcn, s_fan_info.swing, s_fan_info.light, uid, act_id);
     }
 }
 
@@ -328,7 +127,7 @@ void m_fan_decrease_speed(void)
         }
         os_trace("%s M_FAN_MODE_ON speed: %u\r\n", __func__, s_fan_info.speed);
         hw_fan_set_speed_level(s_fan_info.speed);
-        m_fan_set_number_led(s_fan_info.speed);
+        hw_74hc595_set_number(s_fan_info.speed);
         hw_led_stt_set_stt(M_FAN_BUTTON_NATURAL_INDEX, LED_INDICATE_OFF);
     }
     else if (s_fan_info.mode == M_FAN_MODE_OFF)
@@ -337,7 +136,7 @@ void m_fan_decrease_speed(void)
         s_fan_info.speed = M_FAN_SPEED_3;
         os_trace("%s from M_FAN_MODE_OFF to speed: %u\r\n", __func__, s_fan_info.speed);
         hw_fan_set_speed_level(s_fan_info.speed);
-        m_fan_set_number_led(s_fan_info.speed);
+        hw_74hc595_set_number(s_fan_info.speed);
         hw_led_stt_set_stt(M_FAN_BUTTON_NATURAL_INDEX, LED_INDICATE_OFF);
     }
     else if (s_fan_info.mode == M_FAN_MODE_NATURAL)
@@ -349,7 +148,7 @@ void m_fan_decrease_speed(void)
         }
         os_trace("%s M_FAN_MODE_NATURAL speed: %u\r\n", __func__, s_fan_info.speed);
         hw_fan_set_speed_level(s_fan_info.speed);
-        m_fan_set_number_led(s_fan_info.speed);
+        hw_74hc595_set_number(s_fan_info.speed);
     }
 }
 
@@ -364,7 +163,7 @@ void m_fan_increase_speed(void)
         }
         os_trace("%s M_FAN_MODE_ON speed: %u\r\n", __func__, s_fan_info.speed);
         hw_fan_set_speed_level(s_fan_info.speed);
-        m_fan_set_number_led(s_fan_info.speed);
+        hw_74hc595_set_number(s_fan_info.speed);
         hw_led_stt_set_stt(M_FAN_BUTTON_NATURAL_INDEX, LED_INDICATE_OFF);
     }
     else if (s_fan_info.mode == M_FAN_MODE_OFF)
@@ -373,7 +172,7 @@ void m_fan_increase_speed(void)
         s_fan_info.speed = M_FAN_SPEED_1;
         os_trace("%s from M_FAN_MODE_OFF to speed: %u\r\n", __func__, s_fan_info.speed);
         hw_fan_set_speed_level(s_fan_info.speed);
-        m_fan_set_number_led(s_fan_info.speed);
+        hw_74hc595_set_number(s_fan_info.speed);
         hw_led_stt_set_stt(M_FAN_BUTTON_NATURAL_INDEX, LED_INDICATE_OFF);
     }
     else if (s_fan_info.mode == M_FAN_MODE_NATURAL)
@@ -385,7 +184,7 @@ void m_fan_increase_speed(void)
         }
         os_trace("%s M_FAN_MODE_NATURAL speed: %u\r\n", __func__, s_fan_info.speed);
         hw_fan_set_speed_level(s_fan_info.speed);
-        m_fan_set_number_led(s_fan_info.speed);
+        hw_74hc595_set_number(s_fan_info.speed);
     }
 }
 
@@ -410,82 +209,15 @@ void m_fan_toogle_swing(void)
     m_fan_set_swing(swing_set);
 }
 
-void m_fan_toggle_natural_mode(void)
-{
-    if (s_fan_info.mode == M_FAN_MODE_OFF)
-    {
-        s_fan_info.mode = M_FAN_MODE_NATURAL;
-        m_fan_start_natural_mode();
-        // s_fan_info.speed = M_FAN_SPEED_1;
-        os_trace("%s mode_natural: %u\r\n", __func__, s_fan_info.mode);
-        hw_led_stt_set_stt(M_FAN_BUTTON_NATURAL_INDEX, LED_INDICATE_ON);
-        // hw_led_stt_set_stt(LED_SPEED_NORMAL_IDX, LED_INDICATE_ON);
-    }
-    else
-    {
-        if (s_fan_info.mode == M_FAN_MODE_NATURAL)
-        {
-            s_fan_info.mode = M_FAN_MODE_ON;
-            m_fan_set_speed(s_fan_info.mode, s_fan_info.speed);
-            hw_led_stt_set_stt(M_FAN_BUTTON_NATURAL_INDEX, LED_INDICATE_OFF);
-        }
-        else
-        {
-            s_fan_info.mode = M_FAN_MODE_NATURAL;
-            m_fan_start_natural_mode();
-            os_trace("%s mode_natural: %u\r\n", __func__, s_fan_info.mode);
-            hw_led_stt_set_stt(M_FAN_BUTTON_NATURAL_INDEX, LED_INDICATE_ON);
-            // hw_led_stt_set_stt(LED_SPEED_NORMAL_IDX, LED_INDICATE_ON);
-        }
-    }
-    m_fan_need_buzz();
-}
-
-void m_fan_timer_toggle(void)
-{
-    if (s_fan_info.mode == M_FAN_MODE_OFF)
-    {
-        os_trace("can't set time cos fan off\r\n");
-        return;
-    }
-    m_fan_need_buzz();
-    uint32_t time_hours = s_fan_runtime.time_set / (60 * 60 * 1000);
-    time_hours++;
-    if (time_hours > 9)
-    {
-        time_hours = 0;
-    }
-    m_fan_set_time_off(time_hours * 60 * 60);
-    s_fan_runtime.last_tick_timer_toggle = sys_get_tick_ms();
-    os_trace("%s hours: %u\r\n", __func__, time_hours);
-    m_fan_set_number_led(time_hours);
-}
-
-static void m_fan_timer_loop(uint32_t delay_ms)
-{
-    if (s_fan_runtime.time_remain > 0)
-    {
-        s_fan_runtime.time_remain -= delay_ms;
-        if (s_fan_runtime.time_remain == 0)
-        {
-            hw_led_stt_set_stt(M_FAN_BUTTON_TIMER_INDEX, LED_INDICATE_OFF);
-            m_fan_set_speed(M_FAN_MODE_OFF, M_FAN_SPEED_OFF);
-        }
-    }
-}
-
-static void m_fan_set_data_hc595(uint8_t data)
-{
-    hw_74hc595_write_byte(data, 1);
-}
-
-static void m_fan_led_proccess_when_on(void)
+static uint32_t last_tick_blink_led;
+extern uint32_t last_tick_timer_toggle;
+static void m_fan_led_proccess_when_active(void)
 {
     static uint8_t led_val = 0;
-    if (sys_get_tick_ms() - s_fan_runtime.last_tick_blink_led > 1000)
+    if (sys_get_tick_ms() - last_tick_blink_led > 1000)
     {
         led_val = !led_val;
-        s_fan_runtime.last_tick_blink_led = sys_get_tick_ms();
+        last_tick_blink_led = sys_get_tick_ms();
         if (s_fan_info.mode == M_FAN_MODE_NATURAL)
         {
             if (hw_btn_read(M_FAN_BUTTON_NATURAL_INDEX) == BTN_IDLE_LEVEL)
@@ -502,50 +234,19 @@ static void m_fan_led_proccess_when_on(void)
             }
         }
 
-        if (s_fan_runtime.time_set && !s_fan_runtime.last_tick_timer_toggle)
+        if (m_fan_get_time_set() && !last_tick_timer_toggle)
         {
-            if (hw_btn_read(M_FAN_BUTTON_TIMER_INDEX) == BTN_IDLE_LEVEL)
+            if (hw_btn_read(M_FAN_BUTTON_TIMER_INDEX) == BTN_IDLE_LEVEL || device_type == FANAC)
             {
                 hw_led_stt_set_stt(M_FAN_BUTTON_TIMER_INDEX, led_val);
             }
         }
-    }
-}
 
-static void m_fan_mode_natural_process(uint32_t delay_ms)
-{
-    if (s_fan_info.mode == M_FAN_MODE_NATURAL)
-    {
-        s_fan_runtime.natural_mode.time_current += delay_ms;
-        if (device_type == FANDC)
+        if (device_type == FANAC)
         {
-            if (s_fan_runtime.natural_mode.time_current >= TIME_STEP_FAN_NATURAL_MODE_DC_MS)
+            if (s_fan_info.mode > M_FAN_MODE_OFF)
             {
-                s_fan_runtime.natural_mode.time_current = 0;
-
-                s_fan_runtime.natural_mode.speed_current -= 10;
-                if (s_fan_runtime.natural_mode.speed_current == 0 || s_fan_runtime.natural_mode.speed_current > 100)
-                {
-                    s_fan_runtime.natural_mode.speed_current = 100;
-                }
-                hw_fan_set_speed_pcn(s_fan_runtime.natural_mode.speed_current);
-            }
-            // os_trace("m_fan_mode_natural_process %u\r\n", s_fan_runtime.natural_mode.speed_current);
-        }
-        else if (device_type == FANAC || device_type == FANACIR)
-        {
-            if (s_fan_runtime.natural_mode.time_current >= TIME_STEP_FAN_NATURAL_MODE_AC_MS)
-            {
-                s_fan_runtime.natural_mode.time_current = 0;
-                if (s_fan_runtime.natural_mode.speed_current == 0 || s_fan_runtime.natural_mode.speed_current > M_FAN_SPEED_3)
-                {
-                    s_fan_runtime.natural_mode.speed_current = M_FAN_SPEED_3;
-                }
-                else
-                {
-                    s_fan_runtime.natural_mode.speed_current--;
-                }
-                hw_fan_set_speed_level(s_fan_runtime.natural_mode.speed_current);
+                hw_led_stt_set_stt(M_FAN_BUTTON_INCREASE_INDEX, led_val);
             }
         }
     }
@@ -554,6 +255,7 @@ static void m_fan_mode_natural_process(uint32_t delay_ms)
 void m_fan_process_button_event(uint8_t button_pin)
 {
     button_pin = fan_get_func_from_index(button_pin);
+    prevent_buzz = 1;
     switch (button_pin)
     {
     case M_FAN_BUTTON_POWER_INDEX:
@@ -563,22 +265,20 @@ void m_fan_process_button_event(uint8_t button_pin)
     case M_FAN_BUTTON_INCREASE_INDEX:
         os_trace("M_FAN_BUTTON_INCREASE_INDEX\r\n");
         m_fan_increase_speed();
-        m_fan_need_buzz();
-        app_fan_respond_control(s_fan_info.mode, s_fan_info.speed, s_fan_info.pcn, s_fan_info.swing, 0, SRC_ACTION_DEVICE);
+        app_fan_respond_control(s_fan_info.mode, s_fan_info.speed, s_fan_info.pcn, s_fan_info.swing, s_fan_info.light, 0, SRC_ACTION_DEVICE);
         break;
 
     case M_FAN_BUTTON_DECREASE_INDEX:
         os_trace("M_FAN_BUTTON_DECREASE_INDEX\r\n");
         m_fan_decrease_speed();
-        m_fan_need_buzz();
-        app_fan_respond_control(s_fan_info.mode, s_fan_info.speed, s_fan_info.pcn, s_fan_info.swing, 0, SRC_ACTION_DEVICE);
+        app_fan_respond_control(s_fan_info.mode, s_fan_info.speed, s_fan_info.pcn, s_fan_info.swing, s_fan_info.light, 0, SRC_ACTION_DEVICE);
         break;
 
     case M_FAN_BUTTON_SWING_INDEX:
         os_trace("M_FAN_BUTTON_SWING_INDEX\r\n");
         m_fan_toogle_swing();
         m_fan_need_buzz();
-        app_fan_respond_control(s_fan_info.mode, s_fan_info.speed, s_fan_info.pcn, s_fan_info.swing, 0, SRC_ACTION_DEVICE);
+        app_fan_respond_control(s_fan_info.mode, s_fan_info.speed, s_fan_info.pcn, s_fan_info.swing, s_fan_info.light, 0, SRC_ACTION_DEVICE);
         break;
 
     case M_FAN_BUTTON_TIMER_INDEX:
@@ -589,52 +289,55 @@ void m_fan_process_button_event(uint8_t button_pin)
     case M_FAN_BUTTON_NATURAL_INDEX:
         os_trace("M_FAN_BUTTON_NATURAL_INDEX\r\n");
         m_fan_toggle_natural_mode();
-        app_fan_respond_control(s_fan_info.mode, s_fan_info.speed, s_fan_info.pcn, s_fan_info.swing, 0, SRC_ACTION_DEVICE);
+        app_fan_respond_control(s_fan_info.mode, s_fan_info.speed, s_fan_info.pcn, s_fan_info.swing, s_fan_info.light, 0, SRC_ACTION_DEVICE);
         break;
 
     case M_FAN_BUTTON_LIGHT_INDEX:
         os_trace("M_FAN_BUTTON_LIGHT_INDEX\r\n");
         m_fan_toggle_light();
-        app_fan_respond_light(s_fan_info.light, SRC_ACTION_DEVICE);
+        app_fan_respond_control(s_fan_info.mode, s_fan_info.speed, s_fan_info.pcn, s_fan_info.swing, s_fan_info.light, 0, SRC_ACTION_DEVICE);
+        // app_fan_respond_light(s_fan_info.light, SRC_ACTION_DEVICE);
         m_fan_need_buzz();
         break;
 
     default:
         break;
     }
+    prevent_buzz = 0;
 }
 
 void m_fan_process_remote_event(uint32_t button_data)
 {
     os_trace("%s %X\r\n", __func__, button_data);
+
     switch (button_data)
     {
     case REMOTE_IR_DATA_POWEROFF:
         os_trace("REMOTE_IR_DATA_POWEROFF\r\n");
         m_fan_set_speed(M_FAN_MODE_OFF, M_FAN_SPEED_OFF);
         m_fan_need_buzz();
-        app_fan_respond_control(s_fan_info.mode, s_fan_info.speed, s_fan_info.pcn, s_fan_info.swing, 0, SRC_ACTION_REMOTE);
+        app_fan_respond_control(s_fan_info.mode, s_fan_info.speed, s_fan_info.pcn, s_fan_info.swing, s_fan_info.light, 0, SRC_ACTION_REMOTE);
         break;
 
     case REMOTE_IR_DATA_INCREASE:
         os_trace("REMOTE_IR_DATA_INCREASE\r\n");
         m_fan_increase_speed();
         m_fan_need_buzz();
-        app_fan_respond_control(s_fan_info.mode, s_fan_info.speed, s_fan_info.pcn, s_fan_info.swing, 0, SRC_ACTION_REMOTE);
+        app_fan_respond_control(s_fan_info.mode, s_fan_info.speed, s_fan_info.pcn, s_fan_info.swing, s_fan_info.light, 0, SRC_ACTION_REMOTE);
         break;
 
     case REMOTE_IR_DATA_DECREASE:
         os_trace("REMOTE_IR_DATA_DECREASE\r\n");
         m_fan_decrease_speed();
         m_fan_need_buzz();
-        app_fan_respond_control(s_fan_info.mode, s_fan_info.speed, s_fan_info.pcn, s_fan_info.swing, 0, SRC_ACTION_REMOTE);
+        app_fan_respond_control(s_fan_info.mode, s_fan_info.speed, s_fan_info.pcn, s_fan_info.swing, s_fan_info.light, 0, SRC_ACTION_REMOTE);
         break;
 
     case REMOTE_IR_DATA_SWING:
         os_trace("REMOTE_IR_DATA_SWING\r\n");
         m_fan_toogle_swing();
         m_fan_need_buzz();
-        app_fan_respond_control(s_fan_info.mode, s_fan_info.speed, s_fan_info.pcn, s_fan_info.swing, 0, SRC_ACTION_REMOTE);
+        app_fan_respond_control(s_fan_info.mode, s_fan_info.speed, s_fan_info.pcn, s_fan_info.swing, s_fan_info.light, 0, SRC_ACTION_REMOTE);
         break;
 
     case REMOTE_IR_DATA_TIMER:
@@ -645,13 +348,14 @@ void m_fan_process_remote_event(uint32_t button_data)
     case REMOTE_IR_DATA_NATURAL:
         os_trace("REMOTE_IR_DATA_NATURAL\r\n");
         m_fan_toggle_natural_mode();
-        app_fan_respond_control(s_fan_info.mode, s_fan_info.speed, s_fan_info.pcn, s_fan_info.swing, 0, SRC_ACTION_REMOTE);
+        app_fan_respond_control(s_fan_info.mode, s_fan_info.speed, s_fan_info.pcn, s_fan_info.swing, s_fan_info.light, 0, SRC_ACTION_REMOTE);
         break;
 
     case REMOTE_IR_DATA_LIGHT:
         os_trace("REMOTE_IR_DATA_LIGHT\r\n");
         m_fan_toggle_light();
-        app_fan_respond_light(s_fan_info.light, SRC_ACTION_REMOTE);
+        app_fan_respond_control(s_fan_info.mode, s_fan_info.speed, s_fan_info.pcn, s_fan_info.swing, s_fan_info.light, 0, SRC_ACTION_REMOTE);
+        // app_fan_respond_light(s_fan_info.light, SRC_ACTION_REMOTE);
         m_fan_need_buzz();
         break;
 
@@ -663,28 +367,24 @@ void m_fan_process_remote_event(uint32_t button_data)
 
 static void m_fan_check_flag(void)
 {
-    if (s_fan_runtime.need_send_hc595 == 1)
+    hw_74hc595_loop();
+    if (last_tick_timer_toggle && sys_get_tick_ms() - last_tick_timer_toggle >= TIMEOUT_DISPLAY_TIME_OFF_MS)
     {
-        s_fan_runtime.need_send_hc595 = 0;
-        m_fan_set_data_hc595(s_fan_runtime.led_7_seg_data);
-    }
-    if (s_fan_runtime.last_tick_timer_toggle && sys_get_tick_ms() - s_fan_runtime.last_tick_timer_toggle >= TIMEOUT_DISPLAY_TIME_OFF_MS)
-    {
-        s_fan_runtime.last_tick_timer_toggle = 0;
+        last_tick_timer_toggle = 0;
         if (s_fan_info.speed)
         {
-            m_fan_set_number_led(s_fan_info.speed);
+            hw_74hc595_set_number(s_fan_info.speed);
         }
         else
         {
-            m_fan_set_number_led(LED_7_SEG_OFF_INDEX);
+            hw_74hc595_set_number(LED_7_SEG_OFF_INDEX);
         }
     }
 }
 
 void m_led_7_seg_loop(uint32_t delay_ms)
 {
-    m_fan_led_proccess_when_on();
+    m_fan_led_proccess_when_active();
     m_fan_mode_natural_process(delay_ms);
     m_fan_timer_loop(delay_ms);
     m_fan_check_flag();
@@ -692,19 +392,14 @@ void m_led_7_seg_loop(uint32_t delay_ms)
 
 void m_fan_init(void)
 {
+    hw_buzz_init();
     hw_fan_init();
-    s_fan_runtime.led_stt_data = 0b00000000;
-    s_fan_runtime.led_7_seg_data = arr_seg_7[0];
-}
-
-uint8_t m_fan_get_led_stt(void)
-{
-    return s_fan_runtime.led_stt_data;
-}
-
-uint8_t m_fan_get_current_speed_natural(void)
-{
-    return s_fan_runtime.natural_mode.speed_current;
+    s_fan_info.mode = M_FAN_MODE_OFF;
+    s_fan_info.speed = M_FAN_SPEED_OFF;
+    s_fan_info.pcn = M_FAN_SPEED_OFF;
+    s_fan_info.swing = M_FAN_SWING_OFF;
+    s_fan_info.light = FAN_LIGHT_LEVEL_OFF;
+    // led_stt_data = 0b00000000;
 }
 
 m_fan_info_t *m_fan_get_instance(void)

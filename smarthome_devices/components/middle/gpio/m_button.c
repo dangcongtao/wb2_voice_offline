@@ -15,7 +15,7 @@
 #include "m_database.h"
 #include "event_driven.h"
 #include "m_fan.h"
-#include "hw_uart.h"
+#include "app_fan.h"
 #include "bl_sys.h"
 
 #define TIME_OUT_RESET_TS04_WITHOUT_PRESS 2400
@@ -48,6 +48,7 @@ void on_button_event_cb(int button_pin, int event, void *data)
     {
     case APP_BTN_EVT_PRESSED:
     {
+        m_buzz_play();
     }
     break;
 
@@ -99,7 +100,7 @@ void on_button_event_cb(int button_pin, int event, void *data)
 
     case APP_BTN_EVT_HOLD:
     {
-        if (button_pin == BUTTON_POWER_INDEX && device_type == FANDC)
+        if (button_pin == BUTTON_POWER_INDEX && (device_type == FANDC || device_type == FANAC))
         {
             m_fan_off(SRC_ACTION_DEVICE);
         }
@@ -109,27 +110,21 @@ void on_button_event_cb(int button_pin, int event, void *data)
 
     case APP_BTN_EVT_HOLD_SO_LONG:
     {
-        if (device_type != SWMINI || (device_type == SWMINI && button_pin == 2))
+        if (button_pin == 0)
         {
-            if (button_pin == 0)
-            {
-                m_led_stt_get_instance()._set_led_stt_smart_config_cb();
-            }
-            ignore_event_release[button_pin] = EVENT_BTN_HOLD_SO_LONG;
+            m_led_stt_get_instance()._set_led_stt_smart_config_cb();
         }
+        ignore_event_release[button_pin] = EVENT_BTN_HOLD_SO_LONG;
     }
     break;
 
     case APP_BTN_EVT_HOLD_HONG_PHIM:
     {
-        if (device_type != SWMINI || (device_type == SWMINI && button_pin == 2))
+        if (button_pin == 0)
         {
-            if (button_pin == 0)
-            {
-                m_led_stt_get_instance()._set_led_stt_ap_config_cb();
-            }
-            ignore_event_release[button_pin] = EVENT_BTN_HOLD_HONG_PHIM;
+            m_led_stt_get_instance()._set_led_stt_ap_config_cb();
         }
+        ignore_event_release[button_pin] = EVENT_BTN_HOLD_HONG_PHIM;
     }
     break;
 
@@ -165,16 +160,19 @@ static void m_button_config(void)
 }
 
 /* private */
+extern uint32_t val_temperature;
 static void button_scan_task(void *param)
 {
     static uint32_t tick_ota_led = 0;
     os_trace("button_scan_task\n");
     while (true)
     {
-        hw_uart_loop();
         app_btn_scan(NULL);
 
-        hw_temp_read();
+        if (hw_temp_read())
+        {
+            app_fan_send_temperature(val_temperature);
+        }
 
         if (!dev_is_doing_config())
         {
@@ -214,7 +212,6 @@ void m_button_init(void)
 {
     m_button_config();
     hw_temp_config();
-    hw_uart_init();
 
     os_trace("m_button_init: %ld\r\n", max_number_channel);
     xTaskCreate(button_scan_task,  /* Function that implements the task. */

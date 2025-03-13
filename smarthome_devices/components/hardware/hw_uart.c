@@ -62,14 +62,12 @@ static void reset_rx_buffer(void)
 {
     memset(this.rx_bytes, 0, sizeof(this.rx_bytes));
     this.rx_count = 0;
-
-    xQueueReset(this.rx_queue);
 }
 
 void hw_uart_loop(void)
 {
     m_data_uart_t msg;
-    if (this.last_time_rx && (sys_get_tick_ms() - this.last_time_rx) > 10)
+    if (this.last_time_rx && (sys_get_tick_ms() - this.last_time_rx) > 5)
     {
         this.last_time_rx = 0;
 
@@ -91,8 +89,6 @@ void hw_uart_loop(void)
             this.reset_rx_buffer();
         }
     }
-
-    m_ft62f28_check_send_change();
 }
 
 void hw_uart_init(void)
@@ -102,13 +98,6 @@ void hw_uart_init(void)
     this.send_bytes = send_bytes;
     this.get_data = get_data;
     this.reset_rx_buffer = reset_rx_buffer;
-
-    this.rx_queue = xQueueCreate(MAX_QUEUE_UART, sizeof(m_data_uart_t));
-    if (this.rx_queue == NULL)
-    {
-        os_trace("uart create rx_queue fail\r\n");
-        exit(-1);
-    }
 
     this.tx_queue = xQueueCreate(MAX_QUEUE_UART, sizeof(m_data_uart_t));
     if (this.tx_queue == NULL)

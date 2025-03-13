@@ -2,6 +2,7 @@
 #include "m_ft62f28.h"
 #include "m_fan.h"
 #include "hardware.h"
+#include "m_fan_control.h"
 
 uint8_t has_control_fan = 0;
 uint8_t need_buzz_off;
@@ -38,11 +39,6 @@ void m_ft62f28_send_led(void)
 
 void m_ft62f28_check_send_change(void)
 {
-    if (need_buzz_off == 2)
-    {
-        need_buzz_off = 0;
-        hw_set_buzz(SWITCH_IDLE_LEVEL);
-    }
     if (!has_control_fan)
     {
         return;
@@ -127,6 +123,7 @@ void m_ft62f28_check_send_change(void)
 
     if (flag_send_led)
     {
+        // os_trace("send_led: %u\r\n", data_send.data.rcv.state.led_data);
         data_send.data.rcv.state.change_led = 1;
         data_send.data.rcv.state.led_data = m_fan_get_led_stt();
         flag_send_led = 0;
@@ -167,11 +164,6 @@ void m_ft62f28_check_send_change(void)
     data_send.len_data = 2 + sizeof(cmd_data_rcv_u);
 
     hw_uart_get_instance()->send_bytes((char *)&data_send, 3 + data_send.len_data);
-    if (need_buzz_off == 1)
-    {
-        need_buzz_off = 2;
-        hw_set_buzz(SWITCH_ACTIVE_LEVEL);
-    }
 }
 
 void m_ft62f28_receive_data(uint8_t *data, uint32_t len)

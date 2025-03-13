@@ -15,6 +15,7 @@
 #define BIT_FLAG_SYNC_MQTT      1
 #define BIT_FLAG_SYNC_PAIR      2
 #define BIT_FLAG_SYNC_AC        3
+#define BIT_FLAG_SYNC_FAN       4
 
 #define SET(PIN,N) (PIN |=  (1<<N))
 #define CLR(PIN,N) (PIN &= ~(1<<N))

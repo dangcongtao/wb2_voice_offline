@@ -68,6 +68,8 @@
 #define OE_PIN    0
 #define OE_PIN_2    0xFF
 
+#define BUZZ_PIN    17
+
 extern uint32_t max_number_channel;
 extern uint32_t device_type;
 
@@ -97,7 +99,13 @@ void hw_fan_init(void);
 
 /* 7 seg*/
 void hw_74hc595_init(void);
-void hw_74hc595_write_byte(uint16_t data, uint8_t num_hc595);
+void hw_74hc595_set_bit(uint8_t bit, uint8_t val);
+void hw_74hc595_set_number(uint8_t num);
+void hw_74hc595_loop(void);
+
+/* buzz */
+void hw_buzz_set(uint8_t buzz_set);
+void hw_buzz_init(void);
 
 /* hardware init. should call this api first */
 void gpio_set_output(int pin);
