@@ -87,7 +87,7 @@ void m_ft62f28_check_send_change(void)
             }
             os_trace("send_speed: pcn %u\r\n", data_send.data.rcv.state.speed);
         }
-        else if (device_type == FANACIR || device_type == FANACIR)
+        else if (device_type == FANAC || device_type == FANACIR)
         {
             uint8_t speed = fan_info->speed;
             if (fan_info->mode == M_FAN_MODE_NATURAL)
