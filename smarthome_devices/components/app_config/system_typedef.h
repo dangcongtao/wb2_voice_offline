@@ -51,6 +51,7 @@
 #define CJSON_KEY_IR_SWINGV        "swingv"
 #define CJSON_KEY_IR_SWINGH        "swingh"
 #define CJSON_KEY_IR_ACT        "act"
+#define CJSON_KEY_OTP           "otp"
 
 #define DEFAULT_AES_KEY "0000000000000000"
 #define DEFAULT_AES_IV  "0000000000000000"

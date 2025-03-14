@@ -124,7 +124,7 @@ void device_active_handler(void *arg)
 {
     os_trace("device_active_handler\r\n");
     /* ble rename */
-    ble_set_name("Dungnt98", 1);
+    // ble_set_name("Dungnt98", 1);
     // ble_init();
 
     // app_btn_on_hold_time_fire_event_ms = APP_BTN_HOLD_EVENT_15S;

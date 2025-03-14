@@ -13,6 +13,6 @@ uint8_t dev_is_smartconfig(void);
 uint8_t dev_is_online(void);
 void set_timeout_reset(void);
 void clear_timeout_reset(void);
-uint8_t dev_is_online(void);
+uint8_t dev_is_doing_config(void);
 
 #endif /* _M_SMART_CONFIG_H_ */

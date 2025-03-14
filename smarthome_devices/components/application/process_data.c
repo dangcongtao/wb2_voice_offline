@@ -26,11 +26,13 @@
 #include "IRsend.h"
 #include "IRrecv.h"
 #include "hardware.h"
+#include "event_driven.h"
 #include "m_fan_event.h"
 
 char respond[512];
 extern char key[16], iv[16];
 extern uint32_t val_temperature;
+static int previous_otp;
 
 static void app_startup_message(void);
 static void app_get_info(cJSON *jsRoot);
@@ -61,6 +63,8 @@ static void ir_stop_learn_auto(cJSON *jsRoot);
 // ble
 static void ble_config_step1(cJSON *jsRoot);
 static void ble_config_step2(cJSON *jsRoot);
+static void app_ble_discover(cJSON *js_root);
+static void app_ble_authen_connection(cJSON *js_root);
 
 static void AC_LG2_Callback(cJSON *jsRoot);
 static void AC_LG_Callback(cJSON *jsRoot);
@@ -149,6 +153,8 @@ wswitch_handler_t array_handler[] = {
 wswitch_handler_t array_ble_handler[] = {
     {ble_config_step1, 1},
     {ble_config_step2, 3},
+    {app_ble_discover, 35},
+    {app_ble_authen_connection, 36},
 };
 
 wswitch_handler_t array_ir_control_handler[] = {
@@ -6377,6 +6383,77 @@ static void ble_config_step2(cJSON *jsRoot)
     m_ble_config_step2();
 }
 
+/* 35 */
+void app_ble_discover(cJSON *js_root)
+{
+    /* check online */
+    if (dev_is_doing_config())
+    {
+        return;
+    }
+    uint32_t cmd = 35;
+    uint32_t uid = 0;
+    cJSON *js_val = NULL;
+
+    js_val = cJSON_GetObjectItem(js_root, CJSON_KEY_USER_ID);
+    if (js_val == NULL)
+    {
+        os_trace("get uid fail \r\n");
+        return;
+    }
+    uid = js_val->valueint;
+
+    /* generate OTP with 6 digit */
+    previous_otp = rand() % 1000000;
+    os_trace(" otp generated: %d\r\n", previous_otp);
+
+    memset(respond, 0, sizeof(respond));
+    sprintf(respond, "{\"%s\":%ld, \"u\":%ld, \"otp\": %d}",
+            gs_dev_type[device_type], cmd, uid, previous_otp);
+
+    ble_send_data(respond, strlen(respond));
+    // app_send_data(respond, strlen(respond));
+}
+
+/* 36 */
+void app_ble_authen_connection(cJSON *js_root)
+{
+    uint32_t cmd = 36;
+    uint32_t uid = 0;
+    int opt = 0;
+    cJSON *js_val = NULL;
+
+    js_val = cJSON_GetObjectItem(js_root, CJSON_KEY_USER_ID);
+    if (js_val == NULL)
+    {
+        os_trace("get uid fail \r\n");
+        return;
+    }
+    uid = js_val->valueint;
+
+    js_val = cJSON_GetObjectItem(js_root, CJSON_KEY_OTP);
+    if (js_val == NULL)
+    {
+        os_trace("get opt fail \r\n");
+        return;
+    }
+    opt = js_val->valueint;
+
+    /* compare OTP */
+    if (previous_otp != opt)
+    {
+        os_trace("wrong otp \r\n");
+        return;
+    }
+
+    memset(respond, 0, sizeof(respond));
+    sprintf(respond, "{\"%s\":%ld, \"u\":%ld, \"otp\": %d}",
+            gs_dev_type[device_type], cmd, uid, previous_otp);
+
+    ble_send_data(respond, strlen(respond));
+    // app_send_data(respond, strlen(respond));
+}
+
 extern void ble_loop(void);
 extern void ble_init_first(void);
 
@@ -6489,6 +6566,8 @@ void app_handler_msg_task(void *arg)
             }
             uint32_t cmd = jsType->valueint;
 
+            uint8_t handled = 0;
+
             uint32_t arr_size = sizeof(array_ble_handler) / sizeof(array_ble_handler[0]);
             os_trace("arr_size_ble: %lu\r\n", arr_size);
             for (uint32_t i = 0; i < arr_size; i++)
@@ -6497,11 +6576,28 @@ void app_handler_msg_task(void *arg)
                 {
                     os_trace("_cmd_number: %ld\r\n", cmd);
                     array_ble_handler[i]._handler(jsRoot);
+                    handled = 1;
                     break;
                 }
             }
 
+            if (!handled)
+            {
+                arr_size = sizeof(array_handler) / sizeof(array_handler[0]);
+                os_trace("arr_size_mqtt: %lu\r\n", arr_size);
+                for (uint32_t i = 0; i < arr_size; i++)
+                {
+                    if (array_handler[i]._cmd_number == cmd)
+                    {
+                        os_trace("_cmd_number: %ld\r\n", cmd);
+                        array_handler[i]._handler(jsRoot);
+                        break;
+                    }
+                }
+            }
+
             cJSON_Delete(jsRoot);
+
         }
         else
         {
