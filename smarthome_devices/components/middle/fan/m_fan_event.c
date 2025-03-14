@@ -5,7 +5,6 @@
 #include "m_fan.h"
 
 static m_fan_natural_mode_t s_natural_mode;
-static uint32_t time_set;
 static uint32_t time_remain;
 uint32_t last_tick_timer_toggle;
 
@@ -18,7 +17,7 @@ void m_fan_set_time_off(uint32_t _time_set)
 {
     os_trace("%s time_set: %u\r\n", __func__, _time_set);
     time_remain = _time_set * 1000;
-    time_set = _time_set * 1000;
+    m_fan_get_instance()->time_set = _time_set * 1000;
     last_tick_timer_toggle = 0;
     if (time_remain > 0)
     {
@@ -37,7 +36,7 @@ uint32_t m_fan_get_time_remain(void)
 
 uint32_t m_fan_get_time_set(void)
 {
-    return time_set / 1000;
+    return m_fan_get_instance()->time_set / 1000;
 }
 
 void m_fan_start_natural_mode(void)
@@ -135,7 +134,7 @@ void m_fan_timer_toggle(void)
         return;
     }
     m_fan_need_buzz();
-    uint32_t time_hours = time_set / (60 * 60 * 1000);
+    uint32_t time_hours = my_fan->time_set / (60 * 60 * 1000);
     time_hours++;
     if (time_hours > 9)
     {

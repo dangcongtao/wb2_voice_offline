@@ -29,25 +29,7 @@ uint8_t fan_get_func_from_index(uint8_t my_func)
     {
         return my_func;
     }
-    else if (device_type == FANACIR)
-    {
-        switch (my_func)
-        {
-        case 3:
-            return M_FAN_BUTTON_SWING_INDEX;
-        case 2:
-            return M_FAN_BUTTON_TIMER_INDEX;
-        case 1:
-            return M_FAN_BUTTON_INCREASE_INDEX;
-        case 0:
-            return M_FAN_BUTTON_POWER_INDEX;
-
-        default:
-            return M_FAN_BUTTON_INVALID;
-            break;
-        }
-    }
-    else if (device_type == FANAC)
+    else if (device_type == FANACIR || device_type == FANAC)
     {
         switch (my_func)
         {
@@ -65,6 +47,24 @@ uint8_t fan_get_func_from_index(uint8_t my_func)
             break;
         }
     }
+    // else if (device_type == FANAC)
+    // {
+    //     switch (my_func)
+    //     {
+    //     case 3:
+    //         return M_FAN_BUTTON_NATURAL_INDEX;
+    //     case 2:
+    //         return M_FAN_BUTTON_TIMER_INDEX;
+    //     case 1:
+    //         return M_FAN_BUTTON_SWING_INDEX;
+    //     case 0:
+    //         return M_FAN_BUTTON_INCREASE_INDEX;
+
+    //     default:
+    //         return M_FAN_BUTTON_INVALID;
+    //         break;
+    //     }
+    // }
 
     return my_func;
 }
@@ -76,28 +76,6 @@ uint8_t fan_get_index_from_func(uint8_t my_func)
         return my_func;
     }
     else if (device_type == FANACIR)
-    {
-        switch (my_func)
-        {
-        case M_FAN_BUTTON_SWING_INDEX:
-            return 3;
-            break;
-        case M_FAN_BUTTON_TIMER_INDEX:
-            return 2;
-            break;
-        case M_FAN_BUTTON_INCREASE_INDEX:
-            return 1;
-            break;
-        case M_FAN_BUTTON_NATURAL_INDEX:
-            return 2;
-            break;
-
-        default:
-            return M_FAN_BUTTON_INVALID;
-            break;
-        }
-    }
-    else if (device_type == FANAC)
     {
         switch (my_func)
         {
@@ -114,6 +92,23 @@ uint8_t fan_get_index_from_func(uint8_t my_func)
             return 0;
             break;
 
+        default:
+            return M_FAN_BUTTON_INVALID;
+            break;
+        }
+    }
+    else if (device_type == FANAC)
+    {
+        switch (my_func)
+        {
+        case M_FAN_BUTTON_NATURAL_INDEX:
+            return 3;
+            break;
+        case 0:
+        case 1:
+        case 2:
+            return my_func;
+            break;
         default:
             return M_FAN_BUTTON_INVALID;
             break;

@@ -8,6 +8,7 @@
 #include "conn.h"
 #include "conn_internal.h"
 #include "hci_core.h"
+#include "m_database.h"
 
 static char ble_name[64] = {0};
 // #define NAME_DEVICE "HUN167291413297wswitch2vN1"
@@ -170,6 +171,7 @@ static void ble_stack_start(void)
     bt_enable(bt_ready_cb);
 }
 
+extern char s_device_id[64];
 /*BLE初始化函数*/
 void my_ble_init(void)
 {                                                        
@@ -182,9 +184,13 @@ void my_ble_init(void)
     
     my_ble_start_advertise();//开启广播
 
-    if (strlen(ble_name) == 0)
+    if (m_db_get_instance()->_get_dev_pair_state())
     {
-
+        memset(ble_name, 0, sizeof(ble_name));
+        sprintf(ble_name, "%s@", s_device_id);
+    }
+    else
+    {
         sprintf(ble_name, "dungnt98");
         printf("BLE name: %s\r\n", ble_name);
     }

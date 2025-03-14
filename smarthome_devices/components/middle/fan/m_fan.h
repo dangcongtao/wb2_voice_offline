@@ -10,6 +10,7 @@ typedef struct
     uint8_t swing;
     uint8_t light;
     uint8_t disable_buzz;
+    uint32_t time_set;
 } m_fan_info_t;
 
 void m_fan_set_swing(uint8_t swing);
@@ -31,8 +32,6 @@ void m_fan_control(uint8_t mode_set, uint8_t speed_set, uint8_t pcn_set, uint8_t
 void m_fan_set_time_off(uint32_t time_set);
 void m_fan_toggle_natural_mode(void);
 
-uint32_t m_fan_get_time_remain(void);
-uint32_t m_fan_get_time_set(void);
 uint8_t m_fan_get_current_speed_natural(void);
 
 void m_fan_process_button_event(uint8_t button_pin);

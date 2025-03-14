@@ -23,5 +23,6 @@ typedef struct {
 
 void process_data_init(void);
 void app_handler_msg_loop(void);
+void app_send_data(char *data, uint32_t length);
 
 #endif /* _APP_MQTT_H_ */

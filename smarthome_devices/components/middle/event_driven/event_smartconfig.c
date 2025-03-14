@@ -13,6 +13,7 @@
 extern char s_device_id[64];
 // extern uint32_t app_btn_on_hold_time_fire_event_ms;
 extern uint8_t use_server_prev;
+extern void ble_paired_need_connect(void);
 
 void wifi_not_cfg_to_smart_cfg_handler(void *arg)
 {
@@ -78,6 +79,7 @@ void smartconfig_done_handler(void *arg)
     if (m_db_get_instance()->_get_dev_pair_state()) {
         use_server_prev = 1;
         wf.wifi_sta_start_cb(ssid, pass);
+        ble_paired_need_connect();
     }
 }
 m_state_transmit_t smartconfig_done = {

@@ -152,30 +152,30 @@ wswitch_handler_t array_ble_handler[] = {
 };
 
 wswitch_handler_t array_ir_control_handler[] = {
-    {AC_Casper_Callback, 103},             // 102
-    {AC_Whirlpool_Callback, WHIRLPOOL_AC}, // 34
-    {AC_Corona_Callback, CORONA_AC},       // 34
-    {AC_LG2_Callback, 23},                 // 23
-    {AC_LG_Callback, 114},                 // 23
-    {AC_Funiki_Callback, 104},             // 12
-    {AC_Funiki80_Callback, FUNIKIAC83},    // 12
-    {AC_Samsung_Callback, 27},             // 27 - 14 bytes
-    {AC_Toshiba_Callback, 108},            // 31 - 9 bytes
-    {AC_Daikin_Callback, DAIKIN},          // 14 - 35 bytes
-    {AC_Daikin2_Callback, 1},              // 14 - 35 bytes
-    {AC_Daikin64_Callback, DAIKIN64},      // 35 bytes
-    {AC_Daikin152_Callback, 6},            // 6 - 35 bytes
-    {AC_Daikin128_Callback, 5},            // 5 - 35 bytes
-    {AC_Daikin160_Callback, 4},            // 4 - 35 bytes
-    {AC_Daikin216_Callback, 2},            // 2 - 35 bytes
-    {AC_Daikin176_Callback, DAIKIN176},    // 2 - 35 bytes
-    {AC_Daikin200_Callback, DAIKIN200},    // 2 - 35 bytes
-    {AC_Gree_Callback, 19},                // 19 - 8 bytes - Electrolux
-    {AC_Tcl_Callback, 29},                 // 29 - 14 bytes
-    {AC_Tcl_Callback, AKITO},              // 29 - 14 bytes
-    {AC_Mitshubishi112_Callback, MITSUBISHI112},      // 91 - 14 bytes
-    {AC_Midea_Callback, 1934},             // 1934 - 14 bytes
-    {AC_Sharp_Callback, 28},               // 28 - 13 bytes
+    {AC_Casper_Callback, 103},                   // 102
+    {AC_Whirlpool_Callback, WHIRLPOOL_AC},       // 34
+    {AC_Corona_Callback, CORONA_AC},             // 34
+    {AC_LG2_Callback, 23},                       // 23
+    {AC_LG_Callback, 114},                       // 23
+    {AC_Funiki_Callback, 104},                   // 12
+    {AC_Funiki80_Callback, FUNIKIAC83},          // 12
+    {AC_Samsung_Callback, 27},                   // 27 - 14 bytes
+    {AC_Toshiba_Callback, 108},                  // 31 - 9 bytes
+    {AC_Daikin_Callback, DAIKIN},                // 14 - 35 bytes
+    {AC_Daikin2_Callback, 1},                    // 14 - 35 bytes
+    {AC_Daikin64_Callback, DAIKIN64},            // 35 bytes
+    {AC_Daikin152_Callback, 6},                  // 6 - 35 bytes
+    {AC_Daikin128_Callback, 5},                  // 5 - 35 bytes
+    {AC_Daikin160_Callback, 4},                  // 4 - 35 bytes
+    {AC_Daikin216_Callback, 2},                  // 2 - 35 bytes
+    {AC_Daikin176_Callback, DAIKIN176},          // 2 - 35 bytes
+    {AC_Daikin200_Callback, DAIKIN200},          // 2 - 35 bytes
+    {AC_Gree_Callback, 19},                      // 19 - 8 bytes - Electrolux
+    {AC_Tcl_Callback, 29},                       // 29 - 14 bytes
+    {AC_Tcl_Callback, AKITO},                    // 29 - 14 bytes
+    {AC_Mitshubishi112_Callback, MITSUBISHI112}, // 91 - 14 bytes
+    {AC_Midea_Callback, 1934},                   // 1934 - 14 bytes
+    {AC_Sharp_Callback, 28},                     // 28 - 13 bytes
     {AC_Hitachi1_Callback, 92},
     {AC_Hitachi344_Callback, 94},
     {AC_Hitachi424_Callback, 93},
@@ -358,7 +358,6 @@ RESPONSE:
     m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
 }
 
-
 /* {"TYPE":130,"u":uid, "index":i,"time":s} */
 static void app_set_time_release(cJSON *jsRoot)
 {
@@ -416,7 +415,7 @@ RESPONSE:
             "{\"%s\":%ld,\"u\":%ld,\"index\":%ld,\"time\":%ld,\"mode\":%ld,"
             "\"result\": %d}",
             gs_dev_type[device_type], type, uid, index, time, mode, result);
-    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
+    app_send_data(respond, strlen(respond));
 }
 
 /* {"atmwifi":131, "u":1,"index":0} */
@@ -457,10 +456,10 @@ RESPONSE:
     /* respond server here */
     memset(respond, 0, sizeof(respond));
     sprintf(respond,
-        "{\"%s\":%ld,\"u\":%ld,\"index\":%ld,\"time\":%ld,\"mode\":1,"
-        "\"result\": %d}",
-        gs_dev_type[device_type], type, uid, index, time, result);
-    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
+            "{\"%s\":%ld,\"u\":%ld,\"index\":%ld,\"time\":%ld,\"mode\":1,"
+            "\"result\": %d}",
+            gs_dev_type[device_type], type, uid, index, time, result);
+    app_send_data(respond, strlen(respond));
 }
 
 // {"type":20, "mode":1,"lv":1, "u":55519, "act_id":0}
@@ -506,13 +505,13 @@ static void app_control_fan(cJSON *js_Root)
     jsPcn = cJSON_GetObjectItem(js_Root, "pcn");
     if (jsPcn != NULL)
     {
-        pcn= jsPcn->valueint;
+        pcn = jsPcn->valueint;
     }
 
     jsLamp = cJSON_GetObjectItem(js_Root, "lamp");
     if (jsLamp != NULL)
     {
-        lamp= jsLamp->valueint;
+        lamp = jsLamp->valueint;
     }
 
     jsU = cJSON_GetObjectItem(js_Root, CJSON_KEY_USER_ID);
@@ -539,7 +538,7 @@ RESPONSE:
     /* respond server here */
     memset(respond, 0, sizeof(respond));
     sprintf(respond, "{\"%s\":%ld,\"mode\":%u,\"lv\":%u,\"swing\":%u,\"pcn\":%u,\"lamp\":%u,\"u\":%lu,\"act_id\":%lu,\"result\":%d}", gs_dev_type[device_type], type, my_fan->mode, my_fan->speed, my_fan->swing, my_fan->pcn, my_fan->light, uid, act_id, result);
-    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
+    app_send_data(respond, strlen(respond));
 }
 // {"type":21, "mode":1,"lv":1, "u":55519, "act_id":0}
 static void app_control_fan_with_one(cJSON *js_Root)
@@ -618,7 +617,7 @@ RESPONSE:
     /* respond server here */
     memset(respond, 0, sizeof(respond));
     sprintf(respond, "{\"%s\":20,\"mode\":%u,\"lv\":%u,\"swing\":%u,\"pcn\":%u,\"lamp\":%u,\"u\":%lu,\"act_id\":%lu,\"result\":%d}", gs_dev_type[device_type], my_fan->mode, my_fan->speed, my_fan->pcn, my_fan->light, my_fan->swing, uid, act_id, result);
-    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
+    app_send_data(respond, strlen(respond));
 }
 
 //{"type":21, "swing":1,"u":55519, "act_id":0}
@@ -659,8 +658,8 @@ RESPONSE:
     /* respond server here */
     memset(respond, 0, sizeof(respond));
     sprintf(respond, "{\"%s\":%ld,\"swing\":%u,\"u\":%lu,\"act_id\":%lu,\"result\":%d}", gs_dev_type[device_type], type, swing, uid, act_id, result);
-    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
-} 
+    app_send_data(respond, strlen(respond));
+}
 
 // {"type":22, "time":120,"u":55519, "act_id":0}
 static void app_control_timer(cJSON *js_Root)
@@ -700,8 +699,8 @@ RESPONSE:
     /* respond server here */
     memset(respond, 0, sizeof(respond));
     sprintf(respond, "{\"%s\":%lu,\"time\":%lu,\"u\":%lu,\"act_id\":%lu,\"result\":%u}", gs_dev_type[device_type], type, time, uid, act_id, result);
-    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
-} 
+    app_send_data(respond, strlen(respond));
+}
 
 static void app_set_buzz(cJSON *js_Root)
 {
@@ -740,8 +739,8 @@ RESPONSE:
     /* respond server here */
     memset(respond, 0, sizeof(respond));
     sprintf(respond, "{\"%s\":%lu,\"buzz\":%lu,\"u\":%lu,\"act_id\":%lu,\"result\":%u}", gs_dev_type[device_type], type, buzz, uid, act_id, result);
-    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
-} 
+    app_send_data(respond, strlen(respond));
+}
 
 static void app_set_light(cJSON *js_Root)
 {
@@ -780,8 +779,8 @@ RESPONSE:
     /* respond server here */
     memset(respond, 0, sizeof(respond));
     sprintf(respond, "{\"%s\":%lu,\"lamp\":%lu,\"u\":%lu,\"act_id\":%lu,\"result\":%u}", gs_dev_type[device_type], type, lamp, uid, act_id, result);
-    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
-} 
+    app_send_data(respond, strlen(respond));
+}
 
 static void ir_send_data(cJSON *jsRoot)
 {

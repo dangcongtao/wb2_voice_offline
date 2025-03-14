@@ -246,3 +246,14 @@ void ble_set_name(char* name, uint8_t restart_adv)
     os_trace("ble_set_name: %s\r\n", name);
     my_ble_set_name(name, restart_adv);
 }
+
+extern char s_device_id[64];
+void ble_paired_need_connect(void)
+{
+    int len = strlen(s_device_id) + 2;
+    char ble_my_name[len];
+    memset(ble_my_name, 0, sizeof(ble_my_name));
+    sprintf(ble_my_name, "%s@", s_device_id);
+    os_trace("ble_set_name: %s\r\n", ble_my_name);
+    my_ble_set_name(ble_my_name, 1);
+}
