@@ -161,7 +161,6 @@ static void m_button_config(void)
     app_btn_register_callback(APP_BTN_EVT_HOLD_HONG_PHIM, on_button_event_cb, NULL);
 }
 
-extern uint8_t flag_btn_change;
 /* private */
 static void button_scan_task(void *param)
 {
@@ -170,11 +169,7 @@ static void button_scan_task(void *param)
     while (true)
     {
         hw_uart_loop();
-        if (flag_btn_change)
-        {
-            flag_btn_change = 0;
-            app_btn_scan(NULL);
-        }
+        app_btn_scan(NULL);
         buzz_loop();
         m_ft62f28_check_send_change();
         m_led_7_seg_loop(50);

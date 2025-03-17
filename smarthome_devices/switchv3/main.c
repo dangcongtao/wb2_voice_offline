@@ -39,7 +39,7 @@ void main_loop(void)
     while (true)
     {
         m_event_loop(delay_ms);
-        // http_client_loop();
+        http_client_loop();
         
         if (hw_temp_read())
         {

@@ -8,67 +8,67 @@
 #include "app_config.h"
 #include "system_typedef.h"
 
-#define gpio_get_level      bl_gpio_input_get_value
-#define gpio_set_level      bl_gpio_output_set
+#define gpio_get_level bl_gpio_input_get_value
+#define gpio_set_level bl_gpio_output_set
 
 #define LED_STT 14
-#define LED_STT_SSW     1
-#define LED_STT_MINI    0xFF
+#define LED_STT_SSW 1
+#define LED_STT_MINI 0xFF
 
-#define LED_STT_ON      0
-#define LED_STT_OFF     1
+#define LED_STT_ON 0
+#define LED_STT_OFF 1
 
 #define LED_INDICATE_OFF 0
 #define LED_INDICATE_ON 1
 
-#define MAX_NUM_BUTTON  6
-#define BTN_IDLE_LEVEL  0
-#define BUTTON1    0xFF
-#define BUTTON2    0xFF
-#define BUTTON3   0xFF
-#define BUTTON4   0xFF
+#define MAX_NUM_BUTTON 6
+#define BTN_IDLE_LEVEL 0
+#define BUTTON1 0xFF
+#define BUTTON2 0xFF
+#define BUTTON3 0xFF
+#define BUTTON4 0xFF
 
-#define BUTTON_ADC_PIN             11
-#define BUTTON_ADC_CHANNEL             10
+#define BUTTON_ADC_PIN 11
+#define BUTTON_ADC_CHANNEL 10
 
-#define TEMP_ADC_PIN             11
-#define TEMP_ADC_CHANNEL             10
+#define TEMP_ADC_PIN 11
+#define TEMP_ADC_CHANNEL 10
 
-#define BUTTON_POWER_INDEX  0
-#define BUTTON_SWING_INDEX  1
-#define BUTTON_NATURAL_INDEX  2
+#define BUTTON_POWER_INDEX 0
+#define BUTTON_SWING_INDEX 1
+#define BUTTON_NATURAL_INDEX 2
 
-#define BTN_CFG_MINI    22
-#define BUTTON_SSW  0xFF
+#define BTN_CFG_MINI 22
+#define BUTTON_SSW 0xFF
 
-#define MAX_NUM_SWITCH          4
-#define SWITCH_IDLE_LEVEL       0
-#define SWITCH_ACTIVE_LEVEL     1
-#define SWITCH1     0xFF
-#define SWITCH2     0xFF 
-#define SWITCH3     0xFF
-#define SWITCH_SWING    0xFF
+#define MAX_NUM_SWITCH 4
+#define SWITCH_IDLE_LEVEL 0
+#define SWITCH_ACTIVE_LEVEL 1
+#define SWITCH1 0xFF
+#define SWITCH2 0xFF
+#define SWITCH3 0xFF
+#define SWITCH_SWING 0xFF
 
-#define SWITCH1_MINI    0xFF
-#define SWITCH2_MINI    14
+#define SWITCH1_MINI 0xFF
+#define SWITCH2_MINI 14
 
-#define TS04    0xFF
-#define TS04_SWSHOCK    0xFF
-#define TS04_IDLE_LEVEL     0
-#define TS04_ACTIVE_LEVEL   1
+#define TS04 0xFF
+#define TS04_SWSHOCK 0xFF
+#define TS04_IDLE_LEVEL 0
+#define TS04_ACTIVE_LEVEL 1
 
-#define IR_RX   12
-#define IR_RX_POS   1
-#define IRpin   5
+#define IR_RX 12
+#define IR_RX_POS 1
+#define IRpin 5
 
 #define LED_COM_PIN 2
-#define SHCP_PIN    21
-#define STCP_PIN    20
-#define DS_PIN    22
-#define OE_PIN    0
-#define OE_PIN_2    0xFF
+#define SHCP_PIN 21
+#define STCP_PIN 20
+#define DS_PIN 22
+#define OE_PIN 0
+#define OE_PIN_2 0xFF
 
-#define BUZZ_PIN    17
+#define BUZZ_PIN 17
 
 extern uint32_t max_number_channel;
 extern uint32_t device_type;
@@ -93,9 +93,6 @@ void hw_toggle_led_stt(void);
 void hw_write_switch_pin(uint8_t index, uint8_t val);
 uint8_t hw_read_switch_pin(uint8_t index);
 void hw_switch_change_pin_type(void);
-
-/* fan */
-void hw_fan_init(void);
 
 /* 7 seg*/
 void hw_74hc595_init(void);

@@ -201,7 +201,7 @@ void buzz_loop(void)
 {
     if (need_buzz_off)
     {
-        if (need_buzz_off == 5)
+        if (need_buzz_off == 2)
         {
             need_buzz_off = 0;
             hw_buzz_set(SWITCH_IDLE_LEVEL);

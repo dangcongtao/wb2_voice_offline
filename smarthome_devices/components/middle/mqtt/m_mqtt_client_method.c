@@ -209,7 +209,7 @@ void m_mqtt_start(void)
 
     if (client != NULL)
     {
-        os_trace("%s destroy client now\r\n");
+        os_trace("destroy client now\r\n");
         s_mqtt_obj._mqtt_state = MQTT_UNINTIALIZED;
         axk_mqtt_client_destroy(client);
         vTaskDelay(1000);

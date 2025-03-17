@@ -8,7 +8,7 @@
 #include "bl_sys.h"
 #include "hardware.h"
 
-#define MAX_STATE_MACHINE 25
+#define MAX_STATE_MACHINE 24
 
 static m_signal_t signal;
 static uint8_t num_state_in_used = 0;
@@ -42,7 +42,10 @@ extern m_state_transmit_t smartconfig_to_apconfig;
 extern m_state_transmit_t apconfig_to_smartconfig;
 
 extern m_state_transmit_t dev_get_mqtt;
+extern m_state_transmit_t dev_get_mqtt2;
 extern m_state_transmit_t dev_conn_mqtt;
+extern m_state_transmit_t dev_conn_mqtt2;
+extern m_state_transmit_t dev_conn_mqtt3;
 extern m_state_transmit_t dev_actived;
 extern m_state_transmit_t dev_actived_disconnect_mqtt;
 extern m_state_transmit_t dev_actived_disconnect_wifi;
@@ -122,7 +125,10 @@ void m_event_init(void)
     signal_handler_register(get_mqtt_info_to_ap_config);
 
     signal_handler_register(dev_get_mqtt);
+    signal_handler_register(dev_get_mqtt2);
     signal_handler_register(dev_conn_mqtt);
+    signal_handler_register(dev_conn_mqtt2);
+    signal_handler_register(dev_conn_mqtt3);
     signal_handler_register(dev_actived);
     signal_handler_register(dev_actived_disconnect_mqtt);
     signal_handler_register(dev_actived_disconnect_wifi);

@@ -68,6 +68,7 @@ void m_fan_set_speed(uint8_t mode_set, uint8_t speed_set)
     else if (s_fan_info.mode == M_FAN_MODE_OFF)
     {
         m_fan_set_swing(M_FAN_MODE_OFF);
+        m_fan_set_light(FAN_LIGHT_LEVEL_OFF);
         m_fan_set_time_off(0);
         hw_fan_set_speed_level(M_FAN_SPEED_OFF);
         hw_74hc595_set_number(LED_7_SEG_OFF_INDEX);
@@ -222,7 +223,7 @@ extern uint32_t last_tick_timer_toggle;
 static void m_fan_led_proccess_when_active(void)
 {
     static uint8_t led_val = 0;
-    
+
     if (sys_get_tick_ms() - last_tick_blink_led > 1000)
     {
         led_val = !led_val;
@@ -428,7 +429,6 @@ uint8_t last_reason_reset;
 void m_fan_init(void)
 {
     hw_buzz_init();
-    hw_fan_init();
 
     uint8_t reason_reset = flash_read_rs_reason();
     os_trace("reason_reset: %u\r\n", reason_reset);

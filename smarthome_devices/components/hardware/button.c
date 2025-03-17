@@ -5,7 +5,6 @@
 
 static int val = 0;
 static uint8_t val_button = 0;
-uint8_t flag_btn_change = 0;
 
 static hosal_adc_dev_t adc_temperature = {
     .cb = NULL,
@@ -45,7 +44,6 @@ void hw_btn_set_val_button(uint8_t val)
 {
     // os_trace("%s val: %u\r\n", __func__, val);
     val_button = val;
-    flag_btn_change = 1;
 }
 
 uint32_t hw_btn_read(uint32_t index)

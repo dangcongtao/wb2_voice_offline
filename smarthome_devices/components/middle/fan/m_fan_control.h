@@ -17,8 +17,8 @@
 
 #define TIMEOUT_DISPLAY_TIME_OFF_MS  3000
 
-#define FAN_SPEED_LEVEL_1   50
-#define FAN_SPEED_LEVEL_2   75
+#define FAN_SPEED_LEVEL_1   60
+#define FAN_SPEED_LEVEL_2   80
 #define FAN_SPEED_LEVEL_3   100
 
 

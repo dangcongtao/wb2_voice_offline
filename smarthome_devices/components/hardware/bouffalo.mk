@@ -10,7 +10,6 @@ COMPONENT_PRIV_INCLUDEDIRS :=
 COMPONENT_SRCS := hardware.c \
                   button.c \
                   led.c \
-                  fan.c \
                   74hc595.c \
                   temp_10k.c \
                   hw_uart.c \
