@@ -147,12 +147,12 @@ void m_fan_decrease_speed(void)
         hw_74hc595_set_number(s_fan_info.speed);
         hw_led_stt_set_stt(M_FAN_BUTTON_NATURAL_INDEX, LED_INDICATE_OFF);
     }
-    else if (s_fan_info.mode == M_FAN_MODE_NATURAL)
+    else if (s_fan_info.mode == M_FAN_MODE_NATURAL || s_fan_info.mode == M_FAN_MODE_PCN)
     {
         s_fan_info.mode = M_FAN_MODE_ON;
         if (s_fan_info.speed == M_FAN_SPEED_OFF)
         {
-            s_fan_info.speed = M_FAN_SPEED_1;
+            s_fan_info.speed = M_FAN_SPEED_3;
         }
         os_trace("%s M_FAN_MODE_NATURAL speed: %u\r\n", __func__, s_fan_info.speed);
         hw_fan_set_speed_level(s_fan_info.speed);
@@ -183,7 +183,7 @@ void m_fan_increase_speed(void)
         hw_74hc595_set_number(s_fan_info.speed);
         hw_led_stt_set_stt(M_FAN_BUTTON_NATURAL_INDEX, LED_INDICATE_OFF);
     }
-    else if (s_fan_info.mode == M_FAN_MODE_NATURAL)
+    else if (s_fan_info.mode == M_FAN_MODE_NATURAL || s_fan_info.mode == M_FAN_MODE_PCN)
     {
         s_fan_info.mode = M_FAN_MODE_ON;
         if (s_fan_info.speed == M_FAN_SPEED_OFF)
@@ -222,10 +222,12 @@ extern uint32_t last_tick_timer_toggle;
 static void m_fan_led_proccess_when_active(void)
 {
     static uint8_t led_val = 0;
+    
     if (sys_get_tick_ms() - last_tick_blink_led > 1000)
     {
         led_val = !led_val;
         last_tick_blink_led = sys_get_tick_ms();
+
         if (s_fan_info.mode == M_FAN_MODE_NATURAL)
         {
             if (hw_btn_read(M_FAN_BUTTON_NATURAL_INDEX) == BTN_IDLE_LEVEL)
@@ -399,6 +401,7 @@ void m_fan_process_remote_event(uint32_t button_data)
 static void m_fan_check_flag(void)
 {
     hw_74hc595_loop();
+
     if (last_tick_timer_toggle && sys_get_tick_ms() - last_tick_timer_toggle >= TIMEOUT_DISPLAY_TIME_OFF_MS)
     {
         last_tick_timer_toggle = 0;
@@ -429,6 +432,7 @@ void m_fan_init(void)
 
     uint8_t reason_reset = flash_read_rs_reason();
     os_trace("reason_reset: %u\r\n", reason_reset);
+
     if (reason_reset)
     {
         last_reason_reset = reason_reset;

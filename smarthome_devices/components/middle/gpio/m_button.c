@@ -9,14 +9,16 @@
 #include <task.h>
 #include <queue.h>
 #include <timers.h>
+#include "bl_sys.h"
 
 #include "m_led_stt.h"
 #include "m_wifi.h"
 #include "m_database.h"
 #include "event_driven.h"
 #include "m_fan.h"
-#include "app_fan.h"
-#include "bl_sys.h"
+#include "hw_uart.h"
+#include "m_fan_control.h"
+#include "m_ft62f28.h"
 
 #define TIME_OUT_RESET_TS04_WITHOUT_PRESS 2400
 
@@ -159,20 +161,23 @@ static void m_button_config(void)
     app_btn_register_callback(APP_BTN_EVT_HOLD_HONG_PHIM, on_button_event_cb, NULL);
 }
 
+extern uint8_t flag_btn_change;
 /* private */
-extern uint32_t val_temperature;
 static void button_scan_task(void *param)
 {
     static uint32_t tick_ota_led = 0;
     os_trace("button_scan_task\n");
     while (true)
     {
-        app_btn_scan(NULL);
-
-        if (hw_temp_read())
+        hw_uart_loop();
+        if (flag_btn_change)
         {
-            app_fan_send_temperature(val_temperature);
+            flag_btn_change = 0;
+            app_btn_scan(NULL);
         }
+        buzz_loop();
+        m_ft62f28_check_send_change();
+        m_led_7_seg_loop(50);
 
         if (!dev_is_doing_config())
         {

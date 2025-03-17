@@ -99,8 +99,6 @@ void m_ft62f28_check_send_change(void)
             {
                 data_send.data.rcv.state.speed = fan_info->speed;
             }
-
-            os_trace("send_speed: %u\r\n", data_send.data.rcv.state.speed);
         }
 
         flag_send_speed = 0;

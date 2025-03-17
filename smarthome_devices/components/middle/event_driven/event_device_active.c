@@ -28,10 +28,13 @@ void get_mqtt_info_handler(void *arg)
     {
         use_server_prev = 0;
         os_trace("Device had been actived ago\r\n");
+        signal_post(SIG_MQTT_GOT_INFO);
     }
     else
     {
         use_server_prev = 0;
+        // request_get_mqtt_info();
+        // return;
         if (!get_mqtt_info())
         {
             if (m_mqtt_get_instance().get_num_mqtt_broker() > 0)
@@ -45,7 +48,6 @@ void get_mqtt_info_handler(void *arg)
         }
     }
 
-    signal_post(SIG_MQTT_GOT_INFO);
 }
 m_state_transmit_t dev_get_mqtt = {
     .context = M_WIFI_CONNECTING,
@@ -68,6 +70,7 @@ void get_mqtt_broker_handler(void)
         }
         else
         {
+            // request_get_mqtt_info();
             if (get_mqtt_info())
             {
                 mqtt._mqtt_start();
@@ -86,6 +89,7 @@ void get_mqtt_broker_handler(void)
     {
         os_trace("%s get new mqtt info\r\n", __func__);
         mqtt._mqtt_stop();
+        // request_get_mqtt_info();
         if (!get_mqtt_info())
         {
             os_trace("Get MQTT Info Fail\r\n");

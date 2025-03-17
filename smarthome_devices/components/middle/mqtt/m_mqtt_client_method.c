@@ -106,16 +106,16 @@ static axk_err_t mqtt_event_handler_cb(axk_mqtt_event_handle_t event)
 
 void m_mqtt_publish_directly(char *data, uint32_t length)
 {
-    char topic[MAXIMUM_SIZE_MQTT_TOPIC]; 
+    char topic[MAXIMUM_SIZE_MQTT_TOPIC];
     char *p_topic = s_mqtt_obj.mqtt_info.topic_pub;
     memset(topic, 0, MAXIMUM_SIZE_MQTT_TOPIC);
     memcpy(topic, p_topic, strlen(p_topic));
 
-    // m_mqtt_msg_t message;
-    // memset(&message, 0, sizeof(message));
-    // // memcpy(message.topic_pub, topic, strlen(topic));
-    // memcpy(message.msg_pub, data, length);
-    // message.length = length;
+    if (length > MAXIMUM_SIZE_MESSAGE)
+    {
+        os_trace("%s len_data_mqtt excceed max\r\n", __func__);
+        return;
+    }
 
     /* encode data */
     char msg_encrypted[MAXIMUM_SIZE_MESSAGE];
@@ -146,20 +146,10 @@ void m_mqtt_publish_directly(char *data, uint32_t length)
 
 void m_mqtt_publish(char *data, uint32_t length)
 {
-    m_mqtt_publish_directly(data,length);
-    return;
-    char *topic = s_mqtt_obj.mqtt_info.topic_pub;
-
-    m_mqtt_msg_t message;
-    memset(&message, 0, sizeof(message));
-    // memcpy(message.topic_pub, topic, strlen(topic));
-    memcpy(message.msg_pub, data, length);
-    message.length = length;
-
-    // if (xQueueSend(mqtt_tx_queue, &message, pdMS_TO_TICKS(0)) != pdPASS)
-    // {
-    //     os_trace("Push to queue tx fail\r\n");
-    // }
+    if (s_mqtt_obj._mqtt_state == MQTT_SUBSCRIBE)
+    {
+        m_mqtt_publish_directly(data, length);
+    }
 }
 
 void m_mqtt_task_loop(void)
@@ -170,38 +160,6 @@ void m_mqtt_task_loop(void)
         s_mqtt_obj._mqtt_pub_startup_msg();
         request_send_command_online = 0;
     }
-
-    // m_mqtt_msg_t mqtt_msg_pub;
-    // char msg_encrypted[MAXIMUM_SIZE_MESSAGE];
-    // uint32_t len_msg_encrypted = MAXIMUM_SIZE_MESSAGE;
-
-    // send message during activity */
-    // memset(&mqtt_msg_pub, 0, sizeof(mqtt_msg_pub));
-    // len_msg_encrypted = MAXIMUM_SIZE_MESSAGE;
-    // if (xQueueReceive(mqtt_tx_queue, &mqtt_msg_pub, 1) == pdPASS)
-    // {
-    //     memset(msg_encrypted, 0, sizeof(msg_encrypted));
-    //     aes_cbc128_init((uint8_t *)key, (uint8_t *)iv);
-    //     uint32_t aes_encrypt_result = aes_cbc128_encrypt((uint8_t *)mqtt_msg_pub.msg_pub,
-    //                                                      mqtt_msg_pub.length,
-    //                                                      (uint8_t *)msg_encrypted,
-    //                                                      (size_t *)&len_msg_encrypted);
-    //     if (aes_encrypt_result != AES_SUCCESS)
-    //     {
-    //         os_trace("Encode fail,error-code: %ld\r\n", aes_encrypt_result);
-    //         return;
-    //     }
-
-    //     // call platform mqtt-publish api
-    //     if (client != NULL)
-    //     {
-    //         // if (axk_mqtt_client_publish(client, s_mqtt_obj.mqtt_info.topic_pub, msg_encrypted, len_msg_encrypted, 0, 0) < 0)
-    //         // {
-    //         //     os_trace("\t%smqtt_client: publish message fail\r\n", __func__);
-    //         // }
-    //     }
-    // }
-    
 }
 
 void m_mqtt_start(void)
@@ -214,10 +172,13 @@ void m_mqtt_start(void)
 
     axk_mqtt_client_config_t mqtt_cfg;
     memset(&mqtt_cfg, 0, sizeof(mqtt_cfg));
-    
-    if (s_mqtt_obj.mqtt_info.servers[s_mqtt_obj.mqtt_info.broker_in_used].type == 1) {
+
+    if (s_mqtt_obj.mqtt_info.servers[s_mqtt_obj.mqtt_info.broker_in_used].type == 1)
+    {
         mqtt_cfg.uri = s_mqtt_obj.mqtt_info.servers[s_mqtt_obj.mqtt_info.broker_in_used].server;
-    } else {
+    }
+    else
+    {
         mqtt_cfg.transport = MQTT_TRANSPORT_OVER_TCP;
         mqtt_cfg.host = s_mqtt_obj.mqtt_info.servers[s_mqtt_obj.mqtt_info.broker_in_used].server;
     }
@@ -256,7 +217,8 @@ void m_mqtt_start(void)
     }
 
     client = axk_mqtt_client_init(&mqtt_cfg);
-    if (axk_mqtt_client_start(client) != AXK_OK){
+    if (axk_mqtt_client_start(client) != AXK_OK)
+    {
         flash_set_rs_reason(10);
         os_trace("%s RESET BY NOT ENOUGH MEMORY FOR MQTT START\r\n");
         vTaskDelay(2000);
@@ -266,7 +228,6 @@ void m_mqtt_start(void)
 
     os_trace("END %s: free mem %d\r\n", __func__, xPortGetFreeHeapSize());
 }
-
 
 void m_mqtt_stop(void)
 {
@@ -284,4 +245,3 @@ void m_mqtt_stop(void)
 
     os_trace("END %s: free mem %d\r\n", __func__, xPortGetFreeHeapSize());
 }
-

@@ -16,6 +16,8 @@
 #include "base64.h"
 #include "bl_sys.h"
 #include "event_driven.h"
+#include "hardware.h"
+
 
 #define WEB_SERVER "infoserver.hunonicpro.com"
 #define WEB_PORT "80"
@@ -25,12 +27,15 @@
 #define HTTP_RESP_LEN       700
 #define MQTT_INFO_LEN       512
 
+static uint8_t g_req_get_mqtt_info = 0;
+static uint32_t s_time_get = 0;
 extern char s_device_id[64];
 extern char *gs_dev_type[];
 extern uint32_t device_type;
 extern char key[16], iv[16];
 
 extern bool save_mqtt_info(char *json);
+extern void signal_post(m_signal_t sig);
 
 // static const char *REQUEST = "GET " WEB_PATH " HTTP/1.0\r\n"
 //                              "Host: " WEB_SERVER ":" WEB_PORT "\r\n"
@@ -195,4 +200,35 @@ uint8_t get_mqtt_info(void)
 json_parse_fail:
     cJSON_Delete(js_Root);
     return result;
+}
+
+void request_get_mqtt_info(void)
+{
+    os_trace("%s\r\n", __func__);
+    g_req_get_mqtt_info = 1;
+}
+
+void http_client_loop(void)
+{
+    if (g_req_get_mqtt_info)
+    {
+        if (sys_get_tick_ms() - s_time_get < 3000)
+        {
+            return;
+        }
+
+        g_req_get_mqtt_info = 0;
+        if (get_mqtt_info() < 0)
+        {
+            os_trace("%s:%d: Get MQTT Info Fail \r\n", __func__, __LINE__);
+            signal_post(SIG_MQTT_GET_INFO_FAIL);
+            s_time_get = sys_get_tick_ms();
+        }
+        else
+        {
+            os_trace("%s:%d: sig_mqtt_got_info success \r\n", __func__, __LINE__);
+            signal_post(SIG_MQTT_GOT_INFO);
+            s_time_get = 0;
+        }
+    }
 }

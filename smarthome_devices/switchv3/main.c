@@ -20,6 +20,7 @@
 #include "m_wifi.h"
 #include "m_http_server.h"
 #include "process_data.h"
+#include "app_fan.h"
 #include "m_ble.h"
 #include "event_driven.h"
 
@@ -28,9 +29,9 @@
 #include "IRrecv.h"
 #include "m_fan.h"
 #include "hw_uart.h"
-#include "m_fan_control.h"
-#include "m_ft62f28.h"
+#include "m_http_client.h"
 
+extern uint32_t val_temperature;
 void main_loop(void)
 {
     const uint32_t delay_ms = 10/*, old = 0*/;
@@ -38,10 +39,12 @@ void main_loop(void)
     while (true)
     {
         m_event_loop(delay_ms);
-        hw_uart_loop();
-        buzz_loop();
-        m_ft62f28_check_send_change();
-        m_led_7_seg_loop(delay_ms);
+        // http_client_loop();
+        
+        if (hw_temp_read())
+        {
+            app_fan_send_temperature(val_temperature);
+        }
 
         // old += 1;
         // if (old > 20) {
