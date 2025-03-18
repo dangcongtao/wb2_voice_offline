@@ -133,7 +133,7 @@ void m_mqtt_publish_directly(char *data, uint32_t length)
     }
 
     /* call platform mqtt-publish api */
-    if (client != NULL)
+    if (client != NULL && s_mqtt_obj._mqtt_state == MQTT_SUBSCRIBE)
     {
         if (axk_mqtt_client_publish(client, topic, msg_encrypted, len_msg_encrypted, 0, 0) < 0)
         {

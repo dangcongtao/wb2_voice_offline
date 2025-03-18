@@ -41,12 +41,15 @@ static char ota_host[256];
 static char ota_resource[256];
 uint8_t is_ota = 0;
 
-void _ota_task(void* pvParameters)
+void _ota_task(void *pvParameters)
 {
     vTaskDelay(pdMS_TO_TICKS(500));
-    if (ota_type == AT_OTA_MODE_HTTP) {
+    if (ota_type == AT_OTA_MODE_HTTP)
+    {
         ai_http_update_ota(&ota_param);
-    } else {
+    }
+    else
+    {
         ai_https_update_ota(&ota_param);
     }
 
@@ -61,14 +64,15 @@ static void app_reboot(void)
 static void app_ota_set_reboot(_Bool ota_result)
 {
     printf("app_ota_set_reboot %u", ota_result);
-    if (ota_result == true) {
+    if (ota_result == true)
+    {
         is_ota = 2;
     }
     vTaskDelay(1000);
     app_reboot();
 }
 
-int axk_hal_user_ota_update(char* url)
+int axk_hal_user_ota_update(char *url)
 {
     int port;
     char schema[8] = {0};
@@ -76,17 +80,19 @@ int axk_hal_user_ota_update(char* url)
     HALPartition_Entry_Config otaEntry;
     uint16_t length;
 
-    if (hal_boot2_get_active_entries(BOOT2_PARTITION_TYPE_FW, &otaEntry)) {
+    if (hal_boot2_get_active_entries(BOOT2_PARTITION_TYPE_FW, &otaEntry))
+    {
         printf("[OTA] get otaEntry fail\r\n");
         return -1;
     }
 
     http_parser_url_init(&purl);
-    length=strlen(url);
+    length = strlen(url);
 
     int parser_status = http_parser_parse_url(url, length, 0, &purl);
 
-    if (parser_status != 0) {
+    if (parser_status != 0)
+    {
         printf("[OTA] Error parse url:%s\r\n", url);
         return -1;
     }
@@ -94,18 +100,24 @@ int axk_hal_user_ota_update(char* url)
     memset(ota_host, 0, sizeof(ota_host));
     memset(ota_resource, 0, sizeof(ota_resource));
 
-    if (purl.field_data[UF_SCHEMA].len > 8) {
+    if (purl.field_data[UF_SCHEMA].len > 8)
+    {
         printf("[OTA] schema ovfl \r\n");
         return -1;
     }
     memcpy(schema, url + purl.field_data[UF_SCHEMA].off, purl.field_data[UF_SCHEMA].len);
-    if (strcasecmp(schema, "http") == 0) {
+    if (strcasecmp(schema, "http") == 0)
+    {
         ota_type = AT_OTA_MODE_HTTP;
         port = 80;
-    } else if (strcasecmp(schema, "https") == 0) {
+    }
+    else if (strcasecmp(schema, "https") == 0)
+    {
         ota_type = AT_OTA_MODE_HTTPS;
         port = 443;
-    } else {
+    }
+    else
+    {
         printf("[OTA] undef schema\r\n");
         return -1;
     }
@@ -118,8 +130,9 @@ int axk_hal_user_ota_update(char* url)
     ota_param = ai_ota_parame_init(ota_host, port, ota_resource);
     ota_param.rebooot_cb = app_ota_set_reboot;
 
-    int ret = xTaskCreate(_ota_task, "ota", 1024*4, NULL, 10, NULL);
-    if (ret != pdPASS) {
+    int ret = xTaskCreate(_ota_task, "ota", 1024 * 4, NULL, 10, NULL);
+    if (ret != pdPASS)
+    {
         printf("[OTA] task create fail: %d\r\n", ret);
         return -1;
     }
@@ -127,7 +140,7 @@ int axk_hal_user_ota_update(char* url)
     return 0;
 }
 
-void m_ota_start(char* url)
+void m_ota_start(char *url)
 {
     is_ota = 1;
     m_ir_deinit();

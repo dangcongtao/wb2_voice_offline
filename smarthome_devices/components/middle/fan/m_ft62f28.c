@@ -5,7 +5,6 @@
 #include "m_fan_control.h"
 
 uint8_t has_control_fan = 0;
-uint8_t need_buzz_off;
 
 uint8_t flag_send_speed;
 uint8_t flag_send_swing;
@@ -85,7 +84,6 @@ void m_ft62f28_check_send_change(void)
                     break;
                 }
             }
-            os_trace("send_speed: pcn %u\r\n", data_send.data.rcv.state.speed);
         }
         else if (device_type == FANAC || device_type == FANACIR)
         {
@@ -158,6 +156,8 @@ void m_ft62f28_check_send_change(void)
     {
         data_send.data.rcv.state.change_light = 0;
     }
+
+    os_trace("send_speed: pcn %u, swing: %u, light %u, led %u\r\n", data_send.data.rcv.state.speed, data_send.data.rcv.state.change_swing, data_send.data.rcv.state.ligth, data_send.data.rcv.state.led_data);
 
     data_send.len_data = 2 + sizeof(cmd_data_rcv_u);
 

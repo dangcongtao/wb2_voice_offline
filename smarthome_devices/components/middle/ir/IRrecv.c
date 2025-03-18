@@ -16,15 +16,15 @@
 #include "m_led_stt.h"
 #include <hosal_timer.h>
 #include <queue.h>
+#include "app_ir.h"
 
 static QueueHandle_t pqueue_ir_recv;
 static m_ac_info_t s_ac_info;
 
 IRAM_ATTR irparams_t params;
-irparams_t *params_save;
 IRAM_ATTR hosal_gpio_irq_trigger_t trigger_type = HOSAL_IRQ_TRIG_NEG_PULSE;
 
-static TaskHandle_t xHandle = NULL;
+// static TaskHandle_t xHandle = NULL;
 uint8_t _tolerance;
 
 hosal_gpio_dev_t touch_gpio_pos;
@@ -32,10 +32,13 @@ hosal_gpio_dev_t touch_gpio_neg;
 
 struct timer_adpt *timer3;
 
-static decode_results capture;
+decode_results g_capture;
 static uint32_t irRecvCounter = 0;
 static uint32_t old_time_learn_ir = 0;
 static uint32_t old_time_learn_ir_auto = 0;
+static uint8_t is_init = 0;
+
+extern response_remote_data_t g_remote_data;
 
 void resume(void)
 {
@@ -62,7 +65,7 @@ void ir_add_data(void)
 
     memcpy(item.rawbuf, params.rawbuf, sizeof(uint16_t) * item.rawlen);
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    if (xQueueSendFromISR(pqueue_ir_recv, &item, &xHigherPriorityTaskWoken != pdPASS))
+    if (pqueue_ir_recv != NULL && xQueueSendFromISR(pqueue_ir_recv, &item, &xHigherPriorityTaskWoken != pdPASS))
     {
         if (xQueueReceiveFromISR(pqueue_ir_recv, &item, NULL) == pdPASS)
         {
@@ -1134,30 +1137,6 @@ uint16_t matchManchester(volatile const uint16_t *data_ptr,
     return offset;
 }
 
-void copyIrParams(volatile irparams_t *src, irparams_t *dst)
-{
-    // Typecast src and dst addresses to (char *)
-    char *csrc = (char *)src; // NOLINT(readability/casting)
-    char *cdst = (char *)dst; // NOLINT(readability/casting)
-
-    // Save the pointer to the destination's rawbuf so we don't lose it as
-    // the for-loop/copy after this will overwrite it with src's rawbuf pointer.
-    // This isn't immediately obvious due to typecasting/different variable names.
-    uint16_t *dst_rawbuf_ptr;
-    dst_rawbuf_ptr = dst->rawbuf;
-
-    // Copy contents of src[] to dst[]
-    for (uint16_t i = 0; i < sizeof(irparams_t); i++)
-        cdst[i] = csrc[i];
-
-    // Restore the buffer pointer
-    dst->rawbuf = dst_rawbuf_ptr;
-
-    // Copy the rawbuf
-    for (uint16_t i = 0; i < dst->bufsize; i++)
-        dst->rawbuf[i] = src->rawbuf[i];
-}
-
 bool decode_for(decode_results *results, uint8_t max_skip)
 {
 
@@ -1243,8 +1222,8 @@ bool decode_for(decode_results *results, uint8_t max_skip)
         os_trace_rcv("Attempting Toshiba AC 80bit decode\r\n");
         if (decodeToshibaAC(results, offset, kToshibaACBitsLong, true))
             return true;
-            // os_trace_rcv("Attempting Toshiba AC 56bit decode\r\n");
-            // if (decodeToshibaAC(results, offset, kToshibaACBitsShort, true)) return true;
+        // os_trace_rcv("Attempting Toshiba AC 56bit decode\r\n");
+        // if (decodeToshibaAC(results, offset, kToshibaACBitsShort, true)) return true;
 #endif
 
 #if DECODE_DAIKIN
@@ -1431,8 +1410,8 @@ bool decode_for(decode_results *results, uint8_t max_skip)
         os_trace_rcv("Attempting decodeFujitsuAC decode\r\n");
         if (decodeFujitsuAC(results, offset, kFujitsuAcBits, false))
             return true;
-            // os_trace_rcv("Attempting decodeFujitsuAC Long decode\r\n");
-            // if (decodeFujitsuNewAC(results, offset, kFujitsuAcLongBits, false)) return true;
+        // os_trace_rcv("Attempting decodeFujitsuAC Long decode\r\n");
+        // if (decodeFujitsuNewAC(results, offset, kFujitsuAcLongBits, false)) return true;
 #endif
 
 #if DECODE_PANASONIC_AC
@@ -1737,14 +1716,14 @@ static void enableIRIn(const bool pullup)
 
 static void disableIRin(void)
 {
-    bl_os_timer_delete(timer3, 0);
-    timer3 = NULL;
     hosal_gpio_finalize(&touch_gpio_neg);
     hosal_gpio_finalize(&touch_gpio_pos);
+    bl_os_timer_delete(timer3, 0);
+    timer3 = NULL;
 }
 
-void IRrecv_init(const uint32_t recvpin, const uint16_t bufsize,
-                 const uint8_t timeout, const bool save_buffer)
+static void IRrecv_init(const uint32_t recvpin, const uint16_t bufsize,
+                        const uint8_t timeout, const bool save_buffer)
 {
     /// @endcond
     os_trace("%s: free mem %d\r\n", __func__, xPortGetFreeHeapSize());
@@ -1754,30 +1733,6 @@ void IRrecv_init(const uint32_t recvpin, const uint16_t bufsize,
     // capture buffer.
     params.timeout = min(timeout, (uint8_t)kMaxTimeoutMs);
     os_trace("%s timeout: %u(ms)", __func__, params.timeout);
-    params.rawbuf = pvPortMalloc(sizeof(uint16_t) * bufsize);
-    if (params.rawbuf == NULL)
-    {
-        os_trace(
-            "Could not allocate memory for the primary IR buffer.\n"
-            "Try a smaller size for CAPTURE_BUFFER_SIZE.\nRebooting!");
-    }
-    // If we have been asked to use a save buffer (for decoding), then create one.
-    if (save_buffer)
-    {
-        params_save = pvPortMalloc(sizeof(irparams_t));
-        params_save->rawbuf = pvPortMalloc(sizeof(uint16_t) * bufsize);
-        // Check we allocated the memory successfully.
-        if (params_save->rawbuf == NULL)
-        {
-            os_trace(
-                "Could not allocate memory for the second IR buffer.\n"
-                "Try a smaller size for CAPTURE_BUFFER_SIZE.\nRebooting!");
-        }
-    }
-    else
-    {
-        params_save = NULL;
-    }
 #if DECODE_HASH
     _unknown_threshold = kUnknownThreshold;
 #endif // DECODE_HASH
@@ -1810,475 +1765,488 @@ void IR_stop_learn_auto(void)
     m_led_stt_get_instance()._set_led_stt_mqtt_subscribed_cb();
 }
 
-static void learnIR(decode_results *results)
+void ir_decode_common(decode_results capture, state_ir_t *ir_state_recv)
 {
-    // decode_results cb;
-    // decode_results *results = &cb;
-    // results->rawlen = 739;
-    // results->rawbuf = results1->rawbuf;
-    // memset(results->rawbuf + results1->rawlen, 100, sizeof(uint16_t)*(results->rawlen-results1->rawlen));
-    uint16_t len_temp = getCorrectedRawLength(results);
-    os_trace("%s step 1 %u\r\n", __func__, len_temp);
-    uint16_t result_temp[len_temp];
+    if (capture.decode_type == LG2)
+    {
+        if (!LG_setInfo(capture.value, capture.decode_type, ir_state_recv))
+        {
+            capture.decode_type = UNKNOWN;
+        }
+    }
+    else if (capture.decode_type == LG)
+    {
+        if (!LG_setInfo(capture.value, capture.decode_type, ir_state_recv))
+        {
+            capture.decode_type = UNKNOWN;
+        }
+    }
+    else if (capture.decode_type == FUNIKI)
+    {
+        Funiki_setInfo((uint8_t *)&capture.value, capture.decode_type, ir_state_recv);
+    }
+    else if (capture.decode_type == CASPER)
+    {
+        Casper_setInfo((uint8_t *)&capture.value, ir_state_recv);
+    }
+    else if (capture.decode_type == SAMSUNG_AC)
+    {
+        switch (capture.bits)
+        {
+        case kSamsungAcBits:
+            Samsung_setInfo((uint8_t *)&capture.value, kSamsungAcStateLength, capture.decode_type, ir_state_recv);
+            break;
 
-    resultToRawArray(results, result_temp);
-    os_trace("%s step 2\r\n", __func__);
+        case kSamsungAcExtendedBits:
+            Samsung_setInfo((uint8_t *)&capture.value, kSamsungAcExtendedStateLength, capture.decode_type, ir_state_recv);
+            break;
 
-    int size_rawData = getCorrectedRawLength(results) * sizeof(uint16_t);
-    os_trace("%s step 3\r\n", __func__);
+        default:
+            break;
+        }
+    }
+    else if (capture.decode_type == TOSHIBA_AC)
+    {
+        switch (capture.bits)
+        {
+        case kToshibaACBits:
+            Toshiba_setInfo((uint8_t *)capture.state, kToshibaACStateLength, capture.decode_type, ir_state_recv);
+            break;
 
-    size_rawData = min(size_rawData, 1460); // max data base64
+        case kToshibaACBitsShort:
+            Toshiba_setInfo((uint8_t *)capture.state, kToshibaACStateLengthShort, capture.decode_type, ir_state_recv);
+            break;
 
-    uint8_t buffDataIR[2001];
-    memset(buffDataIR, 0, sizeof(buffDataIR));
-    b64_encode((unsigned char *)result_temp, size_rawData, (unsigned char *)buffDataIR);
-    os_trace("%s step 4: len_buffDataIR: %u\r\n\r\n\r\n", __func__, strlen((const char *)buffDataIR));
-    // os_trace("%s step 5: len_buffDataIR: %u\r\n\r\n\r\n", __func__, strlen((const char*)buffDataIR));
-    os_trace("%s step 5: size_rawData: %d, len_temp: %u\r\n", __func__, size_rawData, len_temp);
+        case kToshibaACBitsLong:
+            Toshiba_setInfo((uint8_t *)capture.state, kToshibaACStateLengthLong, capture.decode_type, ir_state_recv);
+            break;
 
-    char str[MAXIMUM_SIZE_MESSAGE];
-    memset(str, 0, MAXIMUM_SIZE_MESSAGE);
+        default:
+            break;
+        }
+    }
+    else if (capture.decode_type == DAIKIN)
+    {
+        Daikin_setInfo((uint8_t *)capture.state, kDaikinStateLength, capture.decode_type, ir_state_recv);
+    }
+    else if (capture.decode_type == DAIKIN2)
+    {
+        Daikin2_setInfo((uint8_t *)capture.state, kDaikin2StateLength, capture.decode_type, ir_state_recv);
+    }
+    else if (capture.decode_type == DAIKIN64)
+    {
+        Daikin64_setInfo(capture.value, capture.decode_type, ir_state_recv);
+    }
+    else if (capture.decode_type == DAIKIN152)
+    {
+        Daikin152_setInfo((uint8_t *)capture.state, kDaikin152StateLength, capture.decode_type, ir_state_recv);
+    }
+    else if (capture.decode_type == DAIKIN160)
+    {
+        Daikin160_setInfo((uint8_t *)capture.state, kDaikin160StateLength, capture.decode_type, ir_state_recv);
+    }
+    else if (capture.decode_type == DAIKIN216)
+    {
+        Daikin216_setInfo((uint8_t *)capture.state, kDaikin216StateLength, capture.decode_type, ir_state_recv);
+    }
+    else if (capture.decode_type == DAIKIN128)
+    {
+        Daikin128_setInfo((uint8_t *)capture.state, kDaikin128StateLength, capture.decode_type, ir_state_recv);
+    }
+    else if (capture.decode_type == DAIKIN312)
+    {
+        extern void Daikin312_setInfo(const uint8_t *newState, const uint16_t length, state_ir_t *ir_state);
+        Daikin312_setInfo((uint8_t *)capture.state, kDaikin312StateLength, ir_state_recv);
+    }
+    else if (capture.decode_type == DAIKIN176)
+    {
+        IRDaikin176_setRaw((uint8_t *)capture.state, ir_state_recv);
+    }
+    else if (capture.decode_type == GREE)
+    {
+        Gree_setInfo((uint8_t *)capture.state, capture.decode_type, ir_state_recv);
+    }
+    else if (capture.decode_type == KELVINATOR)
+    {
+        IRKelvinatorAC_setInfo((uint8_t *)capture.state, ir_state_recv);
+    }
+    else if (capture.decode_type == MITSUBISHI112)
+    {
+        // os_trace("MITSUBISHI112: 0x ");
+        // for(uint8_t i = 0; i < 14; i++) {
+        //     os_trace("%02X-", capture.state[i]);
+        // }
+        // os_trace("\r\n");
+        Mitsubishi112_setInfo((uint8_t *)capture.state, capture.decode_type, ir_state_recv);
+    }
+    else if (capture.decode_type == NAGAKAWA)
+    {
+        // os_trace("NAGAKAWA: 0x ");
+        // for(uint8_t i = 0; i < 14; i++) {
+        //     os_trace("%02X-", capture.state[i]);
+        // }
+        // os_trace("\r\n");
+        Nagakawa_setInfo((uint8_t *)capture.state, capture.decode_type, ir_state_recv);
+    }
+    else if (capture.decode_type == TCL112AC)
+    {
+        Tcl112_setInfo((uint8_t *)capture.state, capture.decode_type, ir_state_recv);
+        if (ir_state_recv->protocol == AKITO)
+        {
+            capture.decode_type = AKITO;
+        }
+    }
+    else if (capture.decode_type == MIDEA)
+    {
+        Midea_setInfo(capture.value, capture.decode_type, ir_state_recv);
+    }
+    else if (capture.decode_type == SHARP_AC)
+    {
+        SharpAc_setInfo((uint8_t *)capture.state, capture.decode_type, ir_state_recv);
+    }
+    else if (HITACHI_AC1 == capture.decode_type)
+    {
+        HitachiAC1_setInfo(capture.state, kHitachiAc1StateLength, ir_state_recv);
+    }
+    else if (HITACHI_AC == capture.decode_type)
+    {
+        HitachiAC_setInfo(capture.state, kHitachiAcStateLength, ir_state_recv);
+    }
+    else if (HITACHI_AC344 == capture.decode_type)
+    {
+        HitachiAC344_setInfo(capture.state, kHitachiAc344StateLength, ir_state_recv);
+    }
+    else if (HITACHI_AC424 == capture.decode_type)
+    {
+        HitachiAC424_setInfo(capture.state, kHitachiAc424StateLength, ir_state_recv);
+    }
+    else if (PANASONIC_AC == capture.decode_type || PANASONIC_AC_2 == capture.decode_type)
+    {
+        PanasonicAC_setInfo(capture.state, ir_state_recv);
+    }
+    else if (PANASONIC_AC32 == capture.decode_type)
+    {
+        IRPanasonicAc32_setInfo(capture.value, ir_state_recv);
+    }
+    else if (ELECTRA_AC == capture.decode_type)
+    {
+        ElectraAc_setInfo(capture.state, kElectraAcStateLength, ir_state_recv);
+    }
+    else if (CASPER2024_AC == capture.decode_type)
+    {
+        Casper2024Ac_setInfo(capture.state, kElectraAcStateLength, ir_state_recv);
+    }
+    else if (AIRWELL == capture.decode_type)
+    {
+        AirwellAc_setInfo(capture.value, ir_state_recv);
+    }
+    else if (MITSUBISHI_HEAVY_88 == capture.decode_type)
+    {
+        IRMitsubishiHeavy88Ac_setInfo(capture.state, ir_state_recv);
+    }
+    else if (MITSUBISHI_HEAVY_152 == capture.decode_type)
+    {
+        IRMitsubishiHeavy152Ac_setInfo(capture.state, ir_state_recv);
+    }
+    else if (FUJITSU_NEW_AC == capture.decode_type)
+    {
+        IRFujitsuAC_setInfo(capture.state, (uint16_t)capture.bits / 8, ir_state_recv);
+    }
+    else if (FUJITSU_AC == capture.decode_type)
+    {
+        if (!IRFujitsuAC_setInfo(capture.state, (uint16_t)capture.bits / 8, ir_state_recv))
+        {
+            capture.decode_type = UNKNOWN;
+        }
+        else
+        {
 
-    sprintf(str, "{\"%s\":3,\"data\":\"%s\"}", gs_dev_type[device_type], buffDataIR);
-    // os_trace("datasend[%u]:", strlen(str));
-    // os_trace("'%s'\r\n", str);
-    if (dev_is_online())
-        m_mqtt_get_instance()._mqtt_publish(str, strlen(str));
+            // if (capture.bits == kFujitsuAcLongBits)
+            // {
+            //     IRFujitsuAC_setInfo(capture.state, kFujitsuAcStateLengthLong, ir_state_recv);
+            // }
+            // else if (capture.bits == kFujitsuAcBits)
+            // {
+            //     IRFujitsuAC_setInfo(capture.state, kFujitsuAcStateLength, ir_state_recv);
+            // }
+            // else if (capture.bits >= kFujitsuAcMinBits)
+            // {
+            //     IRFujitsuAC_setInfo(capture.state, (uint16_t)capture.bits / 8, ir_state_recv);
+            // }
+
+            switch (ir_state_recv->model)
+            {
+            case ARRAH2E:
+            case ARREB1E:
+            case ARRY4:
+            case ARREW4E:
+                capture.decode_type = FUJITSU_AC;
+                break;
+
+            case ARDB1:
+            case ARJW2:
+                capture.decode_type = FUJITSU2_AC;
+                break;
+            case ARRFH2J:
+                capture.decode_type = FUJITSU_NEW_AC;
+                break;
+            default:
+                capture.decode_type = FUJITSU_AC;
+                break;
+            }
+        }
+    }
+    else if (VESTEL_AC == capture.decode_type)
+    {
+        VestelAc_setInfo(capture.value, ir_state_recv);
+    }
+    else if (SANYO_AC == capture.decode_type)
+    {
+        IRSanyoAc_setInfo(capture.state, ir_state_recv);
+    }
+    else if (SANYO_AC152 == capture.decode_type)
+    {
+        IRSanyo152Ac_setInfo(capture.state, ir_state_recv);
+    }
+    else if (MITSUBISHI_AC == capture.decode_type)
+    {
+        IRMitsubishiAC_setInfo(capture.state, ir_state_recv);
+    }
+    else if (MITSUBISHI136 == capture.decode_type)
+    {
+        IRMitsubishi136_setInfo(capture.state, ir_state_recv);
+    }
+    else if (CARRIER_AC64 == capture.decode_type)
+    {
+        IRCarrierAc64_setInfo(capture.value, ir_state_recv);
+    }
+    else if (HAIER_AC_YRW02 == capture.decode_type)
+    {
+        IRHaierACYRW02_setRaw(capture.state, ir_state_recv);
+    }
+    else if (HAIER_AC176 == capture.decode_type)
+    {
+        HaierAC176_setRaw(capture.state, ir_state_recv);
+    }
+    else if (TECO == capture.decode_type)
+    {
+        IRTecoAc_setInfo(capture.value, ir_state_recv);
+    }
+    else if (MIRAGE == capture.decode_type)
+    {
+        IRMirageAc_setInfo(capture.state, ir_state_recv);
+    }
+    else if (AMCOR == capture.decode_type)
+    {
+        IRAmcorAc_setInfo(capture.state, ir_state_recv);
+    }
+    else if (COOLIX == capture.decode_type)
+    {
+        IRAmcorAc_setInfo(capture.state, ir_state_recv);
+    }
+    else if (WHIRLPOOL_AC == capture.decode_type)
+    {
+        IRWhirlpoolAc_setRaw(capture.state, kWhirlpoolAcStateLength, ir_state_recv);
+    }
+    else if (NEOCLIMA == capture.decode_type)
+    {
+        IRNeoclimaAc_setRaw(capture.state, kNeoclimaStateLength, ir_state_recv);
+    }
+    else if (CORONA_AC == capture.decode_type)
+    {
+        IRCoronaAc_setRaw(capture.state, capture.bits / 8, ir_state_recv);
+    }
+    else if (TROTEC == capture.decode_type)
+    {
+        IRTrotec_setRaw(capture.state, ir_state_recv);
+    }
+    else if (TROTEC_3550 == capture.decode_type)
+    {
+        IRTrotec3550_setRaw(capture.state, ir_state_recv);
+    }
+    else if (ARGO == capture.decode_type)
+    {
+        IRArgoAC_setRaw(capture.state, capture.bits / 8, ir_state_recv);
+    }
+    else if (DELONGHI_AC == capture.decode_type)
+    {
+        IRDelonghiAc_setRaw(capture.value, ir_state_recv);
+    }
+    else if (BOSCH144 == capture.decode_type)
+    {
+        IRBosch144AC_setRaw(capture.state, capture.bits / 8, ir_state_recv);
+    }
+    else if (VOLTAS == capture.decode_type)
+    {
+        IRVoltas_setRaw(capture.state, ir_state_recv);
+    }
+    else if (HITACHI_AC264 == capture.decode_type)
+    {
+        HitachiAC264_setRaw(capture.state, capture.bits / 8, ir_state_recv);
+    }
+    else if (HITACHI_AC296 == capture.decode_type)
+    {
+        HitachiAc296_setRaw(capture.state, capture.bits / 8, ir_state_recv);
+    }
+    else if (GOODWEATHER == capture.decode_type)
+    {
+        GoodweatherAc_setRaw(capture.value, ir_state_recv);
+    }
+    else if (SAIJODENKI == capture.decode_type)
+    {
+        SaijoDenki_setInfo(capture.state, ir_state_recv);
+    }
+    else if (CARRIER_AC == capture.decode_type)
+    {
+        IRCarrierAc32_setInfo(capture.value, ir_state_recv);
+    }
+    else if (MITSUBISHI_HEAVY_160 == capture.decode_type)
+    {
+        MitsubishiHeavy160_setInfo(capture.state, ir_state_recv);
+    }
+    else if (FUNIKIAC104 == capture.decode_type)
+    {
+        FunikiAc104_setInfo(capture.state, ir_state_recv);
+    }
+    else if (FUNIKIAC83 == capture.decode_type)
+    {
+        FunikiAC83_setInfo(capture.state, ir_state_recv);
+    }
+    else if (DAIKIN200 == capture.decode_type)
+    {
+        Daikin200_setInfo(capture.state, ir_state_recv);
+    }
+    else if (NEC == capture.decode_type)
+    {
+        // m_fan_process_remote_event(capture.value);
+        g_remote_data.data.remote.value = capture.value;
+        g_remote_data.request_send = REQUEST_SEND_IR_FAN;
+        // Daikin200_setInfo(capture.state, ir_state_recv);
+    }
+    else
+    {
+#if DEBUG_ENABLE == 1
+        os_trace("BRAND_ID(%d): 0x ", capture.decode_type);
+        for (uint8_t i = 0; i < capture.bits / 8; i++)
+        {
+            os_trace("%02X-", capture.state[i]);
+        }
+        os_trace("\r\n");
+#endif
+    }
 }
 
-extern void m_fan_process_remote_event(uint32_t button_data);
 void m_ir_task(void *param)
 {
+    bl_gpio_enable_output(IRpin, 0, 1);
+    IRsend_init(IRpin, false, true);
+    IRrecv_init(IR_RX, MAX_SIZE_BUFFER, 100, false);
+
+    enableIRIn(1);
+
+    if (pqueue_ir_recv == NULL)
+    {
+        pqueue_ir_recv = xQueueCreate(2, sizeof(ir_recv_params_t));
+        if (pqueue_ir_recv == NULL)
+        {
+            os_trace("create queue pqueue_ir_recv fail\r\n", __func__);
+            vTaskDelay(pdMS_TO_TICKS(5000));
+            exit(-1);
+        }
+    }
+
     os_trace("%s init\r\n", __func__);
     ir_recv_params_t item;
+
     while (1)
     {
-
-        if (xQueueReceive(pqueue_ir_recv, &item, 0) == pdPASS)
+        if (is_init == 2)
         {
-            if (decode(&capture, &item, 0, 0))
+            break;
+        }
+        if (pqueue_ir_recv != NULL && xQueueReceive(pqueue_ir_recv, &item, 0) == pdPASS)
+        {
+            if (decode(&g_capture, &item, 0, 0))
             {
-                os_trace("decode_type: %d, bits: %u, value: 0x%llx, command: %lx, address: 0x%llx\r\n", capture.decode_type, capture.bits, (uint64_t)capture.value, capture.command, (uint64_t)capture.address);
-                state_ir_t ir_state = {UNKNOWN, -1, false, opmode_kOff, 25, true, fanspeed_kAuto, swingv_kOff, swingh_kOff, false, false, false, false, false, false, false, -1, -1, kControlCommand, false, kNoTempValue};
-                state_ir_t ir_state_recv = {UNKNOWN, -1, false, opmode_kOff, 25, true, fanspeed_kAuto, swingv_kOff, swingh_kOff, false, false, false, false, false, false, false, -1, -1, kControlCommand, false, kNoTempValue};
+                os_trace("decode_type: %d, bits: %u, value: 0x%llx, command: %lx, address: 0x%llx\r\n",
+                         g_capture.decode_type, g_capture.bits, (uint64_t)g_capture.value,
+                         g_capture.command, (uint64_t)g_capture.address);
 
-                if (capture.decode_type == LG2)
-                {
-                    if (!LG_setInfo(capture.value, capture.decode_type, &ir_state_recv))
-                    {
-                        capture.decode_type = UNKNOWN;
-                    }
-                }
-                else if (capture.decode_type == LG)
-                {
-                    if (!LG_setInfo(capture.value, capture.decode_type, &ir_state_recv))
-                    {
-                        capture.decode_type = UNKNOWN;
-                    }
-                }
-                else if (capture.decode_type == FUNIKI)
-                {
-                    Funiki_setInfo((uint8_t *)&capture.value, capture.decode_type, &ir_state_recv);
-                }
-                else if (capture.decode_type == CASPER)
-                {
-                    Casper_setInfo((uint8_t *)&capture.value, &ir_state_recv);
-                }
-                else if (capture.decode_type == SAMSUNG_AC)
-                {
-                    switch (capture.bits)
-                    {
-                    case kSamsungAcBits:
-                        Samsung_setInfo((uint8_t *)&capture.value, kSamsungAcStateLength, capture.decode_type, &ir_state_recv);
-                        break;
+                state_ir_t ir_state = {
+                    UNKNOWN,
+                    -1,
+                    false,
+                    opmode_kOff,
+                    25,
+                    true,
+                    fanspeed_kAuto,
+                    swingv_kOff,
+                    swingh_kOff,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    -1,
+                    -1,
+                    kControlCommand,
+                    false,
+                    kNoTempValue,
+                };
+                state_ir_t ir_state_recv = {
+                    UNKNOWN,
+                    -1,
+                    false,
+                    opmode_kOff,
+                    25,
+                    true,
+                    fanspeed_kAuto,
+                    swingv_kOff,
+                    swingh_kOff,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    -1,
+                    -1,
+                    kControlCommand,
+                    false,
+                    kNoTempValue,
+                };
 
-                    case kSamsungAcExtendedBits:
-                        Samsung_setInfo((uint8_t *)&capture.value, kSamsungAcExtendedStateLength, capture.decode_type, &ir_state_recv);
-                        break;
-
-                    default:
-                        break;
-                    }
-                }
-                else if (capture.decode_type == TOSHIBA_AC)
-                {
-                    switch (capture.bits)
-                    {
-                    case kToshibaACBits:
-                        Toshiba_setInfo((uint8_t *)capture.state, kToshibaACStateLength, capture.decode_type, &ir_state_recv);
-                        break;
-
-                    case kToshibaACBitsShort:
-                        Toshiba_setInfo((uint8_t *)capture.state, kToshibaACStateLengthShort, capture.decode_type, &ir_state_recv);
-                        break;
-
-                    case kToshibaACBitsLong:
-                        Toshiba_setInfo((uint8_t *)capture.state, kToshibaACStateLengthLong, capture.decode_type, &ir_state_recv);
-                        break;
-
-                    default:
-                        break;
-                    }
-                }
-                else if (capture.decode_type == DAIKIN)
-                {
-                    Daikin_setInfo((uint8_t *)capture.state, kDaikinStateLength, capture.decode_type, &ir_state_recv);
-                }
-                else if (capture.decode_type == DAIKIN2)
-                {
-                    Daikin2_setInfo((uint8_t *)capture.state, kDaikin2StateLength, capture.decode_type, &ir_state_recv);
-                }
-                else if (capture.decode_type == DAIKIN64)
-                {
-                    Daikin64_setInfo(capture.value, capture.decode_type, &ir_state_recv);
-                }
-                else if (capture.decode_type == DAIKIN152)
-                {
-                    Daikin152_setInfo((uint8_t *)capture.state, kDaikin152StateLength, capture.decode_type, &ir_state_recv);
-                }
-                else if (capture.decode_type == DAIKIN160)
-                {
-                    Daikin160_setInfo((uint8_t *)capture.state, kDaikin160StateLength, capture.decode_type, &ir_state_recv);
-                }
-                else if (capture.decode_type == DAIKIN216)
-                {
-                    Daikin216_setInfo((uint8_t *)capture.state, kDaikin216StateLength, capture.decode_type, &ir_state_recv);
-                }
-                else if (capture.decode_type == DAIKIN128)
-                {
-                    Daikin128_setInfo((uint8_t *)capture.state, kDaikin128StateLength, capture.decode_type, &ir_state_recv);
-                }
-                else if (capture.decode_type == DAIKIN312)
-                {
-                    extern void Daikin312_setInfo(const uint8_t *newState, const uint16_t length, state_ir_t *ir_state);
-                    Daikin312_setInfo((uint8_t *)capture.state, kDaikin312StateLength, &ir_state_recv);
-                }
-                else if (capture.decode_type == DAIKIN176)
-                {
-                    IRDaikin176_setRaw((uint8_t *)capture.state, &ir_state_recv);
-                }
-                else if (capture.decode_type == GREE)
-                {
-                    Gree_setInfo((uint8_t *)capture.state, capture.decode_type, &ir_state_recv);
-                }
-                else if (capture.decode_type == KELVINATOR)
-                {
-                    IRKelvinatorAC_setInfo((uint8_t *)capture.state, &ir_state_recv);
-                }
-                else if (capture.decode_type == MITSUBISHI112)
-                {
-                    // os_trace("MITSUBISHI112: 0x ");
-                    // for(uint8_t i = 0; i < 14; i++) {
-                    //     os_trace("%02X-", capture.state[i]);
-                    // }
-                    // os_trace("\r\n");
-                    Mitsubishi112_setInfo((uint8_t *)capture.state, capture.decode_type, &ir_state_recv);
-                }
-                else if (capture.decode_type == NAGAKAWA)
-                {
-                    // os_trace("NAGAKAWA: 0x ");
-                    // for(uint8_t i = 0; i < 14; i++) {
-                    //     os_trace("%02X-", capture.state[i]);
-                    // }
-                    // os_trace("\r\n");
-                    Nagakawa_setInfo((uint8_t *)capture.state, capture.decode_type, &ir_state_recv);
-                }
-                else if (capture.decode_type == TCL112AC)
-                {
-                    Tcl112_setInfo((uint8_t *)capture.state, capture.decode_type, &ir_state_recv);
-                    if (ir_state_recv.protocol == AKITO)
-                    {
-                        capture.decode_type = AKITO;
-                    }
-                }
-                else if (capture.decode_type == MIDEA)
-                {
-                    Midea_setInfo(capture.value, capture.decode_type, &ir_state_recv);
-                }
-                else if (capture.decode_type == SHARP_AC)
-                {
-                    SharpAc_setInfo((uint8_t *)capture.state, capture.decode_type, &ir_state_recv);
-                }
-                else if (HITACHI_AC1 == capture.decode_type)
-                {
-                    HitachiAC1_setInfo(capture.state, kHitachiAc1StateLength, &ir_state_recv);
-                }
-                else if (HITACHI_AC == capture.decode_type)
-                {
-                    HitachiAC_setInfo(capture.state, kHitachiAcStateLength, &ir_state_recv);
-                }
-                else if (HITACHI_AC344 == capture.decode_type)
-                {
-                    HitachiAC344_setInfo(capture.state, kHitachiAc344StateLength, &ir_state_recv);
-                }
-                else if (HITACHI_AC424 == capture.decode_type)
-                {
-                    HitachiAC424_setInfo(capture.state, kHitachiAc424StateLength, &ir_state_recv);
-                }
-                else if (PANASONIC_AC == capture.decode_type || PANASONIC_AC_2 == capture.decode_type)
-                {
-                    PanasonicAC_setInfo(capture.state, &ir_state_recv);
-                }
-                else if (PANASONIC_AC32 == capture.decode_type)
-                {
-                    IRPanasonicAc32_setInfo(capture.value, &ir_state_recv);
-                }
-                else if (ELECTRA_AC == capture.decode_type)
-                {
-                    ElectraAc_setInfo(capture.state, kElectraAcStateLength, &ir_state_recv);
-                }
-                else if (CASPER2024_AC == capture.decode_type)
-                {
-                    Casper2024Ac_setInfo(capture.state, kElectraAcStateLength, &ir_state_recv);
-                }
-                else if (AIRWELL == capture.decode_type)
-                {
-                    AirwellAc_setInfo(capture.value, &ir_state_recv);
-                }
-                else if (MITSUBISHI_HEAVY_88 == capture.decode_type)
-                {
-                    IRMitsubishiHeavy88Ac_setInfo(capture.state, &ir_state_recv);
-                }
-                else if (MITSUBISHI_HEAVY_152 == capture.decode_type)
-                {
-                    IRMitsubishiHeavy152Ac_setInfo(capture.state, &ir_state_recv);
-                }
-                else if (FUJITSU_NEW_AC == capture.decode_type)
-                {
-                    IRFujitsuAC_setInfo(capture.state, (uint16_t)capture.bits / 8, &ir_state_recv);
-                }
-                else if (FUJITSU_AC == capture.decode_type)
-                {
-                    if (!IRFujitsuAC_setInfo(capture.state, (uint16_t)capture.bits / 8, &ir_state_recv))
-                    {
-                        capture.decode_type = UNKNOWN;
-                    }
-                    else
-                    {
-
-                        // if (capture.bits == kFujitsuAcLongBits)
-                        // {
-                        //     IRFujitsuAC_setInfo(capture.state, kFujitsuAcStateLengthLong, &ir_state_recv);
-                        // }
-                        // else if (capture.bits == kFujitsuAcBits)
-                        // {
-                        //     IRFujitsuAC_setInfo(capture.state, kFujitsuAcStateLength, &ir_state_recv);
-                        // }
-                        // else if (capture.bits >= kFujitsuAcMinBits)
-                        // {
-                        //     IRFujitsuAC_setInfo(capture.state, (uint16_t)capture.bits / 8, &ir_state_recv);
-                        // }
-
-                        switch (ir_state_recv.model)
-                        {
-                        case ARRAH2E:
-                        case ARREB1E:
-                        case ARRY4:
-                        case ARREW4E:
-                            capture.decode_type = FUJITSU_AC;
-                            break;
-
-                        case ARDB1:
-                        case ARJW2:
-                            capture.decode_type = FUJITSU2_AC;
-                            break;
-                        case ARRFH2J:
-                            capture.decode_type = FUJITSU_NEW_AC;
-                            break;
-                        default:
-                            capture.decode_type = FUJITSU_AC;
-                            break;
-                        }
-                    }
-                }
-                else if (VESTEL_AC == capture.decode_type)
-                {
-                    VestelAc_setInfo(capture.value, &ir_state_recv);
-                }
-                else if (SANYO_AC == capture.decode_type)
-                {
-                    IRSanyoAc_setInfo(capture.state, &ir_state_recv);
-                }
-                else if (SANYO_AC152 == capture.decode_type)
-                {
-                    IRSanyo152Ac_setInfo(capture.state, &ir_state_recv);
-                }
-                else if (MITSUBISHI_AC == capture.decode_type)
-                {
-                    IRMitsubishiAC_setInfo(capture.state, &ir_state_recv);
-                }
-                else if (MITSUBISHI136 == capture.decode_type)
-                {
-                    IRMitsubishi136_setInfo(capture.state, &ir_state_recv);
-                }
-                else if (CARRIER_AC64 == capture.decode_type)
-                {
-                    IRCarrierAc64_setInfo(capture.value, &ir_state_recv);
-                }
-                else if (HAIER_AC_YRW02 == capture.decode_type)
-                {
-                    IRHaierACYRW02_setRaw(capture.state, &ir_state_recv);
-                }
-                else if (HAIER_AC176 == capture.decode_type)
-                {
-                    HaierAC176_setRaw(capture.state, &ir_state_recv);
-                }
-                else if (TECO == capture.decode_type)
-                {
-                    IRTecoAc_setInfo(capture.value, &ir_state_recv);
-                }
-                else if (MIRAGE == capture.decode_type)
-                {
-                    IRMirageAc_setInfo(capture.state, &ir_state_recv);
-                }
-                else if (AMCOR == capture.decode_type)
-                {
-                    IRAmcorAc_setInfo(capture.state, &ir_state_recv);
-                }
-                else if (COOLIX == capture.decode_type)
-                {
-                    IRAmcorAc_setInfo(capture.state, &ir_state_recv);
-                }
-                else if (WHIRLPOOL_AC == capture.decode_type)
-                {
-                    IRWhirlpoolAc_setRaw(capture.state, kWhirlpoolAcStateLength, &ir_state_recv);
-                }
-                else if (NEOCLIMA == capture.decode_type)
-                {
-                    IRNeoclimaAc_setRaw(capture.state, kNeoclimaStateLength, &ir_state_recv);
-                }
-                else if (CORONA_AC == capture.decode_type)
-                {
-                    IRCoronaAc_setRaw(capture.state, capture.bits / 8, &ir_state_recv);
-                }
-                else if (TROTEC == capture.decode_type)
-                {
-                    IRTrotec_setRaw(capture.state, &ir_state_recv);
-                }
-                else if (TROTEC_3550 == capture.decode_type)
-                {
-                    IRTrotec3550_setRaw(capture.state, &ir_state_recv);
-                }
-                else if (ARGO == capture.decode_type)
-                {
-                    IRArgoAC_setRaw(capture.state, capture.bits / 8, &ir_state_recv);
-                }
-                else if (DELONGHI_AC == capture.decode_type)
-                {
-                    IRDelonghiAc_setRaw(capture.value, &ir_state_recv);
-                }
-                else if (BOSCH144 == capture.decode_type)
-                {
-                    IRBosch144AC_setRaw(capture.state, capture.bits / 8, &ir_state_recv);
-                }
-                else if (VOLTAS == capture.decode_type)
-                {
-                    IRVoltas_setRaw(capture.state, &ir_state_recv);
-                }
-                else if (HITACHI_AC264 == capture.decode_type)
-                {
-                    HitachiAC264_setRaw(capture.state, capture.bits / 8, &ir_state_recv);
-                }
-                else if (HITACHI_AC296 == capture.decode_type)
-                {
-                    HitachiAc296_setRaw(capture.state, capture.bits / 8, &ir_state_recv);
-                }
-                else if (GOODWEATHER == capture.decode_type)
-                {
-                    GoodweatherAc_setRaw(capture.value, &ir_state_recv);
-                }
-                else if (SAIJODENKI == capture.decode_type)
-                {
-                    SaijoDenki_setInfo(capture.state, &ir_state_recv);
-                }
-                else if (CARRIER_AC == capture.decode_type)
-                {
-                    IRCarrierAc32_setInfo(capture.value, &ir_state_recv);
-                }
-                else if (MITSUBISHI_HEAVY_160 == capture.decode_type)
-                {
-                    MitsubishiHeavy160_setInfo(capture.state, &ir_state_recv);
-                }
-                else if (FUNIKIAC104 == capture.decode_type)
-                {
-                    FunikiAc104_setInfo(capture.state, &ir_state_recv);
-                }
-                else if (FUNIKIAC83 == capture.decode_type)
-                {
-                    FunikiAC83_setInfo(capture.state, &ir_state_recv);
-                }
-                else if (DAIKIN200 == capture.decode_type)
-                {
-                    Daikin200_setInfo(capture.state, &ir_state_recv);
-                }
-                else if (NEC == capture.decode_type)
-                {
-                    m_fan_process_remote_event(capture.value);
-                    // Daikin200_setInfo(capture.state, &ir_state_recv);
-                }
-                else
-                {
-#if DEBUG_ENABLE == 1
-                    os_trace("BRAND_ID(%d): 0x ", capture.decode_type);
-                    for (uint8_t i = 0; i < capture.bits / 8; i++)
-                    {
-                        os_trace("%02X-", capture.state[i]);
-                    }
-                    os_trace("\r\n");
-#endif
-                }
+                ir_decode_common(g_capture, &ir_state_recv);
 
                 /***************************************************************************************/
                 if (old_time_learn_ir)
                 {
-                    learnIR(&capture);
+                    // learnIR(&g_capture);
+                    g_remote_data.request_send_learn = REQUEST_SEND_LEARN_IR;
                     IR_stop_learn();
                 }
-                else if (old_time_learn_ir_auto && capture.decode_type != UNKNOWN)
+                else if (old_time_learn_ir_auto && g_capture.decode_type != UNKNOWN)
                 {
-                    char str[128];
-                    memset(str, 0, 128);
-
-                    sprintf(str, "{\"%s\":17,\"type\":1,\"brand\":\"%d\",\"model\":%d}",
-                            gs_dev_type[device_type], capture.decode_type, ir_state_recv.model);
-                    os_trace("learn_auto_datasend[%u]:", strlen(str));
-                    os_trace("'%s'\r\n", str);
-                    if (dev_is_online())
-                        m_mqtt_get_instance()._mqtt_publish(str, strlen(str));
+                    g_remote_data.request_send_learn = REQUEST_SEND_LEARN_AUTO;
+                    g_remote_data.model_learn = ir_state_recv.model;
 
                     // old_time_learn_ir_auto = 0;
                     IR_stop_learn_auto();
                 }
-                else if (capture.decode_type != UNKNOWN)
+                else if (g_capture.decode_type != UNKNOWN && g_remote_data.request_send != REQUEST_SEND_IR_FAN)
                 {
-                    char str[325];
-                    int seek = 0;
-                    memset(str, 0, 325);
-                    if (ir_state_recv.degrees < 10 || ir_state_recv.degrees > 40)
-                    {
-                        os_trace("%s invalid temperature %f\r\n", __func__, ir_state_recv.degrees);
-                        ir_state_recv.degrees = 25;
-                    }
-                    seek += sprintf(str, "{\"%s\":10,\"type\":1,\"brand\":%d,\"model\":%d,\"power\":%u,\"mode\":%d,\"temp\":%.1f,\"fan\":%d,\"swingv\":%d,\"swingh\":%d,\"debug\":{\"nbits\":%u,\"data\":\"",
-                                    gs_dev_type[device_type], capture.decode_type, ir_state_recv.model, ir_state_recv.power, ir_state_recv.mode, ir_state_recv.degrees, ir_state_recv.fanspeed, ir_state_recv.swingv, ir_state_recv.swingh, capture.bits);
-                    uint8_t n_bytes = capture.bits / 8;
-                    if (capture.bits % 8)
-                    {
-                        n_bytes++;
-                    }
-                    for (uint8_t i = 0; i < n_bytes; i++)
-                    {
-                        seek += sprintf(&str[seek], "%02X-", capture.state[i]);
-                    }
-                    seek--;
-                    seek += sprintf(&str[seek], "\"}}");
-
-                    os_trace("datarcv[%u]:", strlen(str));
-                    if (seek < 300)
-                        os_trace("'%s'\r\n", str);
-                    os_trace("\r\n");
-                    if (m_mqtt_get_instance()._mqtt_state >= MQTT_INTIALIZED)
-                        m_mqtt_get_instance()._mqtt_publish(str, strlen(str));
+                    g_remote_data.request_send = REQUEST_SEND_REMOTE_BRAND;
+                    g_remote_data.decode_type = g_capture.decode_type;
+                    g_remote_data.model = ir_state_recv.model;
+                    g_remote_data.data.ir_ac.power = ir_state_recv.power;
+                    g_remote_data.data.ir_ac.mode = ir_state_recv.mode;
+                    g_remote_data.data.ir_ac.degrees = ir_state_recv.degrees;
+                    g_remote_data.data.ir_ac.fanspeed = ir_state_recv.fanspeed;
+                    g_remote_data.data.ir_ac.swingv = ir_state_recv.swingv;
+                    g_remote_data.data.ir_ac.swingh = ir_state_recv.swingh;
                 }
 
                 // IR_logCommon(ir_state);
@@ -2307,53 +2275,45 @@ void m_ir_task(void *param)
 
         vTaskDelay(pdMS_TO_TICKS(100));
     }
+    vTaskDelete(NULL);
 }
 
-static uint8_t is_init = 0;
 void m_ir_init(void)
 {
-    if (is_init)
+    if (is_init == 1)
     {
         os_trace("ir is inited\r\n");
         return;
     }
     is_init = 1;
-    bl_gpio_enable_output(IRpin, 0, 1);
-    IRsend_init(IRpin, false, true);
-    IRrecv_init(IR_RX, MAX_SIZE_BUFFER, 100, false);
+    // if (xHandle != NULL)
+    //     return;
+    int ret = xTaskCreate(m_ir_task,   /* Function that implements the task. */
+                          "m_ir_task", /* Text name for the task. */
+                          1024 + 512,  /* Stack size in words, not bytes. */
+                          NULL,        /* Parameter passed into the task. */
+                          5,           /* Priority at which the task is created. */
+                          NULL);
 
-    enableIRIn(1);
-
-    if (pqueue_ir_recv == NULL)
+    if (ret != pdPASS)
     {
-        pqueue_ir_recv = xQueueCreate(2, sizeof(ir_recv_params_t));
-        if (pqueue_ir_recv == NULL)
-        {
-            os_trace("%s fail\r\n", __func__);
-            exit(-1);
-        }
-    }
-
-    if (xHandle != NULL)
+        printf("[IR] task create fail: %d\r\n", ret);
+        vTaskDelay(pdMS_TO_TICKS(5000));
+        exit(-1);
         return;
-
-    xTaskCreate(m_ir_task,   /* Function that implements the task. */
-                "m_ir_task", /* Text name for the task. */
-                1024 * 4,    /* Stack size in words, not bytes. */
-                NULL,        /* Parameter passed into the task. */
-                5,           /* Priority at which the task is created. */
-                &xHandle);
+    }
     os_trace("%s finished\r\n", __func__);
 }
 
 void m_ir_deinit(void)
 {
+    return;
     if (!is_init)
     {
         os_trace("%s not inited\r\n", __func__);
         return;
     }
-    is_init = 0;
+    is_init = 2;
     os_trace("%s\r\n", __func__);
     disableIRin();
 
@@ -2372,8 +2332,8 @@ void m_ir_deinit(void)
         pqueue_ir_recv = NULL;
     }
 
-    vTaskDelete(xHandle);
-    xHandle = NULL;
+    vTaskDelay(pdMS_TO_TICKS(200));
+    is_init = 0;
 }
 
 m_ac_info_t *m_ac_info_get_reference(void)

@@ -23,7 +23,6 @@
 #define TIME_OUT_RESET_TS04_WITHOUT_PRESS 2400
 
 extern m_state_t current_state;
-;
 extern uint32_t max_number_channel;
 extern uint8_t is_ota;
 static m_button_t s_button_obj;
@@ -50,7 +49,7 @@ void on_button_event_cb(int button_pin, int event, void *data)
     {
     case APP_BTN_EVT_PRESSED:
     {
-        m_buzz_play();
+        m_buzz_play(1);
     }
     break;
 
@@ -170,9 +169,9 @@ static void button_scan_task(void *param)
     {
         hw_uart_loop();
         app_btn_scan(NULL);
-        buzz_loop();
-        m_ft62f28_check_send_change();
         m_led_7_seg_loop(50);
+        m_ft62f28_check_send_change();
+        buzz_loop();
 
         if (!dev_is_doing_config())
         {

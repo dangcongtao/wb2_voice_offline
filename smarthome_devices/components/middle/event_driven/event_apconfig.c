@@ -17,7 +17,8 @@ void wifi_not_cfg_to_ap_cfg_handler(void *arg)
     m_wifi_t wf = m_wifi_get_instance();
     clear_timeout_reset();
     m_led_stt_get_instance()._set_led_stt_ap_config_cb();
-    m_ir_deinit();
+
+    // m_ir_deinit();
 
     /* ble rename */
     ble_set_name("Dungnt98", 1);
@@ -49,15 +50,13 @@ m_state_transmit_t mqtt_connecting_to_ap_config = {
     .context = M_WIFI_MQTT_CONNECTING,
     .signal = SIG_AP_CFG,
     .next_state = M_WIFI_APCONFIG,
-    .signal_handler_cb = wifi_not_cfg_to_ap_cfg_handler
-};
+    .signal_handler_cb = wifi_not_cfg_to_ap_cfg_handler};
 
 m_state_transmit_t get_mqtt_info_to_ap_config = {
     .context = M_WIFI_CONN_MQTT,
     .signal = SIG_AP_CFG,
     .next_state = M_WIFI_APCONFIG,
-    .signal_handler_cb = wifi_not_cfg_to_ap_cfg_handler
-};
+    .signal_handler_cb = wifi_not_cfg_to_ap_cfg_handler};
 
 void ap_config_done_handler(void *arg)
 {
@@ -66,7 +65,7 @@ void ap_config_done_handler(void *arg)
     m_http_stop();
 
     // stop wifi ap
-    m_wifi_get_instance().wifi_ap_stop_cb();
+    wf.wifi_ap_stop_cb();
 
     // set new led states
     m_led_stt_get_instance()._set_led_stt_wifi_not_connect_cb();
@@ -74,7 +73,8 @@ void ap_config_done_handler(void *arg)
     // wifi sta start
     char *ssid = wf._wifi_info._ssid;
     char *pass = wf._wifi_info._passwd;
-    if (m_db_get_instance()->_get_dev_pair_state()) {
+    if (m_db_get_instance()->_get_dev_pair_state())
+    {
         use_server_prev = 1;
         wf.wifi_sta_start_cb(ssid, pass);
         ble_paired_need_connect();
@@ -84,16 +84,15 @@ m_state_transmit_t ap_config_done = {
     .context = M_WIFI_APCONFIG,
     .signal = SIG_AP_CFG_DONE,
     .next_state = M_WIFI_CONNECTING,
-    .signal_handler_cb = ap_config_done_handler
-};
+    .signal_handler_cb = ap_config_done_handler};
 
 /* Smart Config -> AP-config */
 void smartconfig_to_apconfig_handler(void *arg)
 {
     os_trace("smartconfig_to_apconfig_handler\r\n");
 
-    m_ir_deinit();
-    
+    // m_ir_deinit();
+
     m_led_stt_get_instance()._set_led_stt_ap_config_cb();
 
     /* ble rename */
@@ -112,5 +111,4 @@ m_state_transmit_t smartconfig_to_apconfig = {
     .context = M_WIFI_SMARTCONFIG,
     .signal = SIG_AP_CFG,
     .next_state = M_WIFI_APCONFIG,
-    .signal_handler_cb = smartconfig_to_apconfig_handler
-};
+    .signal_handler_cb = smartconfig_to_apconfig_handler};

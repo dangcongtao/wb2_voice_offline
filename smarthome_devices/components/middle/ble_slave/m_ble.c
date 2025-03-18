@@ -67,13 +67,13 @@ static struct bt_gatt_exchange_params exchange_params;
 static QueueHandle_t ble_tx_queue;
 static uint8_t is_inited = 0;
 
-extern void push_data_to_pqueue_ble(m_ble_data_t *message);
+extern void push_data_to_pqueue(m_data_t *message);
 
 static void exchange_func(struct bt_conn *conn, u8_t err, struct bt_gatt_exchange_params *params)
 {
     if (conn)
     {
-        printf("[BLE] Exchange %s MTU Size =%d \r\n", err == 0U ? "successful" : "failed", bt_gatt_get_mtu(conn));
+        os_trace("[BLE] Exchange %s MTU Size =%d \r\n", err == 0U ? "successful" : "failed", bt_gatt_get_mtu(conn));
     }
 }
 
@@ -94,6 +94,7 @@ static void ble_connect_status_cb(uint8_t status, char *addr)
     }
 }
 
+static m_data_t message_ble_rcv;
 static void ble_recv_data_cb(struct bt_conn *conn, const char *buf, u16_t len)
 {
 
@@ -103,14 +104,13 @@ static void ble_recv_data_cb(struct bt_conn *conn, const char *buf, u16_t len)
         return;
     }
 
-    m_ble_data_t message;
-    memset(&message, 0, sizeof(message));
-    memcpy(message.data, buf, len);
-    message.length = len;
-    message.method_trasmit = BLE_MSG;
+    memset(&message_ble_rcv, 0, sizeof(message_ble_rcv));
+    memcpy(message_ble_rcv.data, buf, len);
+    message_ble_rcv.length = len;
+    message_ble_rcv.method_trasmit = BLE_MSG;
 
-    os_trace("ble receive[%d] %s\r\n", len, message.data);
-    push_data_to_pqueue_ble(&message);
+    os_trace("ble receive[%d] %s\r\n", len, message_ble_rcv.data);
+    push_data_to_pqueue(&message_ble_rcv);
 
     memset((void *)buf, 0, sizeof(buf));
 }
@@ -159,7 +159,7 @@ void ble_loop(void)
 {
     if (is_inited && xQueueReceive(ble_tx_queue, &message, 0) == pdPASS)
     {
-        printf("[%s]:\r\n", message.data);
+        os_trace("[%s]:\r\n", message.data);
 
         /* Encode AES */
         len_aes = BLE_DATA_MAX_LEN;
@@ -224,7 +224,8 @@ void ble_deinit(void)
     os_trace("MY BLE SLAVE ble_deinit\r\n");
 
     m_ble_data_t message;
-    if (ble_tx_queue != NULL) {
+    if (ble_tx_queue != NULL)
+    {
         while (xQueuePeek(ble_tx_queue, &message, (TickType_t)10) != pdFALSE)
         {
         }
@@ -232,7 +233,8 @@ void ble_deinit(void)
 
     my_ble_deinit();
 
-    if (ble_tx_queue != NULL) {
+    if (ble_tx_queue != NULL)
+    {
         vQueueDelete(ble_tx_queue);
         ble_tx_queue = NULL;
     }
@@ -240,8 +242,7 @@ void ble_deinit(void)
     vTaskDelay(500);
 }
 
-
-void ble_set_name(char* name, uint8_t restart_adv)
+void ble_set_name(char *name, uint8_t restart_adv)
 {
     os_trace("ble_set_name: %s\r\n", name);
     my_ble_set_name(name, restart_adv);

@@ -34,20 +34,22 @@
 extern uint32_t val_temperature;
 void main_loop(void)
 {
-    const uint32_t delay_ms = 10/*, old = 0*/;
+    const uint32_t delay_ms = 10;
+    // uint32_t old = 0;
 
     while (true)
     {
         m_event_loop(delay_ms);
         http_client_loop();
-        
+
         if (hw_temp_read())
         {
             app_fan_send_temperature(val_temperature);
         }
 
         // old += 1;
-        // if (old > 20) {
+        // if (old > 20)
+        // {
         //     old = 0;
         //     os_trace("Free memory: %d\r\n", xPortGetFreeHeapSize());
         // }
@@ -78,39 +80,40 @@ void main(void)
     bl_wdt_init(120000);
 
     hw_74hc595_init();
-    
+
     easyflash_init();
     tcpip_init(NULL, NULL);
     blog_set_level_log_component(BLOG_LEVEL_INFO, "hardware");
-    
+
     /* have to init wifi and mqtt first. because database was built from them */
     m_wifi_init();
     m_mqtt_init();
     m_database_init();
-    
+
     /* have to init gpio after init database, because gpio init need number_channel
     which initialized by database */
     m_button_init();
     m_led_stt_init();
-    
+
     process_data_init();
     m_event_init();
-    
+
     hw_uart_init();
     m_fan_init();
-    
+
 #if DEBUG_ENABLE == 1
     _tolerance = kTolerance;
     IRrecv_test_run();
 #endif
-    
+    m_ir_init();
+
     /* start stack */
 
-    xTaskCreate(main_loop,  /* Function that implements the task. */
+    xTaskCreate(main_loop,   /* Function that implements the task. */
                 "main_loop", /* Text name for the task. */
-                1024 * 3,          /* Stack size in words, not bytes. */
-                NULL,              /* Parameter passed into the task. */
-                10,                 /* Priority at which the task is created. */
+                1024 * 3,    /* Stack size in words, not bytes. */
+                NULL,        /* Parameter passed into the task. */
+                10,          /* Priority at which the task is created. */
                 NULL);
     vTaskDelete(NULL);
 }

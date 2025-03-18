@@ -142,12 +142,12 @@ void http_get(char *url, char *output)
     close(s);
 }
 
+char temp1[HTTP_REQUEST_LEN];
+char temp2[HTTP_REQUEST_LEN];
 // http://api.hunonicpro.com/infomqtt/?device_id={root_id}&type={root_type}
 uint8_t get_mqtt_info(void)
 {
     uint8_t result = 0;
-    char temp1[HTTP_REQUEST_LEN];
-    char temp2[HTTP_REQUEST_LEN];
 
     memset(temp1, 0, sizeof(temp1));
     sprintf(temp1, "/HardwareAPI/getInfoMqtt.php?device_id=%s&type=%s&dev=%d",

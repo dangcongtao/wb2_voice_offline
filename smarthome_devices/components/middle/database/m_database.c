@@ -41,7 +41,7 @@ void m_db_read_device_id(void)
     uint32_t len_device_id = sizeof(s_device_id);
     memset(s_device_id, 0, sizeof(s_device_id));
 
-    // sprintf(s_device_id, "HUN174191880219fandcN1");
+    // sprintf(s_device_id, "GAV174228321480fanacirN1");
     // flash_write_device_id((void *)(&s_device_id), len_device_id);
 
     flash_read_device_id((void *)(&s_device_id), len_device_id);
@@ -173,7 +173,7 @@ uint16_t dfu_crc16(uint16_t crc, unsigned char *pD, int len)
         }
     }
 
-	// os_trace("crc: %u\n", crc);
+    // os_trace("crc: %u\n", crc);
     return crc;
 }
 
@@ -253,7 +253,6 @@ static void m_database_sync_task(void *param)
 
             s_request_reset_db = 0;
             s_request_sync_db = 0xFF;
-
         }
 
         if (s_request_reset_db_without_sync)
@@ -331,7 +330,7 @@ void m_database_init(void)
 
     xTaskCreate(m_database_sync_task,   /* Function that implements the task. */
                 "m_database_sync_task", /* Text name for the task. */
-                1024,         /* Stack size in words, not bytes. */
+                1024,                   /* Stack size in words, not bytes. */
                 NULL,                   /* Parameter passed into the task. */
                 1,                      /* Priority at which the task is created. */
                 NULL);

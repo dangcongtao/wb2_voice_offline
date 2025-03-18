@@ -83,7 +83,7 @@ static void tcp_accept_handle_cb(void *arg)
     char data[MAX_HTTP_REQUEST_LEN] = {0};
     char *respond;
     int timeout_retry_ms = 3000;
-    do 
+    do
     {
         memset(data, 0, sizeof(data));
         ret = tcp_server_receive(tcp_client_msg->socket_id, data);
@@ -106,14 +106,14 @@ static void tcp_accept_handle_cb(void *arg)
             respond = m_http_services(data, strlen(data));
             if (respond != NULL)
             {
-                printf("respond:[");
-                for (uint32_t i = 0; i < strlen(respond); i++)
-                    printf("%c", respond[i]);
-                printf("]\r\n\r\n");
+                // printf("respond:[");
+                // for (uint32_t i = 0; i < strlen(respond); i++)
+                //     printf("%c", respond[i]);
+                // printf("]\r\n\r\n");
 
                 tcp_server_send(tcp_client_msg->socket_id, http_html_hdr);
                 tcp_server_send(tcp_client_msg->socket_id, respond);
-                
+
                 os_trace("send respond done\r\n");
             }
             else
@@ -124,7 +124,8 @@ static void tcp_accept_handle_cb(void *arg)
             }
             break;
         }
-        else {
+        else
+        {
             break;
         }
 
@@ -140,27 +141,32 @@ void tcp_server_task(void *pvParameters)
 {
     int socket_fd;
     socket_fd = tcp_server_init(NULL, SERVER_PORT);
-    if (socket_fd < 0) {
+    if (socket_fd < 0)
+    {
         os_trace("tcp server create socker fail\r\n");
         vTaskDelete(NULL);
         return;
     }
     os_trace("http_server_task\r\n");
 
-    while (1) {
-        if (stop_http_server) {
+    while (1)
+    {
+        if (stop_http_server)
+        {
             os_trace("stop http server\r\n");
             tcp_server_deinit();
             stop_http_server = 0;
             break;
         }
 
-        if (current_state == M_WIFI_APCONFIG) {
-            if (tcp_server_listen(socket_fd) == 0) {
+        if (current_state == M_WIFI_APCONFIG)
+        {
+            if (tcp_server_listen(socket_fd) == 0)
+            {
                 tcp_server_accept(socket_fd, tcp_accept_handle_cb);
             }
         }
-        
+
         vTaskDelay(pdMS_TO_TICKS(50));
     }
 
@@ -170,7 +176,7 @@ void tcp_server_task(void *pvParameters)
 void m_http_server_start(void)
 {
     os_trace("m_http_server_start\r\n");
-    xTaskCreate(tcp_server_task, (char *)"http server", 1024*3, NULL, 15, NULL);
+    xTaskCreate(tcp_server_task, (char *)"http server", 1024 * 3, NULL, 15, NULL);
 }
 
 void m_http_stop(void)

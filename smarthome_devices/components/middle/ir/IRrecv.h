@@ -92,7 +92,7 @@
 #define DECODE_CORONA_AC 1
 #define DECODE_TROTEC 1
 #define DECODE_TROTEC_3550 1
-#define DECODE_ARGO 1
+#define DECODE_ARGO 0
 #define DECODE_DELONGHI_AC 1
 #define DECODE_BOSCH144 1
 #define DECODE_VOLTAS 1
@@ -129,11 +129,11 @@ typedef union __attribute((packed))
 /// Information for the interrupt handler
 typedef struct
 {
-  uint8_t recvpin;  // pin for IR data from detector
-  uint8_t rcvstate; // state machine
-  uint16_t timer;   // state timer, counts 50uS ticks.
-  uint16_t bufsize; // max. nr. of entries in the capture buffer.
-  uint16_t *rawbuf; // raw data
+  uint8_t recvpin;                  // pin for IR data from detector
+  uint8_t rcvstate;                 // state machine
+  uint16_t timer;                   // state timer, counts 50uS ticks.
+  uint16_t bufsize;                 // max. nr. of entries in the capture buffer.
+  uint16_t rawbuf[MAX_SIZE_BUFFER]; // raw data
   // uint16_t is used for rawlen as it saves 3 bytes of iram in the interrupt
   // handler. Don't ask why, I don't know. It just does.
   uint16_t rawlen;  // counter of entries in rawbuf.
@@ -729,8 +729,6 @@ void Daikin200_setInfo(const uint8_t *newState, state_ir_t *ir_state);
 
 // void enableIRIn(const bool pullup);
 void ir_loop(void);
-void IRrecv_init(const uint32_t recvpin, const uint16_t bufsize,
-                 const uint8_t timeout, const bool save_buffer);
 
 void resume(void);
 
@@ -742,6 +740,6 @@ void IR_start_learn_auto(void);
 void IR_stop_learn_auto(void);
 bool decode_for(decode_results *results, uint8_t max_skip);
 
-m_ac_info_t* m_ac_info_get_reference(void);
+m_ac_info_t *m_ac_info_get_reference(void);
 
 #endif

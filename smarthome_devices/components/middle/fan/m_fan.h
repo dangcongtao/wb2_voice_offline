@@ -18,13 +18,12 @@ void m_fan_toogle_swing(void);
 
 void m_fan_set_speed(uint8_t mode_set, uint8_t speed_set);
 void m_fan_set_pcn(uint8_t pcn_set);
-void m_fan_increase_speed(void);
 
 void m_fan_set_light(uint8_t light);
 void m_fan_toggle_light(void);
 
 void m_fan_set_buzz_disable(uint8_t disable_buzz);
-void m_buzz_play(void);
+void m_buzz_play(uint8_t num_buzz);
 
 void m_fan_off(uint8_t src);
 

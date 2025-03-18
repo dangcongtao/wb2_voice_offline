@@ -5,21 +5,29 @@
 
 static m_fan_runtime_t s_fan_runtime;
 
+uint8_t buzz_num;
 uint8_t prevent_buzz = 0;
-extern uint8_t need_buzz_off;
-void m_fan_need_buzz(void)
+
+void m_fan_need_buzz(uint8_t num_buzz)
 {
+    num_buzz++;
     if (m_fan_get_instance()->disable_buzz != 1 && !prevent_buzz)
     {
-        need_buzz_off = 1;
+        if (num_buzz > buzz_num)
+        {
+            buzz_num = num_buzz;
+        }
+        hw_buzz_set(SWITCH_ACTIVE_LEVEL);
     }
 }
 
-void m_buzz_play(void)
+void m_buzz_play(uint8_t num_buzz)
 {
+    num_buzz++;
     if (m_fan_get_instance()->disable_buzz != 1)
     {
-        need_buzz_off = 1;
+        buzz_num = num_buzz;
+        hw_buzz_set(SWITCH_ACTIVE_LEVEL);
     }
 }
 
@@ -162,21 +170,12 @@ void hw_fan_set_speed_level(uint8_t speed)
         m_ft62f28_send_speed();
         break;
     case M_FAN_SPEED_1:
-        // s_fan_runtime.switch_data_output &= 0b10010;
-        // s_fan_runtime.switch_data_output |= 0b10;
-        // hw_led_stt_set_stt(LED_SPEED_NORMAL_IDX, LED_INDICATE_ON);
         m_ft62f28_send_speed();
         break;
     case M_FAN_SPEED_2:
-        // s_fan_runtime.switch_data_output &= 0b10100;
-        // s_fan_runtime.switch_data_output |= 0b100;
-        // hw_led_stt_set_stt(LED_SPEED_NORMAL_IDX, LED_INDICATE_ON);
         m_ft62f28_send_speed();
         break;
     case M_FAN_SPEED_3:
-        // s_fan_runtime.switch_data_output &= 0b11000;
-        // s_fan_runtime.switch_data_output |= 0b1000;
-        // hw_led_stt_set_stt(LED_SPEED_NORMAL_IDX, LED_INDICATE_ON);
         m_ft62f28_send_speed();
         break;
     default:
@@ -199,21 +198,12 @@ void hw_fan_set_swing(uint8_t swing)
 
 void buzz_loop(void)
 {
-    if (need_buzz_off)
+    if (buzz_num)
     {
-        if (need_buzz_off == 2)
+        buzz_num--;
+        if (buzz_num == 0)
         {
-            need_buzz_off = 0;
             hw_buzz_set(SWITCH_IDLE_LEVEL);
-        }
-        else if (need_buzz_off == 1)
-        {
-            need_buzz_off = 2;
-            hw_buzz_set(SWITCH_ACTIVE_LEVEL);
-        }
-        else
-        {
-            need_buzz_off++;
         }
     }
 }

@@ -82,7 +82,7 @@ void m_fan_toggle_natural_mode(void)
             // hw_led_stt_set_stt(LED_SPEED_NORMAL_IDX, LED_INDICATE_ON);
         }
     }
-    m_fan_need_buzz();
+    m_fan_need_buzz(1);
 }
 
 void m_fan_mode_natural_process(uint32_t delay_ms)
@@ -133,7 +133,7 @@ void m_fan_timer_toggle(void)
         os_trace("can't set time cos fan off\r\n");
         return;
     }
-    m_fan_need_buzz();
+    m_fan_need_buzz(1);
     uint32_t time_hours = my_fan->time_set / (60 * 60 * 1000);
     time_hours++;
     if (time_hours > 9)

@@ -36,7 +36,7 @@ bool decodeNEC(decode_results *results, uint16_t offset,
   uint64_t data = 0;
 
   // Header - All NEC messages have this Header Mark.
-  if (!matchMark(results->rawbuf[offset++], kNecHdrMark, kUseDefTol, kMarkExcess))
+  if (!matchLimit(results->rawbuf[offset++], kNecHdrMark - 2240, kNecHdrMark + 2240))
   {
     os_trace("NEC not match mark 1\r\n");
     return false;
@@ -59,11 +59,11 @@ bool decodeNEC(decode_results *results, uint16_t offset,
 
   // Match Header (cont.) + Data + Footer
   if (!matchGenericDataLimit(results->rawbuf + offset, &data,
-                    results->rawlen - offset, nbits,
-                    0, 0, kNecHdrSpace-900, kNecHdrSpace+900,
-                    kNecBitMark - 460, kNecBitMark + 440, kNecOneSpace - 560, kNecOneSpace + 540,
-                    kNecBitMark - 460, kNecBitMark + 440, kNecZeroSpace - 460, kNecZeroSpace + 440,
-                    kNecBitMark - 460, kNecBitMark + 440, kNecMinGap - 5000, kNecMinGap + 5000, true, kUseDefTol, kMarkExcess, true))
+                             results->rawlen - offset, nbits,
+                             0, 0, kNecHdrSpace - 900, kNecHdrSpace + 900,
+                             kNecBitMark - 460, kNecBitMark + 440, kNecOneSpace - 560, kNecOneSpace + 540,
+                             kNecBitMark - 460, kNecBitMark + 440, kNecZeroSpace - 460, kNecZeroSpace + 440,
+                             kNecBitMark - 460, kNecBitMark + 440, kNecMinGap - 5000, kNecMinGap + 5000, true, kUseDefTol, kMarkExcess, true))
   {
     os_trace("NEC not Match Header\r\n");
     return false;
