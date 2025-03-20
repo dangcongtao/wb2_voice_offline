@@ -16,6 +16,9 @@ static const uint8_t arr_seg_7[] = {
     0b00000000, // 8 (0x00) - Tất cả sáng
     0b00100000, // 9 (0x10) - Thanh 0,1,2,3,5,6 sáng
     0b11111110, // 10 (0x00) - Tắt hết
+    0b00010000, // A
+    0b10001100, // C
+
 };
 
 void hw_74hc595_init(void)

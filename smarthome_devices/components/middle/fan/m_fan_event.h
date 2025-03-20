@@ -2,12 +2,13 @@
 #define _M_FAN_EVENT_H_
 #include <stdint.h>
 
+#define TREND_INCREASE 0
+#define TREND_DECREASE 1
 typedef struct
 {
     uint8_t speed_current;
     uint32_t time_current;
-    uint8_t limit_low_speed;
-    uint8_t limit_high_speed;
+    uint8_t speed_trend;
 } m_fan_natural_mode_t;
 
 uint8_t m_fan_get_current_speed_natural(void);
@@ -21,6 +22,5 @@ void m_fan_start_natural_mode(void);
 void m_fan_toggle_natural_mode(void);
 
 void m_fan_mode_natural_process(uint32_t delay_ms);
-
 
 #endif // _M_FAN_EVENT_H_

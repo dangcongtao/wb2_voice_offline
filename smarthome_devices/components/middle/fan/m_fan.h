@@ -2,6 +2,10 @@
 #define _M_FAN_H_
 #include <stdint.h>
 
+#define LED_7_SEG_OFF_INDEX 10
+#define LED_7_SEG_CHARACTER_A_INDEX 11
+#define LED_7_SEG_CHARACTER_C_INDEX 12
+
 typedef struct
 {
     uint8_t mode;

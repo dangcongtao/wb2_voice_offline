@@ -24,7 +24,6 @@ typedef struct
     uint8_t : 7;
 } cmd_data_receive_state_t;
 
-
 typedef struct
 {
     uint8_t button_data;
@@ -66,6 +65,7 @@ void m_ft62f28_send_speed(void);
 void m_ft62f28_send_swing(void);
 void m_ft62f28_send_led(void);
 void m_ft62f28_send_light(void);
+void m_ft62f28_send_reset_touch(void);
 void m_ft62f28_check_send_change(void);
 void m_ft62f28_receive_data(uint8_t *data, uint32_t len);
 

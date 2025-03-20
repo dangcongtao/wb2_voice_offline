@@ -288,6 +288,17 @@ RESPONSE:
     app_send_data(respond, strlen(respond));
 }
 
+void app_response_time_release(uint32_t uid, uint8_t result)
+{
+    uint32_t time = m_fan_get_time_set();
+    memset(respond, 0, sizeof(respond));
+    sprintf(respond,
+            "{\"%s\":131,\"u\":%ld,\"index\":0,\"time\":%ld,\"mode\":1,"
+            "\"result\": %d}",
+            gs_dev_type[device_type], uid, time, result);
+    app_send_data(respond, strlen(respond));
+}
+
 /* {"atmwifi":131, "u":1,"index":0} */
 static void app_get_time_release(cJSON *jsRoot)
 {
@@ -321,15 +332,11 @@ static void app_get_time_release(cJSON *jsRoot)
 
     /* implement */
     time = m_fan_get_time_set();
+    result = 1;
 
 RESPONSE:
     /* respond server here */
-    memset(respond, 0, sizeof(respond));
-    sprintf(respond,
-            "{\"%s\":%ld,\"u\":%ld,\"index\":%ld,\"time\":%ld,\"mode\":1,"
-            "\"result\": %d}",
-            gs_dev_type[device_type], type, uid, index, time, result);
-    app_send_data(respond, strlen(respond));
+    app_response_time_release(uid, result);
 }
 
 // {"type":20, "mode":1,"lv":1, "u":55519, "act_id":0}

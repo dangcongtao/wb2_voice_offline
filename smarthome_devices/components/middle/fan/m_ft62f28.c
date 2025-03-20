@@ -4,51 +4,68 @@
 #include "hardware.h"
 #include "m_fan_control.h"
 
-uint8_t has_control_fan = 0;
+typedef struct
+{
+    uint8_t has_control_fan : 1;
+    uint8_t flag_send_speed : 1;
+    uint8_t flag_send_swing : 1;
+    uint8_t flag_send_led : 1;
+    uint8_t flag_send_light : 1;
+} m_ft62f28_data_t;
 
-uint8_t flag_send_speed;
-uint8_t flag_send_swing;
-uint8_t flag_send_led;
-uint8_t flag_send_light;
+static m_ft62f28_data_t s_ft62f28_obj;
+
 cmd_uart_t data_send;
 
 void m_ft62f28_send_speed(void)
 {
-    has_control_fan = 1;
-    flag_send_speed = 1;
+    s_ft62f28_obj.has_control_fan = 1;
+    s_ft62f28_obj.flag_send_speed = 1;
 }
 
 void m_ft62f28_send_swing(void)
 {
-    has_control_fan = 1;
-    flag_send_swing = 1;
+    s_ft62f28_obj.has_control_fan = 1;
+    s_ft62f28_obj.flag_send_swing = 1;
 }
 
 void m_ft62f28_send_light(void)
 {
-    has_control_fan = 1;
-    flag_send_light = 1;
+    s_ft62f28_obj.has_control_fan = 1;
+    s_ft62f28_obj.flag_send_light = 1;
 }
 
 void m_ft62f28_send_led(void)
 {
-    has_control_fan = 1;
-    flag_send_led = 1;
+    s_ft62f28_obj.has_control_fan = 1;
+    s_ft62f28_obj.flag_send_led = 1;
+}
+
+void m_ft62f28_send_reset_touch(void)
+{
+    os_trace("m_ft62f28_send_reset_touch");
+    memset(&data_send, 0, sizeof(data_send));
+    data_send.header[0] = HEADER_1;
+    data_send.header[1] = HEADER_2;
+    data_send.cmd = CMD_RECEIVE_RESET_TOUCH;
+    data_send.len_data = 2 + sizeof(cmd_data_rcv_u);
+
+    hw_uart_get_instance()->send_bytes((char *)&data_send, 3 + data_send.len_data);
 }
 
 void m_ft62f28_check_send_change(void)
 {
-    if (!has_control_fan)
+    if (!s_ft62f28_obj.has_control_fan)
     {
         return;
     }
     m_fan_info_t *fan_info = m_fan_get_instance();
-    has_control_fan = 0;
+    s_ft62f28_obj.has_control_fan = 0;
     data_send.header[0] = HEADER_1;
     data_send.header[1] = HEADER_2;
     data_send.cmd = CMD_WIFI_SEND_STATE;
 
-    if (flag_send_speed)
+    if (s_ft62f28_obj.flag_send_speed)
     {
         data_send.data.rcv.state.change_speed = 1;
         if (device_type == FANDC)
@@ -99,37 +116,37 @@ void m_ft62f28_check_send_change(void)
             }
         }
 
-        flag_send_speed = 0;
+        s_ft62f28_obj.flag_send_speed = 0;
     }
     else
     {
         data_send.data.rcv.state.change_speed = 0;
     }
 
-    if (flag_send_swing)
+    if (s_ft62f28_obj.flag_send_swing)
     {
         data_send.data.rcv.state.change_swing = 1;
         data_send.data.rcv.state.swing = fan_info->swing;
-        flag_send_swing = 0;
+        s_ft62f28_obj.flag_send_swing = 0;
     }
     else
     {
         data_send.data.rcv.state.change_swing = 0;
     }
 
-    if (flag_send_led)
+    if (s_ft62f28_obj.flag_send_led)
     {
         // os_trace("send_led: %u\r\n", data_send.data.rcv.state.led_data);
         data_send.data.rcv.state.change_led = 1;
         data_send.data.rcv.state.led_data = m_fan_get_led_stt();
-        flag_send_led = 0;
+        s_ft62f28_obj.flag_send_led = 0;
     }
     else
     {
         data_send.data.rcv.state.change_led = 0;
     }
 
-    if (flag_send_light)
+    if (s_ft62f28_obj.flag_send_light)
     {
         data_send.data.rcv.state.change_light = 1;
         data_send.data.rcv.state.ligth = fan_info->light;
@@ -150,7 +167,7 @@ void m_ft62f28_check_send_change(void)
         default:
             break;
         }
-        flag_send_light = 0;
+        s_ft62f28_obj.flag_send_light = 0;
     }
     else
     {

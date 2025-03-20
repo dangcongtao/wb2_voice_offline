@@ -313,6 +313,7 @@ void m_event_loop(uint32_t time_schedual_ms)
 
 void sync_led_stt_when_reset_ts04(void)
 {
+    os_trace("sync_led_stt_when_reset_ts04\r\n");
     switch (current_state)
     {
     case M_WIFI_NOT_CFG:

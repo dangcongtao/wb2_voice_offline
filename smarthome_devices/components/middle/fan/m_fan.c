@@ -7,8 +7,6 @@
 #include "m_fan_control.h"
 #include "m_fan_event.h"
 
-#define LED_7_SEG_OFF_INDEX 10
-
 static m_fan_info_t s_fan_info;
 static uint32_t last_tick_blink_led;
 extern char respond[512];
@@ -42,6 +40,7 @@ void m_fan_set_pcn(uint8_t pcn_set)
 {
     s_fan_info.mode = M_FAN_MODE_PCN;
     s_fan_info.pcn = pcn_set;
+    hw_74hc595_set_number(LED_7_SEG_CHARACTER_C_INDEX);
     m_ft62f28_send_speed();
 }
 
@@ -425,6 +424,14 @@ static void m_fan_check_flag(void)
         if (s_fan_info.speed)
         {
             hw_74hc595_set_number(s_fan_info.speed);
+        }
+        else if (s_fan_info.mode == M_FAN_MODE_NATURAL)
+        {
+            hw_74hc595_set_number(LED_7_SEG_CHARACTER_A_INDEX);
+        }
+        else if (s_fan_info.mode == M_FAN_MODE_PCN)
+        {
+            hw_74hc595_set_number(LED_7_SEG_CHARACTER_C_INDEX);
         }
         else
         {

@@ -3,6 +3,7 @@
 #include "hardware.h"
 #include "m_ft62f28.h"
 #include "m_fan.h"
+#include "app_fan.h"
 
 static m_fan_natural_mode_t s_natural_mode;
 static uint32_t time_remain;
@@ -27,6 +28,7 @@ void m_fan_set_time_off(uint32_t _time_set)
     {
         hw_led_stt_set_stt(M_FAN_BUTTON_TIMER_INDEX, LED_INDICATE_OFF);
     }
+    app_response_time_release(0, 1);
 }
 
 uint32_t m_fan_get_time_remain(void)
@@ -41,6 +43,7 @@ uint32_t m_fan_get_time_set(void)
 
 void m_fan_start_natural_mode(void)
 {
+    hw_74hc595_set_number(LED_7_SEG_CHARACTER_A_INDEX);
     if (device_type == FANDC)
     {
         s_natural_mode.speed_current = 10; // 10%
@@ -51,6 +54,7 @@ void m_fan_start_natural_mode(void)
     }
     m_ft62f28_send_speed();
     s_natural_mode.time_current = 0;
+    s_natural_mode.speed_trend = TREND_DECREASE;
 }
 
 void m_fan_toggle_natural_mode(void)
@@ -96,11 +100,23 @@ void m_fan_mode_natural_process(uint32_t delay_ms)
             if (s_natural_mode.time_current >= TIME_STEP_FAN_NATURAL_MODE_DC_MS)
             {
                 s_natural_mode.time_current = 0;
-
-                s_natural_mode.speed_current -= 10;
-                if (s_natural_mode.speed_current == 0 || s_natural_mode.speed_current > 100)
+                if (TREND_DECREASE == s_natural_mode.speed_trend)
                 {
-                    s_natural_mode.speed_current = 100;
+                    s_natural_mode.speed_current -= 10;
+                }
+                else if (TREND_INCREASE == s_natural_mode.speed_trend)
+                {
+                    s_natural_mode.speed_current += 10;
+                }
+                if (s_natural_mode.speed_current == 0)
+                {
+                    s_natural_mode.speed_current = 20;
+                    s_natural_mode.speed_trend = TREND_INCREASE;
+                }
+                else if (s_natural_mode.speed_current > 100)
+                {
+                    s_natural_mode.speed_current = 90;
+                    s_natural_mode.speed_trend = TREND_DECREASE;
                 }
                 hw_fan_set_speed_pcn(s_natural_mode.speed_current);
             }

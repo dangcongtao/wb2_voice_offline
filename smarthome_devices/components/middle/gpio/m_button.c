@@ -32,6 +32,7 @@ uint32_t ignore_event_release[MAX_NUM_BUTTON] = {0, 0, 0, 0};
 #define EVENT_BTN_HOLD 1
 #define EVENT_BTN_HOLD_SO_LONG 2
 #define EVENT_BTN_HOLD_HONG_PHIM 3
+#define EVENT_BTN_RELEASE 4
 
 static const char *event_name[] = {"pressed", "release",
                                    "hold", "hold so long", "hold hong phim",
@@ -57,37 +58,37 @@ void on_button_event_cb(int button_pin, int event, void *data)
     {
         time_cnt_down_reset_TS04 = TIME_OUT_RESET_TS04_WITHOUT_PRESS;
 
-        if (button_pin == 0)
+        if (ignore_event_release[button_pin] == EVENT_BTN_RELEASE)
         {
-            if (ignore_event_release[button_pin] == EVENT_BTN_HOLD)
-            {
-                if (button_pin == BUTTON_POWER_INDEX)
-                {
-                    ignore_event_release[button_pin] = 0;
-                    return;
-                }
-            }
-            else if (ignore_event_release[button_pin] == EVENT_BTN_HOLD_SO_LONG)
-            {
-                app_send_offline_message(1);
-                vTaskDelay(pdMS_TO_TICKS(100));
+            ignore_event_release[button_pin] = 0;
+            return;
+        }
+        else if (ignore_event_release[button_pin] == EVENT_BTN_HOLD_HONG_PHIM)
+        {
+            ignore_event_release[button_pin] = 0;
+            sync_led_stt_when_reset_ts04();
+            return;
+        }
+        else if (ignore_event_release[button_pin] == EVENT_BTN_HOLD)
+        {
+            app_send_offline_message(1);
+            vTaskDelay(pdMS_TO_TICKS(100));
 
-                m_db_get_instance()->_reset_db_without_sync_cb();
-                m_wifi_get_instance().start_smart_config_cb();
-                ignore_event_release[button_pin] = 0;
-                return;
-            }
+            m_db_get_instance()->_reset_db_without_sync_cb();
+            m_wifi_get_instance().start_smart_config_cb();
+            ignore_event_release[button_pin] = 0;
+            return;
+        }
 
-            else if (ignore_event_release[button_pin] == EVENT_BTN_HOLD_HONG_PHIM)
-            {
-                app_send_offline_message(1);
-                vTaskDelay(pdMS_TO_TICKS(100));
+        else if (ignore_event_release[button_pin] == EVENT_BTN_HOLD_SO_LONG)
+        {
+            app_send_offline_message(1);
+            vTaskDelay(pdMS_TO_TICKS(100));
 
-                m_db_get_instance()->_reset_db_without_sync_cb();
-                m_wifi_get_instance().start_ap_config_cb();
-                ignore_event_release[button_pin] = 0;
-                return;
-            }
+            m_db_get_instance()->_reset_db_without_sync_cb();
+            m_wifi_get_instance().start_ap_config_cb();
+            ignore_event_release[button_pin] = 0;
+            return;
         }
 
         /* just support buttons, not support sensor */
@@ -101,34 +102,38 @@ void on_button_event_cb(int button_pin, int event, void *data)
 
     case APP_BTN_EVT_HOLD:
     {
-        if (button_pin == BUTTON_POWER_INDEX && (device_type == FANACIR || device_type == FANAC))
-        {
-            m_fan_off(SRC_ACTION_DEVICE);
-        }
+        // if (button_pin == 0)
+        // {
+        m_led_stt_get_instance()._set_led_stt_smart_config_cb();
+        // }
         ignore_event_release[button_pin] = EVENT_BTN_HOLD;
     }
     break;
-
     case APP_BTN_EVT_HOLD_SO_LONG:
     {
-        if (button_pin == 0)
-        {
-            m_led_stt_get_instance()._set_led_stt_smart_config_cb();
-        }
+        // if (button_pin == 0)
+        // {
+        m_led_stt_get_instance()._set_led_stt_ap_config_cb();
+        // }
         ignore_event_release[button_pin] = EVENT_BTN_HOLD_SO_LONG;
     }
     break;
-
     case APP_BTN_EVT_HOLD_HONG_PHIM:
     {
-        if (button_pin == 0)
+        m_ft62f28_send_reset_touch();
+        for (uint8_t i = 0; i < MAX_NUM_BUTTON; i++)
         {
-            m_led_stt_get_instance()._set_led_stt_ap_config_cb();
+            if (i == button_pin)
+            {
+                ignore_event_release[button_pin] = EVENT_BTN_HOLD_HONG_PHIM;
+            }
+            else
+            {
+                ignore_event_release[i] = EVENT_BTN_RELEASE;
+            }
         }
-        ignore_event_release[button_pin] = EVENT_BTN_HOLD_HONG_PHIM;
     }
     break;
-
     default:
         break;
     }

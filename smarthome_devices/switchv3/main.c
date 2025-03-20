@@ -92,13 +92,13 @@ void main(void)
 
     /* have to init gpio after init database, because gpio init need number_channel
     which initialized by database */
+    hw_uart_init();
     m_button_init();
     m_led_stt_init();
 
     process_data_init();
     m_event_init();
 
-    hw_uart_init();
     m_fan_init();
 
 #if DEBUG_ENABLE == 1
