@@ -102,7 +102,7 @@ void my_ble_start_advertise(void)
     param.interval_max = BT_GAP_ADV_SLOW_INT_MAX;
     param.options = (BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_USE_NAME | BT_LE_ADV_OPT_ONE_TIME);
     /*Get mode, 0:General discoverable,  1:non discoverable, 2:limit discoverable*/
-    memset(&adv_data[1], 0, sizeof(struct bt_data));
+    memset(&adv_data[0], 0, sizeof(struct bt_data));
     adv_data[0].type = BT_DATA_NAME_COMPLETE;
     adv_data[0].data = (u8_t *)ble_name;
     adv_data[0].data_len = strlen(ble_name);
