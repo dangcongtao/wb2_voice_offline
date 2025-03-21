@@ -15,8 +15,10 @@ typedef struct
     uint8_t light;
     uint8_t disable_buzz;
     uint32_t time_set;
+    uint8_t power_save;
 } m_fan_info_t;
 
+void m_fan_set_powersaving(uint8_t is_saving);
 void m_fan_set_swing(uint8_t swing);
 void m_fan_toogle_swing(void);
 

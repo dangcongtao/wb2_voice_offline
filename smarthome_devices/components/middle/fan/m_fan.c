@@ -13,6 +13,12 @@ extern char respond[512];
 extern uint8_t prevent_buzz;
 extern uint32_t last_tick_timer_toggle;
 
+void m_fan_set_powersaving(uint8_t is_saving)
+{
+    s_fan_info.power_save = is_saving;
+    m_db_get_instance()->_request_sync_db(BIT_FLAG_SYNC_FAN);
+}
+
 void m_fan_set_light(uint8_t light)
 {
     s_fan_info.light = light;
