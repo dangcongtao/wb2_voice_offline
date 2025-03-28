@@ -4,7 +4,7 @@
 #include "app_config.h"
 #include <stdint.h>
 
-#define BRAND "Hunonic"
+#define BRAND "Gavit"
 
 #define DEF_AES_KEY "yAlaCKUYI3qr0kTd"
 #define DEF_AES_IV "QFjnL4GVODlNB0eZ"
