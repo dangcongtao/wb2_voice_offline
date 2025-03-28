@@ -54,6 +54,8 @@ static void app_control_timer(cJSON *js_Root);
 static void app_set_buzz(cJSON *js_Root);
 static void app_set_light(cJSON *js_Root);
 static void app_set_power_saving(cJSON *js_Root);
+static void app_set_auto_threshold(cJSON *js_Root);
+static void app_get_auto_threshold(cJSON *js_Root);
 
 // IR
 extern void ir_control(cJSON *jsRoot);
@@ -95,6 +97,8 @@ wswitch_handler_t array_handler[] = {
     {app_set_buzz, 24},
     {app_set_light, 25},
     {app_set_power_saving, 26},
+    {app_set_auto_threshold, 27},
+    {app_get_auto_threshold, 28},
 
     {app_ble_discover, 35},
     {app_ble_authen_connection, 36},
@@ -700,6 +704,107 @@ RESPONSE:
     /* respond server here */
     memset(respond, 0, sizeof(respond));
     sprintf(respond, "{\"%s\":%lu,\"lp\":%lu,\"u\":%lu,\"result\":%u}", gs_dev_type[device_type], type, power_save, uid, result);
+    app_send_data(respond, strlen(respond));
+}
+
+static void app_set_auto_threshold(cJSON *js_Root)
+{
+    cJSON *jsAutoEnable, *jsU, *jsAct, *jsType, *jsThresh1, *jsThresh2, *jsThresh3;
+    uint8_t result = 0, auto_enable = 0;
+    uint32_t uid = 0, type = 0, thresh1 = 0, thresh2 = 0, thresh3 = 0;
+
+    jsType = cJSON_GetObjectItem(js_Root, gs_dev_type[device_type]);
+    if (jsType == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    type = jsType->valueint;
+
+    jsAutoEnable = cJSON_GetObjectItem(js_Root, "auto");
+    if (jsAutoEnable == NULL)
+    {
+        os_trace("Get JSON jsAutoEnable mqtt message fail\n");
+        goto RESPONSE;
+    }
+    auto_enable = jsAutoEnable->valueint;
+
+    jsU = cJSON_GetObjectItem(js_Root, CJSON_KEY_USER_ID);
+    if (jsU == NULL)
+    {
+        os_trace("Get JSON jsU mqtt message fail\n");
+        goto RESPONSE;
+    }
+    uid = jsU->valueint;
+
+    jsThresh1 = cJSON_GetObjectItem(js_Root, "thresh1");
+    if (jsThresh1 == NULL)
+    {
+        os_trace("Get JSON jsThresh1 mqtt message fail\n");
+        goto RESPONSE;
+    }
+    thresh1 = jsThresh1->valueint;
+
+    jsThresh2 = cJSON_GetObjectItem(js_Root, "thresh2");
+    if (jsThresh2 == NULL)
+    {
+        os_trace("Get JSON jsThresh2 mqtt message fail\n");
+        goto RESPONSE;
+    }
+    thresh2 = jsThresh2->valueint;
+
+    jsThresh3 = cJSON_GetObjectItem(js_Root, "thresh3");
+    if (jsThresh3 == NULL)
+    {
+        os_trace("Get JSON jsThresh3 mqtt message fail\n");
+        goto RESPONSE;
+    }
+    thresh3 = jsThresh3->valueint;
+
+    // m_fan_set_powersaving(power_save);
+    m_fan_set_auto_mode_settings(auto_enable, thresh1, thresh2, thresh3);
+
+    result = 1;
+RESPONSE:
+    /* respond server here */
+    memset(respond, 0, sizeof(respond));
+    sprintf(respond, "{\"%s\":%lu,\"u\":%lu,\"auto\":%u,\"thresh1\":%lu,\"thresh2\":%lu,\"thresh3\":%lu,\"result\":%u}", gs_dev_type[device_type], type, uid, auto_enable, thresh1, thresh2, thresh3, result);
+    app_send_data(respond, strlen(respond));
+}
+
+static void app_get_auto_threshold(cJSON *js_Root)
+{
+    cJSON *jsAutoEnable, *jsU, *jsAct, *jsType;
+    uint8_t result = 0, auto_enable = 0;
+    uint32_t uid = 0, type = 0, thresh1 = 0, thresh2 = 0, thresh3 = 0;
+
+    jsType = cJSON_GetObjectItem(js_Root, gs_dev_type[device_type]);
+    if (jsType == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        goto RESPONSE;
+    }
+    type = jsType->valueint;
+
+    jsU = cJSON_GetObjectItem(js_Root, CJSON_KEY_USER_ID);
+    if (jsU == NULL)
+    {
+        os_trace("Get JSON jsU mqtt message fail\n");
+        goto RESPONSE;
+    }
+    uid = jsU->valueint;
+
+    m_fan_info_t *my_fan = m_fan_get_instance();
+    auto_enable = my_fan->enable_auto_mode;
+    thresh1 = my_fan->thresh_hold_temperature[0];
+    thresh2 = my_fan->thresh_hold_temperature[1];
+    thresh3 = my_fan->thresh_hold_temperature[2];
+
+    result = 1;
+RESPONSE:
+    /* respond server here */
+    memset(respond, 0, sizeof(respond));
+    sprintf(respond, "{\"%s\":%lu,\"u\":%lu,\"auto\":%u,\"thresh1\":%lu,\"thresh2\":%lu,\"thresh3\":%lu,\"result\":%u}", gs_dev_type[device_type], type, uid, auto_enable, thresh1, thresh2, thresh3, result);
     app_send_data(respond, strlen(respond));
 }
 

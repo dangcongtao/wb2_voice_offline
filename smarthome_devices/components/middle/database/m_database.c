@@ -181,6 +181,17 @@ static void m_load_databse(void)
 {
     m_db_read_device_id();
     flash_read_database(&s_m_database._m_device);
+
+    if (!s_m_database._m_device._fan_info->thresh_hold_temperature[0] ||
+        !s_m_database._m_device._fan_info->thresh_hold_temperature[1] ||
+        !s_m_database._m_device._fan_info->thresh_hold_temperature[2])
+    {
+        os_trace("%s SET DEFAULT THRESHOLD VALUE TEMPERATURE\r\n", __func__);
+        s_m_database._m_device._fan_info->thresh_hold_temperature[0] = 200;
+        s_m_database._m_device._fan_info->thresh_hold_temperature[1] = 260;
+        s_m_database._m_device._fan_info->thresh_hold_temperature[2] = 290;
+        m_db_request_sync_database(BIT_FLAG_SYNC_FAN);
+    }
     // flash_proccess_reset_reason();
 
     // memset(s_m_database._m_device._ble_info, 0, sizeof(m_ble_info_t));

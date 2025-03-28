@@ -5,6 +5,7 @@
 #define LED_7_SEG_OFF_INDEX 10
 #define LED_7_SEG_CHARACTER_A_INDEX 11
 #define LED_7_SEG_CHARACTER_C_INDEX 12
+#define LED_7_SEG_CHARACTER_E_INDEX 13
 
 typedef struct
 {
@@ -16,8 +17,11 @@ typedef struct
     uint8_t disable_buzz;
     uint32_t time_set;
     uint8_t power_save;
+    uint8_t enable_auto_mode;
+    uint16_t thresh_hold_temperature[3];
 } m_fan_info_t;
 
+void m_fan_set_auto_mode_settings(uint8_t _auto_enable, uint32_t thresh1, uint32_t thresh2, uint32_t thresh3);
 void m_fan_set_powersaving(uint8_t is_saving);
 void m_fan_set_swing(uint8_t swing);
 void m_fan_toogle_swing(void);

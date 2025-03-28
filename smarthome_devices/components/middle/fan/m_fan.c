@@ -13,6 +13,15 @@ extern char respond[512];
 extern uint8_t prevent_buzz;
 extern uint32_t last_tick_timer_toggle;
 
+void m_fan_set_auto_mode_settings(uint8_t _auto_enable, uint32_t thresh1, uint32_t thresh2, uint32_t thresh3)
+{
+    s_fan_info.enable_auto_mode = _auto_enable;
+    s_fan_info.thresh_hold_temperature[0] = thresh1;
+    s_fan_info.thresh_hold_temperature[1] = thresh2;
+    s_fan_info.thresh_hold_temperature[2] = thresh3;
+    m_db_get_instance()->_request_sync_db(BIT_FLAG_SYNC_FAN);
+}
+
 void m_fan_set_powersaving(uint8_t is_saving)
 {
     s_fan_info.power_save = is_saving;
@@ -48,6 +57,17 @@ void m_fan_set_pcn(uint8_t pcn_set)
     s_fan_info.pcn = pcn_set;
     hw_74hc595_set_number(LED_7_SEG_CHARACTER_C_INDEX);
     m_ft62f28_send_speed();
+}
+
+static void m_fan_auto_mode_start(void)
+{
+    s_fan_info.mode = M_FAN_MODE_AUTO;
+    if (s_fan_info.speed == M_FAN_SPEED_OFF)
+    {
+        s_fan_info.speed = M_FAN_SPEED_1;
+    }
+    os_trace("%s  to speed: %u\r\n", __func__, s_fan_info.speed);
+    m_fan_set_speed(s_fan_info.mode, s_fan_info.speed);
 }
 
 void m_fan_set_speed(uint8_t mode_set, uint8_t speed_set)
@@ -95,6 +115,18 @@ void m_fan_set_speed(uint8_t mode_set, uint8_t speed_set)
         m_fan_start_natural_mode();
         m_ft62f28_send_speed();
     }
+    else if (s_fan_info.mode == M_FAN_MODE_AUTO)
+    {
+        hw_led_stt_set_stt(M_FAN_BUTTON_NATURAL_INDEX, LED_INDICATE_OFF);
+        if (device_type == FANAC)
+        {
+            hw_led_stt_set_stt(0, LED_INDICATE_OFF);
+            hw_led_stt_set_stt(1, LED_INDICATE_OFF);
+            hw_led_stt_set_stt(2, LED_INDICATE_OFF);
+        }
+        hw_fan_set_speed_level(s_fan_info.speed);
+        m_ft62f28_send_speed();
+    }
 }
 
 void m_fan_off(uint8_t src)
@@ -111,6 +143,10 @@ void m_fan_control(uint8_t mode_set, uint8_t speed_set, uint8_t pcn_set, uint8_t
     {
         m_fan_set_pcn(pcn_set);
     }
+    else if (mode_set == M_FAN_MODE_AUTO)
+    {
+        m_fan_auto_mode_start();
+    }
     else
     {
         m_fan_set_speed(mode_set, speed_set);
@@ -124,6 +160,18 @@ void m_fan_control(uint8_t mode_set, uint8_t speed_set, uint8_t pcn_set, uint8_t
 
 void m_fan_decrease_speed(void)
 {
+    if (s_fan_info.mode == M_FAN_MODE_AUTO)
+    {
+        if (device_type == FANDC && s_fan_info.mode == M_FAN_MODE_ON)
+        {
+            m_fan_off(SRC_ACTION_DEVICE);
+            return;
+        }
+        else
+        {
+            s_fan_info.speed = M_FAN_SPEED_3;
+        }
+    }
     if (s_fan_info.mode == M_FAN_MODE_ON)
     {
         if (s_fan_info.speed == M_FAN_SPEED_OFF)
@@ -135,15 +183,7 @@ void m_fan_decrease_speed(void)
             s_fan_info.speed = s_fan_info.speed - 1;
             if (s_fan_info.speed == M_FAN_SPEED_OFF)
             {
-                if (device_type == FANDC && s_fan_info.mode == M_FAN_MODE_ON)
-                {
-                    m_fan_off(SRC_ACTION_DEVICE);
-                    return;
-                }
-                else
-                {
-                    s_fan_info.speed = M_FAN_SPEED_3;
-                }
+                m_fan_auto_mode_start();
             }
         }
         os_trace("%s M_FAN_MODE_ON speed: %u\r\n", __func__, s_fan_info.speed);
@@ -187,20 +227,23 @@ static void m_fan_increase_speed(uint8_t is_off_when_excceed_limit)
             }
             else
             {
-                s_fan_info.speed = M_FAN_SPEED_1;
+                // s_fan_info.speed = M_FAN_SPEED_1;
+                m_fan_auto_mode_start();
             }
         }
         os_trace("%s M_FAN_MODE_ON speed: %u\r\n", __func__, s_fan_info.speed);
         m_fan_set_speed(s_fan_info.mode, s_fan_info.speed);
     }
-    else if (s_fan_info.mode == M_FAN_MODE_OFF)
+    else if (s_fan_info.mode == M_FAN_MODE_AUTO)
     {
         s_fan_info.mode = M_FAN_MODE_ON;
         s_fan_info.speed = M_FAN_SPEED_1;
         os_trace("%s from M_FAN_MODE_OFF to speed: %u\r\n", __func__, s_fan_info.speed);
-        // hw_fan_set_speed_level(s_fan_info.speed);
-        // hw_74hc595_set_number(s_fan_info.speed);
         m_fan_set_speed(s_fan_info.mode, s_fan_info.speed);
+    }
+    else if (s_fan_info.mode == M_FAN_MODE_OFF)
+    {
+        m_fan_auto_mode_start();
     }
     else if (s_fan_info.mode == M_FAN_MODE_NATURAL || s_fan_info.mode == M_FAN_MODE_PCN)
     {
@@ -210,8 +253,6 @@ static void m_fan_increase_speed(uint8_t is_off_when_excceed_limit)
             s_fan_info.speed = M_FAN_SPEED_1;
         }
         os_trace("%s M_FAN_MODE_NATURAL speed: %u\r\n", __func__, s_fan_info.speed);
-        // hw_fan_set_speed_level(s_fan_info.speed);
-        // hw_74hc595_set_number(s_fan_info.speed);
         m_fan_set_speed(s_fan_info.mode, s_fan_info.speed);
     }
 }
@@ -433,11 +474,15 @@ static void m_fan_check_flag(void)
         }
         else if (s_fan_info.mode == M_FAN_MODE_NATURAL)
         {
-            hw_74hc595_set_number(LED_7_SEG_CHARACTER_A_INDEX);
+            hw_74hc595_set_number(LED_7_SEG_CHARACTER_E_INDEX);
         }
         else if (s_fan_info.mode == M_FAN_MODE_PCN)
         {
             hw_74hc595_set_number(LED_7_SEG_CHARACTER_C_INDEX);
+        }
+        else if (s_fan_info.mode == M_FAN_MODE_AUTO)
+        {
+            hw_74hc595_set_number(LED_7_SEG_CHARACTER_A_INDEX);
         }
         else
         {
@@ -453,6 +498,7 @@ void m_led_7_seg_loop(uint32_t delay_ms)
         last_tick_blink_led = sys_get_tick_ms();
         m_fan_led_proccess_when_active();
         m_fan_mode_natural_process(1000);
+        m_fan_mode_auto_handle(1000);
         m_fan_timer_loop(1000);
     }
     m_fan_check_flag();

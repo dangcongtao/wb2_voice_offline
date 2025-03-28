@@ -22,5 +22,6 @@ void m_fan_start_natural_mode(void);
 void m_fan_toggle_natural_mode(void);
 
 void m_fan_mode_natural_process(uint32_t delay_ms);
+void m_fan_mode_auto_handle(uint32_t delay_ms);
 
 #endif // _M_FAN_EVENT_H_

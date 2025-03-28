@@ -4,88 +4,90 @@
 #include "app_config.h"
 #include <stdint.h>
 
-#define BRAND           "Hunonic"
+#define BRAND "Hunonic"
 
-#define DEF_AES_KEY     "yAlaCKUYI3qr0kTd"
-#define DEF_AES_IV      "QFjnL4GVODlNB0eZ"
+#define DEF_AES_KEY "yAlaCKUYI3qr0kTd"
+#define DEF_AES_IV "QFjnL4GVODlNB0eZ"
 
-#define CJSON_KEY_ACTION        "action"
-#define CJSON_KEY_ACT_ID        "act_id"
-#define CJSON_KEY_USER_ID       "u"
-#define CJSON_KEY_MAC_ADDRESS   "mac"
-#define CJSON_KEY_ID_DEVICE     "id"
-#define CJSON_KEY_TIME          "time"
-#define CJSON_KEY_URL           "url"
-#define CJSON_KEY_IP            "ip"
-#define CJSON_KEY_SSID          "ssid"
-#define CJSON_KEY_PASS          "pass"
-#define CJSON_KEY_AES_KEY       "key"
-#define CJSON_KEY_AES_IV        "iv"
-#define CJSON_KEY_PO            "po" /* power-on state */
-#define CJSON_KEY_INDEX         "index"
-#define CJSON_KEY_LOCK          "lock"
-#define CJSON_KEY_T_ACT         "t_ac1"
-#define CJSON_KEY_T_C           "t_c"
-#define CJSON_KEY_BACKUP        "backup"
-#define CJSON_KEY_MODE          "mode"
+#define CJSON_KEY_ACTION "action"
+#define CJSON_KEY_ACT_ID "act_id"
+#define CJSON_KEY_USER_ID "u"
+#define CJSON_KEY_MAC_ADDRESS "mac"
+#define CJSON_KEY_ID_DEVICE "id"
+#define CJSON_KEY_TIME "time"
+#define CJSON_KEY_URL "url"
+#define CJSON_KEY_IP "ip"
+#define CJSON_KEY_SSID "ssid"
+#define CJSON_KEY_PASS "pass"
+#define CJSON_KEY_AES_KEY "key"
+#define CJSON_KEY_AES_IV "iv"
+#define CJSON_KEY_PO "po" /* power-on state */
+#define CJSON_KEY_INDEX "index"
+#define CJSON_KEY_LOCK "lock"
+#define CJSON_KEY_T_ACT "t_ac1"
+#define CJSON_KEY_T_C "t_c"
+#define CJSON_KEY_BACKUP "backup"
+#define CJSON_KEY_MODE "mode"
 /* JSON KEY USE FOR CONFIGURATION PROCESSING */
-#define CJSON_KEY_SERVER        "server"
-#define CJSON_KEY_S_PORT        "port"
-#define CJSON_KEY_S_USER        "user"
-#define CJSON_KEY_S_PASS        "pass"
-#define CJSON_KEY_TOPIC_PUB     "pub"
-#define CJSON_KEY_TOPIC_SUB     "sub"
+#define CJSON_KEY_SERVER "server"
+#define CJSON_KEY_S_PORT "port"
+#define CJSON_KEY_S_USER "user"
+#define CJSON_KEY_S_PASS "pass"
+#define CJSON_KEY_TOPIC_PUB "pub"
+#define CJSON_KEY_TOPIC_SUB "sub"
 
-#define CJSON_KEY_AP_USER_ID        "uid"
-#define CJSON_KEY_TIMESTAMP      "timestamp"
-#define CJSON_KEY_LEAKAGE       "leakage"
+#define CJSON_KEY_AP_USER_ID "uid"
+#define CJSON_KEY_TIMESTAMP "timestamp"
+#define CJSON_KEY_LEAKAGE "leakage"
 
 /* JSON KEY USE FOR IR CONTROL*/
-#define CJSON_KEY_IR_TYPE_SEND  "type"
-#define CJSON_KEY_IR_DATA       "data"
-#define CJSON_KEY_IR_BRAND      "brand"
-#define CJSON_KEY_IR_POWER      "power"
-#define CJSON_KEY_IR_TEMP       "temp"
-#define CJSON_KEY_IR_MODE       "mode"
-#define CJSON_KEY_IR_FAN        "fan"
-#define CJSON_KEY_IR_SWINGV        "swingv"
-#define CJSON_KEY_IR_SWINGH        "swingh"
-#define CJSON_KEY_IR_ACT        "act"
-#define CJSON_KEY_OTP           "otp"
+#define CJSON_KEY_IR_TYPE_SEND "type"
+#define CJSON_KEY_IR_DATA "data"
+#define CJSON_KEY_IR_BRAND "brand"
+#define CJSON_KEY_IR_POWER "power"
+#define CJSON_KEY_IR_TEMP "temp"
+#define CJSON_KEY_IR_MODE "mode"
+#define CJSON_KEY_IR_FAN "fan"
+#define CJSON_KEY_IR_SWINGV "swingv"
+#define CJSON_KEY_IR_SWINGH "swingh"
+#define CJSON_KEY_IR_ACT "act"
+#define CJSON_KEY_OTP "otp"
 
 #define DEFAULT_AES_KEY "0000000000000000"
-#define DEFAULT_AES_IV  "0000000000000000"
+#define DEFAULT_AES_IV "0000000000000000"
 
 #define SIZEOF_ARRAY(array) (sizeof(array) / sizeof(array[0]))
 
 // state OTA
-#define STATE_OTA_STOP      0
-#define STATE_OTA_PROCESS   1
-#define STATE_OTA_SUCCESS   2
+#define STATE_OTA_STOP 0
+#define STATE_OTA_PROCESS 1
+#define STATE_OTA_SUCCESS 2
 
-#define LED_SPEED_NORMAL_IDX    1
-#define LED_SPEED_SWING_IDX     2
-#define LED_SPEED_NATURAL_IDX   3
-#define LED_STT_NETWORK_IDX     6
+#define LED_SPEED_NORMAL_IDX 1
+#define LED_SPEED_SWING_IDX 2
+#define LED_SPEED_NATURAL_IDX 3
+#define LED_STT_NETWORK_IDX 6
 
-typedef enum {
-    WSWITCH = 0,    // công tắc âm tường cảm hứng
-    LHSWITCH,       // công tắc lahu
-	SWMINI,         // công tắc mini
-    SSWITCH,        // ổ cắm SK01
-    SWSHOCK,        // công tắc chống giật Datic
-    SWSHOCK_HUN,     // công tắc chống giật Hunonic
+typedef enum
+{
+    WSWITCH = 0, // công tắc âm tường cảm hứng
+    LHSWITCH,    // công tắc lahu
+    SWMINI,      // công tắc mini
+    SSWITCH,     // ổ cắm SK01
+    SWSHOCK,     // công tắc chống giật Datic
+    SWSHOCK_HUN, // công tắc chống giật Hunonic
     IRWIFI,
-    FANDC,      // Quạt DC có IR, có đèn
-    FANAC,      // Quạt AC ko có IR
-    FANACIR,    // Quạt AC có IR
+    FANDC,   // Quạt DC có IR, có đèn
+    FANAC,   // Quạt AC ko có IR
+    FANACIR, // Quạt AC có IR
 } device_type_t;
 
 extern uint32_t device_type;
 extern uint32_t max_number_channel;
-extern char* gs_dev_type[];
+extern char *gs_dev_type[];
 
-typedef enum {
+typedef enum
+{
     CH1_ON = 1,
     CH1_OFF = 2,
     CH2_ON = 3,
@@ -115,14 +117,14 @@ typedef enum
     RESULT_SUCCESS = 1,
 } result_t;
 
-
 typedef enum
 {
     LOW = 0,
     HIGH = !LOW,
 } state_t;
 
-typedef enum {
+typedef enum
+{
     WIFI_IDLE = 0,
     WIFI_STATION,
     WIFI_SOFT_AP,
@@ -136,7 +138,7 @@ typedef enum
     BEACON_MSG
 } method_trasmit_t;
 
-#define DATA_MAX_LEN    2048
+#define DATA_MAX_LEN 2048
 
 typedef struct
 {
@@ -145,7 +147,7 @@ typedef struct
     uint8_t method_trasmit;
 } m_data_t;
 
-#define BLE_DATA_MAX_LEN    256
+#define BLE_DATA_MAX_LEN 256
 
 typedef struct
 {
@@ -154,7 +156,8 @@ typedef struct
     uint8_t method_trasmit;
 } m_ble_data_t;
 
-typedef enum {
+typedef enum
+{
     M_WIFI_START = 0,
     M_WIFI_NOT_CFG,
     M_WIFI_DISCONNECT,
@@ -173,13 +176,14 @@ typedef enum {
     M_WIFI_DEV_ACTIVE,
 } m_state_t;
 
-typedef enum {
+typedef enum
+{
     SIG_NONE = 0,
-	SIG_SMART_CFG,
+    SIG_SMART_CFG,
     SIG_SMART_CFG_DONE,
-	SIG_AP_CFG,
+    SIG_AP_CFG,
     SIG_AP_CFG_DONE,
-	SIG_WIFI_DISCONNECT,
+    SIG_WIFI_DISCONNECT,
     SIG_WIFI_CONNECTED,
     SIG_MQTT_GOT_INFO,
     SIG_MQTT_GET_INFO_FAIL,
@@ -187,15 +191,18 @@ typedef enum {
     SIG_MQTT_DISCONNECTED,
 } m_signal_t;
 
-typedef enum {
+typedef enum
+{
     M_FAN_MODE_OFF = 0,
     M_FAN_MODE_ON = 1,
     M_FAN_MODE_NATURAL = 2,
     M_FAN_MODE_PCN = 3,
+    M_FAN_MODE_AUTO = 4,
     M_FAN_MODE_INVALID = 0xFF
 } m_fan_mode_t;
 
-typedef enum {
+typedef enum
+{
     M_FAN_SPEED_OFF = 0,
     M_FAN_SPEED_1 = 1,
     M_FAN_SPEED_2 = 2,
@@ -203,14 +210,15 @@ typedef enum {
     M_FAN_SPEED_INVALID = 0xFF
 } m_fan_speed_t;
 
-typedef struct {
-	m_state_t context;
-	m_signal_t signal;
-	m_state_t next_state;
-    void (*signal_handler_cb)(void * arg);
+typedef struct
+{
+    m_state_t context;
+    m_signal_t signal;
+    m_state_t next_state;
+    void (*signal_handler_cb)(void *arg);
 } m_state_transmit_t;
 
-#define APP_BTN_HOLD_EVENT_5S                    (5000)
-#define APP_BTN_HOLD_EVENT_15S                   (15000)
+#define APP_BTN_HOLD_EVENT_5S (5000)
+#define APP_BTN_HOLD_EVENT_15S (15000)
 
 #endif /* CJSON_KEYWORD_H__ */

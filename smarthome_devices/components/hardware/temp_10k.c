@@ -1,5 +1,6 @@
 #include "hardware.h"
 #include "hosal_adc.h"
+#include "lpf.h"
 #include <math.h>
 
 #define R1 10000       /* Ohm */
@@ -37,12 +38,12 @@ static void steinhart_hart(unsigned int resistence, uint32_t *value)
 
     // Convert in Celsius
     temperature = temperature - 273.15;
-    // os_trace("Temperature: %f\r\n", temperature);
+    os_trace("Temperature: %f\r\n", temperature);
 
     *value = (uint32_t)(temperature * 10);
 }
 
-#define DIFF(a, b) (a>b?(a-b):(b-a))
+#define DIFF(a, b) (a > b ? (a - b) : (b - a))
 
 uint32_t val_temperature = 0;
 uint32_t hw_temp_read(void)
@@ -50,8 +51,13 @@ uint32_t hw_temp_read(void)
     static uint32_t time_stamp;
     static uint32_t last_time_send;
     static uint32_t old_temp;
+    static uint8_t is_the_first_time = 0;
+    static lpf_data_t m_real_temperature;
 
-    if (time_stamp && sys_get_tick_ms() - time_stamp < 10000)
+    if (!time_stamp)
+    {
+    }
+    else if (sys_get_tick_ms() - time_stamp < 10000)
     {
         return 0;
     }
@@ -64,7 +70,26 @@ uint32_t hw_temp_read(void)
     double voltage = (double)val / 1000;
     double resistance = (voltage * R1) / (VCC - voltage);
     steinhart_hart(resistance, &val_temperature);
-    // os_trace("ADC value: %d, resistance: %lf, temp: %lu\r\n", val, resistance, val_temperature);
+    if (!is_the_first_time)
+    {
+        is_the_first_time = 1;
+        m_real_temperature.estimate_value = val_temperature * 1000;
+        m_real_temperature.gain = 10; /* 5% */
+        os_trace("ADC 0 value: %d, resistance: %lf, temp: %lu\r\n", val, resistance, val_temperature);
+    }
+    else if (val_temperature < 700 && val_temperature > 100)
+    {
+        val_temperature *= 1000;
+        lpf_update_estimate(&m_real_temperature, &val_temperature);
+        val_temperature = m_real_temperature.estimate_value / 1000;
+        os_trace("ADC 1 value: %d, resistance: %lf, temp: %lu\r\n", val, resistance, val_temperature);
+    }
+    else
+    {
+        val_temperature = m_real_temperature.estimate_value / 1000;
+        os_trace("ADC 2 value: %d, resistance: %lf, temp: %lu\r\n", val, resistance, val_temperature);
+        return 0;
+    }
 
     if (DIFF(old_temp, val_temperature) > 5 || sys_get_tick_ms() - last_time_send > 60000)
     {

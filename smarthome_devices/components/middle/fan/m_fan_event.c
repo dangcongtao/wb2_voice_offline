@@ -141,6 +141,63 @@ void m_fan_mode_natural_process(uint32_t delay_ms)
     }
 }
 
+extern uint32_t val_temperature;
+void m_fan_mode_auto_handle(uint32_t delay_ms)
+{
+    m_fan_info_t *my_fan = m_fan_get_instance();
+    if (my_fan->mode == M_FAN_MODE_AUTO && my_fan->mode != M_FAN_MODE_OFF)
+    {
+        s_natural_mode.time_current += delay_ms;
+        if (s_natural_mode.time_current < 5000)
+        {
+            return;
+        }
+        s_natural_mode.time_current = 0;
+        uint8_t handle = 0;
+        uint8_t my_speed = M_FAN_SPEED_1;
+        if (val_temperature < 100 || val_temperature > 700)
+        {
+            return;
+        }
+        else if (val_temperature < my_fan->thresh_hold_temperature[0])
+        {
+            my_speed = M_FAN_SPEED_OFF;
+        }
+        else if (val_temperature < my_fan->thresh_hold_temperature[1])
+        {
+            my_speed = M_FAN_SPEED_1;
+        }
+        else if (val_temperature < my_fan->thresh_hold_temperature[2])
+        {
+            my_speed = M_FAN_SPEED_2;
+        }
+        else if (val_temperature >= my_fan->thresh_hold_temperature[2])
+        {
+            my_speed = M_FAN_SPEED_3;
+        }
+
+        if (my_fan->speed != my_speed)
+        {
+            os_trace("%s temp: %lu, my_speed: %u\r\n", __func__, val_temperature, my_speed);
+            my_fan->speed = my_speed;
+            switch (my_speed)
+            {
+            case M_FAN_SPEED_OFF:
+                m_fan_set_speed(M_FAN_MODE_OFF, my_speed);
+                break;
+            case M_FAN_SPEED_1:
+            case M_FAN_SPEED_2:
+            case M_FAN_SPEED_3:
+                m_fan_set_speed(M_FAN_MODE_AUTO, my_speed);
+                break;
+
+            default:
+                break;
+            }
+        }
+    }
+}
+
 void m_fan_timer_toggle(void)
 {
     m_fan_info_t *my_fan = m_fan_get_instance();
