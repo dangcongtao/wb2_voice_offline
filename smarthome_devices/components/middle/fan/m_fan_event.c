@@ -43,7 +43,7 @@ uint32_t m_fan_get_time_set(void)
 
 void m_fan_start_natural_mode(void)
 {
-    hw_74hc595_set_number(LED_7_SEG_CHARACTER_A_INDEX);
+    hw_74hc595_set_number(LED_7_SEG_CHARACTER_E_INDEX);
     if (device_type == FANDC)
     {
         s_natural_mode.speed_current = 10; // 10%
