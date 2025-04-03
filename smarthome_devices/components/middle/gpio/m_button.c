@@ -79,7 +79,6 @@ void on_button_event_cb(int button_pin, int event, void *data)
             ignore_event_release[button_pin] = 0;
             return;
         }
-
         else if (ignore_event_release[button_pin] == EVENT_BTN_HOLD_SO_LONG)
         {
             app_send_offline_message(1);
@@ -139,6 +138,30 @@ void on_button_event_cb(int button_pin, int event, void *data)
     }
 }
 
+static void m_button_reset_touch_loop(void)
+{
+    if (time_cnt_down_reset_TS04 == 0)
+    {
+        uint8_t s_check = 0;
+        time_cnt_down_reset_TS04 = TIME_OUT_RESET_TS04_WITHOUT_PRESS;
+        for (uint8_t i = 0; i < max_number_channel; i++)
+        {
+            s_check += ignore_event_release[i];
+        }
+        if (s_check == 0)
+        {
+            os_trace("reset ts04 every 2 minutes\r\n");
+            m_ft62f28_send_reset_touch();
+            return;
+        }
+        os_trace("reset time count down ts04 reset\r\n");
+    }
+    else
+    {
+        time_cnt_down_reset_TS04--;
+    }
+}
+
 static void m_button_config(void)
 {
     static app_btn_hw_config_t m_hw_button_initialize_value[MAX_NUM_BUTTON];
@@ -177,6 +200,7 @@ static void button_scan_task(void *param)
         m_led_7_seg_loop(50);
         m_ft62f28_check_send_change();
         buzz_loop();
+        m_button_reset_touch_loop();
 
         if (!dev_is_doing_config())
         {
