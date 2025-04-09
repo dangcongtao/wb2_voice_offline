@@ -62,7 +62,7 @@ void m_fan_set_pcn(uint8_t pcn_set)
 static void m_fan_auto_mode_start(void)
 {
     s_fan_info.mode = M_FAN_MODE_AUTO;
-    if (s_fan_info.speed == M_FAN_SPEED_OFF)
+    if (s_fan_info.speed == M_FAN_SPEED_OFF || s_fan_info.speed > M_FAN_SPEED_3)
     {
         s_fan_info.speed = M_FAN_SPEED_1;
     }
@@ -96,6 +96,7 @@ void m_fan_set_speed(uint8_t mode_set, uint8_t speed_set)
     else if (s_fan_info.mode == M_FAN_MODE_OFF)
     {
         uint8_t restore_val = prevent_buzz;
+        s_fan_info.speed = M_FAN_SPEED_OFF;
         prevent_buzz = 0;
         m_fan_need_buzz(10);
         prevent_buzz = restore_val;
@@ -221,32 +222,28 @@ static void m_fan_increase_speed(uint8_t is_off_when_excceed_limit)
         s_fan_info.speed = s_fan_info.speed + 1;
         if (s_fan_info.speed > M_FAN_SPEED_3)
         {
-            if (is_off_when_excceed_limit)
-            {
-                m_fan_set_speed(M_FAN_MODE_OFF, M_FAN_SPEED_OFF);
-                return;
-            }
-            else
-            {
-                // s_fan_info.speed = M_FAN_SPEED_1;
-                m_fan_auto_mode_start();
-            }
+            // s_fan_info.speed = M_FAN_SPEED_1;
+            m_fan_auto_mode_start();
         }
         os_trace("%s M_FAN_MODE_ON speed: %u\r\n", __func__, s_fan_info.speed);
         m_fan_set_speed(s_fan_info.mode, s_fan_info.speed);
     }
     else if (s_fan_info.mode == M_FAN_MODE_AUTO)
     {
-        s_fan_info.mode = M_FAN_MODE_ON;
-        s_fan_info.speed = M_FAN_SPEED_1;
-        os_trace("%s from M_FAN_MODE_OFF to speed: %u\r\n", __func__, s_fan_info.speed);
-        m_fan_set_speed(s_fan_info.mode, s_fan_info.speed);
+        if (is_off_when_excceed_limit)
+        {
+            m_fan_set_speed(M_FAN_MODE_OFF, M_FAN_SPEED_OFF);
+            return;
+        }
+        else
+        {
+            s_fan_info.mode = M_FAN_MODE_ON;
+            s_fan_info.speed = M_FAN_SPEED_1;
+            os_trace("%s from M_FAN_MODE_OFF to speed: %u\r\n", __func__, s_fan_info.speed);
+            m_fan_set_speed(s_fan_info.mode, s_fan_info.speed);
+        }
     }
-    else if (s_fan_info.mode == M_FAN_MODE_OFF)
-    {
-        m_fan_auto_mode_start();
-    }
-    else if (s_fan_info.mode == M_FAN_MODE_NATURAL || s_fan_info.mode == M_FAN_MODE_PCN)
+    else if (s_fan_info.mode == M_FAN_MODE_OFF || s_fan_info.mode == M_FAN_MODE_NATURAL || s_fan_info.mode == M_FAN_MODE_PCN)
     {
         s_fan_info.mode = M_FAN_MODE_ON;
         if (s_fan_info.speed == M_FAN_SPEED_OFF)
