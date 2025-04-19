@@ -163,13 +163,13 @@ static void app_startup_message(void)
             "{\"%s\":100,\"reason\":%lu,\"id\":\"%s\",\"ver\":%s,"
             "\"ssid\":\"%s\",\"pass\":\"%s\",\"streng\":%d,"
             "\"ip\":\"%s\",\"vermqtt\":%lu,\"mode\":%u,\"lv\":%u,\"pcn\":%u,\"swing\":%u,"
-            "\"buzz\":%u,\"t\":%lu,\"temp\":%lu,\"lp\":%u}",
+            "\"buzz\":%u,\"t\":%lu,\"temp\":%lu,\"lamp\":%u,\"lp\":%u}",
             gs_dev_type[device_type], num_send * 100U + last_reason_reset * 10U + (uint32_t)bl_sys_rstinfo_get_hun(), // hang chuc: flash_reason reset, hang don vi: BL_RST_REASON_E
             m_db_get_instance()->_get_dev_id(), FIRMWARE_VERSION,
             app_databse._wifi_info->_ssid, app_databse._wifi_info->_passwd,
             app_databse._wifi_info->_rssi, app_databse._wifi_info->_ip, app_databse._mqtt_info->vermqtt,
             app_databse._fan_info->mode, app_databse._fan_info->speed, app_databse._fan_info->pcn, app_databse._fan_info->swing,
-            !app_databse._fan_info->disable_buzz, m_fan_get_time_remain(), val_temperature, app_databse._fan_info->power_save);
+            !app_databse._fan_info->disable_buzz, m_fan_get_time_remain(), val_temperature, app_databse._fan_info->light, app_databse._fan_info->power_save);
 
     num_send++;
 
@@ -834,13 +834,13 @@ static void app_get_info(cJSON *jsRoot)
             "{\"%s\":%ld,\"u\":0,\"id\":\"%s\",\"ver\":%s,"
             "\"extras\":%d,\"ssid\":\"%s\",\"pass\":\"%s\",\"streng\":%d,"
             "\"ip\":\"%s\",\"mode\":%u,\"lv\":%u,\"pcn\":%u,\"swing\":%u,"
-            "\"buzz\":%u,\"t\":%lu,\"temp\":%lu,\"lp\":%u}",
+            "\"buzz\":%u,\"t\":%lu,\"temp\":%lu,\"lamp\":%u,\"lp\":%u}",
             gs_dev_type[device_type], type,
             m_db_get_instance()->_get_dev_id(), FIRMWARE_VERSION, EXTRAS,
             app_databse._wifi_info->_ssid, app_databse._wifi_info->_passwd,
             app_databse._wifi_info->_rssi, app_databse._wifi_info->_ip,
             app_databse._fan_info->mode, app_databse._fan_info->speed, app_databse._fan_info->pcn, app_databse._fan_info->swing,
-            !app_databse._fan_info->disable_buzz, m_fan_get_time_remain(), val_temperature, app_databse._fan_info->power_save);
+            !app_databse._fan_info->disable_buzz, m_fan_get_time_remain(), val_temperature, app_databse._fan_info->light,  app_databse._fan_info->power_save);
 
     app_send_data(respond, strlen(respond));
 }
