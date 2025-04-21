@@ -37,6 +37,7 @@ static int previous_otp;
 
 static void app_startup_message(void);
 static void app_get_info(cJSON *jsRoot);
+static void app_get_fan_info(cJSON *jsRoot);
 static void app_set_wifi(cJSON *jsRoot);
 static void app_request_ota(cJSON *jsRoot);
 static void app_set_static_ip(cJSON *jsRoot);
@@ -73,6 +74,7 @@ static void app_ble_authen_connection(cJSON *js_root);
 wswitch_handler_t array_handler[] = {
     {app_set_mqtt_info, 990},
     {app_get_info, 105},
+    {app_get_fan_info, 107},
     // {app_set_power_on, 121},
     {app_remove_device, 123},
     {app_set_wifi, 128},
@@ -839,6 +841,33 @@ static void app_get_info(cJSON *jsRoot)
             m_db_get_instance()->_get_dev_id(), FIRMWARE_VERSION, EXTRAS,
             app_databse._wifi_info->_ssid, app_databse._wifi_info->_passwd,
             app_databse._wifi_info->_rssi, app_databse._wifi_info->_ip,
+            app_databse._fan_info->mode, app_databse._fan_info->speed, app_databse._fan_info->pcn, app_databse._fan_info->swing,
+            !app_databse._fan_info->disable_buzz, m_fan_get_time_remain(), val_temperature, app_databse._fan_info->light,  app_databse._fan_info->power_save);
+
+    app_send_data(respond, strlen(respond));
+}
+/* 107 */
+static void app_get_fan_info(cJSON *jsRoot)
+{
+    uint32_t type = 0;
+
+    cJSON *jsType = cJSON_GetObjectItem(jsRoot, gs_dev_type[device_type]);
+    if (jsType == NULL)
+    {
+        os_trace("Get JSON type mqtt message fail\n");
+        return;
+    }
+    type = jsType->valueint;
+
+    /* respond server here */
+    m_device_t app_databse = m_db_get_instance()->_m_device;
+    memset(respond, 0, sizeof(respond));
+
+    sprintf(respond,
+            "{\"%s\":%ld,"
+            "\"mode\":%u,\"lv\":%u,\"pcn\":%u,\"swing\":%u,"
+            "\"buzz\":%u,\"t\":%lu,\"temp\":%lu,\"lamp\":%u,\"lp\":%u}",
+            gs_dev_type[device_type], type,
             app_databse._fan_info->mode, app_databse._fan_info->speed, app_databse._fan_info->pcn, app_databse._fan_info->swing,
             !app_databse._fan_info->disable_buzz, m_fan_get_time_remain(), val_temperature, app_databse._fan_info->light,  app_databse._fan_info->power_save);
 
