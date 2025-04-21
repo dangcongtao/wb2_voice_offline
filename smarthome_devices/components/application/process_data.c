@@ -503,7 +503,7 @@ static void app_control_fan_with_one(cJSON *js_Root)
 RESPONSE:
     /* respond server here */
     memset(respond, 0, sizeof(respond));
-    sprintf(respond, "{\"%s\":20,\"mode\":%u,\"lv\":%u,\"swing\":%u,\"pcn\":%u,\"lamp\":%u,\"u\":%lu,\"act_id\":%lu,\"result\":%d}", gs_dev_type[device_type], my_fan->mode, my_fan->speed, my_fan->pcn, my_fan->light, my_fan->swing, uid, act_id, result);
+    sprintf(respond, "{\"%s\":20,\"mode\":%u,\"lv\":%u,\"swing\":%u,\"pcn\":%u,\"lamp\":%u,\"u\":%lu,\"act_id\":%lu,\"result\":%d}", gs_dev_type[device_type], my_fan->mode, my_fan->speed, my_fan->swing, my_fan->pcn, my_fan->light, uid, act_id, result);
     app_send_data(respond, strlen(respond));
 }
 
