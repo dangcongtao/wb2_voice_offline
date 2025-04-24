@@ -417,8 +417,8 @@ static void app_control_fan(cJSON *js_Root)
     }
     act_id = jsAct->valueint;
 
-    m_fan_set_light(lamp);
-    m_fan_control(mode, level, pcn, swing, uid, act_id, 0);
+    // m_fan_set_light(lamp);
+    m_fan_control(mode, level, pcn, swing, lamp, uid, act_id, 0);
 
     result = 1;
 RESPONSE:

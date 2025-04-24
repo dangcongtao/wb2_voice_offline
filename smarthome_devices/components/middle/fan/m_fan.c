@@ -138,8 +138,9 @@ void m_fan_off(uint8_t src)
     app_fan_respond_control(s_fan_info.mode, s_fan_info.speed, s_fan_info.pcn, s_fan_info.swing, s_fan_info.light, 0, src);
 }
 
-void m_fan_control(uint8_t mode_set, uint8_t speed_set, uint8_t pcn_set, uint8_t swing_set, uint32_t uid, uint8_t act_id, uint8_t respond)
+void m_fan_control(uint8_t mode_set, uint8_t speed_set, uint8_t pcn_set, uint8_t swing_set, uint8_t lamp_set, uint32_t uid, uint8_t act_id, uint8_t respond)
 {
+    uint8_t can_set_lamp = 1;
     m_fan_need_buzz(1);
     if (mode_set == M_FAN_MODE_PCN)
     {
@@ -151,7 +152,15 @@ void m_fan_control(uint8_t mode_set, uint8_t speed_set, uint8_t pcn_set, uint8_t
     }
     else
     {
+        if (mode_set == M_FAN_MODE_OFF && s_fan_info.mode != M_FAN_MODE_OFF)
+        {
+            can_set_lamp = 0;
+        }
         m_fan_set_speed(mode_set, speed_set);
+    }
+    if (can_set_lamp)
+    {
+        m_fan_set_light(lamp_set);
     }
     m_fan_set_swing(swing_set);
     if (respond)
