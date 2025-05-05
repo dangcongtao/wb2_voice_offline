@@ -173,17 +173,14 @@ void m_fan_decrease_speed(void)
 {
     if (s_fan_info.mode == M_FAN_MODE_AUTO)
     {
-        if (device_type == FANDC)
-        {
-            m_fan_off(SRC_ACTION_DEVICE);
-            return;
-        }
-        else
-        {
-            s_fan_info.speed = M_FAN_SPEED_3;
-        }
+        os_trace("%s from M_FAN_MODE_AUTO to speed 3\r\n", __func__);
+        s_fan_info.mode = M_FAN_MODE_ON;
+        s_fan_info.speed = M_FAN_SPEED_3;
+        hw_fan_set_speed_level(s_fan_info.speed);
+        hw_74hc595_set_number(s_fan_info.speed);
+        hw_led_stt_set_stt(M_FAN_BUTTON_NATURAL_INDEX, LED_INDICATE_OFF);
     }
-    if (s_fan_info.mode == M_FAN_MODE_ON)
+    else if (s_fan_info.mode == M_FAN_MODE_ON)
     {
         if (s_fan_info.speed == M_FAN_SPEED_OFF)
         {
@@ -192,23 +189,20 @@ void m_fan_decrease_speed(void)
         else
         {
             s_fan_info.speed = s_fan_info.speed - 1;
+            if (s_fan_info.speed == M_FAN_SPEED_OFF)
+            {
+                m_fan_off(SRC_ACTION_DEVICE);
+            }
         }
         os_trace("%s M_FAN_MODE_ON speed: %u\r\n", __func__, s_fan_info.speed);
         hw_fan_set_speed_level(s_fan_info.speed);
         hw_74hc595_set_number(s_fan_info.speed);
-        if (s_fan_info.speed == M_FAN_SPEED_OFF)
-        {
-            m_fan_auto_mode_start();
-        }
         hw_led_stt_set_stt(M_FAN_BUTTON_NATURAL_INDEX, LED_INDICATE_OFF);
     }
     else if (s_fan_info.mode == M_FAN_MODE_OFF)
     {
-        s_fan_info.mode = M_FAN_MODE_ON;
-        s_fan_info.speed = M_FAN_SPEED_3;
-        os_trace("%s from M_FAN_MODE_OFF to speed: %u\r\n", __func__, s_fan_info.speed);
-        hw_fan_set_speed_level(s_fan_info.speed);
-        hw_74hc595_set_number(s_fan_info.speed);
+        os_trace("%s from M_FAN_MODE_OFF to auto_mode\r\n", __func__);
+        m_fan_auto_mode_start();
         hw_led_stt_set_stt(M_FAN_BUTTON_NATURAL_INDEX, LED_INDICATE_OFF);
     }
     else if (s_fan_info.mode == M_FAN_MODE_NATURAL || s_fan_info.mode == M_FAN_MODE_PCN)
