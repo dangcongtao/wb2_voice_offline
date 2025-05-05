@@ -29,6 +29,7 @@
 #include "event_driven.h"
 #include "m_fan_event.h"
 #include "app_ir.h"
+#include "flash_api.h"
 
 char respond[512];
 extern char key[16], iv[16];
@@ -71,7 +72,10 @@ static void ble_config_step2(cJSON *jsRoot);
 static void app_ble_discover(cJSON *js_root);
 static void app_ble_authen_connection(cJSON *js_root);
 
+static void app_change_device_id(cJSON *js_root);
+
 wswitch_handler_t array_handler[] = {
+    {app_change_device_id, 322},
     {app_set_mqtt_info, 990},
     {app_get_info, 105},
     {app_get_fan_info, 107},
@@ -842,7 +846,7 @@ static void app_get_info(cJSON *jsRoot)
             app_databse._wifi_info->_ssid, app_databse._wifi_info->_passwd,
             app_databse._wifi_info->_rssi, app_databse._wifi_info->_ip,
             app_databse._fan_info->mode, app_databse._fan_info->speed, app_databse._fan_info->pcn, app_databse._fan_info->swing,
-            !app_databse._fan_info->disable_buzz, m_fan_get_time_remain(), val_temperature, app_databse._fan_info->light,  app_databse._fan_info->power_save);
+            !app_databse._fan_info->disable_buzz, m_fan_get_time_remain(), val_temperature, app_databse._fan_info->light, app_databse._fan_info->power_save);
 
     app_send_data(respond, strlen(respond));
 }
@@ -869,7 +873,7 @@ static void app_get_fan_info(cJSON *jsRoot)
             "\"buzz\":%u,\"t\":%lu,\"temp\":%lu,\"lamp\":%u,\"lp\":%u}",
             gs_dev_type[device_type], type,
             app_databse._fan_info->mode, app_databse._fan_info->speed, app_databse._fan_info->pcn, app_databse._fan_info->swing,
-            !app_databse._fan_info->disable_buzz, m_fan_get_time_remain(), val_temperature, app_databse._fan_info->light,  app_databse._fan_info->power_save);
+            !app_databse._fan_info->disable_buzz, m_fan_get_time_remain(), val_temperature, app_databse._fan_info->light, app_databse._fan_info->power_save);
 
     app_send_data(respond, strlen(respond));
 }
@@ -1197,6 +1201,24 @@ void app_ble_authen_connection(cJSON *js_root)
             gs_dev_type[device_type], cmd, uid, previous_otp);
 
     ble_send_data(respond, strlen(respond));
+    // app_send_data(respond, strlen(respond));
+}
+
+void app_change_device_id(cJSON *js_root)
+{
+    cJSON *js_val = NULL;
+    char *dev_id_str = NULL;
+
+    js_val = cJSON_GetObjectItem(js_root, "dev_id");
+    if (js_val == NULL)
+    {
+        os_trace("get device id fail \r\n");
+        return;
+    }
+    dev_id_str = js_val->valuestring;
+
+    flash_write_device_id((void *)(dev_id_str), strlen(dev_id_str));
+
     // app_send_data(respond, strlen(respond));
 }
 
