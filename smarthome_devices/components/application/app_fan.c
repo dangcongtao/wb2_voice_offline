@@ -26,7 +26,22 @@ void app_fan_respond_control(uint8_t mode, uint8_t speed, uint8_t pcn, uint8_t s
 void app_fan_send_temperature(uint32_t temper)
 {
     if (m_mqtt_get_instance()._mqtt_state >= MQTT_INTIALIZED)
+    {
         memset(respond, 0, sizeof(respond));
-    sprintf(respond, "{\"%s\":23,\"temp\":%lu}", gs_dev_type[device_type], temper);
-    app_send_data(respond, strlen(respond));
+        sprintf(respond, "{\"%s\":23,\"temp\":%lu}", gs_dev_type[device_type], temper);
+        app_send_data(respond, strlen(respond));
+    }
+}
+
+extern uint32_t val_battery;
+void app_fan_send_battery(uint8_t bat_percent, uint8_t bat_charging_status)
+{
+    os_trace("app_fan_send_battery\r\n");
+    if (m_mqtt_get_instance()._mqtt_state >= MQTT_INTIALIZED)
+    {
+        os_trace("app_fan_send_battery: %u, %u\r\n", bat_percent, !bat_charging_status);
+        memset(respond, 0, sizeof(respond));
+        sprintf(respond, "{\"%s\":28,\"bat\":%u,\"charging\":%u,\"mV\":%lu}", gs_dev_type[device_type], bat_percent, !bat_charging_status, val_battery);
+        app_send_data(respond, strlen(respond));
+    }
 }

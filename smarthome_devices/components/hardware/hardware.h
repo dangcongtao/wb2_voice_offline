@@ -59,6 +59,16 @@
 
 #define IR_RX 12
 #define IR_RX_POS 1
+
+#define IR_RX_DC 2
+#define IR_RX_DC_POS 1
+#define BAT_LV_PIN 12
+#define BAT_LV_ADC_CHANNEL 0
+#define BAT_CHARGE_STATUS_PIN  17
+
+#define BAT_CHARGE_STATUS_CHARGING 0
+#define BAT_CHARGE_STATUS_DISCHARGING 1
+
 #define IRpin 5
 
 #define LED_COM_PIN 2
@@ -79,7 +89,6 @@ uint32_t sys_get_tick_ms(void);
 /* button */
 void hw_button_config(uint32_t index);
 uint32_t hw_btn_read(uint32_t index);
-void hw_btn_read_adc(void);
 void hw_ts04_write(uint8_t value);
 void hw_btn_set_val_button(uint8_t val);
 
@@ -110,6 +119,7 @@ void gpio_set_input(int pin);
 
 /* Temperature */
 uint32_t hw_temp_read(void);
+uint32_t hw_bat_read(void);
 void hw_temp_config(void);
 
 #endif

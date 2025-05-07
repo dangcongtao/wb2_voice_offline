@@ -851,6 +851,8 @@ static void app_get_info(cJSON *jsRoot)
     app_send_data(respond, strlen(respond));
 }
 /* 107 */
+extern uint8_t bat_percent;
+extern uint8_t bat_charging_status;
 static void app_get_fan_info(cJSON *jsRoot)
 {
     uint32_t type = 0;
@@ -870,10 +872,12 @@ static void app_get_fan_info(cJSON *jsRoot)
     sprintf(respond,
             "{\"%s\":%ld,"
             "\"mode\":%u,\"lv\":%u,\"pcn\":%u,\"swing\":%u,"
-            "\"buzz\":%u,\"t\":%lu,\"temp\":%lu,\"lamp\":%u,\"lp\":%u}",
+            "\"buzz\":%u,\"t\":%lu,\"temp\":%lu,\"lamp\":%u,\"lp\":%u"
+            "\"bat\":%u,\"charging\":%u}",
             gs_dev_type[device_type], type,
             app_databse._fan_info->mode, app_databse._fan_info->speed, app_databse._fan_info->pcn, app_databse._fan_info->swing,
-            !app_databse._fan_info->disable_buzz, m_fan_get_time_remain(), val_temperature, app_databse._fan_info->light, app_databse._fan_info->power_save);
+            !app_databse._fan_info->disable_buzz, m_fan_get_time_remain(), val_temperature, app_databse._fan_info->light, app_databse._fan_info->power_save,
+            bat_percent, !bat_charging_status);
 
     app_send_data(respond, strlen(respond));
 }

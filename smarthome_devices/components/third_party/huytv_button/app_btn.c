@@ -62,8 +62,6 @@ void app_btn_scan(void* params)
         return;
     }
 
-    m_btn_config.btn_get_adc();
-
     /* read all button */
     for (i = 0; i < m_btn_config.btn_count; i++)
     {

@@ -32,6 +32,9 @@
 #include "m_http_client.h"
 
 extern uint32_t val_temperature;
+extern uint8_t bat_percent;
+extern uint8_t bat_charging_status;
+
 void main_loop(void)
 {
     const uint32_t delay_ms = 10;
@@ -45,6 +48,10 @@ void main_loop(void)
         if (hw_temp_read())
         {
             app_fan_send_temperature(val_temperature);
+        }
+        else if (hw_bat_read())
+        {
+            app_fan_send_battery(bat_percent, bat_charging_status);
         }
 
         // old += 1;

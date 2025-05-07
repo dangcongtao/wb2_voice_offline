@@ -1702,12 +1702,22 @@ static void enableIRIn(const bool pullup)
     // This wasn't required on the ESP8266s, but it shouldn't hurt to make sure.
     timer3 = bl_os_timer_create(timer3_cb, NULL);
 
-    touch_gpio_neg.port = params.recvpin;
-    touch_gpio_pos.port = IR_RX_POS;
+    if (device_type == FANDC)
+    {
+        touch_gpio_neg.port = params.recvpin;
+        touch_gpio_pos.port = IR_RX_DC_POS;
 
-    bl_gpio_enable_input(params.recvpin, 1, 0);
-    bl_gpio_enable_input(IR_RX_POS, 1, 0);
+        bl_gpio_enable_input(params.recvpin, 1, 0);
+        bl_gpio_enable_input(IR_RX_DC_POS, 1, 0);
+    }
+    else
+    {
+        touch_gpio_neg.port = params.recvpin;
+        touch_gpio_pos.port = IR_RX_POS;
 
+        bl_gpio_enable_input(params.recvpin, 1, 0);
+        bl_gpio_enable_input(IR_RX_POS, 1, 0);
+    }
     resume();
 
     hosal_gpio_irq_set(&touch_gpio_neg, HOSAL_IRQ_TRIG_NEG_PULSE, gpio_intr_neg, NULL);
@@ -2140,7 +2150,14 @@ void m_ir_task(void *param)
 {
     bl_gpio_enable_output(IRpin, 0, 1);
     IRsend_init(IRpin, false, true);
-    IRrecv_init(IR_RX, MAX_SIZE_BUFFER, 100, false);
+    if (device_type == FANDC)
+    {
+        IRrecv_init(IR_RX_DC, MAX_SIZE_BUFFER, 100, false);
+    }
+    else
+    {
+        IRrecv_init(IR_RX, MAX_SIZE_BUFFER, 100, false);
+    }
 
     enableIRIn(1);
 

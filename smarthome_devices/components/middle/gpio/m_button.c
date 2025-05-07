@@ -178,7 +178,6 @@ static void m_button_config(void)
     conf.get_tick_cb = sys_get_tick_ms;
     conf.btn_initialize = hw_button_config;
     conf.btn_read = hw_btn_read;
-    conf.btn_get_adc = hw_btn_read_adc;
 
     app_btn_initialize(&conf);
     app_btn_register_callback(APP_BTN_EVT_PRESSED, on_button_event_cb, NULL);
