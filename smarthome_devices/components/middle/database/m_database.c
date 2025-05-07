@@ -261,6 +261,9 @@ static void m_database_sync_task(void *param)
             memset(s_m_database._m_device._wifi_info, 0, sizeof(m_wifi_info_t));
             memset(s_m_database._m_device._mqtt_info, 0, sizeof(m_mqtt_info_t));
             s_m_database._m_device._device_is_paired = 0;
+            s_m_database._m_device._fan_info->thresh_hold_temperature[0] = 200;
+            s_m_database._m_device._fan_info->thresh_hold_temperature[1] = 260;
+            s_m_database._m_device._fan_info->thresh_hold_temperature[2] = 290;
 
             s_request_reset_db = 0;
             s_request_sync_db = 0xFF;

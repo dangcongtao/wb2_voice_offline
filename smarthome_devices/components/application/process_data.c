@@ -30,6 +30,7 @@
 #include "m_fan_event.h"
 #include "app_ir.h"
 #include "flash_api.h"
+#include "m_fan_control.h"
 
 char respond[512];
 extern char key[16], iv[16];
@@ -468,6 +469,7 @@ static void app_control_fan_with_one(cJSON *js_Root)
     {
         mode = jsMode->valueint;
         os_trace("Get JSON jsMode mqtt message\n");
+        m_fan_need_buzz(1);
         m_fan_set_speed(mode, M_FAN_SPEED_INVALID);
     }
 
@@ -476,6 +478,7 @@ static void app_control_fan_with_one(cJSON *js_Root)
     {
         os_trace("Get JSON jsLevel mqtt message\n");
         level = jsLevel->valueint;
+        m_fan_need_buzz(1);
         m_fan_set_speed(M_FAN_MODE_INVALID, level);
     }
 
@@ -484,6 +487,7 @@ static void app_control_fan_with_one(cJSON *js_Root)
     {
         os_trace("Get JSON jsSwing mqtt message\n");
         swing = jsSwing->valueint;
+        m_fan_need_buzz(1);
         m_fan_set_swing(swing);
     }
 
@@ -492,6 +496,7 @@ static void app_control_fan_with_one(cJSON *js_Root)
     {
         os_trace("Get JSON jsPcn mqtt message\n");
         pcn = jsPcn->valueint;
+        m_fan_need_buzz(1);
         m_fan_set_pcn(pcn);
     }
 
@@ -500,6 +505,7 @@ static void app_control_fan_with_one(cJSON *js_Root)
     {
         os_trace("Get JSON jsLamp mqtt message\n");
         lamp = jsLamp->valueint;
+        m_fan_need_buzz(1);
         m_fan_set_light(lamp);
     }
 
