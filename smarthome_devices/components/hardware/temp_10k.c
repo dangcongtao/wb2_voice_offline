@@ -67,7 +67,7 @@ static void steinhart_hart(unsigned int resistence, uint32_t *value)
 uint32_t val_temperature = 0;
 uint32_t val_battery = 0;
 uint8_t bat_percent = 0;
-uint8_t bat_charging_status = BAT_CHARGE_STATUS_DISCHARGING;
+uint8_t bat_charging_status = 0;
 
 uint32_t hw_bat_read(void)
 {
@@ -93,10 +93,10 @@ uint32_t hw_bat_read(void)
 
     uint32_t need_send = 0;
 
-    if (gpio_get_level(BAT_CHARGE_STATUS_PIN) != bat_charging_status)
+    if (gpio_get_level(BAT_CHARGE_STATUS_PIN) == bat_charging_status)
     {
-        bat_charging_status = gpio_get_level(BAT_CHARGE_STATUS_PIN);
-        os_trace("CHARGE STATUS: %d\r\n", !bat_charging_status);
+        bat_charging_status = !gpio_get_level(BAT_CHARGE_STATUS_PIN);
+        os_trace("CHARGE STATUS: %d\r\n", bat_charging_status);
         need_send = 1;
     }
 

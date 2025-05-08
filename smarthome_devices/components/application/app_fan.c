@@ -39,9 +39,9 @@ void app_fan_send_battery(uint8_t bat_percent, uint8_t bat_charging_status)
     os_trace("app_fan_send_battery\r\n");
     if (m_mqtt_get_instance()._mqtt_state >= MQTT_INTIALIZED)
     {
-        os_trace("app_fan_send_battery: %u, %u\r\n", bat_percent, !bat_charging_status);
+        os_trace("app_fan_send_battery: %u, %u\r\n", bat_percent, bat_charging_status);
         memset(respond, 0, sizeof(respond));
-        sprintf(respond, "{\"%s\":28,\"bat\":%u,\"charging\":%u,\"mV\":%lu}", gs_dev_type[device_type], bat_percent, !bat_charging_status, val_battery);
+        sprintf(respond, "{\"%s\":28,\"bat\":%u,\"charging\":%u,\"mV\":%lu}", gs_dev_type[device_type], bat_percent, bat_charging_status, val_battery);
         app_send_data(respond, strlen(respond));
     }
 }
