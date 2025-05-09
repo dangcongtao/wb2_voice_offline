@@ -2,6 +2,9 @@
 #define _M_FAN_H_
 #include <stdint.h>
 
+
+#define FAN_KEEP_OLD_SWING_MODE 1
+
 #define LED_7_SEG_OFF_INDEX 10
 #define LED_7_SEG_CHARACTER_A_INDEX 11
 #define LED_7_SEG_CHARACTER_C_INDEX 12

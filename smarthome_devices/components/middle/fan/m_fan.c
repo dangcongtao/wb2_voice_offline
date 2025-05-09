@@ -92,6 +92,9 @@ void m_fan_set_speed(uint8_t mode_set, uint8_t speed_set)
         hw_74hc595_set_number(s_fan_info.speed);
         hw_led_stt_set_stt(M_FAN_BUTTON_NATURAL_INDEX, LED_INDICATE_OFF);
         m_ft62f28_send_speed();
+#if FAN_KEEP_OLD_SWING_MODE
+        m_ft62f28_send_swing(s_fan_info.swing);
+#endif
     }
     else if (s_fan_info.mode == M_FAN_MODE_OFF)
     {
@@ -100,7 +103,11 @@ void m_fan_set_speed(uint8_t mode_set, uint8_t speed_set)
         prevent_buzz = 0;
         m_fan_need_buzz(10);
         prevent_buzz = restore_val;
+#if FAN_KEEP_OLD_SWING_MODE
+        hw_fan_set_swing(M_FAN_SWING_OFF);
+#else
         m_fan_set_swing(M_FAN_MODE_OFF);
+#endif
         m_fan_set_light(FAN_LIGHT_LEVEL_OFF);
         m_fan_set_time_off(0);
         hw_fan_set_speed_level(M_FAN_SPEED_OFF);
@@ -266,6 +273,7 @@ void m_fan_set_swing(uint8_t swing)
         m_fan_need_buzz(1);
         s_fan_info.swing = swing;
         hw_fan_set_swing(s_fan_info.swing);
+        m_db_get_instance()->_request_sync_db(BIT_FLAG_SYNC_FAN);
     }
     else
     {
@@ -523,7 +531,6 @@ void m_fan_init(void)
         s_fan_info.mode = M_FAN_MODE_OFF;
         s_fan_info.speed = M_FAN_SPEED_OFF;
         s_fan_info.pcn = M_FAN_SPEED_OFF;
-        s_fan_info.swing = M_FAN_SWING_OFF;
         s_fan_info.light = FAN_LIGHT_LEVEL_OFF;
         s_fan_info.time_set = 0;
     }

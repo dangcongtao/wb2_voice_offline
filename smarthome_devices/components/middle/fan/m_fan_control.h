@@ -41,7 +41,7 @@ typedef struct
 {
 
     uint8_t led_stt_data;
-
+    uint8_t swing_mode;
     uint32_t last_tick_blink_led;
 } m_fan_runtime_t;
 

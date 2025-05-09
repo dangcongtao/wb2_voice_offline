@@ -185,6 +185,7 @@ void hw_fan_set_speed_level(uint8_t speed)
 
 void hw_fan_set_swing(uint8_t swing)
 {
+    s_fan_runtime.swing_mode = swing;
     if (swing)
     {
         hw_led_stt_set_stt(M_FAN_BUTTON_SWING_INDEX, LED_INDICATE_ON);
@@ -193,7 +194,7 @@ void hw_fan_set_swing(uint8_t swing)
     {
         hw_led_stt_set_stt(M_FAN_BUTTON_SWING_INDEX, LED_INDICATE_OFF);
     }
-    m_ft62f28_send_swing();
+    m_ft62f28_send_swing(swing);
 }
 
 void buzz_loop(void)

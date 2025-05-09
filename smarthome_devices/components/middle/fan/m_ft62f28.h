@@ -62,7 +62,7 @@ typedef struct
 } cmd_uart_t;
 
 void m_ft62f28_send_speed(void);
-void m_ft62f28_send_swing(void);
+void m_ft62f28_send_swing(uint8_t swing_mode);
 void m_ft62f28_send_led(void);
 void m_ft62f28_send_light(void);
 void m_ft62f28_send_reset_touch(void);

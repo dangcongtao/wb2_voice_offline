@@ -11,6 +11,7 @@ typedef struct
     uint8_t flag_send_swing : 1;
     uint8_t flag_send_led : 1;
     uint8_t flag_send_light : 1;
+    uint8_t swing_current_mode;
 } m_ft62f28_data_t;
 
 static m_ft62f28_data_t s_ft62f28_obj;
@@ -23,8 +24,9 @@ void m_ft62f28_send_speed(void)
     s_ft62f28_obj.flag_send_speed = 1;
 }
 
-void m_ft62f28_send_swing(void)
+void m_ft62f28_send_swing(uint8_t swing_mode)
 {
+    s_ft62f28_obj.swing_current_mode = swing_mode;
     s_ft62f28_obj.has_control_fan = 1;
     s_ft62f28_obj.flag_send_swing = 1;
 }
@@ -126,7 +128,7 @@ void m_ft62f28_check_send_change(void)
     if (s_ft62f28_obj.flag_send_swing)
     {
         data_send.data.rcv.state.change_swing = 1;
-        data_send.data.rcv.state.swing = fan_info->swing;
+        data_send.data.rcv.state.swing = s_ft62f28_obj.swing_current_mode;
         s_ft62f28_obj.flag_send_swing = 0;
     }
     else
