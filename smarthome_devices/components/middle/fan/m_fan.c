@@ -479,11 +479,8 @@ static void m_fan_check_flag(void)
     if (last_tick_timer_toggle && sys_get_tick_ms() - last_tick_timer_toggle >= TIMEOUT_DISPLAY_TIME_OFF_MS)
     {
         last_tick_timer_toggle = 0;
-        if (s_fan_info.speed)
-        {
-            hw_74hc595_set_number(s_fan_info.speed);
-        }
-        else if (s_fan_info.mode == M_FAN_MODE_NATURAL)
+
+        if (s_fan_info.mode == M_FAN_MODE_NATURAL)
         {
             hw_74hc595_set_number(LED_7_SEG_CHARACTER_E_INDEX);
         }
@@ -494,6 +491,10 @@ static void m_fan_check_flag(void)
         else if (s_fan_info.mode == M_FAN_MODE_AUTO)
         {
             hw_74hc595_set_number(LED_7_SEG_CHARACTER_A_INDEX);
+        }
+        else if (s_fan_info.speed)
+        {
+            hw_74hc595_set_number(s_fan_info.speed);
         }
         else
         {
