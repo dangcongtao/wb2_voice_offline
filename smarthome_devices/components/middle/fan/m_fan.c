@@ -12,6 +12,7 @@ static uint32_t last_tick_blink_led;
 extern char respond[512];
 extern uint8_t prevent_buzz;
 extern uint32_t last_tick_timer_toggle;
+extern m_fan_runtime_t s_fan_runtime;
 
 void m_fan_set_auto_mode_settings(uint8_t _auto_enable, uint32_t thresh1, uint32_t thresh2, uint32_t thresh3)
 {
@@ -68,7 +69,18 @@ static void m_fan_auto_mode_start(void)
     }
     os_trace("%s  to speed: %u\r\n", __func__, s_fan_info.speed);
     hw_74hc595_set_number(LED_7_SEG_CHARACTER_A_INDEX);
-    m_fan_set_speed(s_fan_info.mode, s_fan_info.speed);
+    hw_led_stt_set_stt(M_FAN_BUTTON_NATURAL_INDEX, LED_INDICATE_OFF);
+    if (device_type == FANAC)
+    {
+        hw_led_stt_set_stt(0, LED_INDICATE_OFF);
+        hw_led_stt_set_stt(1, LED_INDICATE_OFF);
+        hw_led_stt_set_stt(2, LED_INDICATE_OFF);
+    }
+    hw_fan_set_speed_level(s_fan_info.speed);
+    m_ft62f28_send_speed();
+#if FAN_KEEP_OLD_SWING_MODE
+    hw_fan_set_swing(s_fan_info.swing);
+#endif
 }
 
 void m_fan_set_speed(uint8_t mode_set, uint8_t speed_set)
@@ -93,7 +105,7 @@ void m_fan_set_speed(uint8_t mode_set, uint8_t speed_set)
         hw_led_stt_set_stt(M_FAN_BUTTON_NATURAL_INDEX, LED_INDICATE_OFF);
         m_ft62f28_send_speed();
 #if FAN_KEEP_OLD_SWING_MODE
-        m_ft62f28_send_swing(s_fan_info.swing);
+        hw_fan_set_swing(s_fan_info.swing);
 #endif
     }
     else if (s_fan_info.mode == M_FAN_MODE_OFF)
@@ -120,21 +132,11 @@ void m_fan_set_speed(uint8_t mode_set, uint8_t speed_set)
     }
     else if (s_fan_info.mode == M_FAN_MODE_NATURAL)
     {
-        hw_led_stt_set_stt(M_FAN_BUTTON_NATURAL_INDEX, LED_INDICATE_ON);
         m_fan_start_natural_mode();
-        m_ft62f28_send_speed();
     }
     else if (s_fan_info.mode == M_FAN_MODE_AUTO)
     {
-        hw_led_stt_set_stt(M_FAN_BUTTON_NATURAL_INDEX, LED_INDICATE_OFF);
-        if (device_type == FANAC)
-        {
-            hw_led_stt_set_stt(0, LED_INDICATE_OFF);
-            hw_led_stt_set_stt(1, LED_INDICATE_OFF);
-            hw_led_stt_set_stt(2, LED_INDICATE_OFF);
-        }
-        hw_fan_set_speed_level(s_fan_info.speed);
-        m_ft62f28_send_speed();
+        m_fan_auto_mode_start();
     }
 }
 
@@ -307,7 +309,7 @@ static void m_fan_led_proccess_when_active(void)
         }
     }
 
-    if (s_fan_info.swing)
+    if (s_fan_info.swing && s_fan_runtime.swing_mode)
     {
         if (hw_btn_read(M_FAN_BUTTON_SWING_INDEX) == BTN_IDLE_LEVEL && device_type != FANAC)
         {

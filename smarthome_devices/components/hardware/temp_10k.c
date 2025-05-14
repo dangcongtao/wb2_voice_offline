@@ -66,6 +66,7 @@ static void steinhart_hart(unsigned int resistence, uint32_t *value)
 
 uint32_t val_temperature = 0;
 uint32_t val_battery = 0;
+uint32_t old_val_battery = 0;
 uint8_t bat_percent = 0;
 uint8_t bat_charging_status = 0;
 
@@ -121,13 +122,41 @@ uint32_t hw_bat_read(void)
 
     if (val_battery > 2500)
     {
-        if (val_battery > 2970)
+        if (bat_charging_status)
         {
-            bat_percent = 100;
+            if (val_battery > 3000)
+            {
+                if (old_bat_val != 100 && val_battery < old_val_battery)
+                {
+                    bat_percent = 100;
+                    need_send = 1;
+                    old_bat_val = bat_percent;
+                }
+                else
+                {
+                    bat_percent = 99;
+                }
+            }
+            else
+            {
+                bat_percent = (val_battery - 2500) * 100 / 500;
+                if (bat_percent > 99)
+                {
+                    bat_percent = 99;
+                }
+            }
+            old_val_battery = val_battery;
         }
         else
         {
-            bat_percent = (val_battery - 2500) * 100 / 500;
+            if (val_battery > 2970)
+            {
+                bat_percent = 100;
+            }
+            else
+            {
+                bat_percent = (val_battery - 2500) * 100 / 470;
+            }
         }
     }
     else

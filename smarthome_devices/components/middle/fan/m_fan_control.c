@@ -3,7 +3,7 @@
 #include "m_ft62f28.h"
 #include "m_fan.h"
 
-static m_fan_runtime_t s_fan_runtime;
+m_fan_runtime_t s_fan_runtime;
 
 uint8_t buzz_num;
 uint8_t prevent_buzz = 0;

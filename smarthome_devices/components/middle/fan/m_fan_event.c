@@ -43,6 +43,8 @@ uint32_t m_fan_get_time_set(void)
 
 void m_fan_start_natural_mode(void)
 {
+    m_fan_info_t *my_fan = m_fan_get_instance();
+    hw_led_stt_set_stt(M_FAN_BUTTON_NATURAL_INDEX, LED_INDICATE_ON);
     hw_74hc595_set_number(LED_7_SEG_CHARACTER_E_INDEX);
     if (device_type == FANDC)
     {
@@ -55,6 +57,9 @@ void m_fan_start_natural_mode(void)
     m_ft62f28_send_speed();
     s_natural_mode.time_current = 0;
     s_natural_mode.speed_trend = TREND_DECREASE;
+#if FAN_KEEP_OLD_SWING_MODE
+    hw_fan_set_swing(my_fan->swing);
+#endif
 }
 
 void m_fan_toggle_natural_mode(void)
@@ -66,7 +71,6 @@ void m_fan_toggle_natural_mode(void)
         m_fan_start_natural_mode();
         // my_fan->speed = M_FAN_SPEED_1;
         os_trace("%s mode_natural: %u\r\n", __func__, my_fan->mode);
-        hw_led_stt_set_stt(M_FAN_BUTTON_NATURAL_INDEX, LED_INDICATE_ON);
         // hw_led_stt_set_stt(LED_SPEED_NORMAL_IDX, LED_INDICATE_ON);
     }
     else
@@ -82,7 +86,6 @@ void m_fan_toggle_natural_mode(void)
             my_fan->mode = M_FAN_MODE_NATURAL;
             m_fan_start_natural_mode();
             os_trace("%s mode_natural: %u\r\n", __func__, my_fan->mode);
-            hw_led_stt_set_stt(M_FAN_BUTTON_NATURAL_INDEX, LED_INDICATE_ON);
             // hw_led_stt_set_stt(LED_SPEED_NORMAL_IDX, LED_INDICATE_ON);
         }
     }
