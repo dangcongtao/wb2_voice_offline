@@ -75,8 +75,6 @@ uint32_t hw_bat_read(void)
     static uint32_t time_stamp;
     static uint32_t last_time_send = 0;
     static uint8_t old_bat_val;
-    static uint8_t is_the_first_time = 0;
-    static lpf_data_t m_real_bat_val_mV;
 
     if (device_type != FANDC)
     {
@@ -86,7 +84,7 @@ uint32_t hw_bat_read(void)
     if (!time_stamp)
     {
     }
-    else if (sys_get_tick_ms() - time_stamp < 5000)
+    else if (sys_get_tick_ms() - time_stamp < 1000)
     {
         return 0;
     }
@@ -107,18 +105,6 @@ uint32_t hw_bat_read(void)
         return need_send;
 
     val_battery = val;
-    if (!is_the_first_time)
-    {
-        is_the_first_time = 1;
-        m_real_bat_val_mV.estimate_value = val_battery * 1000;
-        m_real_bat_val_mV.gain = 10; /* 5% */
-    }
-    else
-    {
-        val_battery *= 1000;
-        lpf_update_estimate(&m_real_bat_val_mV, &val_battery);
-        val_battery = m_real_bat_val_mV.estimate_value / 1000;
-    }
 
     if (val_battery > 2500)
     {
@@ -152,6 +138,10 @@ uint32_t hw_bat_read(void)
             if (val_battery > 2970)
             {
                 bat_percent = 100;
+            }
+            else if (val_battery < 2100)
+            {
+                bat_percent = 1;
             }
             else
             {
