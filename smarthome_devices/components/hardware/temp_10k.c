@@ -70,6 +70,15 @@ uint32_t old_val_battery = 0;
 uint8_t bat_percent = 0;
 uint8_t bat_charging_status = 0;
 
+uint8_t bat_is_low(void)
+{
+    if (!bat_charging_status && bat_percent < 30)
+    {
+        return 1;
+    }
+    return 0;
+}
+
 uint32_t hw_bat_read(void)
 {
     static uint32_t time_stamp;
@@ -106,26 +115,22 @@ uint32_t hw_bat_read(void)
 
     val_battery = val;
 
-    if (val_battery > 2500)
+    if (val_battery > 1910)
     {
         if (bat_charging_status)
         {
-            if (val_battery > 3000)
+            if (val_battery > 2170)
             {
-                if (old_bat_val != 100 && val_battery < old_val_battery)
+                if (old_bat_val != 100)
                 {
                     bat_percent = 100;
                     need_send = 1;
                     old_bat_val = bat_percent;
                 }
-                else
-                {
-                    bat_percent = 99;
-                }
             }
             else
             {
-                bat_percent = (val_battery - 2500) * 100 / 500;
+                bat_percent = (val_battery - 1910) * 100 / (2170 - 1910);
                 if (bat_percent > 99)
                 {
                     bat_percent = 99;
@@ -135,17 +140,17 @@ uint32_t hw_bat_read(void)
         }
         else
         {
-            if (val_battery > 2970)
+            if (val_battery > 2110)
             {
                 bat_percent = 100;
             }
-            else if (val_battery < 2100)
+            else if (val_battery < 1910)
             {
                 bat_percent = 1;
             }
             else
             {
-                bat_percent = (val_battery - 2500) * 100 / 470;
+                bat_percent = (val_battery - 1910) * 100 / (2110 - 1910);
             }
         }
     }

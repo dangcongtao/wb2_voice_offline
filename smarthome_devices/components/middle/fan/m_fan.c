@@ -289,68 +289,6 @@ void m_fan_toogle_swing(void)
     m_fan_set_swing(swing_set);
 }
 
-static void m_fan_led_proccess_when_active(void)
-{
-    static uint8_t led_val = 0;
-
-    led_val = !led_val;
-
-    if (s_fan_info.mode == M_FAN_MODE_NATURAL)
-    {
-        if (hw_btn_read(M_FAN_BUTTON_NATURAL_INDEX) == BTN_IDLE_LEVEL)
-        {
-            hw_led_stt_set_stt(M_FAN_BUTTON_NATURAL_INDEX, led_val);
-            if (device_type == FANAC)
-            {
-                hw_led_stt_set_stt(0, LED_INDICATE_OFF);
-                hw_led_stt_set_stt(1, LED_INDICATE_OFF);
-                hw_led_stt_set_stt(2, LED_INDICATE_OFF);
-            }
-        }
-    }
-
-    if (s_fan_info.swing && s_fan_runtime.swing_mode)
-    {
-        if (hw_btn_read(M_FAN_BUTTON_SWING_INDEX) == BTN_IDLE_LEVEL && device_type != FANAC)
-        {
-            hw_led_stt_set_stt(M_FAN_BUTTON_SWING_INDEX, led_val);
-        }
-    }
-
-    if (s_fan_info.time_set && !last_tick_timer_toggle)
-    {
-        if (hw_btn_read(M_FAN_BUTTON_TIMER_INDEX) == BTN_IDLE_LEVEL || device_type == FANAC)
-        {
-            hw_led_stt_set_stt(M_FAN_BUTTON_TIMER_INDEX, led_val);
-        }
-    }
-
-    if (device_type == FANAC)
-    {
-        if (s_fan_info.mode == M_FAN_MODE_ON)
-        {
-            if (s_fan_info.speed == M_FAN_SPEED_1)
-            {
-                hw_led_stt_set_stt(0, led_val);
-                hw_led_stt_set_stt(1, LED_INDICATE_OFF);
-                hw_led_stt_set_stt(2, LED_INDICATE_OFF);
-            }
-            else if (s_fan_info.speed == M_FAN_SPEED_2)
-            {
-                hw_led_stt_set_stt(1, led_val);
-                hw_led_stt_set_stt(0, LED_INDICATE_OFF);
-                hw_led_stt_set_stt(2, LED_INDICATE_OFF);
-            }
-            else if (s_fan_info.speed == M_FAN_SPEED_3)
-            {
-                hw_led_stt_set_stt(2, led_val);
-                hw_led_stt_set_stt(0, LED_INDICATE_OFF);
-                hw_led_stt_set_stt(1, LED_INDICATE_OFF);
-            }
-        }
-    }
-}
-
 void m_fan_process_button_event(uint8_t button_pin)
 {
     button_pin = fan_get_func_from_index(button_pin);
@@ -472,6 +410,109 @@ void m_fan_process_remote_event(uint32_t button_data)
     }
 }
 
+extern uint8_t bat_is_low(void);
+
+static void m_led_number_show(void)
+{
+    if (s_fan_info.mode == M_FAN_MODE_NATURAL)
+    {
+        hw_74hc595_set_number(LED_7_SEG_CHARACTER_E_INDEX);
+    }
+    else if (s_fan_info.mode == M_FAN_MODE_PCN)
+    {
+        hw_74hc595_set_number(LED_7_SEG_CHARACTER_C_INDEX);
+    }
+    else if (s_fan_info.mode == M_FAN_MODE_AUTO)
+    {
+        hw_74hc595_set_number(LED_7_SEG_CHARACTER_A_INDEX);
+    }
+    else if (s_fan_info.speed)
+    {
+        hw_74hc595_set_number(s_fan_info.speed);
+    }
+    else
+    {
+        hw_74hc595_set_number(LED_7_SEG_OFF_INDEX);
+    }
+}
+
+static void m_fan_led_proccess_when_active(void)
+{
+    static uint8_t led_val = 0;
+
+    led_val = !led_val;
+
+    if (s_fan_info.mode == M_FAN_MODE_NATURAL)
+    {
+        if (hw_btn_read(M_FAN_BUTTON_NATURAL_INDEX) == BTN_IDLE_LEVEL)
+        {
+            hw_led_stt_set_stt(M_FAN_BUTTON_NATURAL_INDEX, led_val);
+            if (device_type == FANAC)
+            {
+                hw_led_stt_set_stt(0, LED_INDICATE_OFF);
+                hw_led_stt_set_stt(1, LED_INDICATE_OFF);
+                hw_led_stt_set_stt(2, LED_INDICATE_OFF);
+            }
+        }
+    }
+
+    if (s_fan_info.swing && s_fan_runtime.swing_mode)
+    {
+        if (hw_btn_read(M_FAN_BUTTON_SWING_INDEX) == BTN_IDLE_LEVEL && device_type != FANAC)
+        {
+            hw_led_stt_set_stt(M_FAN_BUTTON_SWING_INDEX, led_val);
+        }
+    }
+
+    if (s_fan_info.time_set && !last_tick_timer_toggle)
+    {
+        if (hw_btn_read(M_FAN_BUTTON_TIMER_INDEX) == BTN_IDLE_LEVEL || device_type == FANAC)
+        {
+            hw_led_stt_set_stt(M_FAN_BUTTON_TIMER_INDEX, led_val);
+        }
+    }
+
+    if (device_type == FANAC)
+    {
+        if (s_fan_info.mode == M_FAN_MODE_ON)
+        {
+            if (s_fan_info.speed == M_FAN_SPEED_1)
+            {
+                hw_led_stt_set_stt(0, led_val);
+                hw_led_stt_set_stt(1, LED_INDICATE_OFF);
+                hw_led_stt_set_stt(2, LED_INDICATE_OFF);
+            }
+            else if (s_fan_info.speed == M_FAN_SPEED_2)
+            {
+                hw_led_stt_set_stt(1, led_val);
+                hw_led_stt_set_stt(0, LED_INDICATE_OFF);
+                hw_led_stt_set_stt(2, LED_INDICATE_OFF);
+            }
+            else if (s_fan_info.speed == M_FAN_SPEED_3)
+            {
+                hw_led_stt_set_stt(2, led_val);
+                hw_led_stt_set_stt(0, LED_INDICATE_OFF);
+                hw_led_stt_set_stt(1, LED_INDICATE_OFF);
+            }
+        }
+    }
+
+    if (device_type == FANDC)
+    {
+        if (bat_is_low() && !last_tick_timer_toggle)
+        {
+            if (led_val)
+            {
+                m_led_number_show();  
+            }
+            else
+            {
+                hw_74hc595_set_number(LED_7_SEG_OFF_INDEX);
+            }
+        }
+    }
+}
+
 static void m_fan_check_flag(void)
 {
     hw_74hc595_loop();
@@ -480,26 +521,7 @@ static void m_fan_check_flag(void)
     {
         last_tick_timer_toggle = 0;
 
-        if (s_fan_info.mode == M_FAN_MODE_NATURAL)
-        {
-            hw_74hc595_set_number(LED_7_SEG_CHARACTER_E_INDEX);
-        }
-        else if (s_fan_info.mode == M_FAN_MODE_PCN)
-        {
-            hw_74hc595_set_number(LED_7_SEG_CHARACTER_C_INDEX);
-        }
-        else if (s_fan_info.mode == M_FAN_MODE_AUTO)
-        {
-            hw_74hc595_set_number(LED_7_SEG_CHARACTER_A_INDEX);
-        }
-        else if (s_fan_info.speed)
-        {
-            hw_74hc595_set_number(s_fan_info.speed);
-        }
-        else
-        {
-            hw_74hc595_set_number(LED_7_SEG_OFF_INDEX);
-        }
+        m_led_number_show();
     }
 }
 
