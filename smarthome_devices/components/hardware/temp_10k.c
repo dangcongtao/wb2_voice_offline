@@ -79,6 +79,7 @@ uint8_t bat_is_low(void)
     return 0;
 }
 
+extern void m_led_number_show(void);
 uint32_t hw_bat_read(void)
 {
     static uint32_t time_stamp;
@@ -106,6 +107,7 @@ uint32_t hw_bat_read(void)
         bat_charging_status = !gpio_get_level(BAT_CHARGE_STATUS_PIN);
         os_trace("CHARGE STATUS: %d\r\n", bat_charging_status);
         need_send = 1;
+        m_led_number_show();
     }
 
     int val = hosal_adc_value_get(&adc_battery, BAT_LV_ADC_CHANNEL, 100);
@@ -115,42 +117,43 @@ uint32_t hw_bat_read(void)
 
     val_battery = val;
 
-    if (val_battery > 1910)
+    if (val_battery > 1900)
     {
         if (bat_charging_status)
         {
             if (val_battery > 2170)
             {
-                if (old_bat_val != 100)
+                if (old_bat_val != 99)
                 {
-                    bat_percent = 100;
+                    bat_percent = 99;
                     need_send = 1;
                     old_bat_val = bat_percent;
                 }
             }
             else
             {
-                bat_percent = (val_battery - 1910) * 100 / (2170 - 1910);
-                if (bat_percent > 99)
-                {
-                    bat_percent = 99;
-                }
+                bat_percent = (val_battery - 1900) * 100 / (2170 - 1900);
+            }
+
+            if (bat_percent > 99)
+            {
+                bat_percent = 99;
             }
             old_val_battery = val_battery;
         }
         else
         {
-            if (val_battery > 2110)
+            if (val_battery > 2100)
             {
                 bat_percent = 100;
             }
-            else if (val_battery < 1910)
+            else if (val_battery < 1900)
             {
                 bat_percent = 1;
             }
             else
             {
-                bat_percent = (val_battery - 1910) * 100 / (2110 - 1910);
+                bat_percent = (val_battery - 1900) * 100 / (2100 - 1900);
             }
         }
     }

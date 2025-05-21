@@ -412,7 +412,7 @@ void m_fan_process_remote_event(uint32_t button_data)
 
 extern uint8_t bat_is_low(void);
 
-static void m_led_number_show(void)
+void m_led_number_show(void)
 {
     if (s_fan_info.mode == M_FAN_MODE_NATURAL)
     {
