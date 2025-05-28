@@ -200,7 +200,8 @@ void m_fan_decrease_speed(void)
             s_fan_info.speed = s_fan_info.speed - 1;
             if (s_fan_info.speed == M_FAN_SPEED_OFF)
             {
-                m_fan_off(SRC_ACTION_DEVICE);
+                m_fan_set_speed(M_FAN_MODE_OFF, M_FAN_SPEED_OFF);
+                return;
             }
         }
         os_trace("%s M_FAN_MODE_ON speed: %u\r\n", __func__, s_fan_info.speed);
@@ -503,7 +504,7 @@ static void m_fan_led_proccess_when_active(void)
         {
             if (led_val)
             {
-                m_led_number_show();  
+                m_led_number_show();
             }
             else
             {
