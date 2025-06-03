@@ -6,7 +6,7 @@
 #include "app_fan.h"
 
 static m_fan_natural_mode_t s_natural_mode;
-static uint32_t time_remain;
+uint32_t time_remain;
 uint32_t last_tick_timer_toggle;
 
 uint8_t m_fan_get_current_speed_natural(void)

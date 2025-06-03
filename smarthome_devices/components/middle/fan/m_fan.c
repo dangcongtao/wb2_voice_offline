@@ -497,8 +497,7 @@ static void m_fan_led_proccess_when_active(void)
             }
         }
     }
-
-    if (device_type == FANDC)
+    else if (device_type == FANDC)
     {
         if (bat_is_low() && !last_tick_timer_toggle)
         {
@@ -539,6 +538,7 @@ void m_led_7_seg_loop(uint32_t delay_ms)
     m_fan_check_flag();
 }
 
+extern uint32_t time_remain;
 uint8_t last_reason_reset;
 void m_fan_init(void)
 {
@@ -550,6 +550,13 @@ void m_fan_init(void)
     if (reason_reset)
     {
         last_reason_reset = reason_reset;
+        time_remain = s_fan_info.time_set;
+#if FAN_KEEP_OLD_SWING_MODE
+        if (s_fan_info.mode != M_FAN_MODE_OFF)
+        {
+            s_fan_runtime.swing_mode = s_fan_info.swing;
+        }
+#endif
         flash_set_rs_reason(0);
     }
     else
