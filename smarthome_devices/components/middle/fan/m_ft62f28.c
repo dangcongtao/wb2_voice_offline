@@ -20,6 +20,28 @@ cmd_uart_t data_send;
 
 void m_ft62f28_send_speed(void)
 {
+    m_fan_info_t *fan_info = m_fan_get_instance();
+    if (fan_info->mode != M_FAN_MODE_PCN)
+    {
+        switch (fan_info->speed)
+        {
+        case 1:
+            fan_info->pcn = 33;
+            break;
+        case 2:
+            fan_info->pcn = 66;
+            break;
+        case 3:
+            fan_info->pcn = 100;
+            break;
+        case 0:
+            fan_info->pcn = 0;
+            break;
+        default:
+            fan_info->pcn = 0;
+            break;
+        }
+    }
     s_ft62f28_obj.has_control_fan = 1;
     s_ft62f28_obj.flag_send_speed = 1;
 }

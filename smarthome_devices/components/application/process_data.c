@@ -428,6 +428,28 @@ static void app_control_fan(cJSON *js_Root)
     // m_fan_set_light(lamp);
     m_fan_control(mode, level, pcn, swing, lamp, uid, act_id, 0);
 
+    if (mode != M_FAN_MODE_PCN)
+    {
+        switch (level)
+        {
+        case 1:
+            my_fan->pcn = 33;
+            break;
+        case 2:
+            my_fan->pcn = 66;
+            break;
+        case 3:
+            my_fan->pcn = 100;
+            break;
+        case 0:
+            my_fan->pcn = 0;
+            break;
+        default:
+            my_fan->pcn = 0;
+            break;
+        }
+    }
+
     result = 1;
 RESPONSE:
     /* respond server here */
