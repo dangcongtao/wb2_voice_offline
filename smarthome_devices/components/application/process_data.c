@@ -31,6 +31,7 @@
 #include "app_ir.h"
 #include "flash_api.h"
 #include "m_fan_control.h"
+#include "app_fan.h"
 
 char respond[512];
 extern char key[16], iv[16];
@@ -361,7 +362,7 @@ RESPONSE:
 static void app_control_fan(cJSON *js_Root)
 {
     cJSON *jsMode, *jsLevel, *jsPcn, *jsLamp, *jsU, *jsAct, *jsType, *jsSwing;
-    uint8_t mode = 0, level = 0, swing = 0, pcn = 0, lamp = 0, result = 0;
+    uint8_t mode = 0, level = 0, swing = 0, pcn = 0, lamp = 0, result = 0, change = 0;
     uint32_t uid = 0, act_id = 0, type = 0;
     m_fan_info_t *my_fan = m_fan_get_instance();
 
@@ -427,6 +428,7 @@ static void app_control_fan(cJSON *js_Root)
 
     // m_fan_set_light(lamp);
     m_fan_control(mode, level, pcn, swing, lamp, uid, act_id, 0);
+    change = check_fan_change(mode, level, pcn, swing, lamp);
 
     if (mode != M_FAN_MODE_PCN)
     {
@@ -451,17 +453,20 @@ static void app_control_fan(cJSON *js_Root)
     }
 
     result = 1;
+
 RESPONSE:
     /* respond server here */
     memset(respond, 0, sizeof(respond));
-    sprintf(respond, "{\"%s\":%ld,\"mode\":%u,\"lv\":%u,\"swing\":%u,\"pcn\":%u,\"lamp\":%u,\"u\":%lu,\"act_id\":%lu,\"result\":%d}", gs_dev_type[device_type], type, my_fan->mode, my_fan->speed, my_fan->swing, my_fan->pcn, my_fan->light, uid, act_id, result);
+    sprintf(respond, "{\"%s\":%ld,\"mode\":%u,\"lv\":%u,\"swing\":%u,\"pcn\":%u,\"lamp\":%u,\"u\":%lu,\"act_id\":%lu,\"change\":%u,\"result\":%d}", 
+        gs_dev_type[device_type], type, my_fan->mode, my_fan->speed, my_fan->swing, my_fan->pcn, my_fan->light, uid, act_id, change, result);
     app_send_data(respond, strlen(respond));
 }
+
 // {"type":21, "mode":1,"lv":1, "u":55519, "act_id":0}
 static void app_control_fan_with_one(cJSON *js_Root)
 {
     cJSON *jsMode, *jsLevel, *jsU, *jsAct, *jsType, *jsSwing, *jsPcn, *jsLamp;
-    uint8_t mode = 0, level = 0, swing = 0, pcn = 0, lamp = 0, result = 0;
+    uint8_t mode = 0, level = 0, swing = 0, pcn = 0, lamp = 0, change = 0, result = 0;
     uint32_t uid = 0, act_id = 0, type = 0;
     m_fan_info_t *my_fan = m_fan_get_instance();
 
@@ -534,11 +539,13 @@ static void app_control_fan_with_one(cJSON *js_Root)
         m_fan_set_light(lamp);
     }
 
+    change = check_fan_change(my_fan->mode, my_fan->speed, my_fan->swing, my_fan->pcn, my_fan->light);
     result = 1;
+
 RESPONSE:
     /* respond server here */
     memset(respond, 0, sizeof(respond));
-    sprintf(respond, "{\"%s\":20,\"mode\":%u,\"lv\":%u,\"swing\":%u,\"pcn\":%u,\"lamp\":%u,\"u\":%lu,\"act_id\":%lu,\"result\":%d}", gs_dev_type[device_type], my_fan->mode, my_fan->speed, my_fan->swing, my_fan->pcn, my_fan->light, uid, act_id, result);
+    sprintf(respond, "{\"%s\":20,\"mode\":%u,\"lv\":%u,\"swing\":%u,\"pcn\":%u,\"lamp\":%u,\"u\":%lu,\"act_id\":%lu,\"change\":%u,\"result\":%d}", gs_dev_type[device_type], my_fan->mode, my_fan->speed, my_fan->swing, my_fan->pcn, my_fan->light, uid, act_id, change, result);
     app_send_data(respond, strlen(respond));
 }
 
