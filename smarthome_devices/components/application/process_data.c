@@ -539,7 +539,7 @@ static void app_control_fan_with_one(cJSON *js_Root)
         m_fan_set_light(lamp);
     }
 
-    change = check_fan_change(my_fan->mode, my_fan->speed, my_fan->swing, my_fan->pcn, my_fan->light);
+    change = check_fan_change(my_fan->mode, my_fan->speed, my_fan->pcn, my_fan->swing, my_fan->light);
     result = 1;
 
 RESPONSE:
