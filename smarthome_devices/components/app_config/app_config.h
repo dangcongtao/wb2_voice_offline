@@ -5,7 +5,14 @@
 #include <stdlib.h>
 #include <blog.h>
 
-#define DEBUG_ENABLE 0
+#define DEBUG_ENABLE 1
+
+#define AIIO_UART0_RX_LOG_ENABLE 1
+#define AIIO_UART0_RX_PIN 7U
+#define AIIO_UART0_RX_BAUD_RATE 115200U
+#define AIIO_UART0_RX_STREAM_SIZE 512U
+#define AIIO_UART0_RX_IDLE_TIMEOUT_MS 10U
+
 void m_log(const char *fmt, ...);
 #define os_trace           \
     if (DEBUG_ENABLE == 1) \

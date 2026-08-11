@@ -29,6 +29,7 @@
 #include "IRrecv.h"
 #include "m_fan.h"
 #include "hw_uart.h"
+#include "aiio_uart0_rx_log.h"
 #include "m_http_client.h"
 
 extern uint32_t val_temperature;
@@ -84,6 +85,12 @@ void main(void)
 #else
     bl_sys_logall_enable();
 #endif
+
+    if (aiio_uart0_rx_log_init() != 0)
+    {
+        printf("UART0 RX log initialization failed\r\n");
+    }
+
     bl_wdt_init(120000);
 
     hw_74hc595_init();

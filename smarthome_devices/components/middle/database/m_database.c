@@ -40,10 +40,10 @@ void m_db_read_device_id(void)
 {
     uint32_t len_device_id = sizeof(s_device_id);
     memset(s_device_id, 0, sizeof(s_device_id));
-
-    // sprintf(s_device_id, "GAV174228321480fanacirN1");
-    // flash_write_device_id((void *)(&s_device_id), len_device_id);
-
+#if 0
+    sprintf(s_device_id, "HUN178641908061fanacirN1");
+    flash_write_device_id((void *)(&s_device_id), len_device_id);
+#endif
     flash_read_device_id((void *)(&s_device_id), len_device_id);
     // sprintf(s_device_id, "HUN167351046986wswitch2vN1");
     // sprintf(s_device_id, "HUN167590918658daticbsv2N1");

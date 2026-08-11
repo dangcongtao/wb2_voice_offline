@@ -13,6 +13,7 @@ COMPONENT_SRCS := hardware.c \
                   74hc595.c \
                   temp_10k.c \
                   hw_uart.c \
+                  aiio_uart0_rx_log.c \
                   buzz.c \
                   lpf.c \
 				  
