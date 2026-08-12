@@ -1,4 +1,5 @@
 #include "process_data.h"
+#include "aiio_ci13162_uart.h"
 
 #include <string.h>
 
@@ -1281,6 +1282,8 @@ void app_handler_msg_task(void *arg)
 
     while (1)
     {
+        aiio_ci13162_uart_process();
+
         if (xQueueReceive(pqueue, &message_rcv_mqtt, 0) == pdPASS)
         {
             // os_trace("raw_data received: %s\r\n", msg.data);
