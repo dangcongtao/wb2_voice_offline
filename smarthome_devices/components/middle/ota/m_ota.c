@@ -1,4 +1,5 @@
 #include "m_ota.h"
+#include "m_ci13162_ota.h"
 
 /**
  * @file main.c
@@ -140,13 +141,23 @@ int axk_hal_user_ota_update(char *url)
     return 0;
 }
 
-void m_ota_start(char *url)
+bool m_ota_is_busy(void)
 {
+    return is_ota != 0U;
+}
+
+int m_ota_start(char *url)
+{
+    if (m_ci13162_ota_is_busy() || m_ota_is_busy())
+    {
+        return -1;
+    }
+
     is_ota = 1;
     m_ir_deinit();
     flash_set_rs_reason(3);
     // os_trace("Free memory: %d\r\n", xPortGetFreeHeapSize());
     m_mqtt_get_instance()._mqtt_stop();
     vTaskDelay(pdMS_TO_TICKS(2000));
-    axk_hal_user_ota_update(url);
+    return axk_hal_user_ota_update(url);
 }

@@ -16,6 +16,7 @@
 #define CJSON_KEY_ID_DEVICE "id"
 #define CJSON_KEY_TIME "time"
 #define CJSON_KEY_URL "url"
+#define CJSON_KEY_AGENT_URL "agent_url"
 #define CJSON_KEY_IP "ip"
 #define CJSON_KEY_SSID "ssid"
 #define CJSON_KEY_PASS "pass"

@@ -108,6 +108,7 @@ void m_mqtt_register_msg_handler(p_mqtt_handler_msg_t handler);
 void m_mqtt_command_startup_register_handler(p_mqtt_publish_startup_msg_t handler);
 
 void m_mqtt_init(void);
+void m_mqtt_stop(void);
 m_mqtt_t m_mqtt_get_instance(void);
 m_mqtt_info_t* m_mqtt_get_info_reference(void);
 

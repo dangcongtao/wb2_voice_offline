@@ -48,21 +48,26 @@ không chấp nhận key phụ hoặc dữ liệu theo sau dấu `}`.
 ```c
 typedef enum
 {
-    CMD_RESET = 0,
-    CMD_TURN  = 1,
-    CMD_MODE  = 2,
+    CMD_RESET   = 0,
+    CMD_TURN    = 1,
+    CMD_MODE    = 2,
+    CMD_VERSION = 3,
 } command_type_t;
 ```
 
-| Enum | `cmd` | `data` hợp lệ | Hành động |
-|---|---:|---|---|
-| `CMD_RESET` | 0 | `[]` | Kích hoạt hàm software reset |
-| `CMD_TURN` | 1 | `[0]` | Tắt quạt |
-| `CMD_TURN` | 1 | `[1]` | Bật quạt |
-| `CMD_MODE` | 2 | `[1]` | Chọn tốc độ số 1 |
-| `CMD_MODE` | 2 | `[2]` | Chọn tốc độ số 2 |
-| `CMD_MODE` | 2 | `[3]` | Chọn tốc độ số 3 |
-| `CMD_MODE` | 2 | `[4]` | Chọn chế độ gió tự nhiên |
+| Enum | `cmd` | `data` hợp lệ | Hướng | Hành động |
+|---|---:|---|---|---|
+| `CMD_RESET` | 0 | `[]` | CI13162 → BL602 | Kích hoạt hàm software reset |
+| `CMD_TURN` | 1 | `[0]` | CI13162 → BL602 | Tắt quạt |
+| `CMD_TURN` | 1 | `[1]` | CI13162 → BL602 | Bật quạt |
+| `CMD_MODE` | 2 | `[1]` | CI13162 → BL602 | Chọn tốc độ số 1 |
+| `CMD_MODE` | 2 | `[2]` | CI13162 → BL602 | Chọn tốc độ số 2 |
+| `CMD_MODE` | 2 | `[3]` | CI13162 → BL602 | Chọn tốc độ số 3 |
+| `CMD_MODE` | 2 | `[4]` | CI13162 → BL602 | Chọn chế độ gió tự nhiên |
+| `CMD_VERSION` | 3 | `[]` | BL602 → CI13162 | Hỏi firmware version của chip giọng nói |
+| `CMD_VERSION` | 3 | `[<version>]` | CI13162 → BL602 | Trả version; BL602 chỉ log, không điều khiển quạt |
+
+`CMD_VERSION` khác các lệnh quạt: BL602 chủ động hỏi, CI13162 trả lời. Message hỏi dùng `data` rỗng; message trả lời bắt buộc đúng 1 số. Parser RX của BL602 từ chối `{"cmd":3,"data":[]}` (`INVALID_DATA`) vì đó là frame TX, không phải reply.
 
 ## 4. Ánh xạ lệnh thoại sang message UART1
 
@@ -75,11 +80,32 @@ typedef enum
 | `BẬT-SỐ-BA` | 11 | `{"cmd":2,"data":[3]}` | Chọn tốc độ số 3 |
 | `CHẾ-ĐỘ-GIÓ-TỰ-NHIÊN` | 12 | `{"cmd":2,"data":[4]}` | Chọn chế độ gió tự nhiên |
 
-`CMD_RESET` chưa được ánh xạ với một câu lệnh thoại trong workbook hiện tại.
+`CMD_RESET` và `CMD_VERSION` chưa được ánh xạ với một câu lệnh thoại trong workbook hiện tại.
 
-Khi bật macro test `AIIO_CI13162_UART_SEND_RESET_ON_TURN_OFF_ENABLE`, sau khi
-nhận lệnh tắt quạt, BL602 gửi lại `{cmd:0,data:[]}\r\n` trên UART0 TX GPIO16.
-Message test này dùng format tương thích cũ; CI13162 cần chấp nhận format đó nếu dùng phép thử này.
+## 4.1. Hỏi version chip giọng nói (`cmd` = 3)
+
+Hàm `aiio_ci13162_uart_request_version()` gửi chuỗi cố định trên UART0 TX GPIO16:
+
+```c
+static const char s_aiio_ci13162_version_query[] = "{\"cmd\":3,\"data\":[]}\r\n";
+```
+
+Hiện được gọi từ `app_get_info()` (MQTT lệnh 105). Không gửi khi UART chưa sẵn sàng hoặc khi OTA đang giữ UART0.
+
+Luồng:
+
+```text
+BL602  -- {"cmd":3,"data":[]}\r\n          -->  CI13162
+BL602  <-- {"cmd":3,"data":[<version>]}\r\n --  CI13162
+```
+
+Khi nhận reply hợp lệ, `aiio_ci13162_uart_process()` chỉ in log:
+
+```text
+[CI13162] version=<version>
+```
+
+Ví dụ test trong parser: `{"cmd":3,"data":[260813]}` là hợp lệ; `{cmd:3,data:[]}` nhận về là không hợp lệ.
 
 ## 5. Ví dụ message hoàn chỉnh
 
@@ -98,6 +124,12 @@ Message test này dùng format tương thích cũ; CI13162 cần chấp nhận f
 
 # Chọn chế độ gió tự nhiên
 {"cmd":2,"data":[4]}\r\n
+
+# BL602 hỏi firmware version của CI13162
+{"cmd":3,"data":[]}\r\n
+
+# CI13162 trả firmware version (ví dụ 260813)
+{"cmd":3,"data":[260813]}\r\n
 ```
 
 ## 6. Điểm cần sửa trong workbook

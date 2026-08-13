@@ -31,8 +31,11 @@
 #include "hw_uart.h"
 #include "aiio_ci13162_uart.h"
 #include "m_http_client.h"
+#include "m_ci13162_ota_boot.h"
+#include "system_typedef.h"
 
 extern uint32_t val_temperature;
+extern uint8_t is_ota;
 extern uint8_t bat_percent;
 extern uint8_t bat_charging_status;
 
@@ -79,6 +82,10 @@ void main_loop(void)
 
 void main(void)
 {
+    int32_t ci13162_uart_result;
+    m_wifi_info_t wifi_info;
+
+    aiio_ci13162_uart_hold_tx_idle();
     bl_sys_init(); // if use ble ,must init
 #if DEBUG_ENABLE == 0
     bl_sys_logall_disable();
@@ -86,16 +93,65 @@ void main(void)
     bl_sys_logall_enable();
 #endif
 
-    if (aiio_ci13162_uart_init() != 0)
+    if (bl_wdt_init(AIIO_WDT_TIMEOUT_MS) != 0)
+    {
+        printf("Watchdog initialization failed\r\n");
+    }
+    ci13162_uart_result = aiio_ci13162_uart_init();
+    if (ci13162_uart_result != 0)
     {
         printf("CI13162 UART initialization failed\r\n");
     }
 
-    bl_wdt_init(120000);
+    easyflash_init();
+    if (m_ci13162_ota_boot_prepare(&wifi_info))
+    {
+        m_wifi_t wifi;
+        uint32_t led_elapsed_ms = 500U;
+
+        if (ci13162_uart_result != 0)
+        {
+            bl_wdt_feed();
+            vTaskDelay(pdMS_TO_TICKS(100U));
+            bl_sys_reset_por();
+            vTaskDelete(NULL);
+            return;
+        }
+
+        hw_led_stt_cfg();
+
+        tcpip_init(NULL, NULL);
+        m_wifi_init();
+        wifi = m_wifi_get_instance();
+        wifi.wifi_sta_start_cb(wifi_info._ssid, wifi_info._passwd);
+
+        os_trace("[CI13162][BOOT] Product features disabled, free heap: %u bytes\r\n",
+                 (unsigned int)xPortGetFreeHeapSize());
+        while (true)
+        {
+            uint32_t led_period_ms;
+
+            bl_wdt_feed();
+            /* Match button_scan_task: 500 ms while updating, 100 ms after success. */
+            led_period_ms = (is_ota == STATE_OTA_SUCCESS) ? 100U : 500U;
+            if (led_elapsed_ms >= led_period_ms)
+            {
+                led_elapsed_ms = 0U;
+                hw_toggle_led_stt();
+            }
+            led_elapsed_ms += 10U;
+            if (m_ci13162_ota_boot_poll())
+            {
+                vTaskDelay(pdMS_TO_TICKS(100U));
+                bl_sys_reset_por();
+                vTaskDelete(NULL);
+                return;
+            }
+            vTaskDelay(pdMS_TO_TICKS(10U));
+        }
+    }
 
     hw_74hc595_init();
-
-    easyflash_init();
     tcpip_init(NULL, NULL);
     blog_set_level_log_component(BLOG_LEVEL_INFO, "hardware");
 

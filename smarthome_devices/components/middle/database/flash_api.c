@@ -166,7 +166,7 @@ void flash_read_database(m_device_t *object_data)
         object_data->_mqtt_info->servers[0].port = mqtt_old.port;
         object_data->_mqtt_info->servers[0].type = 1;
         m_db_get_instance()->_request_sync_db(BIT_FLAG_SYNC_MQTT);
-        
+
     }
 
     /* read state pair */
@@ -174,6 +174,33 @@ void flash_read_database(m_device_t *object_data)
     {
         os_trace("Read flash: Device was not paired\r\n");
     }
+}
+
+int32_t flash_read_wifi_info(m_wifi_info_t *wifi_info)
+{
+    int read_length;
+
+    if (wifi_info == NULL) {
+        return -1;
+    }
+
+    memset(wifi_info, 0, sizeof(*wifi_info));
+    read_length = ef_get_bytes(WIFI_INFO,
+                               (uint8_t *)wifi_info,
+                               sizeof(*wifi_info));
+    if (read_length != (int)sizeof(*wifi_info)) {
+        memset(wifi_info, 0, sizeof(*wifi_info));
+        return -1;
+    }
+
+    if ((memchr(wifi_info->_ssid, '\0', sizeof(wifi_info->_ssid)) == NULL) ||
+        (memchr(wifi_info->_passwd, '\0', sizeof(wifi_info->_passwd)) == NULL) ||
+        (wifi_info->_ssid[0] == '\0')) {
+        memset(wifi_info, 0, sizeof(*wifi_info));
+        return -1;
+    }
+    wifi_info->_ip[sizeof(wifi_info->_ip) - 1U] = '\0';
+    return 0;
 }
 
 void flash_read_device_id(void *id_buff, uint32_t size)

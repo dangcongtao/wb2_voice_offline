@@ -12,6 +12,7 @@
 #include <wifi_mgmr_ext.h>
 #include "m_led_stt.h"
 #include "event_driven.h"
+#include "m_ci13162_ota_boot.h"
 #include <lwip/dns.h>
 
 extern m_wifi_t g_wifi_obj;
@@ -57,7 +58,11 @@ void m_wifi_sta_event_cb(input_event_t *event, void *private_data)
         // if (!dev_is_doing_config()) {
         //     m_led_stt_get_instance()._set_led_stt_wifi_not_connect_cb();
         // }
-        signal_post(SIG_WIFI_DISCONNECT);
+        if (m_ci13162_ota_boot_is_active()) {
+            m_ci13162_ota_boot_note_disconnect();
+        } else {
+            signal_post(SIG_WIFI_DISCONNECT);
+        }
         break;
 
     case CODE_WIFI_ON_GOT_IP:
@@ -76,9 +81,13 @@ void m_wifi_sta_event_cb(input_event_t *event, void *private_data)
         inet_pton(AF_INET, GOOGLE_DNS_2, &dnsserver);
         dns_setserver(1, &dnsserver);
         
-        // Start the connection of MQTT
+        // Start the connection of MQTT or the dedicated CI13162 OTA flow.
         // g_wifi_obj.wifi_set_state_cb(M_WIFI_CONNECTED);
-        signal_post(SIG_WIFI_CONNECTED);
+        if (m_ci13162_ota_boot_is_active()) {
+            m_ci13162_ota_boot_note_got_ip();
+        } else {
+            signal_post(SIG_WIFI_CONNECTED);
+        }
 
         break;
 

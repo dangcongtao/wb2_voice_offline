@@ -12,8 +12,9 @@ int ef_get_bytes(const char *key, uint8_t *value, int len) {
     return result;
 }
 
-bool ef_del_key(const char *key){
-    return ef_del_env(key);
+bool ef_del_key(const char *key)
+{
+    return ef_del_env(key) == EF_NO_ERR;
 }
 
 bool ef_set_str(const char *key, char *str) {

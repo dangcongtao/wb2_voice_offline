@@ -9,6 +9,8 @@
 #include "app_config.h"
 #include "m_mqtt.h"
 #include "m_ota.h"
+#include "m_ci13162_ota.h"
+#include "m_ci13162_ota_boot.h"
 #include "system_typedef.h"
 #include "m_ble.h"
 #include "m_wf_ble_cfg.h"
@@ -39,6 +41,7 @@ extern char key[16], iv[16];
 extern uint32_t val_temperature;
 extern uint8_t bat_percent;
 extern uint8_t bat_charging_status;
+extern uint8_t is_ota;
 static int previous_otp;
 
 static void app_startup_message(void);
@@ -46,6 +49,7 @@ static void app_get_info(cJSON *jsRoot);
 static void app_get_fan_info(cJSON *jsRoot);
 static void app_set_wifi(cJSON *jsRoot);
 static void app_request_ota(cJSON *jsRoot);
+static void app_request_ci13162_ota(cJSON *jsRoot);
 static void app_set_static_ip(cJSON *jsRoot);
 static void app_remove_device(cJSON *jsRoot);
 static void app_backup_db(cJSON *jsRoot);
@@ -88,6 +92,7 @@ wswitch_handler_t array_handler[] = {
     {app_remove_device, 123},
     {app_set_wifi, 128},
     {app_request_ota, 129},
+    {app_request_ci13162_ota, 134},
     {app_set_time_release, 130},
     {app_get_time_release, 131},
     {app_set_static_ip, 132},
@@ -871,6 +876,7 @@ static void app_get_info(cJSON *jsRoot)
     uint32_t i;
 
     m_wifi_get_instance().wifi_sync_rssi_cb();
+    (void)aiio_ci13162_uart_request_version();
 
     /* respond server here */
     memset(respond, 0, sizeof(respond));
@@ -1008,6 +1014,12 @@ static void app_request_ota(cJSON *jsRoot)
     }
     url = jsUrl->valuestring;
 
+    if (m_ci13162_ota_is_busy() || m_ota_is_busy())
+    {
+        os_trace("OTA already in progress\r\n");
+        goto RESPONSE;
+    }
+
     result = 1;
 
     memset(respond, 0, sizeof(respond));
@@ -1018,7 +1030,7 @@ static void app_request_ota(cJSON *jsRoot)
     /* implement here */
     extern void ble_deinit(void);
     ble_deinit();
-    m_ota_start(url);
+    (void)m_ota_start(url);
 
     return;
 
@@ -1028,6 +1040,73 @@ RESPONSE:
     sprintf(respond, "{\"%s\":%ld, \"u\":%ld, \"result\": %d}",
             gs_dev_type[device_type], type, uid, result);
     m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
+}
+
+/* {"TYPE":134,"url":fw_url,"agent_url":agent_url,"u":uid} */
+static void app_request_ci13162_ota(cJSON *jsRoot)
+{
+    uint8_t result = 0;
+    cJSON *jsType;
+    cJSON *jsU;
+    cJSON *jsUrl;
+    cJSON *jsAgentUrl;
+    uint32_t type = AIIO_CI13162_OTA_COMMAND;
+    uint32_t uid = 0U;
+
+    if (jsRoot == NULL)
+    {
+        return;
+    }
+
+    jsType = cJSON_GetObjectItem(jsRoot, gs_dev_type[device_type]);
+    jsU = cJSON_GetObjectItem(jsRoot, CJSON_KEY_USER_ID);
+    jsUrl = cJSON_GetObjectItem(jsRoot, CJSON_KEY_URL);
+    jsAgentUrl = cJSON_GetObjectItem(jsRoot, CJSON_KEY_AGENT_URL);
+
+    if ((jsType == NULL) || (jsType->type != cJSON_Number) ||
+        (jsU == NULL) || (jsU->type != cJSON_Number) ||
+        (jsUrl == NULL) || (jsUrl->type != cJSON_String) ||
+        (jsAgentUrl == NULL) || (jsAgentUrl->type != cJSON_String) ||
+        (jsUrl->valuestring == NULL) || (jsAgentUrl->valuestring == NULL))
+    {
+        goto RESPONSE;
+    }
+
+    type = (uint32_t)jsType->valueint;
+    uid = (uint32_t)jsU->valueint;
+    if ((type != AIIO_CI13162_OTA_COMMAND) ||
+        m_ci13162_ota_is_busy() ||
+        m_ota_is_busy())
+    {
+        goto RESPONSE;
+    }
+
+    os_trace("[CI13162][CMD] Save pending request\r\n");
+    if (m_ci13162_ota_boot_save(jsUrl->valuestring, jsAgentUrl->valuestring) != 0)
+    {
+        os_trace("[CI13162][CMD] Save pending request failed\r\n");
+        goto RESPONSE;
+    }
+    os_trace("[CI13162][CMD] Save pending request done\r\n");
+
+    result = 1U;
+    is_ota = STATE_OTA_PROCESS;
+
+RESPONSE:
+    memset(respond, 0, sizeof(respond));
+    snprintf(respond,
+             sizeof(respond),
+             "{\"%s\":%lu, \"u\":%lu, \"result\": %u}",
+             gs_dev_type[device_type],
+             (unsigned long)type,
+             (unsigned long)uid,
+             (unsigned int)result);
+    m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
+    if (result == 1U) {
+        os_trace("start_ota\r\n");
+        vTaskDelay(pdMS_TO_TICKS(AIIO_CI13162_OTA_MQTT_ACK_DELAY_MS));
+        bl_sys_reset_por();
+    }
 }
 
 /* {"TYPE":132, "ip":"192.168.1.100"} */

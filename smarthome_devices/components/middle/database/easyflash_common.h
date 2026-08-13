@@ -28,10 +28,12 @@ bool ef_set_bytes(const char *key, uint8_t *value, int len);
 int ef_get_bytes(const char *key, uint8_t *value, int len);
 
 
-/**
- * @description: easyflash delete key
- * @param {char} *key
- * @return {*}
+/** @brief Delete a value from EasyFlash.
+ *
+ *  @param[in]  key  Key to delete.
+ *  @return     Whether the value was deleted successfully.
+ *  @retval     true  Delete operation succeeded.
+ *  @retval     false Key was absent or the delete operation failed.
  */
 bool ef_del_key(const char *key);
 

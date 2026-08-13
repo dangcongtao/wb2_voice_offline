@@ -11,7 +11,13 @@
 #define gpio_get_level bl_gpio_input_get_value
 #define gpio_set_level bl_gpio_output_set
 
+/* GPIO 14 is shared with the software UART log (gpio_log.c): disable the
+   status LED in debug builds so the pin is free for log output */
+#if DEBUG_ENABLE == 1
+#define LED_STT 0xFF
+#else
 #define LED_STT 14
+#endif
 #define LED_STT_SSW 1
 #define LED_STT_MINI 0xFF
 

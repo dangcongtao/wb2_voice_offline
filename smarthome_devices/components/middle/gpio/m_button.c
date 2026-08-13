@@ -19,6 +19,7 @@
 #include "hw_uart.h"
 #include "m_fan_control.h"
 #include "m_ft62f28.h"
+#include "m_ci13162_ota.h"
 
 #define TIME_OUT_RESET_TS04_WITHOUT_PRESS 2400
 
@@ -211,7 +212,9 @@ static void button_scan_task(void *param)
                     m_led_stt_get_instance()._toggle_led_stt_cb();
                 }
                 tick_ota_led += 50;
-                if (tick_ota_led >= 180000)
+                if (tick_ota_led >= (m_ci13162_ota_is_busy()
+                                         ? m_ci13162_ota_timeout_ms()
+                                         : 180000U))
                 {
                     tick_ota_led = 0;
                     os_trace("ota timeout\r\n");
