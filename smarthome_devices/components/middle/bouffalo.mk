@@ -53,6 +53,7 @@ COMPONENT_SRCS := database/m_database.c \
 				  ota/ci13162_ota_protocol.c \
 				  ota/ci13162_ota_fw2.c \
 				  ota/ci13162_ota_http.c \
+				  ota/ci13162_ota_manifest.c \
 				  http/tcp_server.c \
 				  http/m_http_client.c \
 				  http/m_http_server.c \

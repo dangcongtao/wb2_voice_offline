@@ -11,6 +11,7 @@
 #include "m_ota.h"
 #include "m_ci13162_ota.h"
 #include "m_ci13162_ota_boot.h"
+#include "ci13162_ota_manifest.h"
 #include "system_typedef.h"
 #include "m_ble.h"
 #include "m_wf_ble_cfg.h"
@@ -1042,14 +1043,14 @@ RESPONSE:
     m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
 }
 
-/* {"TYPE":134,"url":fw_url,"agent_url":agent_url,"u":uid} */
+/* {"TYPE":134,"url":manifest_url,"u":uid} */
 static void app_request_ci13162_ota(cJSON *jsRoot)
 {
     uint8_t result = 0;
     cJSON *jsType;
     cJSON *jsU;
     cJSON *jsUrl;
-    cJSON *jsAgentUrl;
+    ci13162_ota_manifest_urls_t resolved_urls;
     uint32_t type = AIIO_CI13162_OTA_COMMAND;
     uint32_t uid = 0U;
 
@@ -1061,13 +1062,11 @@ static void app_request_ci13162_ota(cJSON *jsRoot)
     jsType = cJSON_GetObjectItem(jsRoot, gs_dev_type[device_type]);
     jsU = cJSON_GetObjectItem(jsRoot, CJSON_KEY_USER_ID);
     jsUrl = cJSON_GetObjectItem(jsRoot, CJSON_KEY_URL);
-    jsAgentUrl = cJSON_GetObjectItem(jsRoot, CJSON_KEY_AGENT_URL);
 
     if ((jsType == NULL) || (jsType->type != cJSON_Number) ||
         (jsU == NULL) || (jsU->type != cJSON_Number) ||
         (jsUrl == NULL) || (jsUrl->type != cJSON_String) ||
-        (jsAgentUrl == NULL) || (jsAgentUrl->type != cJSON_String) ||
-        (jsUrl->valuestring == NULL) || (jsAgentUrl->valuestring == NULL))
+        (jsUrl->valuestring == NULL))
     {
         goto RESPONSE;
     }
@@ -1081,8 +1080,18 @@ static void app_request_ci13162_ota(cJSON *jsRoot)
         goto RESPONSE;
     }
 
+    os_trace("[CI13162][CMD] Resolve manifest\r\n");
+    if (ci13162_ota_manifest_fetch(jsUrl->valuestring, &resolved_urls) != 0)
+    {
+        os_trace("[CI13162][CMD] Resolve manifest failed\r\n");
+        goto RESPONSE;
+    }
+    os_trace("[CI13162][CMD] Firmware URL %s\r\n", resolved_urls.firmware_url);
+    os_trace("[CI13162][CMD] Agent URL %s\r\n", resolved_urls.agent_url);
+
     os_trace("[CI13162][CMD] Save pending request\r\n");
-    if (m_ci13162_ota_boot_save(jsUrl->valuestring, jsAgentUrl->valuestring) != 0)
+    if (m_ci13162_ota_boot_save(resolved_urls.firmware_url,
+                                resolved_urls.agent_url) != 0)
     {
         os_trace("[CI13162][CMD] Save pending request failed\r\n");
         goto RESPONSE;
@@ -1446,6 +1455,9 @@ void app_handler_msg_task(void *arg)
 extern bool ble_init_queue(void);
 void process_data_init(void)
 {
+#if defined(BUILD_TEST) && (BUILD_TEST == 1)
+    (void)ci13162_ota_manifest_self_test();
+#endif
     pdata_queue_init();
     ble_init_queue();
     m_mqtt_command_startup_register_handler(app_startup_message);

@@ -325,7 +325,36 @@ Khi updater in thông báo đang spam handshake, reset hoặc power-cycle chip. 
 
 Khi một pha thất bại sau ERASE, cách phục hồi an toàn nhất là reset chip và chạy lại flow từ handshake; không giả định rằng host và chip còn đồng bộ state sau timeout.
 
-## 13. Yêu cầu an toàn cho sản phẩm
+## 13. Manifest OTA từ lệnh MQTT 134
+
+WB2 nhận một manifest URL trong lệnh 134. Ví dụ payload dưới đây dùng `TYPE` để minh họa; key command thực tế là loại thiết bị trong `gs_dev_type`:
+
+```json
+{"TYPE":134,"url":"http://fwm.hunonicpro.com/f/6258/manifest.json","u":123}
+```
+
+Manifest phải trả HTTP 200, có `Content-Length`, không dùng redirect hoặc chunked encoding, và có nội dung:
+
+```json
+{
+    "base_url": "fwm.hunonicpro.com",
+    "app": "Firmware_V26.08.13.bin",
+    "agent": "ci13lc_agent_from_tool_padded_0x5000.bin"
+}
+```
+
+Ngay trong lúc xử lý lệnh 134, WB2 tải manifest và dùng thư mục của manifest (`/f/6258/`) để tạo hai URL:
+
+```text
+http://fwm.hunonicpro.com/f/6258/Firmware_V26.08.13.bin
+http://fwm.hunonicpro.com/f/6258/ci13lc_agent_from_tool_padded_0x5000.bin
+```
+
+`base_url` phải là hostname không kèm port; `app` và `agent` chỉ là tên file, không phải URL hay path. Field MQTT `agent_url` cũ không còn được đọc. Chỉ khi tải/parse manifest và lưu hai URL thành công, WB2 mới ACK `result:1`, chờ 1 giây rồi reboot vào OTA-only mode. Nếu có lỗi, thiết bị ACK `result:0` và không reboot.
+
+Thay đổi này chỉ tác động cách lấy hai URL. Luồng UART OTA vẫn giữ nguyên: tải agent 0x5000 byte trước, đưa CI13162 vào MaskROM, chạy agent, rồi stream firmware ứng dụng.
+
+## 14. Yêu cầu an toàn cho sản phẩm
 
 - Chỉ cho phép một host tin cậy truy cập UART update; giao thức ở mức transport không tự chứng minh image là hợp lệ về nguồn gốc.
 - Cấp nguồn ổn định trong suốt erase/write; không dùng reset ngẫu nhiên để hủy giữa block.
