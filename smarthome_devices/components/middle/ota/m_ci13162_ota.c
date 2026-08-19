@@ -10,6 +10,7 @@
 #include <FreeRTOS.h>
 #include <task.h>
 
+#include "aiio_ci13162_config.h"
 #include "aiio_ci13162_uart.h"
 #include "app_config.h"
 #include "bl_sys.h"

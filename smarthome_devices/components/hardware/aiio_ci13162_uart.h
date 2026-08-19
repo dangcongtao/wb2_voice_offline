@@ -68,8 +68,15 @@ int32_t aiio_ci13162_uart_ota_send_app_reset(void);
  *  @return      Send result.
  *  @retval      0  Query `{"cmd":3,"data":[]}` was sent.
  *  @retval      -1 UART is not ready or OTA owns the port.
- *  @note        The chip reply `{"cmd":3,"data":[<version>]}` is logged when received.
+ *  @note        The chip reply `{"cmd":3,"data":[<version>]}` is cached when received.
  */
 int32_t aiio_ci13162_uart_request_version(void);
+
+/** @brief Get the cached CI13162 firmware version.
+ *
+ *  @return      Cached firmware version, or 0 if no valid reply has been received.
+ *  @note        This function only reads the cache and never sends a UART query.
+ */
+uint32_t aiio_ci13162_uart_get_voice_version(void);
 
 #endif /* AIIO_CI13162_UART_H */

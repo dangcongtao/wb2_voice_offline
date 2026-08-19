@@ -8,6 +8,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "aiio_ci13162_config.h"
 #include "app_config.h"
 
 #ifdef __cplusplus

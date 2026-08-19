@@ -65,9 +65,9 @@ typedef enum
 | `CMD_MODE` | 2 | `[3]` | CI13162 → BL602 | Chọn tốc độ số 3 |
 | `CMD_MODE` | 2 | `[4]` | CI13162 → BL602 | Chọn chế độ gió tự nhiên |
 | `CMD_VERSION` | 3 | `[]` | BL602 → CI13162 | Hỏi firmware version của chip giọng nói |
-| `CMD_VERSION` | 3 | `[<version>]` | CI13162 → BL602 | Trả version; BL602 chỉ log, không điều khiển quạt |
+| `CMD_VERSION` | 3 | `[<version>]` | CI13162 → BL602 | Trả version; BL602 cache vào RAM, không điều khiển quạt |
 
-`CMD_VERSION` khác các lệnh quạt: BL602 chủ động hỏi, CI13162 trả lời. Message hỏi dùng `data` rỗng; message trả lời bắt buộc đúng 1 số. Parser RX của BL602 từ chối `{"cmd":3,"data":[]}` (`INVALID_DATA`) vì đó là frame TX, không phải reply.
+`CMD_VERSION` khác các lệnh quạt: BL602 chủ động hỏi, CI13162 trả lời. Message hỏi dùng `data` rỗng; message trả lời bắt buộc đúng 1 số. Parser RX của BL602 từ chối `{"cmd":3,"data":[]}` (`INVALID_DATA`) vì đó là frame TX, không phải reply. BL602 tự động hỏi lần đầu sau 3 giây kể từ khi UART CI13162 khởi tạo; nếu chưa nhận được reply thì thử lại tối đa 2 lần, mỗi lần cách nhau 1 giây.
 
 ## 4. Ánh xạ lệnh thoại sang message UART1
 
@@ -90,7 +90,7 @@ Hàm `aiio_ci13162_uart_request_version()` gửi chuỗi cố định trên UART
 static const char s_aiio_ci13162_version_query[] = "{\"cmd\":3,\"data\":[]}\r\n";
 ```
 
-Hiện được gọi từ `app_get_info()` (MQTT lệnh 105). Không gửi khi UART chưa sẵn sàng hoặc khi OTA đang giữ UART0.
+Việc gửi được lập lịch tự động trong module UART, không phụ thuộc MQTT. Không gửi khi UART chưa sẵn sàng hoặc khi OTA đang giữ UART0. Lệnh MQTT `100` và `105` chỉ đọc phiên bản đã cache, không gửi thêm yêu cầu sang CI13162.
 
 Luồng:
 
@@ -99,7 +99,7 @@ BL602  -- {"cmd":3,"data":[]}\r\n          -->  CI13162
 BL602  <-- {"cmd":3,"data":[<version>]}\r\n --  CI13162
 ```
 
-Khi nhận reply hợp lệ, `aiio_ci13162_uart_process()` chỉ in log:
+Khi nhận reply hợp lệ, `aiio_ci13162_uart_process()` lưu version vào RAM và dừng retry. Payload MQTT lệnh `100` và response lệnh `105` trả giá trị này qua trường số `voice_ver`. `voice_ver = 0` nghĩa là BL602 chưa nhận được reply hợp lệ trong lần khởi động hiện tại.
 
 ```text
 [CI13162] version=<version>

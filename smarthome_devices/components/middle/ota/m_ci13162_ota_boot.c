@@ -7,6 +7,7 @@
 #include <task.h>
 #include <bl_wdt.h>
 
+#include "aiio_ci13162_config.h"
 #include "app_config.h"
 #include "easyflash_common.h"
 #include "flash_api.h"

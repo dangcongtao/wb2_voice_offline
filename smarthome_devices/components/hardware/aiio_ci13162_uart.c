@@ -16,6 +16,7 @@
 #include <bl_gpio.h>
 #include <bl_sys.h>
 
+#include "aiio_ci13162_config.h"
 #include "app_config.h"
 #include "app_fan.h"
 #include "m_fan.h"
@@ -36,6 +37,9 @@
 #define AIIO_CI13162_UART_RX_TRIGGER_LEVEL      1U
 #define AIIO_CI13162_UART_DIAG_ENABLE           0
 #define AIIO_CI13162_UART_TX_IDLE_HOLD_MS       20U
+#define AIIO_CI13162_VERSION_INITIAL_DELAY_MS   3000U
+#define AIIO_CI13162_VERSION_RETRY_DELAY_MS     1000U
+#define AIIO_CI13162_VERSION_MAX_ATTEMPTS       3U
 #define AIIO_CI13162_UART_GPIO_FUNCTION         7U
 #define AIIO_CI13162_UART_DIAG_BUFFER_SIZE      384U
 #define AIIO_CI13162_UART_HBN_IRQ_MODE_ADDRESS  (HBN_BASE + HBN_IRQ_MODE_OFFSET)
@@ -107,6 +111,12 @@ static volatile uint32_t s_aiio_ci13162_total_dropped_bytes;
 static volatile uint8_t s_aiio_ci13162_ota_held;
 static volatile uint8_t s_aiio_ci13162_ota_rx_overflow;
 static uint8_t s_aiio_ci13162_log_was_enabled;
+static uint32_t s_aiio_ci13162_voice_version;
+static TickType_t s_aiio_ci13162_version_start_tick;
+static TickType_t s_aiio_ci13162_version_last_query_tick;
+static uint8_t s_aiio_ci13162_voice_version_valid;
+static uint8_t s_aiio_ci13162_version_query_attempts;
+static uint8_t s_aiio_ci13162_version_query_scheduled;
 
 extern volatile bool sys_log_all_enable;
 
@@ -703,6 +713,38 @@ static void aiio_ci13162_report_fan_state(const m_fan_info_t *fan_info)
                             SRC_ACTION_VOICE);
 }
 
+// Send the scheduled version query without blocking the application task.
+static void aiio_ci13162_process_version_query(void)
+{
+    TickType_t current_tick;
+    TickType_t reference_tick;
+    TickType_t delay_tick;
+
+    if ((s_aiio_ci13162_version_query_scheduled == 0U) ||
+        (s_aiio_ci13162_voice_version_valid != 0U) ||
+        (s_aiio_ci13162_version_query_attempts >= AIIO_CI13162_VERSION_MAX_ATTEMPTS) ||
+        (s_aiio_ci13162_ota_held != 0U)) {
+        return;
+    }
+
+    current_tick = xTaskGetTickCount();
+    if (s_aiio_ci13162_version_query_attempts == 0U) {
+        reference_tick = s_aiio_ci13162_version_start_tick;
+        delay_tick = pdMS_TO_TICKS(AIIO_CI13162_VERSION_INITIAL_DELAY_MS);
+    } else {
+        reference_tick = s_aiio_ci13162_version_last_query_tick;
+        delay_tick = pdMS_TO_TICKS(AIIO_CI13162_VERSION_RETRY_DELAY_MS);
+    }
+
+    if ((TickType_t)(current_tick - reference_tick) < delay_tick) {
+        return;
+    }
+
+    s_aiio_ci13162_version_last_query_tick = current_tick;
+    s_aiio_ci13162_version_query_attempts++;
+    (void)aiio_ci13162_uart_request_version();
+}
+
 // Queue one validated command for application-context dispatch.
 static uint8_t aiio_ci13162_queue_message(const aiio_ci13162_message_t *message)
 {
@@ -1198,6 +1240,13 @@ int32_t aiio_ci13162_uart_init(void)
         return -1;
     }
 
+    s_aiio_ci13162_voice_version = 0U;
+    s_aiio_ci13162_voice_version_valid = 0U;
+    s_aiio_ci13162_version_query_attempts = 0U;
+    s_aiio_ci13162_version_last_query_tick = 0U;
+    s_aiio_ci13162_version_start_tick = xTaskGetTickCount();
+    s_aiio_ci13162_version_query_scheduled = 1U;
+
 #if DEBUG_ENABLE == 1
     {
         char output[80];
@@ -1240,6 +1289,9 @@ void aiio_ci13162_uart_process(void)
 
     while (xQueueReceive(s_aiio_ci13162_command_queue, &message, 0U) == pdPASS) {
         if (message.command == AIIO_CI13162_CMD_VERSION) {
+            s_aiio_ci13162_voice_version = message.data;
+            s_aiio_ci13162_voice_version_valid = 1U;
+            s_aiio_ci13162_version_query_scheduled = 0U;
             os_trace("[CI13162] version=%lu\r\n", (unsigned long)message.data);
             continue;
         }
@@ -1301,6 +1353,8 @@ void aiio_ci13162_uart_process(void)
                 break;
         }
     }
+
+    aiio_ci13162_process_version_query();
 #endif
 }
 
@@ -1496,5 +1550,16 @@ int32_t aiio_ci13162_uart_request_version(void)
     return (sent_length == (int)query_length) ? 0 : -1;
 #else
     return -1;
+#endif
+}
+
+uint32_t aiio_ci13162_uart_get_voice_version(void)
+{
+#if AIIO_CI13162_UART_ENABLE == 1
+    return (s_aiio_ci13162_voice_version_valid != 0U)
+               ? s_aiio_ci13162_voice_version
+               : 0U;
+#else
+    return 0U;
 #endif
 }

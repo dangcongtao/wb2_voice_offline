@@ -6,6 +6,7 @@
 #include "cJSON.h"
 #include "base64.h"
 #include "m_database.h"
+#include "aiio_ci13162_config.h"
 #include "app_config.h"
 #include "m_mqtt.h"
 #include "m_ota.h"
@@ -170,19 +171,19 @@ extern uint8_t last_reason_reset;
 static void app_startup_message(void)
 {
     m_device_t app_databse = m_db_get_instance()->_m_device;
-    uint32_t i;
     static uint32_t num_send = 0;
     m_wifi_get_instance().wifi_sync_rssi_cb();
     /* respond server here */
     memset(respond, 0, sizeof(respond));
 
     sprintf(respond,
-            "{\"%s\":100,\"reason\":%lu,\"id\":\"%s\",\"ver\":%s,"
+            "{\"%s\":100,\"reason\":%lu,\"id\":\"%s\",\"ver\":%s,\"voice_ver\":%lu,"
             "\"ssid\":\"%s\",\"pass\":\"%s\",\"streng\":%d,"
             "\"ip\":\"%s\",\"vermqtt\":%lu,\"mode\":%u,\"lv\":%u,\"pcn\":%u,\"swing\":%u,"
             "\"buzz\":%u,\"t\":%lu,\"temp\":%lu,\"lamp\":%u,\"lp\":%u,\"bat\":%u,\"charging\":%u}",
             gs_dev_type[device_type], num_send * 100U + last_reason_reset * 10U + (uint32_t)bl_sys_rstinfo_get_hun(), // hang chuc: flash_reason reset, hang don vi: BL_RST_REASON_E
             m_db_get_instance()->_get_dev_id(), FIRMWARE_VERSION,
+            (unsigned long)aiio_ci13162_uart_get_voice_version(),
             app_databse._wifi_info->_ssid, app_databse._wifi_info->_passwd,
             app_databse._wifi_info->_rssi, app_databse._wifi_info->_ip, app_databse._mqtt_info->vermqtt,
             app_databse._fan_info->mode, app_databse._fan_info->speed, app_databse._fan_info->pcn, app_databse._fan_info->swing,
@@ -874,21 +875,20 @@ static void app_get_info(cJSON *jsRoot)
 
     /* respond server here */
     m_device_t app_databse = m_db_get_instance()->_m_device;
-    uint32_t i;
 
     m_wifi_get_instance().wifi_sync_rssi_cb();
-    (void)aiio_ci13162_uart_request_version();
 
     /* respond server here */
     memset(respond, 0, sizeof(respond));
 
     sprintf(respond,
-            "{\"%s\":%ld,\"u\":0,\"id\":\"%s\",\"ver\":%s,"
+            "{\"%s\":%ld,\"u\":0,\"id\":\"%s\",\"ver\":%s,\"voice_ver\":%lu,"
             "\"extras\":%d,\"ssid\":\"%s\",\"pass\":\"%s\",\"streng\":%d,"
             "\"ip\":\"%s\",\"mode\":%u,\"lv\":%u,\"pcn\":%u,\"swing\":%u,"
             "\"buzz\":%u,\"t\":%lu,\"temp\":%lu,\"lamp\":%u,\"lp\":%u,\"bat\":%u,\"charging\":%u}",
             gs_dev_type[device_type], type,
-            m_db_get_instance()->_get_dev_id(), FIRMWARE_VERSION, EXTRAS,
+            m_db_get_instance()->_get_dev_id(), FIRMWARE_VERSION,
+            (unsigned long)aiio_ci13162_uart_get_voice_version(), EXTRAS,
             app_databse._wifi_info->_ssid, app_databse._wifi_info->_passwd,
             app_databse._wifi_info->_rssi, app_databse._wifi_info->_ip,
             app_databse._fan_info->mode, app_databse._fan_info->speed, app_databse._fan_info->pcn, app_databse._fan_info->swing,
