@@ -8,9 +8,10 @@ COMPONENT_PRIV_INCLUDEDIRS :=
 
 ## This component's src
 COMPONENT_SRCS := process_data.c \
-				  app_fan.c \
-				  app_ir.c \
-				  
+                  app_cwsl.c \
+                  app_fan.c \
+                  app_ir.c
+
 COMPONENT_OBJS := $(patsubst %.c,%.o, $(COMPONENT_SRCS))
 
 COMPONENT_SRCDIRS := $(COMPONENT_ADD_INCLUDEDIRS)

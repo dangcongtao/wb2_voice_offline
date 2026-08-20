@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <blog.h>
 
-#define DEBUG_ENABLE 0
+#define DEBUG_ENABLE 1
 #define AIIO_WDT_TIMEOUT_MS 60000U
 
 void m_log(const char *fmt, ...);

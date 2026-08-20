@@ -37,6 +37,7 @@
 #include "flash_api.h"
 #include "m_fan_control.h"
 #include "app_fan.h"
+#include "app_cwsl.h"
 
 char respond[512];
 extern char key[16], iv[16];
@@ -120,6 +121,11 @@ wswitch_handler_t array_handler[] = {
 
     {app_ble_discover, 35},
     {app_ble_authen_connection, 36},
+
+    {app_cwsl_learn, 220},
+    {app_cwsl_delete, 221},
+    {app_cwsl_stop, 222},
+    {app_cwsl_query, 223},
 };
 
 wswitch_handler_t array_ble_handler[] = {
@@ -1015,9 +1021,11 @@ static void app_request_ota(cJSON *jsRoot)
     }
     url = jsUrl->valuestring;
 
-    if (m_ci13162_ota_is_busy() || m_ota_is_busy())
+    if (m_ci13162_ota_is_busy() ||
+        m_ota_is_busy() ||
+        app_cwsl_is_pending())
     {
-        os_trace("OTA already in progress\r\n");
+        os_trace("OTA or CWSL already in progress\r\n");
         goto RESPONSE;
     }
 
@@ -1075,7 +1083,8 @@ static void app_request_ci13162_ota(cJSON *jsRoot)
     uid = (uint32_t)jsU->valueint;
     if ((type != AIIO_CI13162_OTA_COMMAND) ||
         m_ci13162_ota_is_busy() ||
-        m_ota_is_busy())
+        m_ota_is_busy() ||
+        app_cwsl_is_pending())
     {
         goto RESPONSE;
     }
@@ -1186,6 +1195,21 @@ static void app_remove_device(cJSON *jsRoot)
 
     /* implement here */
     app_send_offline_message(2);
+    if (!app_cwsl_factory_clear())
+    {
+        uint32_t wait_count;
+
+        for (wait_count = 0U; wait_count < 40U; wait_count++)
+        {
+            aiio_ci13162_uart_process();
+            app_cwsl_poll();
+            if (app_cwsl_factory_clear_done())
+            {
+                break;
+            }
+            vTaskDelay(pdMS_TO_TICKS(50U));
+        }
+    }
     /* factory reset database */
     m_db_get_instance()->_reset_db_cb();
     m_wifi_get_instance().start_smart_config_cb();
@@ -1371,6 +1395,7 @@ void app_handler_msg_task(void *arg)
     while (1)
     {
         aiio_ci13162_uart_process();
+        app_cwsl_poll();
 
         if (xQueueReceive(pqueue, &message_rcv_mqtt, 0) == pdPASS)
         {
@@ -1448,6 +1473,7 @@ void app_handler_msg_task(void *arg)
             app_ir_send_response_from_remote_brand_check_loop();
         }
 
+        aiio_ci13162_uart_poll();
         vTaskDelay(pdMS_TO_TICKS(50));
     }
 }
@@ -1458,6 +1484,7 @@ void process_data_init(void)
 #if defined(BUILD_TEST) && (BUILD_TEST == 1)
     (void)ci13162_ota_manifest_self_test();
 #endif
+    app_cwsl_init();
     pdata_queue_init();
     ble_init_queue();
     m_mqtt_command_startup_register_handler(app_startup_message);

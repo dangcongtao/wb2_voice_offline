@@ -10,6 +10,29 @@
 #include <stddef.h>
 #include <stdint.h>
 
+/** @brief Handle one final CWSL status received from the CI13162.
+ *
+ *  @param[in]  code    CWSL status code.
+ *  @param[in]  cmd_id  ASR command identifier.
+ *  @param[in]  slot    CWSL slot identifier.
+ *  @return     None.
+ */
+typedef void (*aiio_ci13162_cwsl_status_cb_t)(uint8_t code,
+                                              uint8_t cmd_id,
+                                              uint8_t slot);
+
+/** @brief Handle one CWSL query response received from the CI13162.
+ *
+ *  @param[in]  cmd_id      Queried ASR command identifier.
+ *  @param[in]  data        Query result bytes after cmd_id.
+ *  @param[in]  data_count  Number of bytes available in data.
+ *  @return     None.
+ *  @note       data_count is two for a bitmap and three for capacity data.
+ */
+typedef void (*aiio_ci13162_cwsl_info_cb_t)(uint8_t cmd_id,
+                                            const uint8_t *data,
+                                            uint8_t data_count);
+
 /** @brief Drive UART0 TX idle-high before the port is remuxed.
  *
  *  @return      None.
@@ -35,6 +58,44 @@ int32_t aiio_ci13162_uart_init(void);
  *  @note        Call this function periodically after the fan module is initialized.
  */
 void aiio_ci13162_uart_process(void);
+
+/** @brief Process deferred CI13162 maintenance requests.
+ *
+ *  @return     None.
+ *  @note       Call after application commands so CWSL can pause version TX first.
+ */
+void aiio_ci13162_uart_poll(void);
+
+/** @brief Send one CWSL request to the CI13162.
+ *
+ *  @param[in]  action        CWSL action: learn, delete, stop, or query.
+ *  @param[in]  data          Action arguments, or NULL for stop.
+ *  @param[in]  data_count    Number of action arguments.
+ *  @return     Send status.
+ *  @retval     0             Request sent successfully.
+ *  @retval     -1            Invalid arguments, UART unavailable, or send failure.
+ */
+int32_t aiio_ci13162_uart_send_cwsl(uint8_t action,
+                                    const uint8_t *data,
+                                    uint8_t data_count);
+
+/** @brief Register application callbacks for CWSL responses.
+ *
+ *  @param[in]  status_cb  Status callback, or NULL to disable status delivery.
+ *  @param[in]  info_cb    Query callback, or NULL to disable query delivery.
+ *  @return     None.
+ */
+void aiio_ci13162_uart_set_cwsl_callbacks(
+    aiio_ci13162_cwsl_status_cb_t status_cb,
+    aiio_ci13162_cwsl_info_cb_t info_cb);
+
+/** @brief Pause or resume automatic CI13162 version requests.
+ *
+ *  @param[in]  paused  Non-zero to pause requests, zero to resume them.
+ *  @return     None.
+ *  @note       Incoming version responses are still cached while paused.
+ */
+void aiio_ci13162_uart_set_version_query_paused(uint8_t paused);
 
 /** @brief Claim UART0 for the CI13162 binary OTA protocol. */
 int32_t aiio_ci13162_uart_ota_acquire(void);
