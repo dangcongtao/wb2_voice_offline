@@ -11,6 +11,7 @@
 #include "aiio_ci13162_config.h"
 #include "aiio_ci13162_uart.h"
 #include "app_config.h"
+#include "app_volume.h"
 #include "m_ci13162_ota.h"
 #include "m_ota.h"
 #include "process_data.h"
@@ -174,7 +175,7 @@ static uint8_t app_cwsl_parse_mutating(cJSON *js_root,
                    ? 0U
                    : APP_CWSL_CODE_BAD_REQUEST;
     }
-    if ((request->cmd_id < 1U) || (request->cmd_id > 14U)) {
+    if ((request->cmd_id < 1U) || (request->cmd_id > 39U)) {
         return APP_CWSL_CODE_BAD_COMMAND_ID;
     }
     if (((request->cmd_id >= 2U) && (request->cmd_id <= 6U)) ||
@@ -208,7 +209,7 @@ static uint8_t app_cwsl_parse_query(cJSON *js_root,
     }
 
     request->cmd_id = (uint8_t)cmd_id;
-    if (((request->cmd_id >= 1U) && (request->cmd_id <= 14U)) ||
+    if (((request->cmd_id >= 1U) && (request->cmd_id <= 39U)) ||
         (request->cmd_id == APP_CWSL_ANY)) {
         return 0U;
     }
@@ -494,6 +495,12 @@ static void app_cwsl_run_validation_tests(void)
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
         {"\"cmd_id\":13,\"slot\":0,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
+        {"\"cmd_id\":15,\"slot\":0,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_LEARN, 0U},
+        {"\"cmd_id\":39,\"slot\":255,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_LEARN, 0U},
+        {"\"cmd_id\":40,\"slot\":0,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_COMMAND_ID},
         {"\"cmd_id\":99,\"slot\":0,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_COMMAND_ID},
         {"\"cmd_id\":7,\"slot\":15,\"u\":1,\"act_id\":0",
@@ -512,6 +519,10 @@ static void app_cwsl_run_validation_tests(void)
          APP_CWSL_CMD_DELETE, APP_CWSL_CODE_BAD_REQUEST},
         {"\"cmd_id\":13,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_QUERY, 0U},
+        {"\"cmd_id\":39,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_QUERY, 0U},
+        {"\"cmd_id\":40,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_QUERY, APP_CWSL_CODE_BAD_COMMAND_ID},
         {"\"cmd_id\":99,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_QUERY, APP_CWSL_CODE_BAD_COMMAND_ID},
         {"\"cmd_id\":255,\"u\":1,\"act_id\":\"0\"",
@@ -584,6 +595,10 @@ static void app_cwsl_start_mutating(cJSON *js_root,
         app_cwsl_publish_mutating_reject(&request, APP_CWSL_CODE_OTA_HOLD);
         return;
     }
+    if (app_volume_is_pending()) {
+        app_cwsl_publish_mutating_reject(&request, APP_CWSL_CODE_BUSY);
+        return;
+    }
     if ((s_app_cwsl_mutating.active != 0U) ||
         (s_app_cwsl_query.active != 0U)) {
         app_cwsl_publish_mutating_reject(&request, APP_CWSL_CODE_BUSY);
@@ -648,6 +663,10 @@ void app_cwsl_stop(cJSON *js_root)
         app_cwsl_publish_stop_reject(&request, APP_CWSL_CODE_OTA_HOLD);
         return;
     }
+    if (app_volume_is_pending()) {
+        app_cwsl_publish_stop_reject(&request, APP_CWSL_CODE_BUSY);
+        return;
+    }
     if (s_app_cwsl_mutating.active == 0U) {
         code = (s_app_cwsl_query.active != 0U)
                    ? APP_CWSL_CODE_BUSY
@@ -684,6 +703,10 @@ void app_cwsl_query(cJSON *js_root)
     }
     if (app_cwsl_ota_active()) {
         app_cwsl_publish_query_reject(&request, APP_CWSL_CODE_OTA_HOLD);
+        return;
+    }
+    if (app_volume_is_pending()) {
+        app_cwsl_publish_query_reject(&request, APP_CWSL_CODE_BUSY);
         return;
     }
     if (s_app_cwsl_query.active != 0U) {
@@ -784,6 +807,10 @@ void app_cwsl_notify_voice_cmd(uint8_t cmd_id)
 
     if (cmd_id == 0U) {
         return;
+    }
+
+    if ((cmd_id >= 1U) && (cmd_id <= 6U)) {
+        cmd_id = 1U;
     }
 
     response_length = snprintf(

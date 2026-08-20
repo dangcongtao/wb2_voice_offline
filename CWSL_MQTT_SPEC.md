@@ -2,7 +2,7 @@
 
 > Hợp đồng giao tiếp giữa App, firmware WB2 và chip giọng nói CI13162 cho chức năng học từ đánh thức và học cách nói mới cho lệnh quạt.
 >
-> **Trạng thái:** Đề xuất kỹ thuật — firmware WB2 hiện chưa triển khai CWSL UART `cmd` 4–6 hoặc MQTT 220–223.
+> **Trạng thái:** Đã triển khai trên firmware WB2: CWSL UART `cmd` 4–6, MQTT 220–224, timer thoại, và MQTT volume 225/226.
 
 ## Mục lục
 
@@ -90,8 +90,8 @@ Workbook hiện có hai sheet song song. Cả hai sheet đã dùng cùng ID cho 
 | 10 | `BẬT-SỐ-HAI` | `0x000A` | NO | 10 | Command word | `{"cmd":2,"data":[2]}` | Có | **Cho phép** |
 | 11 | `BẬT-SỐ-BA` | `0x000B` | NO | 11 | Command word | `{"cmd":2,"data":[3]}` | Có | **Cho phép** |
 | 12 | `CHẾ-ĐỘ-GIÓ-TỰ-NHIÊN` | `0x000D` | NO | 12 | Command word | `{"cmd":2,"data":[4]}` | Có | **Cho phép** |
-| 13 | `BẬT-CHẾ-ĐỘ-QUAY` | `0x0010` | NO | 13 | Command word | `{"cmd":2,"data":[5]}` | `INVALID_DATA` | **Khóa** |
-| 14 | `DỪNG-QUAY` | `0x0011` | NO | 14 | Command word | `{"cmd":2,"data":[6]}` | `INVALID_DATA` | **Khóa** |
+| 13 | `BẬT-CHẾ-ĐỘ-QUAY` | `0x0010` | NO | 13 | Command word | `{"cmd":2,"data":[5]}` | Có | **Khóa policy** |
+| 14 | `DỪNG-QUAY` | `0x0011` | NO | 14 | Command word | `{"cmd":2,"data":[6]}` | Có | **Khóa policy** |
 
 ### 1.1. Kết luận quan trọng
 
@@ -99,7 +99,7 @@ Workbook hiện có hai sheet song song. Cả hai sheet đã dùng cùng ID cho 
 - ID **7–14 là command word**, không phải prompt CWSL.
 - Cột `播报音0ID` là ID âm thanh phát lại khi nhận diện. Việc giá trị cột này trùng command ID không biến ID 7–14 thành prompt CWSL.
 - Learned wake của contract CWSL chỉ dùng `cmd_id=1` (`WAKE_UP_ID`), tối đa 5 slot.
-- ID 13/14 có trong ASR workbook, nhưng firmware WB2 hiện chưa chấp nhận UART MODE 5/6.
+- ID 13/14 đã được firmware WB2 xử lý qua UART MODE 5/6, nhưng vẫn khóa LEARN/DELETE theo policy sản phẩm.
 
 ### 1.2. Ghi chú workbook stale trong tài liệu cũ
 
@@ -470,14 +470,15 @@ UART frame:
 | 1 | Cho phép | Cho phép | Cho phép | Learned wake, slot 0–4 hoặc 255 |
 | 2–6 | Cấm policy | Cấm policy | Cho phép | Wake factory có thật trong ASR |
 | 7–12 | Cho phép | Cho phép | Cho phép | Đã map hành vi quạt |
-| 13–14 | Cấm policy | Cấm policy | Cho phép | Có trong ASR, nhưng MCU chưa xử lý MODE 5/6 |
+| 13–14 | Cấm policy | Cấm policy | Cho phép | MCU đã xử lý MODE 5/6, nhưng product chưa mở CWSL |
+| 15–39 | Cho phép | Cho phép | Cho phép | Timer 1–12 giờ/tiếng và hủy hẹn giờ |
 | 255 | Cấm LEARN | Chỉ `[2,255,255]` | Capacity | Giá trị đặc biệt |
-| 0, 99, ID khác | Cấm | Cấm | Cấm | Không có trong bảng ASR |
+| 0, 40–254 | Cấm | Cấm | Cấm | Không có trong bảng ASR của product |
 
 Mã từ chối:
 
 - ID 2–6 hoặc 13–14: `code=64` vì đây là policy sản phẩm, không phải ID không tồn tại.
-- ID 0/99/khác không có trong ASR: `code=65`.
+- ID 0 hoặc 40–254 không có trong ASR của product: `code=65`.
 - LEARN `cmd_id=255`: `code=65`.
 
 ### 9.2. Slot hợp lệ
@@ -485,14 +486,14 @@ Mã từ chối:
 | Loại | Slot hợp lệ |
 |---|---|
 | `cmd_id=1` | 0–4 hoặc 255 |
-| `cmd_id=7..12` | 0–14 hoặc 255 |
+| `cmd_id=7..12` hoặc `15..39` | 0–14 hoặc 255 |
 | DELETE all | Chỉ `cmd_id=255, slot=255` |
 
 Sai slot trả `code=66`.
 
 ### 9.3. QUERY
 
-QUERY được phép cho mọi ASR ID 1–14 và 255 vì đây là thao tác đọc thuần. Việc ID 13/14 chưa được MCU map MODE 5/6 không phải lý do chặn QUERY.
+QUERY được phép cho mọi ASR ID 1–39 và 255 vì đây là thao tác đọc thuần. ID 13/14 vẫn query được dù LEARN/DELETE đang bị khóa policy.
 
 ---
 
@@ -875,8 +876,41 @@ Bảng ánh xạ `cmd_id` cho sự kiện 224:
 - `cmd_id=10`: Bật số 2 (`cmd:2, data:[2]`)
 - `cmd_id=11`: Bật số 3 (`cmd:2, data:[3]`)
 - `cmd_id=12`: Gió tự nhiên (`cmd:2, data:[4]`)
-- `cmd_id=13`: Bật quay (`cmd:2, data:[5]` - khi mở)
-- `cmd_id=14`: Dừng quay (`cmd:2, data:[6]` - khi mở)
+- `cmd_id=13`: Bật quay (`cmd:2, data:[5]`)
+- `cmd_id=14`: Dừng quay (`cmd:2, data:[6]`)
+- Timer `N=1..12`: MCU chỉ nhận số giờ, không biết người dùng nói “giờ” hay “tiếng”, nên publish canonical ID `15 + 2*(N-1)` tương ứng biến thể “giờ” (`15,17,...,37`).
+- `cmd_id=39`: Hủy hẹn giờ (`cmd:7, data:[0]`).
+
+Wake word không còn dùng UART `cmd:7`; command này được dành riêng cho timer theo contract hiện tại.
+
+### 12.13. Âm lượng loa qua MQTT (cmd 225/226)
+
+Âm lượng dùng mức tuyệt đối `1..7`. CI13162 là nguồn sự thật và tự lưu mức vào NVDATA; WB2 chỉ cache giá trị RAM nhận từ `cmd:9`.
+
+| MQTT | Hành động | UART MCU → chip | UART chip → MCU |
+|---:|---|---|---|
+| 225 | Đặt mức | `{"cmd":8,"data":[1..7]}` | `{"cmd":9,"data":[level,result]}` |
+| 226 | Đọc mức | `{"cmd":8,"data":[0]}` | `{"cmd":9,"data":[level,result]}` |
+
+Request/response mẫu:
+
+```json
+{"fanoem":225,"vol":3,"u":55519,"act_id":0}
+{"fanoem":225,"vol":3,"u":55519,"act_id":0,"result":1}
+
+{"fanoem":226,"u":55519,"act_id":0}
+{"fanoem":226,"vol":3,"u":55519,"act_id":0,"result":1}
+```
+
+Quy tắc:
+
+- WB2 chỉ giữ một request volume đang chờ; request thứ hai nhận `result=0`.
+- SET/GET chỉ phản hồi sau khi nhận đúng một `cmd:9`; không block task MQTT.
+- SET thành công khi chip trả `result=1` và `level` đúng mức yêu cầu.
+- Payload sai, UART/OTA bận, TX lỗi hoặc timeout 2 giây trả `result=0`.
+- Sau timeout, WB2 giữ một drain window 2 giây để response muộn không bị ghép vào request kế tiếp.
+- API tăng/giảm nội bộ của MCU cộng hoặc trừ một mức rồi clamp vào `1..7`; nếu cache chưa hợp lệ, MCU query trước rồi mới set tuyệt đối.
+- MQTT 224 vẫn chỉ là `VOICE_NOTIFY`, không dùng cho volume.
 
 ---
 
@@ -997,7 +1031,7 @@ Không hiển thị nút học cho ID 2–6 và 13–14.
 3. Reject unknown cmd.
 4. Assembler xử lý được hai frame CRLF liền nhau.
 5. Stream overflow không dispatch nửa frame.
-6. MODE 1–4 vẫn OK; 5/6 vẫn reject cho đến khi mở ID 13/14.
+6. MODE 1–6 đều parse OK; 5/6 lần lượt điều khiển bật/tắt quay.
 
 ### 15.2. MQTT và nghiệp vụ
 
@@ -1018,14 +1052,15 @@ Không hiển thị nút học cho ID 2–6 và 13–14.
 | 13 | Pool đầy | Final 220 code=50 |
 | 14 | Overwrite rồi học fail | Final 220 code=48; mẫu cũ không còn |
 | 15 | LEARN 2–6/13–14 | ACK 220 code=64, không UART |
-| 16 | LEARN ID 99 | ACK 220 code=65 |
-| 17 | Slot ngoài trần | ACK của cmd tương ứng code=66 |
-| 18 | Thiếu field | ACK của cmd tương ứng code=64 |
-| 19 | OTA đang chạy | ACK của cmd tương ứng code=69 |
-| 20 | UART TX fail | ACK của cmd tương ứng code=70 |
-| 21 | Sai root key hoặc firmware cũ | Không ACK |
-| 22 | Payload cmd 220–224 | Plaintext dưới 180 byte; frame encrypted không vượt output buffer |
-| 23 | Kích hoạt lệnh giọng nói (ví dụ ID 7..12) | MCU gửi MQTT cmd 20 (`act_id=13`) VÀ MQTT cmd 224 chứa `cmd_id` tương ứng |
+| 16 | LEARN timer ID 15 hoặc 39 | Gửi UART và xử lý giống command template khác |
+| 17 | LEARN ID 40/99 | ACK 220 code=65 |
+| 18 | Slot ngoài trần | ACK của cmd tương ứng code=66 |
+| 19 | Thiếu field | ACK của cmd tương ứng code=64 |
+| 20 | OTA đang chạy | ACK của cmd tương ứng code=69 |
+| 21 | UART TX fail | ACK của cmd tương ứng code=70 |
+| 22 | Sai root key hoặc firmware cũ | Không ACK |
+| 23 | Payload cmd 220–224 | Plaintext dưới 180 byte; frame encrypted không vượt output buffer |
+| 24 | Kích hoạt lệnh giọng nói (ví dụ ID 7..39) | MCU gửi state MQTT cmd 20/131 và MQTT cmd 224 chứa `cmd_id` tương ứng |
 
 ### 15.3. Bốn gate bắt buộc
 
@@ -1050,25 +1085,21 @@ Không hiển thị nút học cho ID 2–6 và 13–14.
 
 ---
 
-## 16. Blocker firmware
+## 16. Trạng thái triển khai firmware
 
-Firmware WB2 hiện chưa thể chạy contract này.
+Firmware WB2 hiện đã triển khai contract chính:
 
-| Blocker | Hiện trạng | Cần làm |
-|---|---|---|
-| Parser data | Struct chỉ có một `uint32_t data` | Thêm `data_count` và `uint8_t data[4]`; giữ version riêng |
-| Enum UART | Chỉ cmd 0–3 | Thêm CWSL=4, STATUS=5, INFO=6 |
-| Parser cmd5/6 | Multi-data bị `INVALID_FORMAT` | Parse tối đa 4 byte và validate theo cmd |
-| TX cmd4 | Chưa có | Thêm helper format JSON + CRLF |
-| FSM pending | Chưa có | Một mutating + một QUERY |
-| UART process | Chỉ reset/turn/mode/version | Xử lý cmd5/cmd6 và publish final event cmd 220–223 |
-| MQTT handler | Chưa có cmd 220–223 | Thêm bốn handler `{app_cwsl_learn,220}`, `{app_cwsl_delete,221}`, `{app_cwsl_stop,222}`, `{app_cwsl_query,223}` vào `array_handler` |
-| MQTT final event | Chưa có | Dùng lại cmd request tương ứng; không đăng ký handler TX-only riêng |
-| Version query | Có thể xen trong phiên | Pause TX cmd3 khi mutating pending |
-| OTA | Có thể chiếm/reset UART | Gate cmd 220–223; reject cmd 129/134 khi đang pending trước reset |
-| Timeout | Chưa có | Watchdog mutating và query độc lập |
+| Hạng mục | Trạng thái |
+|---|---|
+| Parser UART | Hỗ trợ `data_count`, tối đa bốn byte; version giữ `uint32_t` riêng |
+| CWSL UART | TX cmd4, RX cmd5/cmd6, callback và parser validation |
+| CWSL MQTT | Handler 220–223, pending mutating/query, timeout và event thoại 224 |
+| Voice fan | TURN, MODE 1–6 và report `act_id=13` |
+| Voice timer | CMD_TIMER 7, 0 hủy, 1–12 giờ, tái sử dụng timer quạt và MQTT 131 |
+| Volume | CMD_VOLUME 8 / INFO 9, MQTT set 225/get 226, timeout và cache RAM |
+| OTA gate | Reject OTA khi CWSL hoặc volume đang pending; volume/CWSL reject khi OTA active |
 
-Không cần tạo task UART mới nếu tiếp tục xử lý trong `app_handler_msg_task` và `aiio_ci13162_uart_process()`.
+Firmware không tạo task volume riêng; toàn bộ completion và timeout chạy trong `app_handler_msg_task` qua `aiio_ci13162_uart_process()`, `app_cwsl_poll()` và `app_volume_poll()`.
 
 ### 16.1. Rủi ro code hiện tại
 
@@ -1084,7 +1115,7 @@ Không cần tạo task UART mới nếu tiếp tục xử lý trong `app_handle
 
 ## 17. Điều kiện mở ID 13 và 14
 
-ID 13/14 đã có trong workbook nhưng bị khóa cho LEARN/DELETE vì WB2 hiện chỉ nhận MODE 1–4.
+ID 13/14 đã có trong workbook và WB2 đã xử lý MODE 5/6, nhưng vẫn bị khóa cho LEARN/DELETE cho đến khi product xác nhận mở policy.
 
 Chỉ mở khi đủ tất cả điều kiện:
 
@@ -1099,7 +1130,7 @@ Chỉ mở khi đủ tất cả điều kiện:
 
 Sau khi mở:
 
-- Allow-list LEARN/DELETE chuyển từ `{1,7..12}` thành `{1,7..14}`.
+- Allow-list LEARN/DELETE chuyển từ `{1,7..12,15..39}` thành `{1,7..39}`.
 - QUERY không cần thay đổi vì đã cho phép 13/14.
 - `commands.md` bổ sung mapping ID 13/14 vào bảng ASR → MCU.
 - Không đổi ý nghĩa code 65.
@@ -1130,6 +1161,8 @@ MQTT cmd:
   222 = STOP request / ACK / final event
   223 = QUERY request / ACK / final event
   224 = VOICE_NOTIFY event (Báo cáo lệnh giọng nói kích hoạt)
+  225 = SET_VOLUME request / response
+  226 = GET_VOLUME request / response
 
 Không dùng trường action trong MQTT.
 UART action tương ứng vẫn là 1 / 2 / 4 / 6.
@@ -1140,8 +1173,8 @@ UART:
   chip → MCU cmd6 query info
 
 CWSL product allow-list:
-  LEARN/DELETE = 1, 7..12
-  QUERY        = 1..14, 255
+  LEARN/DELETE = 1, 7..12, 15..39
+  QUERY        = 1..39, 255
 
 Slot:
   wake         = 0..4 hoặc 255
@@ -1157,5 +1190,5 @@ Hai lớp kết quả dùng cùng MQTT cmd của request:
 
 - Sửa `commands.md` phần workbook: gió tự nhiên là ID 12 trên cả hai sheet.
 - Làm rõ “một request pending” thành một mutating + tối đa một QUERY nếu chọn FSM trong tài liệu này.
-- Chỉ thêm mapping ID 13/14 sau khi MCU thực sự nhận MODE 5/6.
+- Mapping ID 13/14 đã có vì MCU nhận MODE 5/6; chỉ policy CWSL của hai ID này còn khóa.
 - Không dùng `cmd_CI13162_protocol.md` làm contract CWSL.

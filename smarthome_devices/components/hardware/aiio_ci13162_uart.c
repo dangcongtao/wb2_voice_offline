@@ -62,6 +62,9 @@ typedef enum {
     AIIO_CI13162_CMD_CWSL = 4,
     AIIO_CI13162_CMD_CWSL_STATUS = 5,
     AIIO_CI13162_CMD_CWSL_INFO = 6,
+    AIIO_CI13162_CMD_TIMER = 7,
+    AIIO_CI13162_CMD_VOLUME = 8,
+    AIIO_CI13162_CMD_VOLUME_INFO = 9,
 } aiio_ci13162_command_t;
 
 typedef enum {
@@ -123,8 +126,11 @@ static uint8_t s_aiio_ci13162_voice_version_valid;
 static uint8_t s_aiio_ci13162_version_query_attempts;
 static uint8_t s_aiio_ci13162_version_query_scheduled;
 static uint8_t s_aiio_ci13162_version_query_paused;
+static uint8_t s_aiio_ci13162_volume;
+static uint8_t s_aiio_ci13162_volume_valid;
 static aiio_ci13162_cwsl_status_cb_t s_aiio_ci13162_cwsl_status_cb;
 static aiio_ci13162_cwsl_info_cb_t s_aiio_ci13162_cwsl_info_cb;
+static aiio_ci13162_volume_info_cb_t s_aiio_ci13162_volume_info_cb;
 
 extern volatile bool sys_log_all_enable;
 
@@ -618,7 +624,7 @@ static aiio_ci13162_parse_result_t aiio_ci13162_validate_message(
         case AIIO_CI13162_CMD_MODE:
             return ((message->data_count == 1U) &&
                     (message->data[0] >= 1U) &&
-                    (message->data[0] <= 4U))
+                    (message->data[0] <= 6U))
                        ? AIIO_CI13162_PARSE_OK
                        : AIIO_CI13162_PARSE_INVALID_DATA;
 
@@ -639,12 +645,27 @@ static aiio_ci13162_parse_result_t aiio_ci13162_validate_message(
                                                    : AIIO_CI13162_PARSE_INVALID_DATA;
             }
             return ((message->data[0] >= 1U) &&
-                    (message->data[0] <= 14U) &&
+                    (message->data[0] <= 39U) &&
                     (message->data_count == 3U))
                        ? AIIO_CI13162_PARSE_OK
                        : AIIO_CI13162_PARSE_INVALID_DATA;
 
+        case AIIO_CI13162_CMD_TIMER:
+            return ((message->data_count == 1U) &&
+                    (message->data[0] <= 12U))
+                       ? AIIO_CI13162_PARSE_OK
+                       : AIIO_CI13162_PARSE_INVALID_DATA;
+
+        case AIIO_CI13162_CMD_VOLUME_INFO:
+            return ((message->data_count == 2U) &&
+                    (message->data[0] >= 1U) &&
+                    (message->data[0] <= 7U) &&
+                    (message->data[1] <= 1U))
+                       ? AIIO_CI13162_PARSE_OK
+                       : AIIO_CI13162_PARSE_INVALID_DATA;
+
         case AIIO_CI13162_CMD_CWSL:
+        case AIIO_CI13162_CMD_VOLUME:
         default:
             return AIIO_CI13162_PARSE_UNKNOWN_COMMAND;
     }
@@ -710,7 +731,8 @@ static aiio_ci13162_parse_result_t aiio_ci13162_parse_line(
             aiio_ci13162_skip_spaces(&cursor);
         } else {
             while (*cursor != ']') {
-                if ((message->command <= AIIO_CI13162_CMD_MODE) &&
+                if (((message->command <= AIIO_CI13162_CMD_MODE) ||
+                     (message->command == AIIO_CI13162_CMD_TIMER)) &&
                     (message->data_count >= 1U)) {
                     return AIIO_CI13162_PARSE_INVALID_FORMAT;
                 }
@@ -787,6 +809,14 @@ static uint8_t aiio_ci13162_get_cmd_id(uint8_t command, uint8_t data)
         }
         if (data == 6U) {
             return 14U;
+        }
+    }
+    if (command == AIIO_CI13162_CMD_TIMER) {
+        if (data == 0U) {
+            return 39U;
+        }
+        if (data <= 12U) {
+            return (uint8_t)(15U + (2U * (data - 1U)));
         }
     }
     return 0U;
@@ -903,6 +933,38 @@ static void aiio_ci13162_run_parser_tests(void)
          AIIO_CI13162_CMD_CWSL_INFO, 3U, {7U, 5U, 0U, 0U}, 0U},
         {"{\"cmd\":6,\"data\":[255,2,6,12]}", AIIO_CI13162_PARSE_OK,
          AIIO_CI13162_CMD_CWSL_INFO, 4U, {255U, 2U, 6U, 12U}, 0U},
+        {"{cmd:6,data:[15,1,0]}", AIIO_CI13162_PARSE_OK,
+         AIIO_CI13162_CMD_CWSL_INFO, 3U, {15U, 1U, 0U, 0U}, 0U},
+        {"{cmd:6,data:[39,1,0]}", AIIO_CI13162_PARSE_OK,
+         AIIO_CI13162_CMD_CWSL_INFO, 3U, {39U, 1U, 0U, 0U}, 0U},
+        {"{cmd:7,data:[]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U},
+        {"{cmd:7,data:[0]}", AIIO_CI13162_PARSE_OK, AIIO_CI13162_CMD_TIMER, 1U,
+         {0U, 0U, 0U, 0U}, 0U},
+        {"{cmd:7,data:[1]}", AIIO_CI13162_PARSE_OK, AIIO_CI13162_CMD_TIMER, 1U,
+         {1U, 0U, 0U, 0U}, 0U},
+        {"{cmd:7,data:[12]}", AIIO_CI13162_PARSE_OK, AIIO_CI13162_CMD_TIMER, 1U,
+         {12U, 0U, 0U, 0U}, 0U},
+        {"{cmd:7,data:[13]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U},
+        {"{cmd:7,data:[1,2]}", AIIO_CI13162_PARSE_INVALID_FORMAT, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U},
+        {"{cmd:8,data:[0]}", AIIO_CI13162_PARSE_UNKNOWN_COMMAND, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U},
+        {"{cmd:8,data:[3]}", AIIO_CI13162_PARSE_UNKNOWN_COMMAND, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U},
+        {"{cmd:9,data:[3,1]}", AIIO_CI13162_PARSE_OK,
+         AIIO_CI13162_CMD_VOLUME_INFO, 2U, {3U, 1U, 0U, 0U}, 0U},
+        {"{cmd:9,data:[7,0]}", AIIO_CI13162_PARSE_OK,
+         AIIO_CI13162_CMD_VOLUME_INFO, 2U, {7U, 0U, 0U, 0U}, 0U},
+        {"{cmd:9,data:[0,1]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U},
+        {"{cmd:9,data:[8,1]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U},
+        {"{cmd:9,data:[3,2]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U},
+        {"{cmd:9,data:[3]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U},
         {"{cmd:3,data:[]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
          {0U, 0U, 0U, 0U}, 0U},
         {"{cmd:3,data:[1,2]}", AIIO_CI13162_PARSE_INVALID_FORMAT, 0U, 0U,
@@ -913,9 +975,11 @@ static void aiio_ci13162_run_parser_tests(void)
          {0U, 0U, 0U, 0U}, 0U},
         {"{cmd:1,data:[2]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
          {0U, 0U, 0U, 0U}, 0U},
-        {"{cmd:2,data:[5]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
-         {0U, 0U, 0U, 0U}, 0U},
-        {"{cmd:2,data:[6]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
+        {"{cmd:2,data:[5]}", AIIO_CI13162_PARSE_OK, AIIO_CI13162_CMD_MODE, 1U,
+         {5U, 0U, 0U, 0U}, 0U},
+        {"{cmd:2,data:[6]}", AIIO_CI13162_PARSE_OK, AIIO_CI13162_CMD_MODE, 1U,
+         {6U, 0U, 0U, 0U}, 0U},
+        {"{cmd:2,data:[7]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
          {0U, 0U, 0U, 0U}, 0U},
         {"{cmd:4,data:[1,7,255]}", AIIO_CI13162_PARSE_UNKNOWN_COMMAND, 0U, 0U,
          {0U, 0U, 0U, 0U}, 0U},
@@ -926,8 +990,6 @@ static void aiio_ci13162_run_parser_tests(void)
         {"{cmd:6,data:[7,5,0,1]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
          {0U, 0U, 0U, 0U}, 0U},
         {"{cmd:6,data:[255,2,6,12,0]}", AIIO_CI13162_PARSE_INVALID_FORMAT, 0U, 0U,
-         {0U, 0U, 0U, 0U}, 0U},
-        {"{cmd:9,data:[1]}", AIIO_CI13162_PARSE_UNKNOWN_COMMAND, 0U, 0U,
          {0U, 0U, 0U, 0U}, 0U},
         {"{cmd:1,data:[-1]}", AIIO_CI13162_PARSE_INVALID_FORMAT, 0U, 0U,
          {0U, 0U, 0U, 0U}, 0U},
@@ -1371,6 +1433,8 @@ int32_t aiio_ci13162_uart_init(void)
     s_aiio_ci13162_version_start_tick = xTaskGetTickCount();
     s_aiio_ci13162_version_query_scheduled = 1U;
     s_aiio_ci13162_version_query_paused = 0U;
+    s_aiio_ci13162_volume = 0U;
+    s_aiio_ci13162_volume_valid = 0U;
 
 #if DEBUG_ENABLE == 1
     {
@@ -1439,6 +1503,15 @@ void aiio_ci13162_uart_process(void)
             continue;
         }
 
+        if (message.command == AIIO_CI13162_CMD_VOLUME_INFO) {
+            if (s_aiio_ci13162_volume_info_cb != NULL) {
+                s_aiio_ci13162_volume_info_cb(message.data[0], message.data[1]);
+            }
+            s_aiio_ci13162_volume = message.data[0];
+            s_aiio_ci13162_volume_valid = 1U;
+            continue;
+        }
+
         fan_info = m_fan_get_instance();
         if (fan_info == NULL) {
             return;
@@ -1480,18 +1553,30 @@ void aiio_ci13162_uart_process(void)
                 break;
 
             case AIIO_CI13162_CMD_MODE:
-                m_fan_need_buzz(1U);
                 if (message.data[0] <= M_FAN_SPEED_3) {
+                    m_fan_need_buzz(1U);
                     m_fan_set_speed(M_FAN_MODE_ON, message.data[0]);
-                } else {
+                } else if (message.data[0] == 4U) {
+                    m_fan_need_buzz(1U);
                     base_speed = fan_info->speed;
                     if ((base_speed < M_FAN_SPEED_1) || (base_speed > M_FAN_SPEED_3)) {
                         base_speed = M_FAN_SPEED_1;
                     }
                     m_fan_set_speed(M_FAN_MODE_NATURAL, base_speed);
+                } else {
+                    m_fan_set_swing((message.data[0] == 5U)
+                                        ? M_FAN_SWING_ON
+                                        : M_FAN_SWING_OFF);
                 }
                 aiio_ci13162_report_fan_state(fan_info);
                 app_cwsl_notify_voice_cmd(aiio_ci13162_get_cmd_id(message.command, message.data[0]));
+                break;
+
+            case AIIO_CI13162_CMD_TIMER:
+                m_fan_need_buzz(1U);
+                m_fan_set_time_off((uint32_t)message.data[0] * 3600U);
+                app_cwsl_notify_voice_cmd(aiio_ci13162_get_cmd_id(message.command,
+                                                                  message.data[0]));
                 break;
 
             default:
@@ -1760,6 +1845,62 @@ void aiio_ci13162_uart_set_cwsl_callbacks(
 #else
     (void)status_cb;
     (void)info_cb;
+#endif
+}
+
+int32_t aiio_ci13162_uart_send_volume(uint8_t value)
+{
+#if AIIO_CI13162_UART_ENABLE == 1
+    char request[40];
+    int request_length;
+    int sent_length;
+
+    if ((value > 7U) ||
+        (s_aiio_ci13162_command_queue == NULL) ||
+        (s_aiio_ci13162_ota_held != 0U)) {
+        return -1;
+    }
+
+    request_length = snprintf(request,
+                              sizeof(request),
+                              "{\"cmd\":8,\"data\":[%u]}\r\n",
+                              (unsigned int)value);
+    if ((request_length <= 0) || ((size_t)request_length >= sizeof(request))) {
+        return -1;
+    }
+
+    sent_length = hosal_uart_send(&uart_stdio,
+                                  request,
+                                  (uint32_t)request_length);
+    return (sent_length == request_length) ? 0 : -1;
+#else
+    (void)value;
+    return -1;
+#endif
+}
+
+void aiio_ci13162_uart_set_volume_callback(
+    aiio_ci13162_volume_info_cb_t callback)
+{
+#if AIIO_CI13162_UART_ENABLE == 1
+    s_aiio_ci13162_volume_info_cb = callback;
+#else
+    (void)callback;
+#endif
+}
+
+int32_t aiio_ci13162_uart_get_volume(uint8_t *level)
+{
+#if AIIO_CI13162_UART_ENABLE == 1
+    if ((level == NULL) || (s_aiio_ci13162_volume_valid == 0U)) {
+        return -1;
+    }
+
+    *level = s_aiio_ci13162_volume;
+    return 0;
+#else
+    (void)level;
+    return -1;
 #endif
 }
 

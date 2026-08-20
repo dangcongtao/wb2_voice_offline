@@ -33,6 +33,15 @@ typedef void (*aiio_ci13162_cwsl_info_cb_t)(uint8_t cmd_id,
                                             const uint8_t *data,
                                             uint8_t data_count);
 
+/** @brief Handle one speaker volume response received from the CI13162.
+ *
+ *  @param[in]  level   Current speaker volume level from 1 to 7.
+ *  @param[in]  result  Request result: 1 when accepted, otherwise 0.
+ *  @return     None.
+ */
+typedef void (*aiio_ci13162_volume_info_cb_t)(uint8_t level,
+                                              uint8_t result);
+
 /** @brief Drive UART0 TX idle-high before the port is remuxed.
  *
  *  @return      None.
@@ -88,6 +97,33 @@ int32_t aiio_ci13162_uart_send_cwsl(uint8_t action,
 void aiio_ci13162_uart_set_cwsl_callbacks(
     aiio_ci13162_cwsl_status_cb_t status_cb,
     aiio_ci13162_cwsl_info_cb_t info_cb);
+
+/** @brief Send one speaker volume request to the CI13162.
+ *
+ *  @param[in]  value  Zero to query the current level, or 1 to 7 to set it.
+ *  @return     Send status.
+ *  @retval     0  Request sent successfully.
+ *  @retval     -1 Invalid value, UART unavailable, OTA active, or send failure.
+ */
+int32_t aiio_ci13162_uart_send_volume(uint8_t value);
+
+/** @brief Register the application callback for speaker volume responses.
+ *
+ *  @param[in]  callback  Response callback, or NULL to disable delivery.
+ *  @return     None.
+ */
+void aiio_ci13162_uart_set_volume_callback(
+    aiio_ci13162_volume_info_cb_t callback);
+
+/** @brief Read the cached speaker volume level.
+ *
+ *  @param[out]  level  Destination for the cached level from 1 to 7.
+ *  @return      Cache status.
+ *  @retval      0  A valid cached level was copied.
+ *  @retval      -1 The pointer is NULL or no valid response has been received.
+ *  @note        This function never sends a UART request.
+ */
+int32_t aiio_ci13162_uart_get_volume(uint8_t *level);
 
 /** @brief Pause or resume automatic CI13162 version requests.
  *

@@ -38,6 +38,7 @@
 #include "m_fan_control.h"
 #include "app_fan.h"
 #include "app_cwsl.h"
+#include "app_volume.h"
 
 char respond[512];
 extern char key[16], iv[16];
@@ -126,6 +127,8 @@ wswitch_handler_t array_handler[] = {
     {app_cwsl_delete, 221},
     {app_cwsl_stop, 222},
     {app_cwsl_query, 223},
+    {app_volume_set, 225},
+    {app_volume_get, 226},
 };
 
 wswitch_handler_t array_ble_handler[] = {
@@ -1023,9 +1026,10 @@ static void app_request_ota(cJSON *jsRoot)
 
     if (m_ci13162_ota_is_busy() ||
         m_ota_is_busy() ||
-        app_cwsl_is_pending())
+        app_cwsl_is_pending() ||
+        app_volume_is_pending())
     {
-        os_trace("OTA or CWSL already in progress\r\n");
+        os_trace("OTA, CWSL, or volume operation already in progress\r\n");
         goto RESPONSE;
     }
 
@@ -1084,7 +1088,8 @@ static void app_request_ci13162_ota(cJSON *jsRoot)
     if ((type != AIIO_CI13162_OTA_COMMAND) ||
         m_ci13162_ota_is_busy() ||
         m_ota_is_busy() ||
-        app_cwsl_is_pending())
+        app_cwsl_is_pending() ||
+        app_volume_is_pending())
     {
         goto RESPONSE;
     }
@@ -1203,6 +1208,7 @@ static void app_remove_device(cJSON *jsRoot)
         {
             aiio_ci13162_uart_process();
             app_cwsl_poll();
+            app_volume_poll();
             if (app_cwsl_factory_clear_done())
             {
                 break;
@@ -1396,6 +1402,7 @@ void app_handler_msg_task(void *arg)
     {
         aiio_ci13162_uart_process();
         app_cwsl_poll();
+        app_volume_poll();
 
         if (xQueueReceive(pqueue, &message_rcv_mqtt, 0) == pdPASS)
         {
@@ -1485,6 +1492,7 @@ void process_data_init(void)
     (void)ci13162_ota_manifest_self_test();
 #endif
     app_cwsl_init();
+    app_volume_init();
     pdata_queue_init();
     ble_init_queue();
     m_mqtt_command_startup_register_handler(app_startup_message);
