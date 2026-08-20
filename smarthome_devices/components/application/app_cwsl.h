@@ -70,4 +70,11 @@ bool app_cwsl_factory_clear(void);
  */
 bool app_cwsl_factory_clear_done(void);
 
+/** @brief Notify application/cloud about a triggered voice command.
+ *
+ *  @param[in]  cmd_id  ASR command identifier (e.g. 7..14).
+ *  @return     None.
+ */
+void app_cwsl_notify_voice_cmd(uint8_t cmd_id);
+
 #endif /* APP_CWSL_H */

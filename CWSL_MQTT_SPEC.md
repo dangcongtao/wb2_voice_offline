@@ -222,7 +222,8 @@ Các vị trí code chính:
 - MQTT cmd **221**: DELETE request, ACK tức thời và kết quả cuối.
 - MQTT cmd **222**: STOP request, ACK tức thời và kết quả cuối.
 - MQTT cmd **223**: QUERY request, ACK tức thời và kết quả query.
-- MQTT không dùng trường `action`; mã lệnh 220–223 trực tiếp xác định hành động.
+- MQTT cmd **224**: VOICE_NOTIFY sự kiện báo cáo kích hoạt lệnh giọng nói từ thiết bị lên App.
+- MQTT không dùng trường `action`; mã lệnh 220–224 trực tiếp xác định hành động hoặc loại sự kiện.
 - UART TX `cmd=4`; giá trị action UART vẫn là 1/2/4/6 theo contract chip.
 - UART RX `cmd=5` và `cmd=6`.
 - Parser `data[]` tối đa 4 phần tử byte, vẫn giữ ngoại lệ `cmd=3` version là `uint32`.
@@ -318,6 +319,7 @@ Không tạo topic riêng cho CWSL và không gửi trường `action` trong pay
 | 221 | DELETE | `u, act_id, cmd_id, slot` | `cmd4 [2,cmd_id,slot]` | ACK 221; sau đó final 221 từ `cmd5` |
 | 222 | STOP | `u, act_id` | `cmd4 [4]` | ACK 222; sau đó final 222 từ `cmd5` nếu đã gửi UART |
 | 223 | QUERY | `u, act_id, cmd_id` | `cmd4 [6,cmd_id]` | ACK 223; sau đó final 223 từ `cmd6` |
+| 224 | VOICE_NOTIFY | Không có (Event-only) | Đã nhận từ chip qua `cmd1`/`cmd2` | Bản tin 224: `{"<device_type>":224,"cmd_id":<id>}` |
 
 Mã lệnh MQTT thay cho trường `action`:
 
@@ -400,11 +402,11 @@ Tất cả số là JSON Number nguyên, biểu diễn ở hệ thập phân.
 
 | Trường | Có mặt | Kiểu / miền | Nguồn | Ý nghĩa |
 |---|---|---|---|---|
-| `<device_type>` | Mọi frame | 220, 221, 222 hoặc 223 | Hiện có | Ví dụ `fanoem`; value trực tiếp xác định LEARN/DELETE/STOP/QUERY |
+| `<device_type>` | Mọi frame | 220, 221, 222, 223 hoặc 224 | Hiện có | Ví dụ `fanoem`; value trực tiếp xác định LEARN/DELETE/STOP/QUERY/VOICE_NOTIFY |
 | `u` | Request; echo ACK/final event | `uint32`, không âm | Hiện có | User ID; không phải request ID |
 | `act_id` | Request; echo ACK/final event | `uint8`, thường App = 0 | Hiện có | Nguồn thao tác; không đảm bảo duy nhất |
-| `action` | Không được gửi | — | — | Hành động được xác định bằng MQTT cmd 220–223 |
-| `cmd_id` | LEARN/DELETE/QUERY; final event | `uint8` | Mới | ASR command ID; 255 là giá trị đặc biệt |
+| `action` | Không được gửi | — | — | Hành động được xác định bằng MQTT cmd 220–224 |
+| `cmd_id` | LEARN/DELETE/QUERY; final event; VOICE_NOTIFY | `uint8` | Mới | ASR command ID; 255 là giá trị đặc biệt |
 | `slot` | LEARN/DELETE; mutating final event | Wake 0–4, command 0–14, hoặc 255 | Mới | Địa chỉ mẫu hoặc `CWSL_ANY` |
 | `result` | Chỉ ACK | 0 hoặc 1 | Hiện có | 1 = request đã được gửi UART; 0 = bị từ chối local |
 | `code` | ACK fail hoặc final event fail/status | Byte status hoặc mã local | Mới | Trạng thái chi tiết |
@@ -850,6 +852,32 @@ Final 220 LEARN_OK tới sau
 
 Final event cmd 223 không được tắt spinner LEARN.
 
+### 12.12. Báo cáo kích hoạt lệnh giọng nói (cmd 224)
+
+Khi người dùng nói câu lệnh điều khiển (câu mặc định của nhà sản xuất hoặc câu đã học CWSL), chip CI13162 nhận diện và gửi UART điều khiển sang WB2. Ngoài bản tin báo trạng thái quạt qua MQTT cmd 20 (`act_id=13`), MCU WB2 gửi thêm bản tin MQTT cmd 224 chứa `cmd_id` của lệnh vừa kích hoạt.
+
+Ví dụ: người dùng nói "Bật quạt" (ASR ID 7):
+
+UART chip → MCU:
+```text
+{"cmd":1,"data":[1]}\r\n
+```
+
+MCU xử lý bật quạt, report trạng thái quạt cmd 20, và publish MQTT cmd 224:
+```json
+{"fanoem":224,"cmd_id":7}
+```
+
+Bảng ánh xạ `cmd_id` cho sự kiện 224:
+- `cmd_id=7`: Bật quạt (`cmd:1, data:[1]`)
+- `cmd_id=8`: Tắt quạt (`cmd:1, data:[0]`)
+- `cmd_id=9`: Bật số 1 (`cmd:2, data:[1]`)
+- `cmd_id=10`: Bật số 2 (`cmd:2, data:[2]`)
+- `cmd_id=11`: Bật số 3 (`cmd:2, data:[3]`)
+- `cmd_id=12`: Gió tự nhiên (`cmd:2, data:[4]`)
+- `cmd_id=13`: Bật quay (`cmd:2, data:[5]` - khi mở)
+- `cmd_id=14`: Dừng quay (`cmd:2, data:[6]` - khi mở)
+
 ---
 
 ## 13. QoS 0, duplicate, timeout và reconnect
@@ -996,7 +1024,8 @@ Không hiển thị nút học cho ID 2–6 và 13–14.
 | 19 | OTA đang chạy | ACK của cmd tương ứng code=69 |
 | 20 | UART TX fail | ACK của cmd tương ứng code=70 |
 | 21 | Sai root key hoặc firmware cũ | Không ACK |
-| 22 | Payload cmd 220–223 | Plaintext dưới 180 byte; frame encrypted không vượt output buffer |
+| 22 | Payload cmd 220–224 | Plaintext dưới 180 byte; frame encrypted không vượt output buffer |
+| 23 | Kích hoạt lệnh giọng nói (ví dụ ID 7..12) | MCU gửi MQTT cmd 20 (`act_id=13`) VÀ MQTT cmd 224 chứa `cmd_id` tương ứng |
 
 ### 15.3. Bốn gate bắt buộc
 
@@ -1100,6 +1129,7 @@ MQTT cmd:
   221 = DELETE request / ACK / final event
   222 = STOP request / ACK / final event
   223 = QUERY request / ACK / final event
+  224 = VOICE_NOTIFY event (Báo cáo lệnh giọng nói kích hoạt)
 
 Không dùng trường action trong MQTT.
 UART action tương ứng vẫn là 1 / 2 / 4 / 6.

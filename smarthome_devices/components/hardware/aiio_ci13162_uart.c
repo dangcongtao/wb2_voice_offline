@@ -18,6 +18,7 @@
 
 #include "aiio_ci13162_config.h"
 #include "app_config.h"
+#include "app_cwsl.h"
 #include "app_fan.h"
 #include "m_fan.h"
 #include "m_fan_control.h"
@@ -768,6 +769,29 @@ static void aiio_ci13162_report_fan_state(const m_fan_info_t *fan_info)
                             SRC_ACTION_VOICE);
 }
 
+// Map the CI13162 UART command and payload to the corresponding ASR command ID.
+static uint8_t aiio_ci13162_get_cmd_id(uint8_t command, uint8_t data)
+{
+    if (command == AIIO_CI13162_CMD_TURN) {
+        return (data == 1U) ? 7U : 8U;
+    }
+    if (command == AIIO_CI13162_CMD_MODE) {
+        if ((data >= 1U) && (data <= 3U)) {
+            return (uint8_t)(8U + data);
+        }
+        if (data == 4U) {
+            return 12U;
+        }
+        if (data == 5U) {
+            return 13U;
+        }
+        if (data == 6U) {
+            return 14U;
+        }
+    }
+    return 0U;
+}
+
 // Send the scheduled version query without blocking the application task.
 static void aiio_ci13162_process_version_query(void)
 {
@@ -1452,6 +1476,7 @@ void aiio_ci13162_uart_process(void)
                                            fan_info->light);
                     aiio_ci13162_report_fan_state(fan_info);
                 }
+                app_cwsl_notify_voice_cmd(aiio_ci13162_get_cmd_id(message.command, message.data[0]));
                 break;
 
             case AIIO_CI13162_CMD_MODE:
@@ -1466,6 +1491,7 @@ void aiio_ci13162_uart_process(void)
                     m_fan_set_speed(M_FAN_MODE_NATURAL, base_speed);
                 }
                 aiio_ci13162_report_fan_state(fan_info);
+                app_cwsl_notify_voice_cmd(aiio_ci13162_get_cmd_id(message.command, message.data[0]));
                 break;
 
             default:

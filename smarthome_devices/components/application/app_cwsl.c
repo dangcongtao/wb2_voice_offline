@@ -20,6 +20,7 @@
 #define APP_CWSL_CMD_DELETE 221U
 #define APP_CWSL_CMD_STOP 222U
 #define APP_CWSL_CMD_QUERY 223U
+#define APP_CWSL_CMD_VOICE_NOTIFY 224U
 
 #define APP_CWSL_ACTION_LEARN 1U
 #define APP_CWSL_ACTION_DELETE 2U
@@ -775,3 +776,24 @@ bool app_cwsl_factory_clear_done(void)
 {
     return s_app_cwsl_factory_clear_pending == 0U;
 }
+
+void app_cwsl_notify_voice_cmd(uint8_t cmd_id)
+{
+    char response[APP_CWSL_RESPONSE_SIZE];
+    int response_length;
+
+    if (cmd_id == 0U) {
+        return;
+    }
+
+    response_length = snprintf(
+        response,
+        sizeof(response),
+        "{\"%s\":%u,\"cmd_id\":%u}",
+        gs_dev_type[device_type],
+        (unsigned int)APP_CWSL_CMD_VOICE_NOTIFY,
+        (unsigned int)cmd_id);
+
+    app_cwsl_publish(response, response_length);
+}
+
