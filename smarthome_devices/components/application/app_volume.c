@@ -28,15 +28,12 @@ typedef enum {
     APP_VOLUME_OPERATION_NONE = 0,
     APP_VOLUME_OPERATION_MQTT_SET,
     APP_VOLUME_OPERATION_MQTT_GET,
-    APP_VOLUME_OPERATION_ADJUST_QUERY,
-    APP_VOLUME_OPERATION_ADJUST_SET,
 } app_volume_operation_t;
 
 typedef struct {
     uint8_t active;
     app_volume_operation_t operation;
     uint8_t target;
-    int8_t delta;
     uint32_t mqtt_cmd;
     uint32_t user_id;
     uint8_t act_id;
@@ -135,11 +132,10 @@ static void app_volume_clear_pending(uint8_t drain_late_response)
     }
 }
 
-// Complete or advance the request that owns the received volume response.
+// Complete the MQTT request that owns the received volume response.
 static void app_volume_on_info(uint8_t level, uint8_t result)
 {
     app_volume_pending_t pending;
-    int16_t target;
 
     if (s_app_volume_draining != 0U) {
         s_app_volume_draining = 0U;
@@ -150,28 +146,6 @@ static void app_volume_on_info(uint8_t level, uint8_t result)
     }
 
     pending = s_app_volume_pending;
-    if (pending.operation == APP_VOLUME_OPERATION_ADJUST_QUERY) {
-        if (result == 0U) {
-            app_volume_clear_pending(0U);
-            return;
-        }
-
-        target = (int16_t)level + (int16_t)pending.delta;
-        if (target < (int16_t)APP_VOLUME_LEVEL_MIN) {
-            target = APP_VOLUME_LEVEL_MIN;
-        } else if (target > (int16_t)APP_VOLUME_LEVEL_MAX) {
-            target = APP_VOLUME_LEVEL_MAX;
-        }
-
-        s_app_volume_pending.operation = APP_VOLUME_OPERATION_ADJUST_SET;
-        s_app_volume_pending.target = (uint8_t)target;
-        s_app_volume_pending.start_tick = xTaskGetTickCount();
-        if (aiio_ci13162_uart_send_volume((uint8_t)target) != 0) {
-            app_volume_clear_pending(0U);
-        }
-        return;
-    }
-
     app_volume_clear_pending(0U);
     if (pending.operation == APP_VOLUME_OPERATION_MQTT_SET) {
         app_volume_publish(pending.mqtt_cmd,
@@ -188,6 +162,15 @@ static void app_volume_on_info(uint8_t level, uint8_t result)
     }
 }
 
+// Return true while another UART owner or volume transaction is already active.
+static bool app_volume_busy(void)
+{
+    return (s_app_volume_pending.active != 0U) ||
+           (s_app_volume_draining != 0U) ||
+           app_cwsl_is_pending() ||
+           app_volume_ota_active();
+}
+
 // Start one absolute MQTT set or read-through query.
 static void app_volume_start_mqtt(cJSON *js_root, uint32_t mqtt_cmd)
 {
@@ -195,8 +178,9 @@ static void app_volume_start_mqtt(cJSON *js_root, uint32_t mqtt_cmd)
     uint32_t user_id = 0U;
     uint32_t act_id = 0U;
     uint32_t level = 0U;
-    uint8_t request_value;
+    uint8_t request_value = 0U;
     uint8_t valid;
+    int32_t send_result;
 
     valid = (app_volume_read_number(js_root,
                                     gs_dev_type[device_type],
@@ -223,15 +207,9 @@ static void app_volume_start_mqtt(cJSON *js_root, uint32_t mqtt_cmd)
             valid = 0U;
         }
         request_value = (uint8_t)level;
-    } else {
-        request_value = 0U;
     }
 
-    if ((valid == 0U) ||
-        (s_app_volume_pending.active != 0U) ||
-        (s_app_volume_draining != 0U) ||
-        app_cwsl_is_pending() ||
-        app_volume_ota_active()) {
+    if ((valid == 0U) || app_volume_busy()) {
         app_volume_publish(mqtt_cmd,
                            app_volume_cached_or((uint8_t)level),
                            user_id,
@@ -250,7 +228,10 @@ static void app_volume_start_mqtt(cJSON *js_root, uint32_t mqtt_cmd)
     s_app_volume_pending.act_id = (uint8_t)act_id;
     s_app_volume_pending.start_tick = xTaskGetTickCount();
 
-    if (aiio_ci13162_uart_send_volume(request_value) != 0) {
+    send_result = (mqtt_cmd == APP_VOLUME_CMD_SET)
+                      ? aiio_ci13162_uart_send_volume(request_value)
+                      : aiio_ci13162_uart_query_volume();
+    if (send_result != 0) {
         app_volume_clear_pending(0U);
         app_volume_publish(mqtt_cmd,
                            app_volume_cached_or((uint8_t)level),
@@ -258,50 +239,6 @@ static void app_volume_start_mqtt(cJSON *js_root, uint32_t mqtt_cmd)
                            (uint8_t)act_id,
                            0U);
     }
-}
-
-// Start a relative operation, querying the source of truth when the cache is empty.
-static int32_t app_volume_adjust(int8_t delta)
-{
-    uint8_t level;
-    int16_t target;
-
-    if (((delta != -1) && (delta != 1)) ||
-        (s_app_volume_pending.active != 0U) ||
-        (s_app_volume_draining != 0U) ||
-        app_cwsl_is_pending() ||
-        app_volume_ota_active()) {
-        return -1;
-    }
-
-    memset(&s_app_volume_pending, 0, sizeof(s_app_volume_pending));
-    s_app_volume_pending.active = 1U;
-    s_app_volume_pending.delta = delta;
-    s_app_volume_pending.start_tick = xTaskGetTickCount();
-
-    if (aiio_ci13162_uart_get_volume(&level) != 0) {
-        s_app_volume_pending.operation = APP_VOLUME_OPERATION_ADJUST_QUERY;
-        if (aiio_ci13162_uart_send_volume(0U) != 0) {
-            app_volume_clear_pending(0U);
-            return -1;
-        }
-        return 0;
-    }
-
-    target = (int16_t)level + (int16_t)delta;
-    if (target < (int16_t)APP_VOLUME_LEVEL_MIN) {
-        target = APP_VOLUME_LEVEL_MIN;
-    } else if (target > (int16_t)APP_VOLUME_LEVEL_MAX) {
-        target = APP_VOLUME_LEVEL_MAX;
-    }
-
-    s_app_volume_pending.operation = APP_VOLUME_OPERATION_ADJUST_SET;
-    s_app_volume_pending.target = (uint8_t)target;
-    if (aiio_ci13162_uart_send_volume((uint8_t)target) != 0) {
-        app_volume_clear_pending(0U);
-        return -1;
-    }
-    return 0;
 }
 
 void app_volume_init(void)
@@ -322,16 +259,6 @@ void app_volume_get(cJSON *js_root)
     app_volume_start_mqtt(js_root, APP_VOLUME_CMD_GET);
 }
 
-int32_t app_volume_increase(void)
-{
-    return app_volume_adjust(1);
-}
-
-int32_t app_volume_decrease(void)
-{
-    return app_volume_adjust(-1);
-}
-
 void app_volume_poll(void)
 {
     TickType_t current_tick = xTaskGetTickCount();
@@ -342,14 +269,11 @@ void app_volume_poll(void)
         app_volume_pending_t pending = s_app_volume_pending;
 
         app_volume_clear_pending(1U);
-        if ((pending.operation == APP_VOLUME_OPERATION_MQTT_SET) ||
-            (pending.operation == APP_VOLUME_OPERATION_MQTT_GET)) {
-            app_volume_publish(pending.mqtt_cmd,
-                               app_volume_cached_or(pending.target),
-                               pending.user_id,
-                               pending.act_id,
-                               0U);
-        }
+        app_volume_publish(pending.mqtt_cmd,
+                           app_volume_cached_or(pending.target),
+                           pending.user_id,
+                           pending.act_id,
+                           0U);
     }
 
     if ((s_app_volume_draining != 0U) &&

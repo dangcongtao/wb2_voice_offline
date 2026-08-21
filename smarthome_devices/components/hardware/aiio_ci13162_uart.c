@@ -51,6 +51,7 @@
 
 static const char s_aiio_ci13162_reset_message[] = "{\"cmd\":0,\"data\":[]}\r\n";
 static const char s_aiio_ci13162_version_query[] = "{\"cmd\":3,\"data\":[]}\r\n";
+static const char s_aiio_ci13162_volume_query[] = "{\"cmd\":11,\"data\":[]}\r\n";
 
 extern hosal_uart_dev_t uart_stdio;
 
@@ -65,6 +66,8 @@ typedef enum {
     AIIO_CI13162_CMD_TIMER = 7,
     AIIO_CI13162_CMD_VOLUME = 8,
     AIIO_CI13162_CMD_VOLUME_INFO = 9,
+    AIIO_CI13162_CMD_ASR_UNHANDLED = 10,
+    AIIO_CI13162_CMD_VOLUME_GET = 11,
 } aiio_ci13162_command_t;
 
 typedef enum {
@@ -645,7 +648,7 @@ static aiio_ci13162_parse_result_t aiio_ci13162_validate_message(
                                                    : AIIO_CI13162_PARSE_INVALID_DATA;
             }
             return ((message->data[0] >= 1U) &&
-                    (message->data[0] <= 39U) &&
+                    (message->data[0] <= APP_CWSL_CMD_ID_MAX) &&
                     (message->data_count == 3U))
                        ? AIIO_CI13162_PARSE_OK
                        : AIIO_CI13162_PARSE_INVALID_DATA;
@@ -657,15 +660,21 @@ static aiio_ci13162_parse_result_t aiio_ci13162_validate_message(
                        : AIIO_CI13162_PARSE_INVALID_DATA;
 
         case AIIO_CI13162_CMD_VOLUME_INFO:
-            return ((message->data_count == 2U) &&
+            return ((message->data_count >= 2U) &&
+                    (message->data_count <= 3U) &&
                     (message->data[0] >= 1U) &&
                     (message->data[0] <= 7U) &&
                     (message->data[1] <= 1U))
                        ? AIIO_CI13162_PARSE_OK
                        : AIIO_CI13162_PARSE_INVALID_DATA;
 
+        case AIIO_CI13162_CMD_ASR_UNHANDLED:
+            return (message->data_count == 1U) ? AIIO_CI13162_PARSE_OK
+                                               : AIIO_CI13162_PARSE_INVALID_DATA;
+
         case AIIO_CI13162_CMD_CWSL:
         case AIIO_CI13162_CMD_VOLUME:
+        case AIIO_CI13162_CMD_VOLUME_GET:
         default:
             return AIIO_CI13162_PARSE_UNKNOWN_COMMAND;
     }
@@ -937,6 +946,10 @@ static void aiio_ci13162_run_parser_tests(void)
          AIIO_CI13162_CMD_CWSL_INFO, 3U, {15U, 1U, 0U, 0U}, 0U},
         {"{cmd:6,data:[39,1,0]}", AIIO_CI13162_PARSE_OK,
          AIIO_CI13162_CMD_CWSL_INFO, 3U, {39U, 1U, 0U, 0U}, 0U},
+        {"{cmd:6,data:[43,1,0]}", AIIO_CI13162_PARSE_OK,
+         AIIO_CI13162_CMD_CWSL_INFO, 3U, {43U, 1U, 0U, 0U}, 0U},
+        {"{cmd:6,data:[44,1,0]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U},
         {"{cmd:7,data:[]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
          {0U, 0U, 0U, 0U}, 0U},
         {"{cmd:7,data:[0]}", AIIO_CI13162_PARSE_OK, AIIO_CI13162_CMD_TIMER, 1U,
@@ -957,6 +970,8 @@ static void aiio_ci13162_run_parser_tests(void)
          AIIO_CI13162_CMD_VOLUME_INFO, 2U, {3U, 1U, 0U, 0U}, 0U},
         {"{cmd:9,data:[7,0]}", AIIO_CI13162_PARSE_OK,
          AIIO_CI13162_CMD_VOLUME_INFO, 2U, {7U, 0U, 0U, 0U}, 0U},
+        {"{\"cmd\":9,\"data\":[3,1,0]}", AIIO_CI13162_PARSE_OK,
+         AIIO_CI13162_CMD_VOLUME_INFO, 3U, {3U, 1U, 0U, 0U}, 0U},
         {"{cmd:9,data:[0,1]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
          {0U, 0U, 0U, 0U}, 0U},
         {"{cmd:9,data:[8,1]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
@@ -964,6 +979,18 @@ static void aiio_ci13162_run_parser_tests(void)
         {"{cmd:9,data:[3,2]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
          {0U, 0U, 0U, 0U}, 0U},
         {"{cmd:9,data:[3]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U},
+        {"{cmd:9,data:[3,1,0,0]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U},
+        {"{cmd:10,data:[1]}", AIIO_CI13162_PARSE_OK, AIIO_CI13162_CMD_ASR_UNHANDLED, 1U,
+         {1U, 0U, 0U, 0U}, 0U},
+        {"{cmd:10,data:[40]}", AIIO_CI13162_PARSE_OK, AIIO_CI13162_CMD_ASR_UNHANDLED, 1U,
+         {40U, 0U, 0U, 0U}, 0U},
+        {"{cmd:10,data:[]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U},
+        {"{cmd:10,data:[1,2]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U},
+        {"{cmd:11,data:[]}", AIIO_CI13162_PARSE_UNKNOWN_COMMAND, 0U, 0U,
          {0U, 0U, 0U, 0U}, 0U},
         {"{cmd:3,data:[]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
          {0U, 0U, 0U, 0U}, 0U},
@@ -1512,6 +1539,12 @@ void aiio_ci13162_uart_process(void)
             continue;
         }
 
+        if (message.command == AIIO_CI13162_CMD_ASR_UNHANDLED) {
+            os_trace("[CI13162] asr unhandled cmd_id=%u\r\n",
+                     (unsigned int)message.data[0]);
+            continue;
+        }
+
         fan_info = m_fan_get_instance();
         if (fan_info == NULL) {
             return;
@@ -1855,7 +1888,8 @@ int32_t aiio_ci13162_uart_send_volume(uint8_t value)
     int request_length;
     int sent_length;
 
-    if ((value > 7U) ||
+    if ((value < 1U) ||
+        (value > 7U) ||
         (s_aiio_ci13162_command_queue == NULL) ||
         (s_aiio_ci13162_ota_held != 0U)) {
         return -1;
@@ -1875,6 +1909,27 @@ int32_t aiio_ci13162_uart_send_volume(uint8_t value)
     return (sent_length == request_length) ? 0 : -1;
 #else
     (void)value;
+    return -1;
+#endif
+}
+
+int32_t aiio_ci13162_uart_query_volume(void)
+{
+#if AIIO_CI13162_UART_ENABLE == 1
+    int sent_length;
+    uint32_t query_length;
+
+    if ((s_aiio_ci13162_command_queue == NULL) ||
+        (s_aiio_ci13162_ota_held != 0U)) {
+        return -1;
+    }
+
+    query_length = (uint32_t)(sizeof(s_aiio_ci13162_volume_query) - 1U);
+    sent_length = hosal_uart_send(&uart_stdio,
+                                  s_aiio_ci13162_volume_query,
+                                  query_length);
+    return (sent_length == (int)query_length) ? 0 : -1;
+#else
     return -1;
 #endif
 }

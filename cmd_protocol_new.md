@@ -1,7 +1,13 @@
 # Giao thức lệnh quạt qua UART0
 
-Tài liệu này là contract giữa chip giọng nói và MCU quạt. UART0 được dùng đồng
-thời cho lệnh điều khiển quạt, yêu cầu CWSL và phản hồi trạng thái CWSL.
+Tài liệu này là contract giữa chip giọng nói và MCU quạt. UART0 gánh toàn bộ
+bốn nhóm chức năng: lệnh điều khiển quạt, hẹn giờ tắt, âm lượng loa, và học lệnh
+CWSL kèm phản hồi trạng thái.
+
+Quy ước chung của giao thức: **request và response luôn nằm ở hai `cmd` id khác
+nhau**, để một giá trị dữ liệu không bao giờ bị đọc nhầm thành câu lệnh khi hai
+chiều dùng chung một dây (`4` → `5`/`6` cho CWSL, `8` → `9` cho âm lượng).
+Ngoại lệ duy nhất là `CMD_VER`, phân biệt được nhờ độ dài payload.
 
 ## 1. Cấu hình UART và frame
 
@@ -33,13 +39,18 @@ Chiều MCU → chip chỉ chấp nhận `cmd` và từng phần tử `data` là
 ```c
 typedef enum
 {
-    CMD_RESET     = 0,
-    CMD_TURN      = 1,
-    CMD_MODE      = 2,
-    CMD_VER       = 3,
-    CMD_CWSL      = 4,
-    CMD_STATUS    = 5,
-    CMD_CWSL_INFO = 6,
+    CMD_RESET       = 0,
+    CMD_TURN        = 1,
+    CMD_MODE        = 2,
+    CMD_VER         = 3,
+    CMD_CWSL        = 4,
+    CMD_STATUS      = 5,
+    CMD_CWSL_INFO   = 6,
+    CMD_TIMER       = 7,
+    CMD_VOLUME      = 8,
+    CMD_VOLUME_INFO = 9,
+    CMD_ASR_UNHANDLED = 10,
+    CMD_VOLUME_GET    = 11,
 } command_type_t;
 ```
 
@@ -55,13 +66,85 @@ typedef enum
 | `CMD_MODE` | 2 | `[5]` | Chip → MCU | Quay quạt |
 | `CMD_MODE` | 2 | `[6]` | Chip → MCU | Dừng quay |
 | `CMD_VER` | 3 | `[]` | MCU → chip | Yêu cầu version firmware |
-| `CMD_VER` | 3 | `[YYMMDD]` | Chip → MCU | Trả version dạng một số, ví dụ `[260819]` |
+| `CMD_VER` | 3 | `[YYMMDD]` | Chip → MCU | Trả version dạng một số, ví dụ `[260821]` |
 | `CMD_CWSL` | 4 | xem mục 3 | MCU → chip | Điều khiển học/xóa mẫu giọng nói |
 | `CMD_STATUS` | 5 | `[code, cmd_id, slot]` | Chip → MCU | Kết quả của CWSL request, xem mục 3.3 |
 | `CMD_CWSL_INFO` | 6 | xem mục 3.5 | Chip → MCU | Trả lời QUERY: slot nào đang có mẫu |
+| `CMD_TIMER` | 7 | `[0]` | Chip → MCU | Hủy hẹn giờ tắt quạt |
+| `CMD_TIMER` | 7 | `[1]..[12]` | Chip → MCU | Hẹn giờ tắt quạt sau 1..12 giờ |
+| `CMD_VOLUME` | 8 | `[1..7]` | MCU → chip | Đặt mức âm lượng; xem chi tiết bên dưới |
+| `CMD_VOLUME_INFO` | 9 | `[level, result, reserved]` | Chip → MCU | Phản hồi mức âm lượng; MCU bỏ qua `reserved` |
+| `CMD_ASR_UNHANDLED` | 10 | `[asr_cmd_id]` | Chip → MCU | Chẩn đoán: ASR command không có callback firmware |
+| `CMD_VOLUME_GET` | 11 | `[]` | MCU → chip | Hỏi trạng thái âm lượng hiện tại |
 
 Giá trị version ở chiều chip → MCU có thể lớn hơn một byte. Đây là ngoại lệ của
 frame trả lời; parser chiều MCU → chip vẫn chỉ nhận từng phần tử `data` là byte.
+
+### Hẹn giờ tắt quạt (`CMD_TIMER`)
+
+`CMD_TIMER` chỉ đi **một chiều chip → MCU**. Chip không tự đếm giờ: nó chỉ dịch
+câu lệnh thoại thành một con số và giao lại cho MCU, MCU là bên giữ đồng hồ và
+thực sự tắt quạt.
+
+| Frame | Ý nghĩa |
+|---|---|
+| `{"cmd":7,"data":[0]}` | `TIMER_DATA_CANCEL` — hủy hẹn giờ đang chạy |
+| `{"cmd":7,"data":[N]}` | Hẹn tắt quạt sau `N` giờ, `N` thuộc `1..12` |
+
+Mỗi mốc giờ có hai cách nói (“giờ” và “tiếng”) ứng với hai ASR command ID khác
+nhau, nhưng cả hai cùng sinh ra một giá trị `N` — xem bảng ánh xạ ở mục 4.
+
+### Âm lượng loa (`CMD_VOLUME` / `CMD_VOLUME_INFO`)
+
+Âm lượng có 7 mức, `1` nhỏ nhất và `7` lớn nhất. Mức hiện tại được ghi
+NVDATA/flash nên giữ nguyên sau mất điện.
+
+| Chiều | Frame | Ý nghĩa |
+|---|---|---|
+| MCU → chip | `{"cmd":8,"data":[1..7]}` | Đặt mức âm lượng tuyệt đối |
+| MCU → chip | `{"cmd":11,"data":[]}` | Chỉ hỏi trạng thái hiện tại |
+| Chip → MCU | `{"cmd":9,"data":[level,result,reserved]}` | Phản hồi cho request `cmd:8` hoặc `cmd:11`; MCU bỏ qua `reserved` |
+
+`result` trong frame trả lời:
+
+| Giá trị | Tên | Nghĩa |
+|---:|---|---|
+| `0` | `VOLUME_RESULT_REJECTED` | Payload không hợp lệ; trạng thái giữ nguyên |
+| `1` | `VOLUME_RESULT_ACCEPTED` | Đã áp dụng request, hoặc đã trả lời query |
+
+Giá trị `0` hoặc lớn hơn `7` trong payload `CMD_VOLUME` không hợp lệ và bị từ
+chối. Query luôn dùng `CMD_VOLUME_GET` (`cmd:11`) riêng.
+
+Hai điểm quan trọng:
+
+- **Mỗi `cmd:8` và `cmd:11` luôn nhận đúng một `cmd:9`.** Payload sai cũng được
+  trả lời với `result=0` thay vì bị nuốt im lặng, nên MCU không bao giờ phải đoán
+  xem chip còn sống hay không.
+- **Response nằm ở `cmd` id riêng.** `cmd:8` chỉ đi MCU → chip, `cmd:9` chỉ đi
+  chip → MCU. Nhờ vậy một mức âm lượng không bao giờ bị nhầm thành câu lệnh khi
+  đọc log hay khi hai chiều dùng chung một dây.
+
+Ví dụ:
+
+```text
+MCU  -> chip:  {"cmd":8,"data":[3]}      # đặt mức 3
+chip           phát beep 1000 (vì mức có thay đổi)
+chip -> MCU:   {"cmd":9,"data":[3,1,0]}
+
+MCU  -> chip:  {"cmd":8,"data":[3]}      # đặt lại đúng mức đang có
+chip -> MCU:   {"cmd":9,"data":[3,1,0]}  # không beep, mức không đổi
+
+MCU  -> chip:  {"cmd":11,"data":[]}      # query
+chip -> MCU:   {"cmd":9,"data":[3,1,0]}
+
+MCU  -> chip:  {"cmd":8,"data":[0]}      # ngoài dải
+chip -> MCU:   {"cmd":9,"data":[3,0,0]}  # từ chối, mức vẫn là 3
+```
+
+Middleware `m_volume` cung cấp `m_volume_get()`, `m_volume_set()` và
+`m_volume_handle_request()`. Beep voice ID `1000` chỉ phát khi mức **thực sự
+thay đổi**, nên đặt lặp lại cùng một mức sẽ im lặng. Lệnh voice tăng/giảm dùng
+cùng persistence này.
 
 ## 3. CWSL: học lệnh bằng giọng nói
 
@@ -257,7 +340,8 @@ học. Nó không sinh frame `CMD_STATUS`.
   action quạt hay không. Vì vậy một ID như `6` có thể học/xóa/query thành công nếu
   nó tồn tại trong `cmd_info`, nhưng khi nhận diện thì `cmd_dispatch()` không map
   ID đó sang UART fan command. Với product hiện tại, MCU chỉ nên học command ID
-  `7..12`; ID `1` dành cho learned wake word.
+  `7..14`, timer ID `15..39` hoặc volume ID `40..43`; ID `1` dành cho learned
+  wake word.
 - Câu học không được trùng command có sẵn trong model. Trong lúc thu, firmware
   chuyển mọi command mặc định nhận được vào `cwsl_reg_check_other_asrcmd()` và
   `send_nn_end_msg_to_cwsl()`. SDK trả `CWSL_RECORD_FAILED_BY_DEFAULTCMD`, chip
@@ -313,6 +397,14 @@ nhờ đó câu như "tắt quạt" không bị lưu thành câu học mới.
 | `BẬT-SỐ-HAI` | 10 | `{"cmd":2,"data":[2]}` | Tốc độ số 2 |
 | `BẬT-SỐ-BA` | 11 | `{"cmd":2,"data":[3]}` | Tốc độ số 3 |
 | `CHẾ-ĐỘ-GIÓ-TỰ-NHIÊN` | 12 | `{"cmd":2,"data":[4]}` | Gió tự nhiên |
+| `BẬT-CHẾ-ĐỘ-QUAY` | 13 | `{"cmd":2,"data":[5]}` | Quay quạt |
+| `DỪNG-QUAY` | 14 | `{"cmd":2,"data":[6]}` | Dừng quay |
+| `TẮT-QUẠT-SAU-<N>-GIỜ` / `...-TIẾNG` | 15..38 | `{"cmd":7,"data":[N]}` | Hẹn tắt sau N giờ (`N=1..12`) |
+| `HỦY-HẸN-GIỜ` | 39 | `{"cmd":7,"data":[0]}` | Hủy hẹn giờ |
+| `GIẢM-ÂM-LƯỢNG` | 40 | Chip-local | Giảm một mức, clamp tại 1 |
+| `TĂNG-ÂM-LƯỢNG` | 41 | Chip-local | Tăng một mức, clamp tại 7 |
+| `ÂM-LƯỢNG-NHỎ-NHẤT` | 42 | Chip-local | Đặt mức 1 |
+| `ÂM-LƯỢNG-LỚN-NHẤT` | 43 | Chip-local | Đặt mức 7 |
 
 Khi một command ID học được nhận diện, nó đi lại đúng pipeline ASR mặc định,
 do đó message UART gửi sang MCU giống với câu lệnh mặc định mà nó trỏ tới.
@@ -345,6 +437,20 @@ Trình duyệt sẽ mở `http://127.0.0.1:8765/`. Chọn COM đang nối UART0,
 
 Với wake word, dùng khu **Wake word shortcuts**: học nhiều câu đánh thức rồi
 xóa đúng một slot để xác nhận các câu còn lại vẫn đánh thức được.
+
+Kiểm tra âm lượng ở khu **Speaker volume**:
+
+1. Nhấn **Query level** → phải nhận `cmd:9`, tool giải mã thành ví dụ
+   `<- volume level 7 (accepted)`.
+2. Nhấn **3** → nghe beep một tiếng, nhận `{"cmd":9,"data":[3,1,0]}`.
+3. Gửi custom `cmd 8` với data `0` → nhận `[3,0,<reserved>]`, tức bị từ chối và
+   trạng thái giữ nguyên. Đây là cách xác nhận chip không nuốt im lặng request sai.
+
+Lưu ý: nạp lại full package thường xóa NVDATA, nên âm lượng quay về
+`VOLUME_DEFAULT = 7` sau mỗi lần nạp. Nếu vừa nạp xong mà thấy mức khác với lúc
+trước, đó là lý do. Sau khi nạp, chờ chip boot xong (phát prompt khởi động) rồi
+mới gửi lệnh — frame gửi trong lúc chip còn đang boot sẽ mất vì UART RX chỉ được
+bật ở cuối `app_init()`.
 
 Nếu danh sách COM trống hoặc mở cổng thất bại, đóng Serial Monitor/tool khác
 đang giữ cổng rồi nhấn **Refresh**. Có thể đổi web port bằng

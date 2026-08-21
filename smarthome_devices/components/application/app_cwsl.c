@@ -175,11 +175,10 @@ static uint8_t app_cwsl_parse_mutating(cJSON *js_root,
                    ? 0U
                    : APP_CWSL_CODE_BAD_REQUEST;
     }
-    if ((request->cmd_id < 1U) || (request->cmd_id > 39U)) {
+    if ((request->cmd_id < 1U) || (request->cmd_id > APP_CWSL_CMD_ID_MAX)) {
         return APP_CWSL_CODE_BAD_COMMAND_ID;
     }
-    if (((request->cmd_id >= 2U) && (request->cmd_id <= 6U)) ||
-        ((request->cmd_id >= 13U) && (request->cmd_id <= 14U))) {
+    if ((request->cmd_id >= 2U) && (request->cmd_id <= 6U)) {
         return APP_CWSL_CODE_BAD_REQUEST;
     }
 
@@ -209,7 +208,7 @@ static uint8_t app_cwsl_parse_query(cJSON *js_root,
     }
 
     request->cmd_id = (uint8_t)cmd_id;
-    if (((request->cmd_id >= 1U) && (request->cmd_id <= 39U)) ||
+    if (((request->cmd_id >= 1U) && (request->cmd_id <= APP_CWSL_CMD_ID_MAX)) ||
         (request->cmd_id == APP_CWSL_ANY)) {
         return 0U;
     }
@@ -494,12 +493,16 @@ static void app_cwsl_run_validation_tests(void)
         {"\"cmd_id\":2,\"slot\":0,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
         {"\"cmd_id\":13,\"slot\":0,\"u\":1,\"act_id\":0",
-         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
+         APP_CWSL_CMD_LEARN, 0U},
+        {"\"cmd_id\":14,\"slot\":255,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_LEARN, 0U},
         {"\"cmd_id\":15,\"slot\":0,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_LEARN, 0U},
         {"\"cmd_id\":39,\"slot\":255,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_LEARN, 0U},
-        {"\"cmd_id\":40,\"slot\":0,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":43,\"slot\":255,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_LEARN, 0U},
+        {"\"cmd_id\":44,\"slot\":0,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_COMMAND_ID},
         {"\"cmd_id\":99,\"slot\":0,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_COMMAND_ID},
@@ -521,7 +524,9 @@ static void app_cwsl_run_validation_tests(void)
          APP_CWSL_CMD_QUERY, 0U},
         {"\"cmd_id\":39,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_QUERY, 0U},
-        {"\"cmd_id\":40,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":43,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_QUERY, 0U},
+        {"\"cmd_id\":44,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_QUERY, APP_CWSL_CODE_BAD_COMMAND_ID},
         {"\"cmd_id\":99,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_QUERY, APP_CWSL_CODE_BAD_COMMAND_ID},

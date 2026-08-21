@@ -214,13 +214,13 @@ static void m_load_databse(void)
     os_trace("vermqtt: %d\r\n", s_m_database._m_device._mqtt_info->vermqtt);
     os_trace("num broker: %d\r\n", s_m_database._m_device._mqtt_info->num_broker);
     os_trace("broker_in_used: %d\r\n", s_m_database._m_device._mqtt_info->broker_in_used);
-    for (int i = 0; i < s_m_database._m_device._mqtt_info->num_broker; i++)
-    {
-        os_trace("server: %s\r\n", s_m_database._m_device._mqtt_info->servers[i].server);
-        os_trace("port: %ld\r\n", s_m_database._m_device._mqtt_info->servers[i].port);
-        os_trace("username: %s\r\n", s_m_database._m_device._mqtt_info->servers[i].username);
-        os_trace("passwd: %s\r\n", s_m_database._m_device._mqtt_info->servers[i].passwd);
-    }
+    // for (int i = 0; i < s_m_database._m_device._mqtt_info->num_broker; i++)
+    // {
+    //     os_trace("server: %s\r\n", s_m_database._m_device._mqtt_info->servers[i].server);
+    //     os_trace("port: %ld\r\n", s_m_database._m_device._mqtt_info->servers[i].port);
+    //     os_trace("username: %s\r\n", s_m_database._m_device._mqtt_info->servers[i].username);
+    //     os_trace("passwd: %s\r\n", s_m_database._m_device._mqtt_info->servers[i].passwd);
+    // }
 
     if (s_m_database._m_device._device_is_paired)
     {

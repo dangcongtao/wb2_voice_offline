@@ -8,8 +8,12 @@
 #define APP_CWSL_H
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "cJSON.h"
+
+/** Maximum ASR command identifier accepted by CWSL LEARN/DELETE/QUERY. */
+#define APP_CWSL_CMD_ID_MAX 43U
 
 /** @brief Initialize the CWSL state machine and UART response callbacks.
  *
@@ -72,7 +76,7 @@ bool app_cwsl_factory_clear_done(void);
 
 /** @brief Notify application/cloud about a triggered voice command.
  *
- *  @param[in]  cmd_id  ASR command identifier (e.g. 7..14).
+ *  @param[in]  cmd_id  ASR command identifier (e.g. 7..43).
  *  @return     None.
  */
 void app_cwsl_notify_voice_cmd(uint8_t cmd_id);

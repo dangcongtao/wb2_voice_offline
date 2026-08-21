@@ -31,22 +31,6 @@ void app_volume_set(cJSON *js_root);
  */
 void app_volume_get(cJSON *js_root);
 
-/** @brief Increase the speaker volume by one level.
- *
- *  @return     Start status.
- *  @retval     0  The asynchronous operation was started.
- *  @retval     -1 Another operation is pending, UART is unavailable, or OTA is active.
- */
-int32_t app_volume_increase(void);
-
-/** @brief Decrease the speaker volume by one level.
- *
- *  @return     Start status.
- *  @retval     0  The asynchronous operation was started.
- *  @retval     -1 Another operation is pending, UART is unavailable, or OTA is active.
- */
-int32_t app_volume_decrease(void);
-
 /** @brief Process speaker volume timeout and late-response drain state.
  *
  *  @return     None.

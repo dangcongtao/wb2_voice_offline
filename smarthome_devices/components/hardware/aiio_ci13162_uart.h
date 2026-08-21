@@ -98,14 +98,22 @@ void aiio_ci13162_uart_set_cwsl_callbacks(
     aiio_ci13162_cwsl_status_cb_t status_cb,
     aiio_ci13162_cwsl_info_cb_t info_cb);
 
-/** @brief Send one speaker volume request to the CI13162.
+/** @brief Send one speaker volume set request to the CI13162.
  *
- *  @param[in]  value  Zero to query the current level, or 1 to 7 to set it.
+ *  @param[in]  value  Absolute speaker volume level from 1 to 7.
  *  @return     Send status.
- *  @retval     0  Request sent successfully.
+ *  @retval     0  Request `{"cmd":8,"data":[value]}` was sent.
  *  @retval     -1 Invalid value, UART unavailable, OTA active, or send failure.
  */
 int32_t aiio_ci13162_uart_send_volume(uint8_t value);
+
+/** @brief Query the current speaker volume from the CI13162.
+ *
+ *  @return     Send status.
+ *  @retval     0  Query `{"cmd":11,"data":[]}` was sent.
+ *  @retval     -1 UART unavailable, OTA active, or send failure.
+ */
+int32_t aiio_ci13162_uart_query_volume(void);
 
 /** @brief Register the application callback for speaker volume responses.
  *
