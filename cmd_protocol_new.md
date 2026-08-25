@@ -51,6 +51,8 @@ typedef enum
     CMD_VOLUME_INFO = 9,
     CMD_ASR_UNHANDLED = 10,
     CMD_VOLUME_GET    = 11,
+    CMD_SCENE         = 12,
+    CMD_VOLUME_CHANGE = 13,
 } command_type_t;
 ```
 
@@ -76,6 +78,8 @@ typedef enum
 | `CMD_VOLUME_INFO` | 9 | `[level, result, reserved]` | Chip → MCU | Phản hồi mức âm lượng; MCU bỏ qua `reserved` |
 | `CMD_ASR_UNHANDLED` | 10 | `[asr_cmd_id]` | Chip → MCU | Chẩn đoán: ASR command không có callback firmware |
 | `CMD_VOLUME_GET` | 11 | `[]` | MCU → chip | Hỏi trạng thái âm lượng hiện tại |
+| `CMD_SCENE` | 12 | `[1]..[10]` | Chip → MCU | Kích hoạt ngữ cảnh tương ứng trên MCU |
+| `CMD_VOLUME_CHANGE` | 13 | `[1]..[7]` | Chip → MCU | Báo mức âm lượng mới sau lệnh thoại tăng/giảm âm lượng |
 
 Giá trị version ở chiều chip → MCU có thể lớn hơn một byte. Đây là ngoại lệ của
 frame trả lời; parser chiều MCU → chip vẫn chỉ nhận từng phần tử `data` là byte.
@@ -94,6 +98,22 @@ thực sự tắt quạt.
 Mỗi mốc giờ có hai cách nói (“giờ” và “tiếng”) ứng với hai ASR command ID khác
 nhau, nhưng cả hai cùng sinh ra một giá trị `N` — xem bảng ánh xạ ở mục 4.
 
+### Kích hoạt ngữ cảnh (`CMD_SCENE`)
+
+`CMD_SCENE` chỉ đi **một chiều chip → MCU**. Khi nhận diện câu lệnh
+“KÍCH HOẠT NGỮ CẢNH N”, chip gửi index `N` để MCU tự thực thi ngữ cảnh tương
+ứng. Firmware giọng nói không lưu hoặc xử lý nội dung của từng ngữ cảnh.
+
+```text
+KÍCH-HOẠT-NGỮ-CẢNH-MỘT  -> {"cmd":12,"data":[1]}
+KÍCH-HOẠT-NGỮ-CẢNH-HAI  -> {"cmd":12,"data":[2]}
+...
+KÍCH-HOẠT-NGỮ-CẢNH-MƯỜI -> {"cmd":12,"data":[10]}
+```
+
+ASR command ID là `45 + N`, tức ID `46..55` lần lượt ánh xạ sang scene
+`1..10`. Payload luôn có đúng một byte và giá trị hợp lệ là `1..10`.
+
 ### Âm lượng loa (`CMD_VOLUME` / `CMD_VOLUME_INFO`)
 
 Âm lượng có 7 mức, `1` nhỏ nhất và `7` lớn nhất. Mức hiện tại được ghi
@@ -104,6 +124,11 @@ NVDATA/flash nên giữ nguyên sau mất điện.
 | MCU → chip | `{"cmd":8,"data":[1..7]}` | Đặt mức âm lượng tuyệt đối |
 | MCU → chip | `{"cmd":11,"data":[]}` | Chỉ hỏi trạng thái hiện tại |
 | Chip → MCU | `{"cmd":9,"data":[level,result,reserved]}` | Phản hồi cho request `cmd:8` hoặc `cmd:11`; MCU bỏ qua `reserved` |
+| Chip → MCU | `{"cmd":13,"data":[level]}` | Thông báo sau khi người dùng ra lệnh thoại “Tăng âm lượng” hoặc “Giảm âm lượng” |
+
+`CMD_VOLUME_CHANGE` chỉ là event một chiều chip → MCU, không phải phản hồi
+cho `CMD_VOLUME`. Chip gửi cả khi âm lượng đã ở biên: ví dụ, nói
+“Tăng âm lượng” khi đang ở mức `7` vẫn gửi `{"cmd":13,"data":[7]}`.
 
 `result` trong frame trả lời:
 
@@ -340,8 +365,8 @@ học. Nó không sinh frame `CMD_STATUS`.
   action quạt hay không. Vì vậy một ID như `6` có thể học/xóa/query thành công nếu
   nó tồn tại trong `cmd_info`, nhưng khi nhận diện thì `cmd_dispatch()` không map
   ID đó sang UART fan command. Với product hiện tại, MCU chỉ nên học command ID
-  `7..14`, timer ID `15..39` hoặc volume ID `40..43`; ID `1` dành cho learned
-  wake word.
+  `7..14`, timer ID `15..39`, volume ID `40..43` hoặc scene ID `46..55`; ID `1`
+  dành cho learned wake word.
 - Câu học không được trùng command có sẵn trong model. Trong lúc thu, firmware
   chuyển mọi command mặc định nhận được vào `cwsl_reg_check_other_asrcmd()` và
   `send_nn_end_msg_to_cwsl()`. SDK trả `CWSL_RECORD_FAILED_BY_DEFAULTCMD`, chip
@@ -405,6 +430,7 @@ nhờ đó câu như "tắt quạt" không bị lưu thành câu học mới.
 | `TĂNG-ÂM-LƯỢNG` | 41 | Chip-local | Tăng một mức, clamp tại 7 |
 | `ÂM-LƯỢNG-NHỎ-NHẤT` | 42 | Chip-local | Đặt mức 1 |
 | `ÂM-LƯỢNG-LỚN-NHẤT` | 43 | Chip-local | Đặt mức 7 |
+| `KÍCH-HOẠT-NGỮ-CẢNH-<N>` | 46..55 | `{"cmd":12,"data":[N]}` | Kích hoạt ngữ cảnh `N` (`N=1..10`) |
 
 Khi một command ID học được nhận diện, nó đi lại đúng pipeline ASR mặc định,
 do đó message UART gửi sang MCU giống với câu lệnh mặc định mà nó trỏ tới.

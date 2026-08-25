@@ -48,6 +48,12 @@
 #define AIIO_CI13162_UART_GLB_PARM_ADDRESS      (GLB_BASE + GLB_PARM_OFFSET)
 #define AIIO_CI13162_UART_SIG_SEL_ADDRESS       (GLB_BASE + GLB_UART_SIG_SEL_0_OFFSET)
 #define AIIO_CI13162_UART_REG32(address)        (*(volatile uint32_t *)(uintptr_t)(address))
+#define AIIO_CI13162_VOLUME_LEVEL_MIN           1U
+#define AIIO_CI13162_VOLUME_LEVEL_MAX           7U
+#define AIIO_CI13162_ASR_VOLUME_DOWN            40U
+#define AIIO_CI13162_ASR_VOLUME_UP              41U
+#define AIIO_CI13162_ASR_VOLUME_MIN             42U
+#define AIIO_CI13162_ASR_VOLUME_MAX             43U
 
 static const char s_aiio_ci13162_reset_message[] = "{\"cmd\":0,\"data\":[]}\r\n";
 static const char s_aiio_ci13162_version_query[] = "{\"cmd\":3,\"data\":[]}\r\n";
@@ -68,6 +74,8 @@ typedef enum {
     AIIO_CI13162_CMD_VOLUME_INFO = 9,
     AIIO_CI13162_CMD_ASR_UNHANDLED = 10,
     AIIO_CI13162_CMD_VOLUME_GET = 11,
+    AIIO_CI13162_CMD_SCENE = 12,
+    AIIO_CI13162_CMD_VOLUME_CHANGE = 13,
 } aiio_ci13162_command_t;
 
 typedef enum {
@@ -659,6 +667,20 @@ static aiio_ci13162_parse_result_t aiio_ci13162_validate_message(
                        ? AIIO_CI13162_PARSE_OK
                        : AIIO_CI13162_PARSE_INVALID_DATA;
 
+        case AIIO_CI13162_CMD_SCENE:
+            return ((message->data_count == 1U) &&
+                    (message->data[0] >= 1U) &&
+                    (message->data[0] <= 10U))
+                       ? AIIO_CI13162_PARSE_OK
+                       : AIIO_CI13162_PARSE_INVALID_DATA;
+
+        case AIIO_CI13162_CMD_VOLUME_CHANGE:
+            return ((message->data_count == 1U) &&
+                    (message->data[0] >= AIIO_CI13162_VOLUME_LEVEL_MIN) &&
+                    (message->data[0] <= AIIO_CI13162_VOLUME_LEVEL_MAX))
+                       ? AIIO_CI13162_PARSE_OK
+                       : AIIO_CI13162_PARSE_INVALID_DATA;
+
         case AIIO_CI13162_CMD_VOLUME_INFO:
             return ((message->data_count >= 2U) &&
                     (message->data_count <= 3U) &&
@@ -741,7 +763,9 @@ static aiio_ci13162_parse_result_t aiio_ci13162_parse_line(
         } else {
             while (*cursor != ']') {
                 if (((message->command <= AIIO_CI13162_CMD_MODE) ||
-                     (message->command == AIIO_CI13162_CMD_TIMER)) &&
+                     (message->command == AIIO_CI13162_CMD_TIMER) ||
+                     (message->command == AIIO_CI13162_CMD_SCENE) ||
+                     (message->command == AIIO_CI13162_CMD_VOLUME_CHANGE)) &&
                     (message->data_count >= 1U)) {
                     return AIIO_CI13162_PARSE_INVALID_FORMAT;
                 }
@@ -828,7 +852,65 @@ static uint8_t aiio_ci13162_get_cmd_id(uint8_t command, uint8_t data)
             return (uint8_t)(15U + (2U * (data - 1U)));
         }
     }
+    if (command == AIIO_CI13162_CMD_SCENE) {
+        if ((data >= 1U) && (data <= 10U)) {
+            return (uint8_t)(45U + data);
+        }
+    }
+    /* CMD_VOLUME_CHANGE payload is a speaker level, not an ASR ID. */
     return 0U;
+}
+
+// Infer ASR 40..43 from cmd 13 level versus the cached speaker level.
+static uint8_t aiio_ci13162_get_volume_change_cmd_id(uint8_t old_valid,
+                                                     uint8_t old_level,
+                                                     uint8_t new_level)
+{
+    int16_t delta;
+
+    if ((new_level < AIIO_CI13162_VOLUME_LEVEL_MIN) ||
+        (new_level > AIIO_CI13162_VOLUME_LEVEL_MAX)) {
+        return AIIO_CI13162_ASR_VOLUME_UP;
+    }
+
+    /* No cache yet: 1 -> min (42), 7 -> max (43), else increase (41). */
+    if ((old_valid == 0U) ||
+        (old_level < AIIO_CI13162_VOLUME_LEVEL_MIN) ||
+        (old_level > AIIO_CI13162_VOLUME_LEVEL_MAX)) {
+        if (new_level == AIIO_CI13162_VOLUME_LEVEL_MIN) {
+            return AIIO_CI13162_ASR_VOLUME_MIN;
+        }
+        if (new_level == AIIO_CI13162_VOLUME_LEVEL_MAX) {
+            return AIIO_CI13162_ASR_VOLUME_MAX;
+        }
+        return AIIO_CI13162_ASR_VOLUME_UP;
+    }
+
+    delta = (int16_t)new_level - (int16_t)old_level;
+    if (delta == 1) {
+        return AIIO_CI13162_ASR_VOLUME_UP;
+    }
+    if (delta == -1) {
+        return AIIO_CI13162_ASR_VOLUME_DOWN;
+    }
+    if (delta > 1) {
+        return (new_level == AIIO_CI13162_VOLUME_LEVEL_MAX)
+                   ? AIIO_CI13162_ASR_VOLUME_MAX
+                   : AIIO_CI13162_ASR_VOLUME_UP;
+    }
+    if (delta < -1) {
+        return (new_level == AIIO_CI13162_VOLUME_LEVEL_MIN)
+                   ? AIIO_CI13162_ASR_VOLUME_MIN
+                   : AIIO_CI13162_ASR_VOLUME_DOWN;
+    }
+
+    if (new_level == AIIO_CI13162_VOLUME_LEVEL_MIN) {
+        return AIIO_CI13162_ASR_VOLUME_MIN;
+    }
+    if (new_level == AIIO_CI13162_VOLUME_LEVEL_MAX) {
+        return AIIO_CI13162_ASR_VOLUME_MAX;
+    }
+    return AIIO_CI13162_ASR_VOLUME_UP;
 }
 
 // Send the scheduled version query without blocking the application task.
@@ -948,7 +1030,11 @@ static void aiio_ci13162_run_parser_tests(void)
          AIIO_CI13162_CMD_CWSL_INFO, 3U, {39U, 1U, 0U, 0U}, 0U},
         {"{cmd:6,data:[43,1,0]}", AIIO_CI13162_PARSE_OK,
          AIIO_CI13162_CMD_CWSL_INFO, 3U, {43U, 1U, 0U, 0U}, 0U},
-        {"{cmd:6,data:[44,1,0]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
+        {"{cmd:6,data:[44,1,0]}", AIIO_CI13162_PARSE_OK,
+         AIIO_CI13162_CMD_CWSL_INFO, 3U, {44U, 1U, 0U, 0U}, 0U},
+        {"{cmd:6,data:[55,1,0]}", AIIO_CI13162_PARSE_OK,
+         AIIO_CI13162_CMD_CWSL_INFO, 3U, {55U, 1U, 0U, 0U}, 0U},
+        {"{cmd:6,data:[56,1,0]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
          {0U, 0U, 0U, 0U}, 0U},
         {"{cmd:7,data:[]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
          {0U, 0U, 0U, 0U}, 0U},
@@ -991,6 +1077,32 @@ static void aiio_ci13162_run_parser_tests(void)
         {"{cmd:10,data:[1,2]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
          {0U, 0U, 0U, 0U}, 0U},
         {"{cmd:11,data:[]}", AIIO_CI13162_PARSE_UNKNOWN_COMMAND, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U},
+        {"{cmd:12,data:[]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U},
+        {"{cmd:12,data:[1]}", AIIO_CI13162_PARSE_OK, AIIO_CI13162_CMD_SCENE, 1U,
+         {1U, 0U, 0U, 0U}, 0U},
+        {"{cmd:12,data:[10]}", AIIO_CI13162_PARSE_OK, AIIO_CI13162_CMD_SCENE, 1U,
+         {10U, 0U, 0U, 0U}, 0U},
+        {"{cmd:12,data:[0]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U},
+        {"{cmd:12,data:[11]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U},
+        {"{cmd:12,data:[1,2]}", AIIO_CI13162_PARSE_INVALID_FORMAT, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U},
+        {"{cmd:13,data:[1]}", AIIO_CI13162_PARSE_OK,
+         AIIO_CI13162_CMD_VOLUME_CHANGE, 1U, {1U, 0U, 0U, 0U}, 0U},
+        {"{cmd:13,data:[4]}", AIIO_CI13162_PARSE_OK,
+         AIIO_CI13162_CMD_VOLUME_CHANGE, 1U, {4U, 0U, 0U, 0U}, 0U},
+        {"{cmd:13,data:[7]}", AIIO_CI13162_PARSE_OK,
+         AIIO_CI13162_CMD_VOLUME_CHANGE, 1U, {7U, 0U, 0U, 0U}, 0U},
+        {"{cmd:13,data:[0]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U},
+        {"{cmd:13,data:[8]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U},
+        {"{cmd:13,data:[]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U},
+        {"{cmd:13,data:[3,1]}", AIIO_CI13162_PARSE_INVALID_FORMAT, 0U, 0U,
          {0U, 0U, 0U, 0U}, 0U},
         {"{cmd:3,data:[]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
          {0U, 0U, 0U, 0U}, 0U},
@@ -1259,6 +1371,93 @@ static void aiio_ci13162_run_assembler_tests(void)
     xQueueReset(s_aiio_ci13162_command_queue);
 }
 
+// Run UART-to-ASR cmd_id mapping cases without MQTT or UART side effects.
+static void aiio_ci13162_run_cmd_id_tests(void)
+{
+    static const struct {
+        uint8_t command;
+        uint8_t data;
+        uint8_t expected;
+    } uart_cases[] = {
+        {AIIO_CI13162_CMD_TURN, 1U, 7U},
+        {AIIO_CI13162_CMD_TURN, 0U, 8U},
+        {AIIO_CI13162_CMD_MODE, 1U, 9U},
+        {AIIO_CI13162_CMD_MODE, 2U, 10U},
+        {AIIO_CI13162_CMD_MODE, 3U, 11U},
+        {AIIO_CI13162_CMD_MODE, 4U, 12U},
+        {AIIO_CI13162_CMD_MODE, 5U, 13U},
+        {AIIO_CI13162_CMD_MODE, 6U, 14U},
+        {AIIO_CI13162_CMD_TIMER, 0U, 39U},
+        {AIIO_CI13162_CMD_TIMER, 1U, 15U},
+        {AIIO_CI13162_CMD_TIMER, 12U, 37U},
+        {AIIO_CI13162_CMD_SCENE, 1U, 46U},
+        {AIIO_CI13162_CMD_SCENE, 10U, 55U},
+        {AIIO_CI13162_CMD_VOLUME_CHANGE, 3U, 0U},
+        {AIIO_CI13162_CMD_VOLUME_CHANGE, 7U, 0U},
+    };
+    static const struct {
+        uint8_t old_valid;
+        uint8_t old_level;
+        uint8_t new_level;
+        uint8_t expected;
+    } volume_cases[] = {
+        {0U, 0U, 1U, AIIO_CI13162_ASR_VOLUME_MIN},
+        {0U, 0U, 7U, AIIO_CI13162_ASR_VOLUME_MAX},
+        {0U, 0U, 4U, AIIO_CI13162_ASR_VOLUME_UP},
+        {1U, 3U, 4U, AIIO_CI13162_ASR_VOLUME_UP},
+        {1U, 4U, 3U, AIIO_CI13162_ASR_VOLUME_DOWN},
+        {1U, 6U, 7U, AIIO_CI13162_ASR_VOLUME_UP},
+        {1U, 2U, 1U, AIIO_CI13162_ASR_VOLUME_DOWN},
+        {1U, 3U, 7U, AIIO_CI13162_ASR_VOLUME_MAX},
+        {1U, 5U, 1U, AIIO_CI13162_ASR_VOLUME_MIN},
+        {1U, 1U, 1U, AIIO_CI13162_ASR_VOLUME_MIN},
+        {1U, 7U, 7U, AIIO_CI13162_ASR_VOLUME_MAX},
+        {1U, 4U, 4U, AIIO_CI13162_ASR_VOLUME_UP},
+        {1U, 1U, 2U, AIIO_CI13162_ASR_VOLUME_UP},
+        {1U, 7U, 6U, AIIO_CI13162_ASR_VOLUME_DOWN},
+        {1U, 2U, 7U, AIIO_CI13162_ASR_VOLUME_MAX},
+        {1U, 6U, 1U, AIIO_CI13162_ASR_VOLUME_MIN},
+    };
+    uint32_t failed_count = 0U;
+    size_t i;
+
+    for (i = 0U; i < (sizeof(uart_cases) / sizeof(uart_cases[0])); i++) {
+        if (aiio_ci13162_get_cmd_id(uart_cases[i].command,
+                                    uart_cases[i].data) != uart_cases[i].expected) {
+            failed_count++;
+        }
+    }
+
+    for (i = 0U; i < (sizeof(volume_cases) / sizeof(volume_cases[0])); i++) {
+        if (aiio_ci13162_get_volume_change_cmd_id(volume_cases[i].old_valid,
+                                                  volume_cases[i].old_level,
+                                                  volume_cases[i].new_level) !=
+            volume_cases[i].expected) {
+            failed_count++;
+        }
+    }
+
+#if DEBUG_ENABLE == 1
+    {
+        char output[80];
+        int output_length;
+
+        output_length = snprintf(output,
+                                 sizeof(output),
+                                 "[CI13162][TEST] cmd_id failed=%lu\r\n",
+                                 (unsigned long)failed_count);
+        if (output_length > 0) {
+            if ((size_t)output_length >= sizeof(output)) {
+                output_length = (int)(sizeof(output) - 1U);
+            }
+            aiio_ci13162_uart_send(output, (uint32_t)output_length);
+        }
+    }
+#else
+    (void)failed_count;
+#endif
+}
+
 #endif
 
 // Drain the hardware RX FIFO into the active application or OTA stream buffer.
@@ -1484,6 +1683,7 @@ int32_t aiio_ci13162_uart_init(void)
 #if BUILD_TEST == 1
     aiio_ci13162_run_parser_tests();
     aiio_ci13162_run_assembler_tests();
+    aiio_ci13162_run_cmd_id_tests();
 #endif
     return 0;
 #else
@@ -1536,6 +1736,22 @@ void aiio_ci13162_uart_process(void)
             }
             s_aiio_ci13162_volume = message.data[0];
             s_aiio_ci13162_volume_valid = 1U;
+            continue;
+        }
+
+        if (message.command == AIIO_CI13162_CMD_VOLUME_CHANGE) {
+            uint8_t cmd_id;
+
+            cmd_id = aiio_ci13162_get_volume_change_cmd_id(
+                s_aiio_ci13162_volume_valid,
+                s_aiio_ci13162_volume,
+                message.data[0]);
+            s_aiio_ci13162_volume = message.data[0];
+            s_aiio_ci13162_volume_valid = 1U;
+            os_trace("[CI13162] volume change=%u cmd_id=%u\r\n",
+                     (unsigned int)message.data[0],
+                     (unsigned int)cmd_id);
+            app_cwsl_notify_voice_cmd(cmd_id);
             continue;
         }
 
@@ -1608,6 +1824,14 @@ void aiio_ci13162_uart_process(void)
             case AIIO_CI13162_CMD_TIMER:
                 m_fan_need_buzz(1U);
                 m_fan_set_time_off((uint32_t)message.data[0] * 3600U);
+                app_cwsl_notify_voice_cmd(aiio_ci13162_get_cmd_id(message.command,
+                                                                  message.data[0]));
+                break;
+
+            case AIIO_CI13162_CMD_SCENE:
+                m_fan_need_buzz(1U);
+                os_trace("[CI13162] scene=%u\r\n",
+                         (unsigned int)message.data[0]);
                 app_cwsl_notify_voice_cmd(aiio_ci13162_get_cmd_id(message.command,
                                                                   message.data[0]));
                 break;

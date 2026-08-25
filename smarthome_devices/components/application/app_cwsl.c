@@ -181,6 +181,10 @@ static uint8_t app_cwsl_parse_mutating(cJSON *js_root,
     if ((request->cmd_id >= 2U) && (request->cmd_id <= 6U)) {
         return APP_CWSL_CODE_BAD_REQUEST;
     }
+    if ((mqtt_cmd == APP_CWSL_CMD_LEARN) &&
+        ((request->cmd_id == 44U) || (request->cmd_id == 45U))) {
+        return APP_CWSL_CODE_BAD_COMMAND_ID;
+    }
 
     if (request->cmd_id == 1U) {
         return ((request->slot <= 4U) || (request->slot == APP_CWSL_ANY))
@@ -504,6 +508,14 @@ static void app_cwsl_run_validation_tests(void)
          APP_CWSL_CMD_LEARN, 0U},
         {"\"cmd_id\":44,\"slot\":0,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_COMMAND_ID},
+        {"\"cmd_id\":45,\"slot\":255,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_COMMAND_ID},
+        {"\"cmd_id\":46,\"slot\":255,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_LEARN, 0U},
+        {"\"cmd_id\":55,\"slot\":255,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_LEARN, 0U},
+        {"\"cmd_id\":56,\"slot\":0,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_COMMAND_ID},
         {"\"cmd_id\":99,\"slot\":0,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_COMMAND_ID},
         {"\"cmd_id\":7,\"slot\":15,\"u\":1,\"act_id\":0",
@@ -527,6 +539,10 @@ static void app_cwsl_run_validation_tests(void)
         {"\"cmd_id\":43,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_QUERY, 0U},
         {"\"cmd_id\":44,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_QUERY, 0U},
+        {"\"cmd_id\":55,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_QUERY, 0U},
+        {"\"cmd_id\":56,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_QUERY, APP_CWSL_CODE_BAD_COMMAND_ID},
         {"\"cmd_id\":99,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_QUERY, APP_CWSL_CODE_BAD_COMMAND_ID},
