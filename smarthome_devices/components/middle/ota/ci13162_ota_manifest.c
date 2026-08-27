@@ -179,6 +179,7 @@ static int32_t ci13162_ota_manifest_resolve(const char *manifest_url,
     cJSON *base_url_item;
     cJSON *app_item;
     cJSON *agent_item;
+    cJSON *erase_nv_item;
     const char *parse_end = NULL;
     const char *body_end;
     size_t path_length;
@@ -266,6 +267,19 @@ static int32_t ci13162_ota_manifest_resolve(const char *manifest_url,
         (ci13162_ota_manifest_filename_is_valid(agent_item->valuestring) == 0)) {
         os_trace("[CI13162][MANIFEST] Invalid host or filename\r\n");
         goto CLEANUP;
+    }
+
+    erase_nv_item = cJSON_GetObjectItem(root, "erase_nv");
+    if (erase_nv_item == NULL) {
+        out->erase_nv = 0U;
+    } else if ((erase_nv_item->string == NULL) ||
+               (strcmp(erase_nv_item->string, "erase_nv") != 0) ||
+               ((erase_nv_item->type != cJSON_True) &&
+                (erase_nv_item->type != cJSON_False))) {
+        os_trace("[CI13162][MANIFEST] Invalid erase_nv\r\n");
+        goto CLEANUP;
+    } else {
+        out->erase_nv = (erase_nv_item->type == cJSON_True) ? 1U : 0U;
     }
 
     if ((ci13162_ota_manifest_build_url(base_url_item->valuestring,
@@ -386,6 +400,21 @@ int ci13162_ota_manifest_self_test(void)
         "{\"base_url\":\"fwm.hunonicpro.com\","
         "\"app\":\"Firmware_V26.08.13.bin\","
         "\"agent\":\"ci13lc_agent_from_tool_padded_0x5000.bin\"}";
+    static const char erase_nv_true_body[] =
+        "{\"base_url\":\"fwm.hunonicpro.com\","
+        "\"app\":\"Firmware_V26.08.13.bin\","
+        "\"agent\":\"ci13lc_agent_from_tool_padded_0x5000.bin\","
+        "\"erase_nv\":true}";
+    static const char erase_nv_false_body[] =
+        "{\"base_url\":\"fwm.hunonicpro.com\","
+        "\"app\":\"Firmware_V26.08.13.bin\","
+        "\"agent\":\"ci13lc_agent_from_tool_padded_0x5000.bin\","
+        "\"erase_nv\":false}";
+    static const char erase_nv_wrong_type_body[] =
+        "{\"base_url\":\"fwm.hunonicpro.com\","
+        "\"app\":\"Firmware_V26.08.13.bin\","
+        "\"agent\":\"ci13lc_agent_from_tool_padded_0x5000.bin\","
+        "\"erase_nv\":\"true\"}";
     static const char golden_firmware[] =
         "http://fwm.hunonicpro.com/f/6258/Firmware_V26.08.13.bin";
     static const char golden_agent[] =
@@ -401,7 +430,28 @@ int ci13162_ota_manifest_self_test(void)
              strlen(golden_body),
              &urls) != 0) ||
         (strcmp(urls.firmware_url, golden_firmware) != 0) ||
-        (strcmp(urls.agent_url, golden_agent) != 0)) {
+        (strcmp(urls.agent_url, golden_agent) != 0) ||
+        (urls.erase_nv != 0U)) {
+        failed++;
+    }
+
+    total++;
+    if ((ci13162_ota_manifest_resolve(
+             "http://fwm.hunonicpro.com/f/6258/manifest.json",
+             erase_nv_true_body,
+             strlen(erase_nv_true_body),
+             &urls) != 0) ||
+        (urls.erase_nv != 1U)) {
+        failed++;
+    }
+
+    total++;
+    if ((ci13162_ota_manifest_resolve(
+             "http://fwm.hunonicpro.com/f/6258/manifest.json",
+             erase_nv_false_body,
+             strlen(erase_nv_false_body),
+             &urls) != 0) ||
+        (urls.erase_nv != 0U)) {
         failed++;
     }
 
@@ -448,6 +498,10 @@ int ci13162_ota_manifest_self_test(void)
     CI13162_OTA_MANIFEST_TEST(
         "http://fwm.hunonicpro.com/f/6258/not-manifest.json",
         golden_body,
+        0);
+    CI13162_OTA_MANIFEST_TEST(
+        "http://fwm.hunonicpro.com/f/6258/manifest.json",
+        erase_nv_wrong_type_body,
         0);
 
 #undef CI13162_OTA_MANIFEST_TEST

@@ -73,6 +73,7 @@ extern uint8_t is_ota;
 extern void ble_deinit(void);
 
 static volatile uint8_t s_ci13162_ota_busy;
+static uint8_t s_ci13162_ota_erase_nv;
 static char s_ci13162_ota_firmware_url[AIIO_CI13162_OTA_URL_MAX];
 static char s_ci13162_ota_agent_url[AIIO_CI13162_OTA_URL_MAX];
 static const char *s_ci13162_ota_stage = "init";
@@ -946,10 +947,14 @@ static uint16_t ci13162_ota_crc_ff(uint32_t size)
 
 static int32_t ci13162_ota_erase_nv(ci13162_ota_context_t *ctx)
 {
-#if AIIO_CI13162_OTA_ERASE_NV == 1
     uint32_t coverage_end = 0U;
     uint16_t crc;
     size_t payload_len;
+
+    if (s_ci13162_ota_erase_nv == 0U) {
+        os_trace("[CI13162][OTA] Skip NV erase\r\n");
+        return 0;
+    }
 
     memset(ctx->tail_pad, 0xFF, sizeof(ctx->tail_pad));
     crc = ci13162_ota_crc_ff(ctx->layout.nv_size);
@@ -1047,10 +1052,6 @@ static int32_t ci13162_ota_erase_nv(ci13162_ota_context_t *ctx)
                                      ctx->control_payload,
                                      (uint16_t)payload_len,
                                      AIIO_CI13162_OTA_COMMAND_TIMEOUT_MS);
-#else
-    (void)ctx;
-    return 0;
-#endif
 }
 
 static void ci13162_ota_cleanup(ci13162_ota_context_t *ctx)
@@ -1230,7 +1231,9 @@ EXIT:
 
 #endif /* AIIO_CI13162_OTA_ENABLE */
 
-int32_t m_ci13162_ota_start(const char *firmware_url, const char *agent_url)
+int32_t m_ci13162_ota_start(const char *firmware_url,
+                            const char *agent_url,
+                            bool erase_nv)
 {
 #if AIIO_CI13162_OTA_ENABLE == 1
     BaseType_t task_result;
@@ -1255,6 +1258,9 @@ int32_t m_ci13162_ota_start(const char *firmware_url, const char *agent_url)
 
     memcpy(s_ci13162_ota_firmware_url, firmware_url, strlen(firmware_url) + 1U);
     memcpy(s_ci13162_ota_agent_url, agent_url, strlen(agent_url) + 1U);
+    s_ci13162_ota_erase_nv = erase_nv ? 1U : 0U;
+    os_trace("[CI13162][OTA] erase_nv %u\r\n",
+             (unsigned int)s_ci13162_ota_erase_nv);
     /* Dynamic stack on purpose: it only takes heap while OTA runs. A create
      * failure here is harmless (nothing was shut down yet, respond 0). */
     task_result = xTaskCreate(ci13162_ota_task,
@@ -1274,6 +1280,7 @@ int32_t m_ci13162_ota_start(const char *firmware_url, const char *agent_url)
 #else
     (void)firmware_url;
     (void)agent_url;
+    (void)erase_nv;
     return -1;
 #endif
 }

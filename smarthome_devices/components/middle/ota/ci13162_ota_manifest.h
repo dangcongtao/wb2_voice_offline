@@ -19,6 +19,7 @@ extern "C" {
 typedef struct {
     char firmware_url[AIIO_CI13162_OTA_URL_MAX];
     char agent_url[AIIO_CI13162_OTA_URL_MAX];
+    uint8_t erase_nv;
 } ci13162_ota_manifest_urls_t;
 
 /** @brief Download and resolve a CI13162 OTA manifest.

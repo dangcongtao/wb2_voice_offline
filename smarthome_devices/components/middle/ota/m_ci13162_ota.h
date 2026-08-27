@@ -8,11 +8,14 @@
  *
  *  @param[in]  firmware_url  Firmware image HTTP URL.
  *  @param[in]  agent_url     Updater agent HTTP URL.
+ *  @param[in]  erase_nv      true to erase CI13162 NV after firmware write, false to keep NV.
  *  @return     Operation status.
  *  @retval     0             OTA task started successfully.
  *  @retval     -1            Invalid input, busy state, or task creation failure.
  */
-int32_t m_ci13162_ota_start(const char *firmware_url, const char *agent_url);
+int32_t m_ci13162_ota_start(const char *firmware_url,
+                            const char *agent_url,
+                            bool erase_nv);
 
 /** @brief Validate a CI13162 OTA HTTP URL.
  *

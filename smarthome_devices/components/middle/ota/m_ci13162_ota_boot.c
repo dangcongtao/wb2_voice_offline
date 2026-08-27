@@ -16,7 +16,7 @@
 #define AI_CI13162_OTA_PENDING_KEY       "ci_ota_pend"
 #define AI_CI13162_OTA_ATTEMPT_KEY       "ci_ota_att"
 #define AI_CI13162_OTA_PENDING_MAGIC     0x31333143U
-#define AI_CI13162_OTA_PENDING_VERSION   1U
+#define AI_CI13162_OTA_PENDING_VERSION   2U
 #define AI_CI13162_OTA_BOOT_RESET_DELAY_MS 100U
 
 typedef struct {
@@ -27,6 +27,7 @@ typedef struct {
     uint16_t agent_url_length;
     char firmware_url[AIIO_CI13162_OTA_URL_MAX];
     char agent_url[AIIO_CI13162_OTA_URL_MAX];
+    uint8_t erase_nv;
     uint32_t crc32;
 } ai_ci13162_ota_pending_t;
 
@@ -59,7 +60,8 @@ static bool ai_ci13162_ota_pending_validate(const ai_ci13162_ota_pending_t *pend
         (pending->firmware_url_length == 0U) ||
         (pending->firmware_url_length >= AIIO_CI13162_OTA_URL_MAX) ||
         (pending->agent_url_length == 0U) ||
-        (pending->agent_url_length >= AIIO_CI13162_OTA_URL_MAX)) {
+        (pending->agent_url_length >= AIIO_CI13162_OTA_URL_MAX) ||
+        (pending->erase_nv > 1U)) {
         return false;
     }
     if ((pending->firmware_url[pending->firmware_url_length] != '\0') ||
@@ -150,7 +152,9 @@ static bool ai_ci13162_ota_pending_write(const ai_ci13162_ota_pending_t *pending
     return true;
 }
 
-int32_t m_ci13162_ota_boot_save(const char *firmware_url, const char *agent_url)
+int32_t m_ci13162_ota_boot_save(const char *firmware_url,
+                                const char *agent_url,
+                                bool erase_nv)
 {
 #if AIIO_CI13162_OTA_ENABLE == 1
     size_t firmware_url_length;
@@ -171,6 +175,7 @@ int32_t m_ci13162_ota_boot_save(const char *firmware_url, const char *agent_url)
     s_ai_pending.agent_url_length = (uint16_t)agent_url_length;
     memcpy(s_ai_pending.firmware_url, firmware_url, firmware_url_length + 1U);
     memcpy(s_ai_pending.agent_url, agent_url, agent_url_length + 1U);
+    s_ai_pending.erase_nv = erase_nv ? 1U : 0U;
     s_ai_pending.crc32 = ai_ci13162_ota_pending_crc(&s_ai_pending);
 
     if (!ai_ci13162_ota_pending_write(&s_ai_pending)) {
@@ -183,6 +188,7 @@ int32_t m_ci13162_ota_boot_save(const char *firmware_url, const char *agent_url)
 #else
     (void)firmware_url;
     (void)agent_url;
+    (void)erase_nv;
     return -1;
 #endif
 }
@@ -262,7 +268,8 @@ bool m_ci13162_ota_boot_poll(void)
             return true;
         }
         if (m_ci13162_ota_start(s_ai_pending.firmware_url,
-                                s_ai_pending.agent_url) != 0) {
+                                s_ai_pending.agent_url,
+                                (s_ai_pending.erase_nv != 0U)) != 0) {
             os_trace("[CI13162][BOOT] OTA start failed\r\n");
             vTaskDelay(pdMS_TO_TICKS(AI_CI13162_OTA_BOOT_RESET_DELAY_MS));
             return true;

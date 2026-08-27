@@ -1102,10 +1102,13 @@ static void app_request_ci13162_ota(cJSON *jsRoot)
     }
     os_trace("[CI13162][CMD] Firmware URL %s\r\n", resolved_urls.firmware_url);
     os_trace("[CI13162][CMD] Agent URL %s\r\n", resolved_urls.agent_url);
+    os_trace("[CI13162][CMD] erase_nv %u\r\n",
+             (unsigned int)resolved_urls.erase_nv);
 
     os_trace("[CI13162][CMD] Save pending request\r\n");
     if (m_ci13162_ota_boot_save(resolved_urls.firmware_url,
-                                resolved_urls.agent_url) != 0)
+                                resolved_urls.agent_url,
+                                (resolved_urls.erase_nv != 0U)) != 0)
     {
         os_trace("[CI13162][CMD] Save pending request failed\r\n");
         goto RESPONSE;
