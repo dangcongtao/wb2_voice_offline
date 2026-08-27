@@ -63,7 +63,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
 
 #  >>> FIRMWARE can nap (full flash) <<<
-FW_PATH    = r"..\CI13LC_SDK_2.1.5\projects\cwsl_sample\firmware\Firmware_V2.0.0.bin"
+FW_PATH    = r"D:\Project\Offline_voice_control\vendor\firmware\Gavit_260827_V26.08.27.bin"
 
 #  >>> AGENT / updater (thuong KHONG can doi) <<<
 AGENT_PATH = r"ci13lc_agent_from_tool_padded_0x5000.bin"
@@ -680,8 +680,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--agent", type=Path, default=DEFAULT_AGENT, help="padded ci13lc updater/agent path")
     parser.add_argument("--handshake-timeout", type=float, default=30.0, help="seconds to spam A1/83 before giving up")
     nv_group = parser.add_mutually_exclusive_group()
-    nv_group.add_argument("--erase-nv", dest="erase_nv", action="store_true", default=True, help="erase/fill NV region with 0xFF, default")
-    nv_group.add_argument("--keep-nv", dest="erase_nv", action="store_false", help="skip the NV erase/fill block")
+    nv_group.add_argument("--erase-nv", dest="erase_nv", action="store_true", default=False,
+                          help="erase/fill NV region with 0xFF (giong TICH o Erase NV tren PACK_UPDATE_TOOL)")
+    nv_group.add_argument("--keep-nv", dest="erase_nv", action="store_false", default=False,
+                          help="giu nguyen vung NV - MAC DINH (bo tich Erase NV)")
     parser.add_argument("--dry-run", action="store_true", help="validate files/CRC and print sample frames only")
     parser.add_argument("--verbose", action="store_true", help="log notify/extra frames more verbosely")
     parser.add_argument("--no-log-file", action="store_true", help="do not write test_update_last.log")

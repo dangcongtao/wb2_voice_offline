@@ -20,6 +20,7 @@
 #include "app_config.h"
 #include "app_cwsl.h"
 #include "app_fan.h"
+#include "app_volume.h"
 #include "m_fan.h"
 #include "m_fan_control.h"
 #include "system_typedef.h"
@@ -1752,6 +1753,7 @@ void aiio_ci13162_uart_process(void)
                      (unsigned int)message.data[0],
                      (unsigned int)cmd_id);
             app_cwsl_notify_voice_cmd(cmd_id);
+            app_volume_report_voice(message.data[0]);
             continue;
         }
 

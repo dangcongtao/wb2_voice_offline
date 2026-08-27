@@ -883,18 +883,19 @@ Bảng ánh xạ `cmd_id` cho sự kiện 224:
 - `cmd_id=14`: Dừng quay (`cmd:2, data:[6]`)
 - Timer `N=1..12`: MCU chỉ nhận số giờ, không biết người dùng nói “giờ” hay “tiếng”, nên publish canonical ID `15 + 2*(N-1)` tương ứng biến thể “giờ” (`15,17,...,37`).
 - `cmd_id=39`: Hủy hẹn giờ (`cmd:7, data:[0]`).
-- ASR `cmd_id=40..43` (tăng/giảm/min/max âm lượng) được chip xử lý local, không gửi UART điều khiển và không sinh MQTT 224.
+- ASR `cmd_id=40..43` (tăng/giảm/min/max âm lượng): chip tự đổi volume rồi gửi UART `cmd:13`; MCU publish MQTT 224 (`cmd_id` 40–43) và MQTT 225 unsolicited (`vol`, `u=0`, `act_id=13`). Xem mục 12.13.
 
 Wake word không còn dùng UART `cmd:7`; command này được dành riêng cho timer theo contract hiện tại.
 
 ### 12.13. Âm lượng loa qua MQTT (cmd 225/226)
 
-Âm lượng dùng mức tuyệt đối `1..7`. CI13162 là nguồn sự thật và tự lưu mức vào NVDATA; WB2 chỉ cache giá trị RAM nhận từ `cmd:9`.
+Âm lượng dùng mức tuyệt đối `1..7`. CI13162 là nguồn sự thật và tự lưu mức vào NVDATA; WB2 cache giá trị RAM nhận từ `cmd:9` và `cmd:13`.
 
 | MQTT | Hành động | UART MCU → chip | UART chip → MCU |
 |---:|---|---|---|
 | 225 | Đặt mức | `{"cmd":8,"data":[1..7]}` | `{"cmd":9,"data":[level,result,reserved]}` |
 | 226 | Đọc mức | `{"cmd":11,"data":[]}` | `{"cmd":9,"data":[level,result,reserved]}` |
+| 225 | Unsolicited (thoại) | — | `{"cmd":13,"data":[1..7]}` |
 
 Request/response mẫu:
 
@@ -906,6 +907,18 @@ Request/response mẫu:
 {"fanoem":226,"vol":3,"u":55519,"act_id":0,"result":1}
 ```
 
+Khi chip gửi UART `{"cmd":13,"data":[level]}` (lệnh thoại tăng/giảm/min/max), MCU cập nhật cache RAM, publish MQTT 224 (`cmd_id` 40–43) và publish MQTT 225 unsolicited:
+
+```json
+{"fanoem":225,"vol":4,"u":0,"act_id":13,"result":1}
+```
+
+- `vol`: mức tuyệt đối `1..7` từ `cmd:13`.
+- `u`: `0` (không có user request).
+- `act_id`: `13` (`SRC_ACTION_VOICE`), cùng convention report quạt cmd 20.
+- `result`: `1` (event đã áp dụng trên chip).
+- Chip vẫn gửi `cmd:13` khi đã ở biên (ví dụ tăng lúc đang mức 7); MCU vẫn report để App đồng bộ.
+
 Quy tắc:
 
 - WB2 chỉ giữ một request volume đang chờ; request thứ hai nhận `result=0`.
@@ -914,7 +927,8 @@ Quy tắc:
 - Payload sai, UART/OTA bận, TX lỗi hoặc timeout 2 giây trả `result=0`.
 - Sau timeout, WB2 giữ một drain window 2 giây để response muộn không bị ghép vào request kế tiếp.
 - MCU bỏ qua byte `reserved` trong `cmd:9`.
-- Lệnh thoại volume ASR 40–43 do chip tự xử lý; MCU không còn nhận `cmd:10` volume và không publish MQTT 224 cho các ID đó.
+- `cmd:13` **không** hoàn thành SET/GET đang chờ; chỉ `cmd:9` mới đóng request 225/226.
+- Lệnh thoại volume ASR 40–43 do chip tự xử lý local rồi gửi UART `cmd:13`; MCU publish MQTT 224 (`cmd_id` 40–43) và MQTT 225 unsolicited. `cmd:10` không còn dùng cho volume.
 - `cmd:10` UART là `CMD_ASR_UNHANDLED`: diagnostic khi ASR command không có callback firmware. MCU chỉ log, không đổi volume.
 
 ---
@@ -1108,7 +1122,7 @@ Firmware WB2 hiện đã triển khai contract chính:
 | CWSL MQTT | Handler 220–223, pending mutating/query, timeout và event thoại 224 |
 | Voice fan | TURN, MODE 1–6 và report `act_id=13` |
 | Voice timer | CMD_TIMER 7, 0 hủy, 1–12 giờ, tái sử dụng timer quạt và MQTT 131 |
-| Volume | SET `cmd:8` / GET `cmd:11` / INFO `cmd:9`, MQTT 225/226, timeout và cache RAM |
+| Volume | SET `cmd:8` / GET `cmd:11` / INFO `cmd:9`, MQTT 225/226, UART `cmd:13` → MQTT 225 unsolicited, timeout và cache RAM |
 | OTA gate | Reject OTA khi CWSL hoặc volume đang pending; volume/CWSL reject khi OTA active |
 
 Firmware không tạo task volume riêng; toàn bộ completion và timeout chạy trong `app_handler_msg_task` qua `aiio_ci13162_uart_process()`, `app_cwsl_poll()` và `app_volume_poll()`.
@@ -1131,7 +1145,7 @@ ID 13/14 đã mở LEARN/DELETE. Trần ASR hợp lệ là `cmd_id=1..43`; từ 
 
 Allow-list LEARN/DELETE hiện tại: `{1,7..43}`. QUERY cho phép `{1..43,255}`.
 
-ID volume 40–43 vẫn được phép học/xóa/query CWSL. Khi nhận diện, chip tự đổi âm lượng local; MCU không nhận UART điều khiển và không publish MQTT 224 cho các ID này.
+ID volume 40–43 vẫn được phép học/xóa/query CWSL. Khi nhận diện, chip tự đổi âm lượng local rồi gửi UART `cmd:13`; MCU publish MQTT 224 (`cmd_id` 40–43) và MQTT 225 unsolicited (`act_id=13`).
 
 ---
 
