@@ -292,7 +292,7 @@ bool app_volume_is_pending(void)
 // Publish MQTT 225 for a voice-driven volume change without completing a pending SET or GET.
 void app_volume_report_voice(uint8_t level)
 {
-    if ((level < APP_VOLUME_LEVEL_MIN) || (level > APP_VOLUME_LEVEL_MAX)) {
+    if (level > APP_VOLUME_LEVEL_MAX) {
         return;
     }
 

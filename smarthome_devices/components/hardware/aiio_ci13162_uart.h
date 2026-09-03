@@ -35,7 +35,7 @@ typedef void (*aiio_ci13162_cwsl_info_cb_t)(uint8_t cmd_id,
 
 /** @brief Handle one speaker volume response received from the CI13162.
  *
- *  @param[in]  level   Current speaker volume level from 1 to 7.
+ *  @param[in]  level   Current speaker volume level from 0 to 7, where 0 is mute.
  *  @param[in]  result  Request result: 1 when accepted, otherwise 0.
  *  @return     None.
  */
@@ -125,11 +125,12 @@ void aiio_ci13162_uart_set_volume_callback(
 
 /** @brief Read the cached speaker volume level.
  *
- *  @param[out]  level  Destination for the cached level from 1 to 7.
+ *  @param[out]  level  Destination for the cached level from 0 to 7, where 0 is mute.
  *  @return      Cache status.
  *  @retval      0  A valid cached level was copied.
  *  @retval      -1 The pointer is NULL or no valid response has been received.
- *  @note        This function never sends a UART request.
+ *  @note        This function never sends a UART request. Boot starts with
+ *               no cache (valid=0), which is not mute.
  */
 int32_t aiio_ci13162_uart_get_volume(uint8_t *level);
 

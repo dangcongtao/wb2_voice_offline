@@ -21,6 +21,7 @@ void app_volume_init(void);
  *
  *  @param[in]  js_root  Parsed MQTT request object.
  *  @return     None.
+ *  @note       Accepted SET levels are 1..7. Mute (0) is not accepted via SET.
  */
 void app_volume_set(cJSON *js_root);
 
@@ -46,9 +47,9 @@ bool app_volume_is_pending(void);
 
 /** @brief Publish an unsolicited MQTT 225 report for a voice-driven volume change.
  *
- *  @param[in]  level  Absolute speaker volume in the range 1..7.
+ *  @param[in]  level  Absolute speaker volume in the range 0..7, where 0 is mute.
  *  @return     None.
- *  @note       Levels outside 1..7 are ignored. This report does not complete a pending SET or GET.
+ *  @note       Levels outside 0..7 are ignored. This report does not complete a pending SET or GET.
  */
 void app_volume_report_voice(uint8_t level);
 

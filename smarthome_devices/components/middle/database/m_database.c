@@ -41,7 +41,7 @@ void m_db_read_device_id(void)
     uint32_t len_device_id = sizeof(s_device_id);
     memset(s_device_id, 0, sizeof(s_device_id));
 #if 0
-    sprintf(s_device_id, "HUN178641908061fanacirN1");
+    sprintf(s_device_id, "HUN178780118817fanproacv2N1");
     flash_write_device_id((void *)(&s_device_id), len_device_id);
 #endif
     flash_read_device_id((void *)(&s_device_id), len_device_id);
