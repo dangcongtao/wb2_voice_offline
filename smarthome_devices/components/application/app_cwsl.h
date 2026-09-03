@@ -70,7 +70,7 @@ bool app_cwsl_factory_clear(void);
 
 /** @brief Check whether the deferred factory clear has completed.
  *
- *  @return     true when no deferred clear is pending, otherwise false.
+ *  @return     true when no deferred clear is pending and mutating is inactive, otherwise false.
  */
 bool app_cwsl_factory_clear_done(void);
 

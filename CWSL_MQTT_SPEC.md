@@ -181,9 +181,13 @@ Hệ quả:
 | DELETE `[2,255,255]` | Xóa toàn bộ wake + command |
 | QUERY `cmd_id=255` | Query tổng dung lượng |
 
-### 2.4. Overwrite
+### 2.4. Safe Replace (Commit-on-Success)
 
-LEARN vào một slot đang có mẫu sẽ xóa mẫu cũ trước, sau đó mới thu mẫu mới. Nếu lần thu mới thất bại, mẫu cũ đã mất và không có rollback phía MCU.
+- **Lệnh điều khiển (`cmd_id >= 7`)**: Mỗi `cmd_id` chỉ duy trì duy nhất 1 giọng nói.
+- **Cơ chế Safe Replace**: Firmware áp dụng cơ chế thay thế an toàn hai giai đoạn (Commit-on-Success). Khi học lại một `cmd_id` đã có mẫu, MCU gửi lệnh học vào slot trống (`slot = 255`). Chip CI13162 thu âm vào slot trống mới trong khi mẫu cũ được bảo toàn nguyên vẹn 100%.
+- **Chỉ xóa khi thành công**: Chỉ sau khi chip xác nhận đã thu và lưu thành công mẫu mới (`code = 32`, `LEARN_OK`), MCU mới phát lệnh DELETE dọn dẹp các slot cũ.
+- **Bảo toàn khi thất bại**: Nếu lần thu mới thất bại (nói không rõ, ồn, timeout, hủy STOP hoặc bộ nhớ đầy), mẫu cũ hoàn toàn không bị xóa và vẫn điều khiển thiết bị bình thường.
+- **Learned Wake (`cmd_id = 1`)**: Vẫn giữ nguyên cơ chế độc lập, cho phép tối đa 5 slot (0–4).
 
 ---
 
@@ -483,11 +487,12 @@ Mã từ chối:
 
 ### 9.2. Slot hợp lệ
 
-| Loại | Slot hợp lệ |
-|---|---|
-| `cmd_id=1` | 0–4 hoặc 255 |
-| `cmd_id=7..43` | 0–14 hoặc 255 |
-| DELETE all | Chỉ `cmd_id=255, slot=255` |
+| Loại | Thao tác | Slot hợp lệ | Ghi chú |
+|---|---|---|---|
+| `cmd_id=1` (Wake) | LEARN / DELETE | 0–4 hoặc 255 | Tối đa 5 slot độc lập |
+| `cmd_id` thuộc `{7..43, 46..55}` (Command) | LEARN | **Chỉ 255** | Tự động phân bổ slot trống; sai slot trả `code=66` |
+| `cmd_id` thuộc `{7..43, 46..55}` (Command) | DELETE | 0–14 hoặc 255 | Cho phép xóa từng slot hoặc xóa toàn bộ |
+| DELETE all | DELETE | Chỉ `cmd_id=255, slot=255` | Xóa toàn bộ template |
 
 Sai slot trả `code=66`.
 
@@ -508,6 +513,11 @@ QUERY được phép cho mọi ASR ID 1–43 và 255 vì đây là thao tác đ�
 | `CWSL_MCU_WAIT_INFO` | 1 QUERY, chờ cmd6 | Request CWSL khác trả 67 | 2 giây |
 | `CWSL_MCU_WAIT_BOTH` | 1 mutating + 1 QUERY | STOP; QUERY thứ hai và mutating khác trả 67 | Hai timer độc lập |
 | `CWSL_MCU_OTA` | Không CWSL | Mọi cmd 220–223 trả code 69 | Đến khi release UART OTA |
+
+**3 Sub-phase của Command LEARN (`cmd_id >= 7`)**:
+1. `PHASE_QUERY_OLD` (2s timeout): MCU gửi UART `[6, cmd_id]` lấy bitmap slot cũ. **Mọi App QUERY (cmd 223) trong phase này bị reject ngay với mã `code=67` (BUSY)** để tránh xung đột frame `cmd6` trên UART.
+2. `PHASE_LEARNING` (120s watchdog): Chip CI13162 thu âm vào slot trống (`slot=255`), mẫu cũ giữ nguyên vẹn 100%. Hết 120s MCU chủ động phát UART STOP `[4]` rồi trả `code=52`.
+3. `PHASE_DELETING_OLD` (2s timeout mỗi slot): Sau khi nhận `LEARN_OK` (32), MCU phát lệnh DELETE dọn dẹp từng slot cũ cho đến khi sạch hoàn toàn. Xong phiên trả final MQTT 220 `code=32` kèm `new_slot`.
 
 ### 10.2. Chuyển trạng thái chính
 
@@ -616,7 +626,7 @@ Mã 69/70 là mã local mới của MQTT, không phải `cwsl_status_t` từ chi
 | 32 | `0x20` | `LEARN_OK` | OK | 211 | Học thành công; hiển thị slot |
 | 33 | `0x21` | `DELETE_OK` | OK | 213 | Xóa thành công |
 | 34 | `0x22` | `EXIT_OK` | OK | 217 | Đã dừng phiên học |
-| 48 | `0x30` | `LEARN_FAIL` | Fail | 218/1021 | Học thất bại; overwrite có thể làm mất mẫu cũ |
+| 48 | `0x30` | `LEARN_FAIL` | Fail | 218/1021 | Học thất bại; mẫu cũ vẫn được bảo toàn nguyên vẹn |
 | 49 | `0x31` | `LEARN_ABORTED` | Fail | — | SDK abort |
 | 50 | `0x32` | `NO_SLOT` | Fail | 212 | Bộ nhớ đầy |
 | 51 | `0x33` | `DELETE_FAIL` | Fail | 214 | Không xóa được |
@@ -1053,12 +1063,12 @@ Không hiển thị nút học cho ID 44/45 (tắt/bật âm thanh); LEARN/DELET
 | Final 222 `code=34` | Tắt spinner, hiển thị đã hủy |
 | Final 223 | Chỉ cập nhật bitmap/capacity, không tắt spinner LEARN |
 | 35 giây chưa có final event | Gửi QUERY cmd 223 để reconcile; không LEARN lại |
-| code=48 | Báo học thất bại; nếu overwrite, cảnh báo mẫu cũ có thể mất |
+| code=48 | Báo học thất bại; mẫu cũ vẫn được bảo toàn nguyên vẹn |
 | code=50 | Báo bộ nhớ đầy |
 | code=67 | Báo đang có phiên khác; không spam request |
 | code=68 | Đóng UI STOP nhẹ nhàng, không hiện lỗi nghiêm trọng |
 | code=69 | Báo thiết bị đang cập nhật firmware |
-| `nfree=0` | Disable học mẫu mới; vẫn cho DELETE hoặc overwrite có cảnh báo |
+| `nfree=0` | Disable học mẫu mới và học lại; báo bộ nhớ đầy; cần bấm DELETE để giải phóng bộ nhớ |
 
 ---
 
@@ -1084,7 +1094,7 @@ Không hiển thị nút học cho ID 44/45 (tắt/bật âm thanh); LEARN/DELET
 | 2 | LEARN cmd 220, ID 7 slot 255 | ACK=1, UART `[1,7,255]`, final 220 code=32 với slot thật |
 | 3 | Nói lại câu học | MQTT cmd 20, `act_id=13`, không phát lại final CWSL |
 | 4 | QUERY cmd 223, ID 7 | Bit slot mới bật |
-| 5 | LEARN thêm cùng ID 7 | Slot khác; cả hai câu điều khiển được |
+| 5 | LEARN lại cùng ID 7 | Mẫu mới lưu vào slot trống, sau khi thành công thì mẫu cũ bị xóa; bitmap chỉ còn đúng 1 bit bật |
 | 6 | DELETE cmd 221 một slot | code=33; slot khác giữ nguyên |
 | 7 | LEARN cmd 220 wake ID 1 | Slot 0–4; wake factory vẫn hoạt động |
 | 8 | LEARN thứ hai khi đang học | ACK 220 code=67; không UART thứ hai |
@@ -1093,7 +1103,7 @@ Không hiển thị nút học cho ID 44/45 (tắt/bật âm thanh); LEARN/DELET
 | 11 | STOP cmd 222 khi IDLE | ACK 222 code=68, không final event |
 | 12 | Chip timeout | Final của cmd pending có code=52 |
 | 13 | Pool đầy | Final 220 code=50 |
-| 14 | Overwrite rồi học fail | Final 220 code=48; mẫu cũ không còn |
+| 14 | Học lại rồi học fail / timeout | Final 220 code=48 hoặc 52; mẫu cũ VẪN CÒN NGUYÊN và hoạt động bình thường |
 | 15 | LEARN 2–6 | ACK 220 code=64, không UART |
 | 16 | LEARN timer ID 15 hoặc 39 | Gửi UART và xử lý giống command template khác |
 | 17 | LEARN ID 13/14/43 | Gửi UART và xử lý giống command template khác |
@@ -1157,11 +1167,11 @@ Firmware không tạo task volume riêng; toàn bộ completion và timeout ch�
 
 ---
 
-## 17. ID 13, 14 và trần ASR 43
+## 17. ID 13, 14 và trần ASR 55
 
-ID 13/14 đã mở LEARN/DELETE. Trần ASR hợp lệ cho CWSL LEARN/DELETE/QUERY là `cmd_id=1..43`; từ `44` trở đi MCU trả `code=65`.
+ID 13/14 đã mở LEARN/DELETE. Trần ASR hợp lệ cho CWSL LEARN/DELETE/QUERY là `cmd_id=1..55` (được định nghĩa bởi `APP_CWSL_CMD_ID_MAX 55U`); từ `56` trở đi MCU trả `code=65`.
 
-Allow-list LEARN/DELETE hiện tại: `{1,7..43}`. QUERY cho phép `{1..43,255}`.
+Allow-list LEARN/DELETE hiện tại: `{1, 7..43, 46..55}` (cấm wake factory `{2..6}` trả `code=64`; cấm `{44, 45}` trả `code=65`). QUERY cho phép `{1..43, 46..55, 255}`.
 
 ID volume 40–43 vẫn được phép học/xóa/query CWSL. Khi nhận diện, chip tự đổi âm lượng local rồi gửi UART `cmd:13`; MCU publish MQTT 224 (`cmd_id` 40–43) và MQTT 225 unsolicited (`act_id=13`).
 
@@ -1180,7 +1190,7 @@ Nếu không có quyết định khác, dùng default sau:
 | Watchdog mutating bao lâu? | Tạm 120 giây; đo chip thật trước production |
 | App có nút DELETE all không? | Không; chỉ dùng trong unbind/factory reset |
 | CWSL qua BLE có là scope riêng không? | Không; `app_send_data` có thể mirror cùng JSON, không tạo protocol khác |
-| Trần ASR hiện tại? | LEARN/DELETE/QUERY hợp lệ đến `cmd_id=43`; từ 44 trở đi `code=65` |
+| Trần ASR hiện tại? | LEARN/DELETE/QUERY hợp lệ đến `cmd_id=55` (allow-list `{1, 7..43, 46..55}`); từ 56 trở đi `code=65` |
 
 ---
 
@@ -1205,12 +1215,13 @@ UART:
   chip → MCU cmd6 query info
 
 CWSL product allow-list:
-  LEARN/DELETE = 1, 7..43
-  QUERY        = 1..43, 255
+  LEARN/DELETE = 1, 7..43, 46..55
+  QUERY        = 1..43, 46..55, 255
 
 Slot:
-  wake         = 0..4 hoặc 255
-  command      = 0..14 hoặc 255
+  wake (cmd 1) = 0..4 hoặc 255
+  command LEARN= chỉ 255
+  command DELETE= 0..14 hoặc 255
   delete all   = cmd_id=255, slot=255
 
 Hai lớp kết quả dùng cùng MQTT cmd của request:

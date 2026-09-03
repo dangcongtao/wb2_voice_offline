@@ -30,6 +30,7 @@
 
 #define APP_CWSL_CODE_LEARN_OK 32U
 #define APP_CWSL_CODE_DELETE_OK 33U
+#define APP_CWSL_CODE_EXIT_OK 34U
 #define APP_CWSL_CODE_TIMEOUT 52U
 #define APP_CWSL_CODE_BAD_REQUEST 64U
 #define APP_CWSL_CODE_BAD_COMMAND_ID 65U
@@ -42,6 +43,17 @@
 #define APP_CWSL_ANY 255U
 #define APP_CWSL_RESPONSE_SIZE 180U
 
+#define APP_CWSL_CMD_SLOT_MAX 14U
+#define APP_CWSL_CMD_SLOT_MASK 0x7FFFU
+
+static inline uint16_t app_cwsl_slot_bit(uint8_t slot)
+{
+    if (slot > APP_CWSL_CMD_SLOT_MAX) {
+        return 0U;
+    }
+    return (uint16_t)(1U << slot);
+}
+
 typedef struct {
     uint32_t mqtt_cmd;
     uint32_t user_id;
@@ -50,9 +62,21 @@ typedef struct {
     uint8_t slot;
 } app_cwsl_request_t;
 
+typedef enum {
+    APP_CWSL_PHASE_NORMAL = 0U,
+    APP_CWSL_PHASE_QUERY_OLD,
+    APP_CWSL_PHASE_LEARNING,
+    APP_CWSL_PHASE_DELETING_OLD
+} app_cwsl_phase_t;
+
 typedef struct {
     uint8_t active;
     uint8_t stop_sent;
+    uint8_t phase;
+    uint8_t new_slot;
+    uint8_t delete_target_slot;
+    uint8_t delete_retry_count;
+    uint16_t old_bitmap;
     app_cwsl_request_t request;
     TickType_t start_tick;
 } app_cwsl_mutating_t;
@@ -188,6 +212,11 @@ static uint8_t app_cwsl_parse_mutating(cJSON *js_root,
 
     if (request->cmd_id == 1U) {
         return ((request->slot <= 4U) || (request->slot == APP_CWSL_ANY))
+                   ? 0U
+                   : APP_CWSL_CODE_BAD_SLOT;
+    }
+    if (mqtt_cmd == APP_CWSL_CMD_LEARN) {
+        return (request->slot == APP_CWSL_ANY)
                    ? 0U
                    : APP_CWSL_CODE_BAD_SLOT;
     }
@@ -396,6 +425,114 @@ static void app_cwsl_on_status(uint8_t code, uint8_t cmd_id, uint8_t slot)
         return;
     }
 
+    if (s_app_cwsl_factory_clear_pending != 0U) {
+        app_cwsl_finish_factory_clear();
+        return;
+    }
+
+    /* Phase 3: DELETING_OLD - Delete old slots after LEARN_OK */
+    if (s_app_cwsl_mutating.phase == APP_CWSL_PHASE_DELETING_OLD) {
+        if ((cmd_id != s_app_cwsl_mutating.request.cmd_id) ||
+            (slot != s_app_cwsl_mutating.delete_target_slot)) {
+            return;
+        }
+
+        if (code == APP_CWSL_CODE_BUSY) {
+            if (s_app_cwsl_mutating.delete_retry_count < 2U) {
+                s_app_cwsl_mutating.delete_retry_count++;
+                s_app_cwsl_mutating.start_tick = xTaskGetTickCount();
+                uint8_t retry_data[2] = {cmd_id, slot};
+                if (aiio_ci13162_uart_send_cwsl(APP_CWSL_ACTION_DELETE, retry_data, 2U) == 0) {
+                    return;
+                }
+            }
+        }
+
+        /* [P1 & P3] Mask out attempted slot using helper whether delete succeeded or failed */
+        s_app_cwsl_mutating.old_bitmap &= ~app_cwsl_slot_bit(slot);
+
+        uint16_t remaining_old = s_app_cwsl_mutating.old_bitmap &
+                                 ~app_cwsl_slot_bit(s_app_cwsl_mutating.new_slot);
+        if (remaining_old != 0U) {
+            uint8_t next_slot;
+            for (next_slot = 0U; next_slot <= APP_CWSL_CMD_SLOT_MAX; next_slot++) {
+                if ((remaining_old & (1U << next_slot)) != 0U) {
+                    break;
+                }
+            }
+            if (next_slot <= APP_CWSL_CMD_SLOT_MAX) {
+                s_app_cwsl_mutating.delete_target_slot = next_slot;
+                s_app_cwsl_mutating.delete_retry_count = 0U;
+                s_app_cwsl_mutating.start_tick = xTaskGetTickCount();
+                uint8_t delete_data[2] = {cmd_id, next_slot};
+                if (aiio_ci13162_uart_send_cwsl(APP_CWSL_ACTION_DELETE, delete_data, 2U) == 0) {
+                    return;
+                }
+            }
+        }
+
+        pending = s_app_cwsl_mutating;
+        app_cwsl_clear_mutating();
+        app_cwsl_publish_mutating_final(&pending,
+                                        pending.request.cmd_id,
+                                        pending.new_slot,
+                                        APP_CWSL_CODE_LEARN_OK);
+        return;
+    }
+
+    /* Phase 2: LEARNING - Speech recording */
+    if (s_app_cwsl_mutating.phase == APP_CWSL_PHASE_LEARNING) {
+        if (cmd_id != s_app_cwsl_mutating.request.cmd_id) {
+            return;
+        }
+
+        status_class = (uint8_t)(code >> 4U);
+
+        if (code == APP_CWSL_CODE_LEARN_OK) {
+            s_app_cwsl_mutating.new_slot = slot;
+
+            if (slot <= APP_CWSL_CMD_SLOT_MAX) {
+                uint16_t old_slots = s_app_cwsl_mutating.old_bitmap &
+                                     ~app_cwsl_slot_bit(slot);
+
+                if (old_slots != 0U) {
+                    uint8_t first_old;
+                    for (first_old = 0U; first_old <= APP_CWSL_CMD_SLOT_MAX; first_old++) {
+                        if ((old_slots & (1U << first_old)) != 0U) {
+                            break;
+                        }
+                    }
+                    if (first_old <= APP_CWSL_CMD_SLOT_MAX) {
+                        s_app_cwsl_mutating.phase = APP_CWSL_PHASE_DELETING_OLD;
+                        s_app_cwsl_mutating.delete_target_slot = first_old;
+                        s_app_cwsl_mutating.delete_retry_count = 0U;
+                        s_app_cwsl_mutating.start_tick = xTaskGetTickCount();
+                        uint8_t delete_data[2] = {cmd_id, first_old};
+                        if (aiio_ci13162_uart_send_cwsl(APP_CWSL_ACTION_DELETE, delete_data, 2U) == 0) {
+                            return;
+                        }
+                    }
+                }
+            }
+
+            pending = s_app_cwsl_mutating;
+            app_cwsl_clear_mutating();
+            app_cwsl_publish_mutating_final(&pending,
+                                            pending.request.cmd_id,
+                                            slot,
+                                            APP_CWSL_CODE_LEARN_OK);
+            return;
+        }
+
+        if ((status_class == 3U) || (status_class == 4U) || (code == APP_CWSL_CODE_EXIT_OK)) {
+            pending = s_app_cwsl_mutating;
+            app_cwsl_clear_mutating();
+            app_cwsl_publish_mutating_final(&pending, cmd_id, slot, code);
+        }
+        return;
+    }
+
+    /* Phase 0: NORMAL - Wake word or direct DELETE */
     if (s_app_cwsl_mutating.stop_sent == 0U) {
         if ((cmd_id != s_app_cwsl_mutating.request.cmd_id) ||
             ((s_app_cwsl_mutating.request.slot != APP_CWSL_ANY) &&
@@ -419,11 +556,6 @@ static void app_cwsl_on_status(uint8_t code, uint8_t cmd_id, uint8_t slot)
     }
 
     pending = s_app_cwsl_mutating;
-    if (s_app_cwsl_factory_clear_pending != 0U) {
-        app_cwsl_finish_factory_clear();
-        return;
-    }
-
     app_cwsl_clear_mutating();
     app_cwsl_publish_mutating_final(&pending, cmd_id, slot, code);
 }
@@ -436,6 +568,46 @@ static void app_cwsl_on_info(uint8_t cmd_id,
     app_cwsl_query_t pending;
     char response[APP_CWSL_RESPONSE_SIZE];
     int response_length;
+
+    if ((s_app_cwsl_mutating.active != 0U) &&
+        (s_app_cwsl_mutating.phase == APP_CWSL_PHASE_QUERY_OLD) &&
+        (cmd_id == s_app_cwsl_mutating.request.cmd_id) &&
+        (data != NULL) &&
+        (data_count == 2U)) {
+
+        if (s_app_cwsl_factory_clear_pending != 0U) {
+            app_cwsl_finish_factory_clear();
+            return;
+        }
+        if (s_app_cwsl_mutating.stop_sent != 0U) {
+            app_cwsl_mutating_t pending_mut = s_app_cwsl_mutating;
+            app_cwsl_clear_mutating();
+            app_cwsl_publish_mutating_final(&pending_mut,
+                                            pending_mut.request.cmd_id,
+                                            APP_CWSL_ANY,
+                                            APP_CWSL_CODE_EXIT_OK);
+            return;
+        }
+
+        uint16_t bitmap = (uint16_t)data[0] | ((uint16_t)data[1] << 8U);
+        uint8_t uart_data[2];
+
+        s_app_cwsl_mutating.old_bitmap = bitmap & APP_CWSL_CMD_SLOT_MASK;
+        s_app_cwsl_mutating.phase = APP_CWSL_PHASE_LEARNING;
+        s_app_cwsl_mutating.start_tick = xTaskGetTickCount();
+
+        uart_data[0] = s_app_cwsl_mutating.request.cmd_id;
+        uart_data[1] = APP_CWSL_ANY;
+        if (aiio_ci13162_uart_send_cwsl(APP_CWSL_ACTION_LEARN, uart_data, 2U) != 0) {
+            app_cwsl_mutating_t pending_mut = s_app_cwsl_mutating;
+            app_cwsl_clear_mutating();
+            app_cwsl_publish_mutating_final(&pending_mut,
+                                            pending_mut.request.cmd_id,
+                                            APP_CWSL_ANY,
+                                            APP_CWSL_CODE_TX_FAIL);
+        }
+        return;
+    }
 
     if ((s_app_cwsl_query.active == 0U) ||
         (cmd_id != s_app_cwsl_query.request.cmd_id) ||
@@ -497,11 +669,11 @@ static void app_cwsl_run_validation_tests(void)
         {"\"cmd_id\":2,\"slot\":0,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
         {"\"cmd_id\":13,\"slot\":0,\"u\":1,\"act_id\":0",
-         APP_CWSL_CMD_LEARN, 0U},
+         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_SLOT},
         {"\"cmd_id\":14,\"slot\":255,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_LEARN, 0U},
         {"\"cmd_id\":15,\"slot\":0,\"u\":1,\"act_id\":0",
-         APP_CWSL_CMD_LEARN, 0U},
+         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_SLOT},
         {"\"cmd_id\":39,\"slot\":255,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_LEARN, 0U},
         {"\"cmd_id\":43,\"slot\":255,\"u\":1,\"act_id\":0",
@@ -532,6 +704,12 @@ static void app_cwsl_run_validation_tests(void)
          APP_CWSL_CMD_DELETE, 0U},
         {"\"cmd_id\":255,\"slot\":0,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_DELETE, APP_CWSL_CODE_BAD_REQUEST},
+        {"\"cmd_id\":7,\"slot\":0,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_DELETE, 0U},
+        {"\"cmd_id\":7,\"slot\":14,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_DELETE, 0U},
+        {"\"cmd_id\":7,\"slot\":255,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_DELETE, 0U},
         {"\"cmd_id\":13,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_QUERY, 0U},
         {"\"cmd_id\":39,\"u\":1,\"act_id\":0",
@@ -626,19 +804,47 @@ static void app_cwsl_start_mutating(cJSON *js_root,
         return;
     }
 
-    uart_data[0] = request.cmd_id;
-    uart_data[1] = request.slot;
-    aiio_ci13162_uart_set_version_query_paused(1U);
-    if (aiio_ci13162_uart_send_cwsl(action, uart_data, 2U) != 0) {
-        aiio_ci13162_uart_set_version_query_paused(0U);
-        app_cwsl_publish_mutating_reject(&request, APP_CWSL_CODE_TX_FAIL);
+    if ((action == APP_CWSL_ACTION_LEARN) && (request.cmd_id != 1U)) {
+        aiio_ci13162_uart_set_version_query_paused(1U);
+        if (aiio_ci13162_uart_send_cwsl(APP_CWSL_ACTION_QUERY,
+                                        &request.cmd_id,
+                                        1U) != 0) {
+            aiio_ci13162_uart_set_version_query_paused(0U);
+            app_cwsl_publish_mutating_reject(&request, APP_CWSL_CODE_TX_FAIL);
+            return;
+        }
+
+        s_app_cwsl_mutating.active = 1U;
+        s_app_cwsl_mutating.stop_sent = 0U;
+        s_app_cwsl_mutating.phase = APP_CWSL_PHASE_QUERY_OLD;
+        s_app_cwsl_mutating.old_bitmap = 0U;
+        s_app_cwsl_mutating.new_slot = APP_CWSL_ANY;
+        s_app_cwsl_mutating.delete_target_slot = APP_CWSL_ANY;
+        s_app_cwsl_mutating.delete_retry_count = 0U;
+        s_app_cwsl_mutating.request = request;
+        s_app_cwsl_mutating.start_tick = xTaskGetTickCount();
         return;
     }
 
     s_app_cwsl_mutating.active = 1U;
     s_app_cwsl_mutating.stop_sent = 0U;
+    s_app_cwsl_mutating.phase = APP_CWSL_PHASE_NORMAL;
+    s_app_cwsl_mutating.old_bitmap = 0U;
+    s_app_cwsl_mutating.new_slot = APP_CWSL_ANY;
+    s_app_cwsl_mutating.delete_target_slot = APP_CWSL_ANY;
+    s_app_cwsl_mutating.delete_retry_count = 0U;
     s_app_cwsl_mutating.request = request;
     s_app_cwsl_mutating.start_tick = xTaskGetTickCount();
+
+    uart_data[0] = request.cmd_id;
+    uart_data[1] = request.slot;
+    aiio_ci13162_uart_set_version_query_paused(1U);
+    if (aiio_ci13162_uart_send_cwsl(action, uart_data, 2U) != 0) {
+        aiio_ci13162_uart_set_version_query_paused(0U);
+        app_cwsl_clear_mutating();
+        app_cwsl_publish_mutating_reject(&request, APP_CWSL_CODE_TX_FAIL);
+        return;
+    }
 }
 
 void app_cwsl_init(void)
@@ -695,6 +901,25 @@ void app_cwsl_stop(cJSON *js_root)
         app_cwsl_publish_stop_reject(&request, code);
         return;
     }
+
+    if (s_app_cwsl_mutating.phase == APP_CWSL_PHASE_QUERY_OLD) {
+        app_cwsl_mutating_t pending = s_app_cwsl_mutating;
+        pending.stop_sent = 1U;
+        pending.request.user_id = request.user_id;
+        pending.request.act_id = request.act_id;
+        app_cwsl_clear_mutating();
+        app_cwsl_publish_mutating_final(&pending,
+                                        pending.request.cmd_id,
+                                        APP_CWSL_ANY,
+                                        APP_CWSL_CODE_EXIT_OK);
+        return;
+    }
+
+    if (s_app_cwsl_mutating.phase == APP_CWSL_PHASE_DELETING_OLD) {
+        app_cwsl_publish_stop_reject(&request, APP_CWSL_CODE_BUSY);
+        return;
+    }
+
     if (s_app_cwsl_mutating.stop_sent != 0U) {
         app_cwsl_publish_stop_reject(&request, APP_CWSL_CODE_BUSY);
         return;
@@ -730,7 +955,9 @@ void app_cwsl_query(cJSON *js_root)
         app_cwsl_publish_query_reject(&request, APP_CWSL_CODE_BUSY);
         return;
     }
-    if (s_app_cwsl_query.active != 0U) {
+    if ((s_app_cwsl_query.active != 0U) ||
+        ((s_app_cwsl_mutating.active != 0U) &&
+         (s_app_cwsl_mutating.phase == APP_CWSL_PHASE_QUERY_OLD))) {
         app_cwsl_publish_query_reject(&request, APP_CWSL_CODE_BUSY);
         return;
     }
@@ -750,19 +977,90 @@ void app_cwsl_poll(void)
 {
     TickType_t current_tick = xTaskGetTickCount();
 
-    if ((s_app_cwsl_mutating.active != 0U) &&
-        ((TickType_t)(current_tick - s_app_cwsl_mutating.start_tick) >=
-         pdMS_TO_TICKS(AIIO_CI13162_CWSL_MUTATE_TIMEOUT_MS))) {
-        if (s_app_cwsl_factory_clear_pending != 0U) {
-            app_cwsl_finish_factory_clear();
-        } else {
-            app_cwsl_mutating_t pending = s_app_cwsl_mutating;
+    if (s_app_cwsl_mutating.active != 0U) {
+        TickType_t elapsed = (TickType_t)(current_tick - s_app_cwsl_mutating.start_tick);
 
-            app_cwsl_clear_mutating();
-            app_cwsl_publish_mutating_final(&pending,
-                                            pending.request.cmd_id,
-                                            pending.request.slot,
-                                            APP_CWSL_CODE_TIMEOUT);
+        if (s_app_cwsl_factory_clear_pending != 0U) {
+            if (elapsed >= pdMS_TO_TICKS(AIIO_CI13162_CWSL_QUERY_TIMEOUT_MS)) {
+                app_cwsl_finish_factory_clear();
+                return;
+            }
+        }
+
+        switch (s_app_cwsl_mutating.phase) {
+            case APP_CWSL_PHASE_QUERY_OLD:
+                if (elapsed >= pdMS_TO_TICKS(AIIO_CI13162_CWSL_QUERY_TIMEOUT_MS)) {
+                    app_cwsl_mutating_t pending = s_app_cwsl_mutating;
+                    app_cwsl_clear_mutating();
+                    app_cwsl_publish_mutating_final(&pending,
+                                                    pending.request.cmd_id,
+                                                    APP_CWSL_ANY,
+                                                    APP_CWSL_CODE_TIMEOUT);
+                }
+                break;
+
+            case APP_CWSL_PHASE_LEARNING:
+                if (elapsed >= pdMS_TO_TICKS(AIIO_CI13162_CWSL_MUTATE_TIMEOUT_MS)) {
+                    (void)aiio_ci13162_uart_send_cwsl(APP_CWSL_ACTION_STOP, NULL, 0U);
+                    app_cwsl_mutating_t pending = s_app_cwsl_mutating;
+                    app_cwsl_clear_mutating();
+                    app_cwsl_publish_mutating_final(&pending,
+                                                    pending.request.cmd_id,
+                                                    APP_CWSL_ANY,
+                                                    APP_CWSL_CODE_TIMEOUT);
+                }
+                break;
+
+            case APP_CWSL_PHASE_DELETING_OLD:
+                if (elapsed >= pdMS_TO_TICKS(AIIO_CI13162_CWSL_QUERY_TIMEOUT_MS)) {
+                    s_app_cwsl_mutating.old_bitmap &=
+                        ~app_cwsl_slot_bit(s_app_cwsl_mutating.delete_target_slot);
+                    uint16_t remaining_old =
+                        s_app_cwsl_mutating.old_bitmap &
+                        ~app_cwsl_slot_bit(s_app_cwsl_mutating.new_slot);
+
+                    if (remaining_old != 0U) {
+                        uint8_t next_slot;
+                        for (next_slot = 0U; next_slot <= APP_CWSL_CMD_SLOT_MAX; next_slot++) {
+                            if ((remaining_old & (1U << next_slot)) != 0U) {
+                                break;
+                            }
+                        }
+                        if (next_slot <= APP_CWSL_CMD_SLOT_MAX) {
+                            s_app_cwsl_mutating.delete_target_slot = next_slot;
+                            s_app_cwsl_mutating.delete_retry_count = 0U;
+                            s_app_cwsl_mutating.start_tick = current_tick;
+                            uint8_t delete_data[2] = {s_app_cwsl_mutating.request.cmd_id, next_slot};
+                            if (aiio_ci13162_uart_send_cwsl(APP_CWSL_ACTION_DELETE, delete_data, 2U) == 0) {
+                                break;
+                            }
+                        }
+                    }
+
+                    app_cwsl_mutating_t pending = s_app_cwsl_mutating;
+                    app_cwsl_clear_mutating();
+                    app_cwsl_publish_mutating_final(&pending,
+                                                    pending.request.cmd_id,
+                                                    pending.new_slot,
+                                                    APP_CWSL_CODE_LEARN_OK);
+                }
+                break;
+
+            case APP_CWSL_PHASE_NORMAL:
+            default:
+                if (elapsed >= pdMS_TO_TICKS(AIIO_CI13162_CWSL_MUTATE_TIMEOUT_MS)) {
+                    if (s_app_cwsl_factory_clear_pending != 0U) {
+                        app_cwsl_finish_factory_clear();
+                    } else {
+                        app_cwsl_mutating_t pending = s_app_cwsl_mutating;
+                        app_cwsl_clear_mutating();
+                        app_cwsl_publish_mutating_final(&pending,
+                                                        pending.request.cmd_id,
+                                                        pending.request.slot,
+                                                        APP_CWSL_CODE_TIMEOUT);
+                    }
+                }
+                break;
         }
     }
 
@@ -795,6 +1093,20 @@ bool app_cwsl_factory_clear(void)
 
     memset(&s_app_cwsl_query, 0, sizeof(s_app_cwsl_query));
     if (s_app_cwsl_mutating.active != 0U) {
+        if (s_app_cwsl_mutating.phase == APP_CWSL_PHASE_QUERY_OLD) {
+            app_cwsl_clear_mutating();
+            (void)aiio_ci13162_uart_send_cwsl(APP_CWSL_ACTION_DELETE,
+                                             delete_all,
+                                             2U);
+            s_app_cwsl_factory_clear_pending = 0U;
+            return true;
+        }
+
+        if (s_app_cwsl_mutating.phase == APP_CWSL_PHASE_DELETING_OLD) {
+            s_app_cwsl_factory_clear_pending = 1U;
+            return false;
+        }
+
         if (s_app_cwsl_mutating.stop_sent == 0U) {
             if (aiio_ci13162_uart_send_cwsl(APP_CWSL_ACTION_STOP,
                                             NULL,
@@ -818,7 +1130,8 @@ bool app_cwsl_factory_clear(void)
 
 bool app_cwsl_factory_clear_done(void)
 {
-    return s_app_cwsl_factory_clear_pending == 0U;
+    return (s_app_cwsl_factory_clear_pending == 0U) &&
+           (s_app_cwsl_mutating.active == 0U);
 }
 
 void app_cwsl_notify_voice_cmd(uint8_t cmd_id)
