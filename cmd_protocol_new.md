@@ -53,6 +53,7 @@ typedef enum
     CMD_VOLUME_GET    = 11,
     CMD_SCENE         = 12,
     CMD_VOLUME_CHANGE = 13,
+    CMD_BUZZ          = 200,
 } command_type_t;
 ```
 
@@ -80,6 +81,7 @@ typedef enum
 | `CMD_VOLUME_GET` | 11 | `[]` | MCU → chip | Hỏi trạng thái âm lượng hiện tại |
 | `CMD_SCENE` | 12 | `[1]..[10]` | Chip → MCU | Kích hoạt ngữ cảnh tương ứng trên MCU |
 | `CMD_VOLUME_CHANGE` | 13 | `[0]..[7]` | Chip → MCU | Báo mức âm lượng mới sau lệnh thoại; `[0]` là tắt âm thanh |
+| `CMD_BUZZ` | 200 | `[]` | MCU → chip | Phát âm báo còi (buzzer feedback), fire-and-forget |
 
 Giá trị version ở chiều chip → MCU có thể lớn hơn một byte. Đây là ngoại lệ của
 frame trả lời; parser chiều MCU → chip vẫn chỉ nhận từng phần tử `data` là byte.

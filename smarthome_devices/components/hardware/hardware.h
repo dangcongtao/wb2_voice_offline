@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <bl_gpio.h>
 #include "app_config.h"
 #include "system_typedef.h"
@@ -118,6 +119,14 @@ void hw_74hc595_loop(void);
 /* buzz */
 void hw_buzz_set(uint8_t buzz_set);
 void hw_buzz_init(void);
+
+/** @brief Check whether the current device supports voice IC.
+ *
+ *  @return     Voice IC support status.
+ *  @retval     true   Device supports voice IC (e.g. fanproacv2).
+ *  @retval     false  Device does not support voice IC.
+ */
+bool hw_device_support_voice(void);
 
 /* hardware init. should call this api first */
 void gpio_set_output(int pin);

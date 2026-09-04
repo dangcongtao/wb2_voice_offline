@@ -7,6 +7,7 @@
 
 #include <FreeRTOS.h>
 #include <queue.h>
+#include <semphr.h>
 #include <stream_buffer.h>
 #include <task.h>
 #include <hosal_uart.h>
@@ -21,6 +22,7 @@
 #include "app_cwsl.h"
 #include "app_fan.h"
 #include "app_volume.h"
+#include "hardware.h"
 #include "m_fan.h"
 #include "m_fan_control.h"
 #include "system_typedef.h"
@@ -61,6 +63,7 @@
 static const char s_aiio_ci13162_reset_message[] = "{\"cmd\":0,\"data\":[]}\r\n";
 static const char s_aiio_ci13162_version_query[] = "{\"cmd\":3,\"data\":[]}\r\n";
 static const char s_aiio_ci13162_volume_query[] = "{\"cmd\":11,\"data\":[]}\r\n";
+static const char s_aiio_ci13162_buzz_message[] = "{\"cmd\":200,\"data\":[]}\r\n";
 
 extern hosal_uart_dev_t uart_stdio;
 
@@ -79,6 +82,7 @@ typedef enum {
     AIIO_CI13162_CMD_VOLUME_GET = 11,
     AIIO_CI13162_CMD_SCENE = 12,
     AIIO_CI13162_CMD_VOLUME_CHANGE = 13,
+    AIIO_CI13162_CMD_BUZZ = 200,
 } aiio_ci13162_command_t;
 
 typedef enum {
@@ -145,8 +149,30 @@ static uint8_t s_aiio_ci13162_volume_valid;
 static aiio_ci13162_cwsl_status_cb_t s_aiio_ci13162_cwsl_status_cb;
 static aiio_ci13162_cwsl_info_cb_t s_aiio_ci13162_cwsl_info_cb;
 static aiio_ci13162_volume_info_cb_t s_aiio_ci13162_volume_info_cb;
+static SemaphoreHandle_t s_aiio_ci13162_tx_mutex;
+static StaticSemaphore_t s_aiio_ci13162_tx_mutex_control;
 
 extern volatile bool sys_log_all_enable;
+
+// Send UART bytes safely across multiple task contexts.
+static int aiio_ci13162_uart_tx(const void *data, uint32_t length)
+{
+    int sent_length = -1;
+
+    if ((data == NULL) || (length == 0U)) {
+        return -1;
+    }
+
+    if (s_aiio_ci13162_tx_mutex != NULL) {
+        if (xSemaphoreTake(s_aiio_ci13162_tx_mutex, pdMS_TO_TICKS(50U)) == pdTRUE) {
+            sent_length = hosal_uart_send(&uart_stdio, data, length);
+            (void)xSemaphoreGive(s_aiio_ci13162_tx_mutex);
+        }
+    } else {
+        sent_length = hosal_uart_send(&uart_stdio, data, length);
+    }
+    return sent_length;
+}
 
 // Restore the original UART0 TX-only console configuration.
 static void aiio_ci13162_restore_tx_only(void)
@@ -695,6 +721,10 @@ static aiio_ci13162_parse_result_t aiio_ci13162_validate_message(
             return (message->data_count == 1U) ? AIIO_CI13162_PARSE_OK
                                                : AIIO_CI13162_PARSE_INVALID_DATA;
 
+        case AIIO_CI13162_CMD_BUZZ:
+            return (message->data_count == 0U) ? AIIO_CI13162_PARSE_OK
+                                               : AIIO_CI13162_PARSE_INVALID_DATA;
+
         case AIIO_CI13162_CMD_CWSL:
         case AIIO_CI13162_CMD_VOLUME:
         case AIIO_CI13162_CMD_VOLUME_GET:
@@ -996,6 +1026,10 @@ static void aiio_ci13162_handle_line(char *line, size_t length)
         return;
     }
 
+    if (message.command == AIIO_CI13162_CMD_BUZZ) {
+        return;
+    }
+
     if (aiio_ci13162_queue_message(&message) == 0U) {
 #if DEBUG_ENABLE == 1
         aiio_ci13162_report_line_error("COMMAND_QUEUE_FULL");
@@ -1018,6 +1052,12 @@ static void aiio_ci13162_run_parser_tests(void)
     } test_cases[] = {
         {"{cmd:0,data:[]}", AIIO_CI13162_PARSE_OK, AIIO_CI13162_CMD_RESET, 0U,
          {0U, 0U, 0U, 0U}, 0U},
+        {"{\"cmd\":200,\"data\":[]}", AIIO_CI13162_PARSE_OK,
+         AIIO_CI13162_CMD_BUZZ, 0U, {0U, 0U, 0U, 0U}, 0U},
+        {"{cmd:200,data:[]}", AIIO_CI13162_PARSE_OK,
+         AIIO_CI13162_CMD_BUZZ, 0U, {0U, 0U, 0U, 0U}, 0U},
+        {"{\"cmd\":200,\"data\":[1]}", AIIO_CI13162_PARSE_INVALID_DATA,
+         0U, 0U, {0U, 0U, 0U, 0U}, 0U},
         {"{cmd:1,data:[0]}", AIIO_CI13162_PARSE_OK, AIIO_CI13162_CMD_TURN, 1U,
          {0U, 0U, 0U, 0U}, 0U},
         {"{cmd:1,data:[1]}", AIIO_CI13162_PARSE_OK, AIIO_CI13162_CMD_TURN, 1U,
@@ -1628,6 +1668,12 @@ int32_t aiio_ci13162_uart_init(void)
         return -1;
     }
 
+    s_aiio_ci13162_tx_mutex = xSemaphoreCreateMutexStatic(
+        &s_aiio_ci13162_tx_mutex_control);
+    if (s_aiio_ci13162_tx_mutex == NULL) {
+        return -1;
+    }
+
     // Pin is already GPIO idle-high. Do not finalize first: UART_Disable
     // while GPIO16 is still UART AF can drop TX and look like a BREAK.
     vTaskDelay(pdMS_TO_TICKS(AIIO_CI13162_UART_TX_IDLE_HOLD_MS));
@@ -1787,6 +1833,11 @@ void aiio_ci13162_uart_process(void)
             return;
         }
 
+        uint8_t prev_prevent_buzz = prevent_buzz;
+        if (hw_device_support_voice()) {
+            prevent_buzz = 1U;
+        }
+
         switch (message.command) {
             case AIIO_CI13162_CMD_RESET:
 #if DEBUG_ENABLE == 1
@@ -1860,6 +1911,8 @@ void aiio_ci13162_uart_process(void)
             default:
                 break;
         }
+
+        prevent_buzz = prev_prevent_buzz;
     }
 
 #endif
@@ -2101,9 +2154,8 @@ int32_t aiio_ci13162_uart_send_cwsl(uint8_t action,
         return -1;
     }
 
-    sent_length = hosal_uart_send(&uart_stdio,
-                                  request,
-                                  (uint32_t)request_length);
+    sent_length = aiio_ci13162_uart_tx(request,
+                                       (uint32_t)request_length);
     return (sent_length == request_length) ? 0 : -1;
 #else
     (void)action;
@@ -2148,9 +2200,8 @@ int32_t aiio_ci13162_uart_send_volume(uint8_t value)
         return -1;
     }
 
-    sent_length = hosal_uart_send(&uart_stdio,
-                                  request,
-                                  (uint32_t)request_length);
+    sent_length = aiio_ci13162_uart_tx(request,
+                                       (uint32_t)request_length);
     return (sent_length == request_length) ? 0 : -1;
 #else
     (void)value;
@@ -2170,9 +2221,8 @@ int32_t aiio_ci13162_uart_query_volume(void)
     }
 
     query_length = (uint32_t)(sizeof(s_aiio_ci13162_volume_query) - 1U);
-    sent_length = hosal_uart_send(&uart_stdio,
-                                  s_aiio_ci13162_volume_query,
-                                  query_length);
+    sent_length = aiio_ci13162_uart_tx(s_aiio_ci13162_volume_query,
+                                       query_length);
     return (sent_length == (int)query_length) ? 0 : -1;
 #else
     return -1;
@@ -2225,10 +2275,29 @@ int32_t aiio_ci13162_uart_request_version(void)
     }
 
     query_length = (uint32_t)(sizeof(s_aiio_ci13162_version_query) - 1U);
-    sent_length = hosal_uart_send(&uart_stdio,
-                                  s_aiio_ci13162_version_query,
-                                  query_length);
+    sent_length = aiio_ci13162_uart_tx(s_aiio_ci13162_version_query,
+                                       query_length);
     return (sent_length == (int)query_length) ? 0 : -1;
+#else
+    return -1;
+#endif
+}
+
+int32_t aiio_ci13162_uart_send_buzz(void)
+{
+#if AIIO_CI13162_UART_ENABLE == 1
+    int sent_length;
+    uint32_t message_length;
+
+    if ((s_aiio_ci13162_command_queue == NULL) ||
+        (s_aiio_ci13162_ota_held != 0U)) {
+        return -1;
+    }
+
+    message_length = (uint32_t)(sizeof(s_aiio_ci13162_buzz_message) - 1U);
+    sent_length = aiio_ci13162_uart_tx(s_aiio_ci13162_buzz_message,
+                                       message_length);
+    return (sent_length == (int)message_length) ? 0 : -1;
 #else
     return -1;
 #endif

@@ -10,7 +10,7 @@
 static m_fan_info_t s_fan_info;
 static uint32_t last_tick_blink_led;
 extern char respond[512];
-extern uint8_t prevent_buzz;
+extern volatile uint8_t prevent_buzz;
 extern uint32_t last_tick_timer_toggle;
 extern m_fan_runtime_t s_fan_runtime;
 
@@ -110,11 +110,11 @@ void m_fan_set_speed(uint8_t mode_set, uint8_t speed_set)
     }
     else if (s_fan_info.mode == M_FAN_MODE_OFF)
     {
-        uint8_t restore_val = prevent_buzz;
         s_fan_info.speed = M_FAN_SPEED_OFF;
-        prevent_buzz = 0;
-        m_fan_need_buzz(10);
-        prevent_buzz = restore_val;
+        if (!prevent_buzz)
+        {
+            m_fan_need_buzz(10);
+        }
 #if FAN_KEEP_OLD_SWING_MODE
         hw_fan_set_swing(M_FAN_SWING_OFF);
 #else

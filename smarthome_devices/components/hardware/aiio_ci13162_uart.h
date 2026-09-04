@@ -98,6 +98,14 @@ void aiio_ci13162_uart_set_cwsl_callbacks(
     aiio_ci13162_cwsl_status_cb_t status_cb,
     aiio_ci13162_cwsl_info_cb_t info_cb);
 
+/** @brief Send one buzzer beep request to the CI13162.
+ *
+ *  @return     Send status.
+ *  @retval     0  Request `{"cmd":200,"data":[]}` was sent.
+ *  @retval     -1 UART unavailable, OTA active, or send failure.
+ */
+int32_t aiio_ci13162_uart_send_buzz(void);
+
 /** @brief Send one speaker volume set request to the CI13162.
  *
  *  @param[in]  value  Absolute speaker volume level from 1 to 7.

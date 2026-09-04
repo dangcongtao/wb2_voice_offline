@@ -6,7 +6,7 @@
 m_fan_runtime_t s_fan_runtime;
 
 uint8_t buzz_num;
-uint8_t prevent_buzz = 0;
+volatile uint8_t prevent_buzz = 0;
 
 void m_fan_need_buzz(uint8_t num_buzz)
 {
