@@ -50,6 +50,24 @@ typedef void (*aiio_ci13162_volume_info_cb_t)(uint8_t level,
  */
 void aiio_ci13162_uart_hold_tx_idle(void);
 
+/** @brief Initialize power control pin (GPIO 17) for CI13162 voice IC.
+ *
+ *  @return      Initialization result.
+ *  @retval      0  Power control pin initialized and CI13162 powered ON.
+ *  @retval      -1 Device does not support voice or module disabled.
+ */
+int32_t aiio_ci13162_power_init(void);
+
+/** @brief Perform a power cycle reset on the CI13162 voice IC via GPIO 17.
+ *
+ *  @param[in]   off_duration_ms     Duration in milliseconds to hold power OFF (LOW).
+ *  @param[in]   stabilize_delay_ms  Duration in milliseconds to wait after powering ON (HIGH).
+ *  @return      Power cycle result.
+ *  @retval      0  Power cycle completed successfully.
+ *  @retval      -1 Device does not support voice or module disabled.
+ */
+int32_t aiio_ci13162_power_cycle(uint32_t off_duration_ms, uint32_t stabilize_delay_ms);
+
 /** @brief Initialize the CI13162 UART receiver and command processing task.
  *
  *  @return      Initialization result.

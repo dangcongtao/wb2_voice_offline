@@ -18,7 +18,9 @@ void m_log(const char *fmt, ...);
 #define FIRMWARE_VERSION "260824"
 #define FIRMWARE_VERSION_NUMBER 240702
 
+#ifndef BUILD_TEST
 #define BUILD_TEST 0 // 1 dev, 0 release
+#endif
 
 #define HARDWARE_VERSION "230303"
 

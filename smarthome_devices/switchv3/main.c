@@ -104,6 +104,11 @@ void main(void)
     }
 
     easyflash_init();
+    m_db_read_device_id();
+    if (hw_device_support_voice())
+    {
+        aiio_ci13162_power_init();
+    }
     if (m_ci13162_ota_boot_prepare(&wifi_info))
     {
         m_wifi_t wifi;

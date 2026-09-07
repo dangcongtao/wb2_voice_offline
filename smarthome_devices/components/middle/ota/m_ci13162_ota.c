@@ -19,6 +19,8 @@
 #include "ci13162_ota_http.h"
 #include "ci13162_ota_protocol.h"
 #include "IRrecv.h"
+#undef IR_RX
+#include "hardware.h"
 #include "m_ble.h"
 #include "m_mqtt.h"
 #include "system_typedef.h"
@@ -57,7 +59,7 @@ bool m_ci13162_ota_url_is_valid(const char *url)
 #define CI13162_OTA_ALLOC_RETRY_DELAY_MS   500U
 #define CI13162_OTA_AGENT_ADDR             0x1FF80000U
 #define CI13162_OTA_FW_BASE                0x00000000U
-#define CI13162_OTA_HANDSHAKE_PERIOD_MS    25U
+#define CI13162_OTA_HANDSHAKE_PERIOD_MS    20U
 #define CI13162_OTA_READ_SLICE_MS          20U
 #define CI13162_OTA_ACK_TIMEOUT_MS         5000U
 #define CI13162_OTA_GET_INFO_TIMEOUT_MS    35000U
@@ -394,20 +396,39 @@ static int32_t ci13162_ota_enter_maskrom(ci13162_ota_context_t *ctx)
 {
     TickType_t start;
     TickType_t timeout_ticks;
+    bool use_power_reset = false;
+#if (AIIO_CI13162_OTA_RESET_MODE == AIIO_CI13162_OTA_RESET_MODE_POWER_FALLBACK)
+    bool fallback_sent = false;
+#endif
 
     if (aiio_ci13162_uart_ota_set_baud(115200U) != 0) {
         return -1;
     }
+
+#if (AIIO_CI13162_OTA_RESET_MODE != AIIO_CI13162_OTA_RESET_MODE_SOFT_ONLY)
+    if (hw_device_support_voice()) {
+        use_power_reset = true;
+    }
+#endif
+
+    if (use_power_reset) {
+        os_trace("[CI13162][OTA] Power cycle reset started\r\n");
+        if (aiio_ci13162_power_cycle(AIIO_CI13162_POWER_RESET_DURATION_MS,
+                                     AIIO_CI13162_POWER_STABILIZE_DELAY_MS) != 0) {
+            return -1;
+        }
+    } else {
+        /* Send the app reset command first: binary OTA bytes emitted before the
+         * JSON reset line can make the CI13162 application line parser discard
+         * the whole line (frame contains 0x00 bytes and no CRLF). Per the OTA
+         * guide, software reset goes first, then the handshake spam starts. */
+        if (aiio_ci13162_uart_ota_send_app_reset() < 0) {
+            return -1;
+        }
+    }
+
     aiio_ci13162_uart_ota_flush_rx();
     ci13162_ota_rx_parser_reset(&ctx->parser);
-
-    /* Send the app reset command first: binary OTA bytes emitted before the
-     * JSON reset line can make the CI13162 application line parser discard
-     * the whole line (frame contains 0x00 bytes and no CRLF). Per the OTA
-     * guide, software reset goes first, then the handshake spam starts. */
-    if (aiio_ci13162_uart_ota_send_app_reset() < 0) {
-        return -1;
-    }
 
     start = xTaskGetTickCount();
     timeout_ticks = pdMS_TO_TICKS(AIIO_CI13162_OTA_HANDSHAKE_TIMEOUT_MS);
@@ -416,6 +437,18 @@ static int32_t ci13162_ota_enter_maskrom(ci13162_ota_context_t *ctx)
         ci13162_ota_frame_t frame;
 
         bl_wdt_feed();
+
+#if (AIIO_CI13162_OTA_RESET_MODE == AIIO_CI13162_OTA_RESET_MODE_POWER_FALLBACK)
+        if (use_power_reset && !fallback_sent &&
+            ((xTaskGetTickCount() - start) >= pdMS_TO_TICKS(AIIO_CI13162_OTA_FALLBACK_TIMEOUT_MS))) {
+            os_trace("[CI13162][OTA] Handshake fallback: sending soft reset\r\n");
+            (void)aiio_ci13162_uart_ota_send_app_reset();
+            fallback_sent = true;
+            aiio_ci13162_uart_ota_flush_rx();
+            ci13162_ota_rx_parser_reset(&ctx->parser);
+        }
+#endif
+
         s_ci13162_ota_handshake_tries++;
         if (ci13162_ota_send(CI13162_OTA_MSG_REQ,
                              CI13162_OTA_CMD_HANDSHAKE,

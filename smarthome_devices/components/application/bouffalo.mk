@@ -9,6 +9,7 @@ COMPONENT_PRIV_INCLUDEDIRS :=
 ## This component's src
 COMPONENT_SRCS := process_data.c \
                   app_cwsl.c \
+                  app_scene.c \
                   app_volume.c \
                   app_fan.c \
                   app_ir.c

@@ -16,6 +16,7 @@
 #include <bl602_uart.h>
 #include <bl_gpio.h>
 #include <bl_sys.h>
+#include <bl_wdt.h>
 
 #include "aiio_ci13162_config.h"
 #include "app_config.h"
@@ -1626,6 +1627,61 @@ void aiio_ci13162_uart_hold_tx_idle(void)
 #endif
 }
 
+int32_t aiio_ci13162_power_init(void)
+{
+#if AIIO_CI13162_UART_ENABLE == 1
+    if (!hw_device_support_voice()) {
+        return -1;
+    }
+
+    bl_gpio_output_set((uint8_t)AIIO_CI13162_POWER_PIN, 1U);
+    bl_gpio_enable_output((uint8_t)AIIO_CI13162_POWER_PIN, 1U, 0U);
+    bl_gpio_output_set((uint8_t)AIIO_CI13162_POWER_PIN, 1U);
+    return 0;
+#else
+    return -1;
+#endif
+}
+
+int32_t aiio_ci13162_power_cycle(uint32_t off_duration_ms, uint32_t stabilize_delay_ms)
+{
+#if AIIO_CI13162_UART_ENABLE == 1
+    uint32_t remaining;
+
+    if (!hw_device_support_voice()) {
+        return -1;
+    }
+
+    /* Drive power pin LOW (power OFF) */
+    bl_gpio_output_set((uint8_t)AIIO_CI13162_POWER_PIN, 0U);
+    bl_gpio_enable_output((uint8_t)AIIO_CI13162_POWER_PIN, 1U, 0U);
+    bl_gpio_output_set((uint8_t)AIIO_CI13162_POWER_PIN, 0U);
+
+    remaining = off_duration_ms;
+    while (remaining > 0U) {
+        uint32_t step = (remaining > 100U) ? 100U : remaining;
+        bl_wdt_feed();
+        vTaskDelay(pdMS_TO_TICKS(step));
+        remaining -= step;
+    }
+    bl_wdt_feed();
+
+    /* Drive power pin HIGH (power ON) */
+    bl_gpio_output_set((uint8_t)AIIO_CI13162_POWER_PIN, 1U);
+
+    if (stabilize_delay_ms > 0U) {
+        vTaskDelay(pdMS_TO_TICKS(stabilize_delay_ms));
+    }
+    bl_wdt_feed();
+
+    return 0;
+#else
+    (void)off_duration_ms;
+    (void)stabilize_delay_ms;
+    return -1;
+#endif
+}
+
 int32_t aiio_ci13162_uart_init(void)
 {
 #if AIIO_CI13162_UART_ENABLE == 1
@@ -1901,7 +1957,6 @@ void aiio_ci13162_uart_process(void)
                 break;
 
             case AIIO_CI13162_CMD_SCENE:
-                m_fan_need_buzz(1U);
                 os_trace("[CI13162] scene=%u\r\n",
                          (unsigned int)message.data[0]);
                 app_cwsl_notify_voice_cmd(aiio_ci13162_get_cmd_id(message.command,

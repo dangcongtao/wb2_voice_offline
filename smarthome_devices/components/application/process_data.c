@@ -39,6 +39,7 @@
 #include "app_fan.h"
 #include "app_cwsl.h"
 #include "app_volume.h"
+#include "app_scene.h"
 
 char respond[512];
 extern char key[16], iv[16];
@@ -129,6 +130,9 @@ wswitch_handler_t array_handler[] = {
     {app_cwsl_query, 223},
     {app_volume_set, 225},
     {app_volume_get, 226},
+    {app_scene_add, 227},
+    {app_scene_delete, 228},
+    {app_scene_query, 229},
 };
 
 wswitch_handler_t array_ble_handler[] = {
@@ -1203,22 +1207,7 @@ static void app_remove_device(cJSON *jsRoot)
 
     /* implement here */
     app_send_offline_message(2);
-    if (!app_cwsl_factory_clear())
-    {
-        uint32_t wait_count;
-
-        for (wait_count = 0U; wait_count < 40U; wait_count++)
-        {
-            aiio_ci13162_uart_process();
-            app_cwsl_poll();
-            app_volume_poll();
-            if (app_cwsl_factory_clear_done())
-            {
-                break;
-            }
-            vTaskDelay(pdMS_TO_TICKS(50U));
-        }
-    }
+    /* Preserve learned voice commands (CWSL) and scenes (CI13162 + flash scene_mask) across factory reset (R1) */
     /* factory reset database */
     m_db_get_instance()->_reset_db_cb();
     m_wifi_get_instance().start_smart_config_cb();
@@ -1495,6 +1484,7 @@ void process_data_init(void)
     (void)ci13162_ota_manifest_self_test();
 #endif
     app_cwsl_init();
+    app_scene_init();
     app_volume_init();
     pdata_queue_init();
     ble_init_queue();

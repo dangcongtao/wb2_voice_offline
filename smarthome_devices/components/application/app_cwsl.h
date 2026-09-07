@@ -81,4 +81,23 @@ bool app_cwsl_factory_clear_done(void);
  */
 void app_cwsl_notify_voice_cmd(uint8_t cmd_id);
 
+/** @brief Start a scene learning session for an ASR command ID (46..55).
+ *
+ *  @param[in]  cmd_id   ASR command identifier (46..55).
+ *  @param[in]  user_id  Requesting user ID.
+ *  @param[in]  act_id   Requesting action ID.
+ *  @return     0 on success, or error code (67, 69, 70).
+ */
+uint8_t app_cwsl_start_scene_learn(uint8_t cmd_id, uint32_t user_id, uint8_t act_id);
+
+/** @brief Start a scene deletion session for an ASR command ID (46..55).
+ *
+ *  @param[in]  cmd_id   ASR command identifier (46..55).
+ *  @param[in]  user_id  Requesting user ID.
+ *  @param[in]  act_id   Requesting action ID.
+ *  @return     0 on success, or error code (67, 69, 70).
+ */
+uint8_t app_cwsl_start_scene_delete(uint8_t cmd_id, uint32_t user_id, uint8_t act_id);
+
 #endif /* APP_CWSL_H */
+
