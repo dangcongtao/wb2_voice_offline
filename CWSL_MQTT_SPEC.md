@@ -181,13 +181,22 @@ Hệ quả:
 | DELETE `[2,255,255]` | Xóa toàn bộ wake + command |
 | QUERY `cmd_id=255` | Query tổng dung lượng |
 
-### 2.4. Safe Replace (Commit-on-Success)
+### 2.4. Cơ chế lưu trữ giọng nói và Safe Replace
 
-- **Lệnh điều khiển (`cmd_id >= 7`)**: Mỗi `cmd_id` chỉ duy trì duy nhất 1 giọng nói.
-- **Cơ chế Safe Replace**: Firmware áp dụng cơ chế thay thế an toàn hai giai đoạn (Commit-on-Success). Khi học lại một `cmd_id` đã có mẫu, MCU gửi lệnh học vào slot trống (`slot = 255`). Chip CI13162 thu âm vào slot trống mới trong khi mẫu cũ được bảo toàn nguyên vẹn 100%.
-- **Chỉ xóa khi thành công**: Chỉ sau khi chip xác nhận đã thu và lưu thành công mẫu mới (`code = 32`, `LEARN_OK`), MCU mới phát lệnh DELETE dọn dẹp các slot cũ.
-- **Bảo toàn khi thất bại**: Nếu lần thu mới thất bại (nói không rõ, ồn, timeout, hủy STOP hoặc bộ nhớ đầy), mẫu cũ hoàn toàn không bị xóa và vẫn điều khiển thiết bị bình thường.
-- **Learned Wake (`cmd_id = 1`)**: Vẫn giữ nguyên cơ chế độc lập, cho phép tối đa 5 slot (0–4).
+- **Lệnh điều khiển (`cmd_id` 7..43)**:
+  - **Quan hệ 1-n**: Mỗi lệnh điều khiển (bật/tắt quạt, tốc độ gió, timer, âm lượng...) được phép học nhiều giọng nói khác nhau, dùng chung pool 15 slot (`0..14`) của chip CI13162.
+  - **Không tự động xóa giọng cũ**: Khi thêm giọng nói mới, firmware không truy vấn slot cũ và không xóa / ghi đè giọng cũ sau khi học thành công. Mọi giọng đã học đều hoạt động đồng thời.
+  - **Linh hoạt chọn slot**: Hỗ trợ cả `slot = 255` (chip tự chọn slot trống tiếp theo trong pool 15 slot) và `slot = 0..14` (nếu App muốn ghi đè vào một slot cụ thể).
+  - **Xóa chủ động**: App có thể dùng lệnh DELETE (cmd 221) để xóa từng slot cụ thể (`slot = 0..14`) hoặc xóa toàn bộ mẫu của lệnh đó (`slot = 255`).
+
+- **Ngữ cảnh (Scene - `cmd_id` 46..55)**:
+  - **Duy trì cơ chế Safe Replace (1-1)**: Mỗi ngữ cảnh duy trì duy nhất 1 giọng nói đại diện.
+  - **Hai giai đoạn (Commit-on-Success)**: Khi học lại ngữ cảnh, MCU thực hiện tuần tự qua 3 sub-phase: `APP_CWSL_PHASE_QUERY_OLD` -> `APP_CWSL_PHASE_LEARNING` -> `APP_CWSL_PHASE_DELETING_OLD`.
+  - **Chỉ xóa khi thành công**: Chip thu âm vào slot trống mới (`slot = 255`), mẫu cũ giữ nguyên vẹn. Chỉ khi có xác nhận `LEARN_OK` (`code = 32`), MCU mới phát lệnh DELETE dọn dẹp các slot cũ của ngữ cảnh đó.
+  - **Bảo toàn khi thất bại**: Nếu lần thu mới thất bại (nói không rõ, ồn, timeout, STOP hoặc đầy bộ nhớ), giọng cũ hoàn toàn không bị ảnh hưởng.
+
+- **Từ đánh thức (Learned Wake - `cmd_id = 1`)**:
+  - Giữ nguyên cơ chế độc lập, cho phép tối đa 5 slot (`0..4`) hoặc `slot = 255` (tự động phân bổ slot trống).
 
 ---
 
@@ -489,9 +498,10 @@ Mã từ chối:
 
 | Loại | Thao tác | Slot hợp lệ | Ghi chú |
 |---|---|---|---|
-| `cmd_id=1` (Wake) | LEARN / DELETE | 0–4 hoặc 255 | Tối đa 5 slot độc lập |
-| `cmd_id` thuộc `{7..43, 46..55}` (Command) | LEARN | **Chỉ 255** | Tự động phân bổ slot trống; sai slot trả `code=66` |
-| `cmd_id` thuộc `{7..43, 46..55}` (Command) | DELETE | 0–14 hoặc 255 | Cho phép xóa từng slot hoặc xóa toàn bộ |
+| `cmd_id=1` (Wake) | LEARN / DELETE | 0–4 hoặc 255 | Tối đa 5 slot độc lập (255: tự phân bổ) |
+| `cmd_id` thuộc `7..43` (Lệnh điều khiển) | LEARN | 0–14 hoặc 255 | Hỗ trợ 1-n: 255 tự động phân bổ slot trống; 0–14 chỉ định ghi đè slot cụ thể |
+| `cmd_id` thuộc `7..43` (Lệnh điều khiển) | DELETE | 0–14 hoặc 255 | Xóa từng slot (0–14) hoặc xóa toàn bộ mẫu của `cmd_id` (255) |
+| `cmd_id` thuộc `46..55` (Ngữ cảnh / Scene) | LEARN / DELETE | Qua MQTT Scene (204/205) | Cơ chế Safe Replace 1-1 (tự động phân bổ slot 255 rồi dọn slot cũ). Gửi trực tiếp qua MQTT 220/221 sẽ bị từ chối `code=64` |
 | DELETE all | DELETE | Chỉ `cmd_id=255, slot=255` | Xóa toàn bộ template |
 
 Sai slot trả `code=66`.
@@ -514,10 +524,16 @@ QUERY được phép cho mọi ASR ID 1–43 và 255 vì đây là thao tác đ�
 | `CWSL_MCU_WAIT_BOTH` | 1 mutating + 1 QUERY | STOP; QUERY thứ hai và mutating khác trả 67 | Hai timer độc lập |
 | `CWSL_MCU_OTA` | Không CWSL | Mọi cmd 220–223 trả code 69 | Đến khi release UART OTA |
 
-**3 Sub-phase của Command LEARN (`cmd_id >= 7`)**:
-1. `PHASE_QUERY_OLD` (2s timeout): MCU gửi UART `[6, cmd_id]` lấy bitmap slot cũ. **Mọi App QUERY (cmd 223) trong phase này bị reject ngay với mã `code=67` (BUSY)** để tránh xung đột frame `cmd6` trên UART.
-2. `PHASE_LEARNING` (120s watchdog): Chip CI13162 thu âm vào slot trống (`slot=255`), mẫu cũ giữ nguyên vẹn 100%. Hết 120s MCU chủ động phát UART STOP `[4]` rồi trả `code=52`.
-3. `PHASE_DELETING_OLD` (2s timeout mỗi slot): Sau khi nhận `LEARN_OK` (32), MCU phát lệnh DELETE dọn dẹp từng slot cũ cho đến khi sạch hoàn toàn. Xong phiên trả final MQTT 220 `code=32` kèm `new_slot`.
+**Cơ chế thực thi LEARN:**
+- **Lệnh điều khiển (`cmd_id` 7..43) và Từ đánh thức (`cmd_id = 1`)**:
+  - Chạy trực tiếp trong phase thông thường (`APP_CWSL_PHASE_NORMAL`), không qua các sub-phase truy vấn hay dọn dẹp slot cũ.
+  - MCU gửi trực tiếp lệnh UART `[1, cmd_id, slot]` tới chip CI13162 (`slot` là 255 hoặc 0..14).
+  - Chip CI13162 thu âm; khi nhận `cmd5` thành công (`code = 32`, `LEARN_OK`), MCU phát final MQTT cmd 220 chứa `slot` thực tế vừa ghi nhận và kết thúc phiên mà không xóa mẫu cũ (hỗ trợ quan hệ 1-n).
+- **Chỉ riêng Ngữ cảnh (Scene - `cmd_id` 46..55)**:
+  - Duy trì cơ chế Safe Replace (1-1) qua 3 sub-phase:
+    1. `PHASE_QUERY_OLD` (2s timeout): MCU gửi UART `[6, cmd_id]` lấy bitmap slot cũ. **Mọi App QUERY (cmd 223) trong phase này bị reject ngay với mã `code=67` (BUSY)** để tránh xung đột frame `cmd6` trên UART.
+    2. `PHASE_LEARNING` (120s watchdog): Chip CI13162 thu âm vào slot trống (`slot=255`), mẫu cũ giữ nguyên vẹn 100%. Hết 120s MCU chủ động phát UART STOP `[4]` rồi trả `code=52`.
+    3. `PHASE_DELETING_OLD` (2s timeout mỗi slot): Sau khi nhận `LEARN_OK` (32), MCU phát lệnh DELETE dọn dẹp từng slot cũ cho đến khi sạch hoàn toàn. Xong phiên báo kết quả về module scene.
 
 ### 10.2. Chuyển trạng thái chính
 
@@ -558,13 +574,14 @@ QUERY thứ hai khi đã có QUERY pending trả ACK 223 `result=0, code=67`.
 
 ### 10.4. Khớp cmd5
 
-Không được so sánh cứng với `pending.slot` khi slot request là 255.
+Không được so sánh cứng với `pending.slot` khi slot request là 255 hoặc khi chip trả về mã lỗi/từ chối.
 
 Đối với LEARN cmd 220 hoặc DELETE cmd 221, khớp nếu:
 
-1. Có một mutating pending.
+1. Có một mutating pending (`s_app_cwsl_mutating.active == 1`).
 2. `cmd_id` response bằng `pending.cmd_id`.
-3. `pending.slot==255` hoặc `response.slot==pending.slot`.
+3. Khi thành công (`code` thuộc lớp `0x2x`): `pending.slot == 255` hoặc `response.slot == 255` hoặc `response.slot == pending.slot`.
+4. Khi thất bại hoặc bị từ chối (`code` thuộc lớp `0x3x` hoặc `0x4x`): chỉ cần khớp `cmd_id` với mutating request đang pending (vì chip CI13162 có thể phản hồi `slot = 255` như trường hợp bộ nhớ đầy `[50, cmd_id, 255]` dù request gửi `slot = 0..14`).
 
 Đối với STOP cmd 222, frame cmd5 đầu tiên sau khi STOP được gửi sẽ kết thúc mutating pending hiện tại. Không khớp theo `cmd_id`/`slot` của request STOP vì STOP không mang hai field này.
 
@@ -1094,7 +1111,7 @@ Không hiển thị nút học cho ID 44/45 (tắt/bật âm thanh); LEARN/DELET
 | 2 | LEARN cmd 220, ID 7 slot 255 | ACK=1, UART `[1,7,255]`, final 220 code=32 với slot thật |
 | 3 | Nói lại câu học | MQTT cmd 20, `act_id=13`, không phát lại final CWSL |
 | 4 | QUERY cmd 223, ID 7 | Bit slot mới bật |
-| 5 | LEARN lại cùng ID 7 | Mẫu mới lưu vào slot trống, sau khi thành công thì mẫu cũ bị xóa; bitmap chỉ còn đúng 1 bit bật |
+| 5 | LEARN lại cùng ID 7 | Mẫu mới lưu vào slot trống (hoặc slot chỉ định), mẫu cũ KHÔNG bị xóa; cả hai slot đều có hiệu lực (quan hệ 1-n) |
 | 6 | DELETE cmd 221 một slot | code=33; slot khác giữ nguyên |
 | 7 | LEARN cmd 220 wake ID 1 | Slot 0–4; wake factory vẫn hoạt động |
 | 8 | LEARN thứ hai khi đang học | ACK 220 code=67; không UART thứ hai |

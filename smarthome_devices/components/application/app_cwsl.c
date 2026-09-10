@@ -211,18 +211,12 @@ static uint8_t app_cwsl_parse_mutating(cJSON *js_root,
         (request->cmd_id <= APP_SCENE_CMD_ID_MAX)) {
         return APP_CWSL_CODE_BAD_REQUEST;
     }
-    if ((mqtt_cmd == APP_CWSL_CMD_LEARN) &&
-        ((request->cmd_id == 44U) || (request->cmd_id == 45U))) {
+    if ((request->cmd_id == 44U) || (request->cmd_id == 45U)) {
         return APP_CWSL_CODE_BAD_COMMAND_ID;
     }
 
     if (request->cmd_id == 1U) {
         return ((request->slot <= 4U) || (request->slot == APP_CWSL_ANY))
-                   ? 0U
-                   : APP_CWSL_CODE_BAD_SLOT;
-    }
-    if (mqtt_cmd == APP_CWSL_CMD_LEARN) {
-        return (request->slot == APP_CWSL_ANY)
                    ? 0U
                    : APP_CWSL_CODE_BAD_SLOT;
     }
@@ -575,16 +569,19 @@ static void app_cwsl_on_status(uint8_t code, uint8_t cmd_id, uint8_t slot)
         return;
     }
 
-    /* Phase 0: NORMAL - Wake word or direct DELETE */
+    /* Phase 0: NORMAL - Wake word, command LEARN, or direct DELETE */
     if (s_app_cwsl_mutating.stop_sent == 0U) {
-        if ((cmd_id != s_app_cwsl_mutating.request.cmd_id) ||
-            ((s_app_cwsl_mutating.request.slot != APP_CWSL_ANY) &&
-             (slot != s_app_cwsl_mutating.request.slot))) {
+        if (cmd_id != s_app_cwsl_mutating.request.cmd_id) {
             return;
         }
 
         status_class = (uint8_t)(code >> 4U);
         if (status_class == 2U) {
+            if ((s_app_cwsl_mutating.request.slot != APP_CWSL_ANY) &&
+                (slot != APP_CWSL_ANY) &&
+                (slot != s_app_cwsl_mutating.request.slot)) {
+                return;
+            }
             if (((code == APP_CWSL_CODE_LEARN_OK) &&
                  ((s_app_cwsl_mutating.request.mqtt_cmd == APP_CWSL_CMD_LEARN) ||
                   (s_app_cwsl_mutating.request.mqtt_cmd == APP_SCENE_CMD_ADD))) ||
@@ -732,11 +729,11 @@ static void app_cwsl_run_validation_tests(void)
         {"\"cmd_id\":2,\"slot\":0,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
         {"\"cmd_id\":13,\"slot\":0,\"u\":1,\"act_id\":0",
-         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_SLOT},
+         APP_CWSL_CMD_LEARN, 0U},
         {"\"cmd_id\":14,\"slot\":255,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_LEARN, 0U},
         {"\"cmd_id\":15,\"slot\":0,\"u\":1,\"act_id\":0",
-         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_SLOT},
+         APP_CWSL_CMD_LEARN, 0U},
         {"\"cmd_id\":39,\"slot\":255,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_LEARN, 0U},
         {"\"cmd_id\":43,\"slot\":255,\"u\":1,\"act_id\":0",
@@ -745,6 +742,10 @@ static void app_cwsl_run_validation_tests(void)
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_COMMAND_ID},
         {"\"cmd_id\":45,\"slot\":255,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_COMMAND_ID},
+        {"\"cmd_id\":44,\"slot\":0,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_DELETE, APP_CWSL_CODE_BAD_COMMAND_ID},
+        {"\"cmd_id\":45,\"slot\":255,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_DELETE, APP_CWSL_CODE_BAD_COMMAND_ID},
         {"\"cmd_id\":46,\"slot\":255,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
         {"\"cmd_id\":55,\"slot\":255,\"u\":1,\"act_id\":0",
@@ -757,10 +758,18 @@ static void app_cwsl_run_validation_tests(void)
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_COMMAND_ID},
         {"\"cmd_id\":99,\"slot\":0,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_COMMAND_ID},
+        {"\"cmd_id\":7,\"slot\":14,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_LEARN, 0U},
+        {"\"cmd_id\":43,\"slot\":14,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_LEARN, 0U},
         {"\"cmd_id\":7,\"slot\":15,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_SLOT},
+        {"\"cmd_id\":7,\"slot\":15,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_DELETE, APP_CWSL_CODE_BAD_SLOT},
         {"\"cmd_id\":1,\"slot\":5,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_SLOT},
+        {"\"cmd_id\":1,\"slot\":5,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_DELETE, APP_CWSL_CODE_BAD_SLOT},
         {"\"cmd_id\":7,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
         {"\"cmd_id\":7,\"slot\":0.5,\"u\":1,\"act_id\":0",
@@ -869,28 +878,6 @@ static void app_cwsl_start_mutating(cJSON *js_root,
         (s_app_cwsl_query.active != 0U) ||
         app_scene_is_pending()) {
         app_cwsl_publish_mutating_reject(&request, APP_CWSL_CODE_BUSY);
-        return;
-    }
-
-    if ((action == APP_CWSL_ACTION_LEARN) && (request.cmd_id != 1U)) {
-        aiio_ci13162_uart_set_version_query_paused(1U);
-        if (aiio_ci13162_uart_send_cwsl(APP_CWSL_ACTION_QUERY,
-                                        &request.cmd_id,
-                                        1U) != 0) {
-            aiio_ci13162_uart_set_version_query_paused(0U);
-            app_cwsl_publish_mutating_reject(&request, APP_CWSL_CODE_TX_FAIL);
-            return;
-        }
-
-        s_app_cwsl_mutating.active = 1U;
-        s_app_cwsl_mutating.stop_sent = 0U;
-        s_app_cwsl_mutating.phase = APP_CWSL_PHASE_QUERY_OLD;
-        s_app_cwsl_mutating.old_bitmap = 0U;
-        s_app_cwsl_mutating.new_slot = APP_CWSL_ANY;
-        s_app_cwsl_mutating.delete_target_slot = APP_CWSL_ANY;
-        s_app_cwsl_mutating.delete_retry_count = 0U;
-        s_app_cwsl_mutating.request = request;
-        s_app_cwsl_mutating.start_tick = xTaskGetTickCount();
         return;
     }
 
@@ -1242,6 +1229,9 @@ void app_cwsl_poll(void)
                     if (s_app_cwsl_factory_clear_pending != 0U) {
                         app_cwsl_finish_factory_clear();
                     } else {
+                        if (s_app_cwsl_mutating.request.mqtt_cmd == APP_CWSL_CMD_LEARN) {
+                            (void)aiio_ci13162_uart_send_cwsl(APP_CWSL_ACTION_STOP, NULL, 0U);
+                        }
                         app_cwsl_mutating_t pending = s_app_cwsl_mutating;
                         app_cwsl_clear_mutating();
                         if (pending.request.mqtt_cmd == APP_SCENE_CMD_DELETE) {
