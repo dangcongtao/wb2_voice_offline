@@ -33,6 +33,7 @@
 #include "hardware.h"
 #include "event_driven.h"
 #include "m_fan_event.h"
+#include "m_fan.h"
 #include "app_ir.h"
 #include "flash_api.h"
 #include "m_fan_control.h"
@@ -1134,6 +1135,7 @@ RESPONSE:
     m_mqtt_get_instance()._mqtt_publish(respond, strlen(respond));
     if (result == 1U) {
         os_trace("start_ota\r\n");
+        m_fan_prepare_for_ota();
         vTaskDelay(pdMS_TO_TICKS(AIIO_CI13162_OTA_MQTT_ACK_DELAY_MS));
         bl_sys_reset_por();
     }

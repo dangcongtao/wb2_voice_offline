@@ -237,8 +237,15 @@ static void m_load_databse(void)
 
 static void m_database_sync_task(void *param)
 {
+    extern uint8_t is_ota;
     while (1)
     {
+        if (is_ota)
+        {
+            vTaskDelay(pdMS_TO_TICKS(500));
+            continue;
+        }
+
         if (s_request_reset_db)
         {
             os_trace("have reset factory request\r\n");

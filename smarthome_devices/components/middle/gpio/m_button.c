@@ -20,6 +20,7 @@
 #include "m_fan_control.h"
 #include "m_ft62f28.h"
 #include "m_ci13162_ota.h"
+#include "m_ota.h"
 
 #define TIME_OUT_RESET_TS04_WITHOUT_PRESS 2400
 
@@ -195,43 +196,55 @@ static void button_scan_task(void *param)
     os_trace("button_scan_task\n");
     while (true)
     {
+        if (is_ota == STATE_OTA_PROCESS)
+        {
+            if (tick_ota_led % 500 == 0)
+            {
+                m_led_stt_get_instance()._toggle_led_stt_cb();
+            }
+            tick_ota_led += 50;
+            if (!m_ci13162_ota_is_busy() && m_ota_has_task_finished())
+            {
+                tick_ota_led = 0;
+                os_trace("ota task ended unexpectedly, rebooting to restore state\r\n");
+                vTaskDelay(pdMS_TO_TICKS(500));
+                bl_sys_reset_por();
+            }
+
+            if (tick_ota_led >= (m_ci13162_ota_is_busy()
+                                     ? m_ci13162_ota_timeout_ms()
+                                     : 180000U))
+            {
+                tick_ota_led = 0;
+                os_trace("ota timeout\r\n");
+                vTaskDelay(pdMS_TO_TICKS(2000));
+                bl_sys_reset_por();
+            }
+            vTaskDelay(pdMS_TO_TICKS(50));
+            continue;
+        }
+        else if (is_ota == STATE_OTA_SUCCESS)
+        {
+            if (tick_ota_led >= 100)
+            {
+                tick_ota_led = 0;
+                m_led_stt_get_instance()._toggle_led_stt_cb();
+            }
+            tick_ota_led += 50;
+            vTaskDelay(pdMS_TO_TICKS(50));
+            continue;
+        }
+        else
+        {
+            tick_ota_led = 0;
+        }
+
         hw_uart_loop();
         app_btn_scan(NULL);
         m_led_7_seg_loop(50);
         m_ft62f28_check_send_change();
         buzz_loop();
         m_button_reset_touch_loop();
-
-        if (!dev_is_doing_config())
-        {
-            if (is_ota == STATE_OTA_PROCESS)
-            {
-                if (tick_ota_led % 500 == 0)
-                {
-                    // tick_ota_led = 0;
-                    m_led_stt_get_instance()._toggle_led_stt_cb();
-                }
-                tick_ota_led += 50;
-                if (tick_ota_led >= (m_ci13162_ota_is_busy()
-                                         ? m_ci13162_ota_timeout_ms()
-                                         : 180000U))
-                {
-                    tick_ota_led = 0;
-                    os_trace("ota timeout\r\n");
-                    vTaskDelay(pdMS_TO_TICKS(2000));
-                    bl_sys_reset_por();
-                }
-            }
-            else if (is_ota == STATE_OTA_SUCCESS)
-            {
-                if (tick_ota_led >= 100)
-                {
-                    tick_ota_led = 0;
-                    m_led_stt_get_instance()._toggle_led_stt_cb();
-                }
-                tick_ota_led += 50;
-            }
-        }
 
         vTaskDelay(pdMS_TO_TICKS(50));
     }

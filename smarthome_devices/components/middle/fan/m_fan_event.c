@@ -230,13 +230,17 @@ void m_fan_timer_loop(uint32_t delay_ms)
 {
     if (time_remain > 0)
     {
-        time_remain -= delay_ms;
-        if (time_remain == 0)
+        if (time_remain <= delay_ms)
         {
+            time_remain = 0;
             m_fan_info_t *m_fan = m_fan_get_instance();
             hw_led_stt_set_stt(M_FAN_BUTTON_TIMER_INDEX, LED_INDICATE_OFF);
             m_fan_set_speed(M_FAN_MODE_OFF, M_FAN_SPEED_OFF);
             app_fan_respond_control(m_fan->mode, m_fan->speed, m_fan->pcn, m_fan->swing, m_fan->light, 0, SRC_ACTION_PRESS_MODE);
+        }
+        else
+        {
+            time_remain -= delay_ms;
         }
     }
 }

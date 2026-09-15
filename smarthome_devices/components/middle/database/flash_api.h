@@ -20,5 +20,6 @@ int32_t flash_read_wifi_info(m_wifi_info_t *wifi_info);
 
 void flash_read_device_id(void *object_data, uint32_t size);
 void flash_write_device_id(void* device_id, uint32_t size);
+void flash_save_fan_info(const m_fan_info_t *fan_info);
 
 #endif

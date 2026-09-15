@@ -51,5 +51,6 @@ void m_fan_process_button_event(uint8_t button_pin);
 void m_led_7_seg_loop(uint32_t delay_ms);
 void m_fan_init(void);
 m_fan_info_t *m_fan_get_instance(void);
-
+void m_fan_prepare_for_ota(void);
+ 
 #endif /* _M_FAN_H_ */

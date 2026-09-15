@@ -214,6 +214,14 @@ void flash_write_device_id(void *device_id, uint32_t size)
     ef_set_bytes(DEVICE_ID, device_id, size);
 }
 
+void flash_save_fan_info(const m_fan_info_t *fan_info)
+{
+    if (fan_info != NULL)
+    {
+        ef_set_bytes(FAN_INFO, (const uint8_t *)fan_info, sizeof(m_fan_info_t));
+    }
+}
+
 void flash_set_rs_reason(uint8_t is_set)
 {
     ef_set_bytes(REASON_RS, &is_set, sizeof(is_set));

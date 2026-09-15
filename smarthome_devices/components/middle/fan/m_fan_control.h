@@ -55,6 +55,7 @@ void hw_fan_set_swing(uint8_t swing);
 void m_fan_need_buzz(uint8_t num_buzz);
 uint8_t m_fan_get_led_stt(void);
 extern volatile uint8_t prevent_buzz;
+extern uint8_t buzz_num;
 void buzz_loop(void);
 
 #endif // _M_FAN_CONTROL_H_

@@ -49,13 +49,16 @@ void main_loop(void)
         m_event_loop(delay_ms);
         http_client_loop();
 
-        if (hw_temp_read())
+        if (!is_ota)
         {
-            app_fan_send_temperature(val_temperature);
-        }
-        else if (hw_bat_read())
-        {
-            app_fan_send_battery(bat_percent, bat_charging_status);
+            if (hw_temp_read())
+            {
+                app_fan_send_temperature(val_temperature);
+            }
+            else if (hw_bat_read())
+            {
+                app_fan_send_battery(bat_percent, bat_charging_status);
+            }
         }
 
         // old += 1;

@@ -4,6 +4,7 @@
 #include "app_fan.h"
 #include "m_ft62f28.h"
 #include "m_database.h"
+#include "flash_api.h"
 #include "m_fan_control.h"
 #include "m_fan_event.h"
 
@@ -540,6 +541,68 @@ void m_led_7_seg_loop(uint32_t delay_ms)
 
 extern uint32_t time_remain;
 uint8_t last_reason_reset;
+
+void m_fan_prepare_for_ota(void)
+{
+    prevent_buzz = 1;
+    hw_buzz_set(SWITCH_IDLE_LEVEL);
+    buzz_num = 0;
+
+    if (time_remain > 0)
+    {
+        s_fan_info.time_set = time_remain;
+    }
+    else
+    {
+        s_fan_info.time_set = 0;
+    }
+    flash_save_fan_info(&s_fan_info);
+    flash_set_rs_reason(3);
+
+    s_fan_runtime.swing_mode = 0;
+    s_fan_info.mode = M_FAN_MODE_OFF;
+    s_fan_info.speed = M_FAN_SPEED_OFF;
+    s_fan_info.pcn = 0;
+    s_fan_info.light = FAN_LIGHT_LEVEL_OFF;
+    s_fan_info.swing = 0;
+
+    hw_fan_set_speed_level(M_FAN_SPEED_OFF);
+    hw_fan_set_swing(M_FAN_SWING_OFF);
+    m_ft62f28_send_speed();
+    m_ft62f28_send_swing(0);
+    m_ft62f28_send_light();
+
+    hw_led_stt_set_stt(M_FAN_BUTTON_NATURAL_INDEX, LED_INDICATE_OFF);
+    hw_led_stt_set_stt(M_FAN_BUTTON_SWING_INDEX, LED_INDICATE_OFF);
+    hw_led_stt_set_stt(M_FAN_BUTTON_TIMER_INDEX, LED_INDICATE_OFF);
+    if (device_type == FANAC)
+    {
+        hw_led_stt_set_stt(0, LED_INDICATE_OFF);
+        hw_led_stt_set_stt(1, LED_INDICATE_OFF);
+        hw_led_stt_set_stt(2, LED_INDICATE_OFF);
+    }
+    m_ft62f28_send_led();
+
+    if (device_type != FANAC)
+    {
+        hw_74hc595_set_number(LED_7_SEG_OFF_INDEX);
+        hw_74hc595_loop();
+        bl_gpio_output_set(OE_PIN, 1);
+    }
+
+    m_ft62f28_check_send_change();
+    vTaskDelay(pdMS_TO_TICKS(100));
+    m_ft62f28_send_speed();
+    m_ft62f28_send_swing(0);
+    m_ft62f28_send_light();
+    m_ft62f28_send_led();
+    m_ft62f28_check_send_change();
+
+    time_remain = 0;
+    last_tick_timer_toggle = 0;
+    prevent_buzz = 0;
+}
+
 void m_fan_init(void)
 {
     hw_buzz_init();
@@ -550,14 +613,67 @@ void m_fan_init(void)
     if (reason_reset)
     {
         last_reason_reset = reason_reset;
-        time_remain = s_fan_info.time_set;
-#if FAN_KEEP_OLD_SWING_MODE
+        flash_set_rs_reason(0);
+
+        prevent_buzz = 1;
         if (s_fan_info.mode != M_FAN_MODE_OFF)
         {
-            s_fan_runtime.swing_mode = s_fan_info.swing;
+            time_remain = s_fan_info.time_set;
+            if (time_remain > 0)
+            {
+                hw_led_stt_set_stt(M_FAN_BUTTON_TIMER_INDEX, LED_INDICATE_ON);
+            }
+            else
+            {
+                hw_led_stt_set_stt(M_FAN_BUTTON_TIMER_INDEX, LED_INDICATE_OFF);
+            }
+
+            if (s_fan_info.mode == M_FAN_MODE_PCN)
+            {
+                m_fan_set_pcn(s_fan_info.pcn);
+            }
+            else if (s_fan_info.mode == M_FAN_MODE_NATURAL)
+            {
+                m_fan_start_natural_mode();
+            }
+            else if (s_fan_info.mode == M_FAN_MODE_AUTO)
+            {
+                m_fan_auto_mode_start();
+            }
+            else
+            {
+                m_fan_set_speed(s_fan_info.mode, s_fan_info.speed);
+            }
+
+            if (s_fan_info.swing)
+            {
+                s_fan_runtime.swing_mode = s_fan_info.swing;
+                hw_fan_set_swing(s_fan_info.swing);
+            }
+
+            if (s_fan_info.light)
+            {
+                m_fan_set_light(s_fan_info.light);
+            }
+
+            hw_74hc595_loop();
+            m_ft62f28_send_led();
+            m_ft62f28_check_send_change();
         }
-#endif
-        flash_set_rs_reason(0);
+        else
+        {
+            time_remain = 0;
+            s_fan_info.speed = M_FAN_SPEED_OFF;
+            s_fan_info.pcn = M_FAN_SPEED_OFF;
+            s_fan_info.light = FAN_LIGHT_LEVEL_OFF;
+            s_fan_info.time_set = 0;
+            m_fan_set_speed(M_FAN_MODE_OFF, M_FAN_SPEED_OFF);
+            hw_74hc595_set_number(LED_7_SEG_OFF_INDEX);
+            hw_74hc595_loop();
+            m_ft62f28_send_led();
+            m_ft62f28_check_send_change();
+        }
+        prevent_buzz = 0;
     }
     else
     {
