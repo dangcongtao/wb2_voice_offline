@@ -476,19 +476,19 @@ static void app_scene_run_validation_tests(void)
     if (app_scene_is_active(11U) != false) { failed_count++; }
 
     /* Test 2: is_cmd_id_active bounds */
-    if (app_scene_is_cmd_id_active(57U) != false) { failed_count++; }
-    if (app_scene_is_cmd_id_active(68U) != false) { failed_count++; }
+    if (app_scene_is_cmd_id_active(55U) != false) { failed_count++; }
+    if (app_scene_is_cmd_id_active(66U) != false) { failed_count++; }
     if (app_scene_is_cmd_id_active(255U) != false) { failed_count++; }
 
     /* Test 3: mask bits indexing */
     uint16_t orig_mask = s_app_scene_mask;
-    s_app_scene_mask = 0x0005U; /* bits 0 and 2 (cmd_id 58 and 60) */
+    s_app_scene_mask = 0x0005U; /* bits 0 and 2 (cmd_id 56 and 58) */
     if (!app_scene_is_active(1U)) { failed_count++; }
     if (app_scene_is_active(2U)) { failed_count++; }
     if (!app_scene_is_active(3U)) { failed_count++; }
+    if (!app_scene_is_cmd_id_active(56U)) { failed_count++; }
+    if (app_scene_is_cmd_id_active(57U)) { failed_count++; }
     if (!app_scene_is_cmd_id_active(58U)) { failed_count++; }
-    if (app_scene_is_cmd_id_active(59U)) { failed_count++; }
-    if (!app_scene_is_cmd_id_active(60U)) { failed_count++; }
 
     /* Test 4: JSON read number tests */
     cJSON *test_js = cJSON_Parse("{\"fanoem\":227,\"u\":100,\"act_id\":1}");

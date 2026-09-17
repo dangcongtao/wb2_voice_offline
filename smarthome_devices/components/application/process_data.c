@@ -334,7 +334,7 @@ void app_response_time_release(uint32_t uid, uint8_t result)
     uint32_t time = m_fan_get_time_set();
     memset(respond, 0, sizeof(respond));
     sprintf(respond,
-            "{\"%s\":131,\"u\":%ld,\"index\":0,\"time\":%ld,\"mode\":1,"
+            "{\"%s\":130,\"u\":%ld,\"index\":0,\"time\":%ld,\"mode\":1,"
             "\"result\": %d}",
             gs_dev_type[device_type], uid, time, result);
     app_send_data(respond, strlen(respond));
@@ -345,7 +345,7 @@ void app_response_time_release_voice(uint32_t uid, uint8_t result, uint8_t cmd_i
     uint32_t time = m_fan_get_time_set();
     memset(respond, 0, sizeof(respond));
     sprintf(respond,
-            "{\"%s\":131,\"u\":%lu,\"index\":0,\"time\":%lu,\"mode\":1,"
+            "{\"%s\":130,\"u\":%lu,\"index\":0,\"time\":%lu,\"mode\":1,"
             "\"result\":%d,\"cmd_id\":%u,\"cwsl\":%u}",
             gs_dev_type[device_type], (unsigned long)uid, (unsigned long)time, (int)result, (unsigned int)cmd_id, (unsigned int)cwsl);
     app_send_data(respond, strlen(respond));

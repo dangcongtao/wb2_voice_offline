@@ -211,7 +211,7 @@ static uint8_t app_cwsl_parse_mutating(cJSON *js_root,
         (request->cmd_id <= APP_SCENE_CMD_ID_MAX)) {
         return APP_CWSL_CODE_BAD_REQUEST;
     }
-    if ((request->cmd_id == 56U) || (request->cmd_id == 57U)) {
+    if ((request->cmd_id == 54U) || (request->cmd_id == 55U)) {
         return APP_CWSL_CODE_BAD_COMMAND_ID;
     }
 
@@ -744,25 +744,25 @@ static void app_cwsl_run_validation_tests(void)
          APP_CWSL_CMD_LEARN, 0U},
         {"\"cmd_id\":46,\"slot\":255,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_LEARN, 0U},
-        {"\"cmd_id\":55,\"slot\":255,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":53,\"slot\":255,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_LEARN, 0U},
-        {"\"cmd_id\":56,\"slot\":0,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":54,\"slot\":0,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_COMMAND_ID},
-        {"\"cmd_id\":57,\"slot\":255,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":55,\"slot\":255,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_COMMAND_ID},
-        {"\"cmd_id\":56,\"slot\":0,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":54,\"slot\":0,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_DELETE, APP_CWSL_CODE_BAD_COMMAND_ID},
-        {"\"cmd_id\":57,\"slot\":255,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":55,\"slot\":255,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_DELETE, APP_CWSL_CODE_BAD_COMMAND_ID},
-        {"\"cmd_id\":58,\"slot\":255,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":56,\"slot\":255,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
-        {"\"cmd_id\":67,\"slot\":255,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":65,\"slot\":255,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
-        {"\"cmd_id\":58,\"slot\":255,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":56,\"slot\":255,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_DELETE, APP_CWSL_CODE_BAD_REQUEST},
-        {"\"cmd_id\":67,\"slot\":255,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":65,\"slot\":255,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_DELETE, APP_CWSL_CODE_BAD_REQUEST},
-        {"\"cmd_id\":68,\"slot\":0,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":66,\"slot\":0,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_COMMAND_ID},
         {"\"cmd_id\":99,\"slot\":0,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_COMMAND_ID},
@@ -802,15 +802,15 @@ static void app_cwsl_run_validation_tests(void)
          APP_CWSL_CMD_QUERY, 0U},
         {"\"cmd_id\":44,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_QUERY, 0U},
+        {"\"cmd_id\":53,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_QUERY, 0U},
+        {"\"cmd_id\":54,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_QUERY, 0U},
         {"\"cmd_id\":55,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_QUERY, 0U},
-        {"\"cmd_id\":56,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":65,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_QUERY, 0U},
-        {"\"cmd_id\":57,\"u\":1,\"act_id\":0",
-         APP_CWSL_CMD_QUERY, 0U},
-        {"\"cmd_id\":67,\"u\":1,\"act_id\":0",
-         APP_CWSL_CMD_QUERY, 0U},
-        {"\"cmd_id\":68,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":66,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_QUERY, APP_CWSL_CODE_BAD_COMMAND_ID},
         {"\"cmd_id\":99,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_QUERY, APP_CWSL_CODE_BAD_COMMAND_ID},
@@ -1349,6 +1349,7 @@ void app_cwsl_notify_voice_cmd(uint8_t cmd_id, uint8_t cwsl)
 
     if ((cmd_id >= APP_SCENE_CMD_ID_MIN) && (cmd_id <= APP_SCENE_CMD_ID_MAX)) {
         if (!app_scene_is_cmd_id_active(cmd_id)) {
+            os_trace("[SCENE] cmd_id=%u not active in app_scene, skip MQTT\r\n", (unsigned int)cmd_id);
             return;
         }
         m_fan_need_buzz(1U);

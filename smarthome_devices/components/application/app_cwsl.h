@@ -13,7 +13,7 @@
 #include "cJSON.h"
 
 /** Maximum ASR command identifier accepted by CWSL LEARN/DELETE/QUERY. */
-#define APP_CWSL_CMD_ID_MAX 67U
+#define APP_CWSL_CMD_ID_MAX 65U
 
 /** @brief Initialize the CWSL state machine and UART response callbacks.
  *

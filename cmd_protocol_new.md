@@ -185,13 +185,13 @@ nhau, nhưng cả hai cùng sinh ra một giá trị `N` — xem bảng ánh x�
 ứng. Firmware giọng nói không lưu hoặc xử lý nội dung của từng ngữ cảnh.
 
 ```text
-KÍCH-HOẠT-NGỮ-CẢNH-MỘT  -> {"cmd":12,"data":[1]}
-KÍCH-HOẠT-NGỮ-CẢNH-HAI  -> {"cmd":12,"data":[2]}
+KÍCH-HOẠT-NGỮ-CẢNH-MỘT  -> {"cmd":12,"data":[1],"cmd_id":56,"cwsl":255}
+KÍCH-HOẠT-NGỮ-CẢNH-HAI  -> {"cmd":12,"data":[2],"cmd_id":57,"cwsl":255}
 ...
-KÍCH-HOẠT-NGỮ-CẢNH-MƯỜI -> {"cmd":12,"data":[10]}
+KÍCH-HOẠT-NGỮ-CẢNH-MƯỜI -> {"cmd":12,"data":[10],"cmd_id":65,"cwsl":255}
 ```
 
-ASR command ID là `45 + N`, tức ID `46..55` lần lượt ánh xạ sang scene
+ASR command ID là `55 + N`, tức ID `56..65` lần lượt ánh xạ sang scene
 `1..10`. Payload luôn có đúng một byte và giá trị hợp lệ là `1..10`.
 
 ### Âm lượng loa (`CMD_VOLUME` / `CMD_VOLUME_INFO`)
@@ -585,20 +585,38 @@ một status rồi về `APP_ST_IDLE`.
 | `MỞ/BẬT-SỐ-BA` | 15 / 16 | `{"cmd":2,"data":[3],"cmd_id":15\|16,"cwsl":255}` | Tốc độ số 3 |
 | `MỞ-GIÓ-TỰ-NHIÊN` / `CHẾ-ĐỘ-GIÓ-TỰ-NHIÊN` | 17 / 18 | `{"cmd":2,"data":[4],"cmd_id":17\|18,"cwsl":255}` | Gió tự nhiên |
 | `BẬT-QUAY` / `MỞ-CHẾ-ĐỘ-QUAY` / `BẬT-CHẾ-ĐỘ-QUAY` | 19 / 20 / 21 | `{"cmd":2,"data":[5],"cmd_id":19\|20\|21,"cwsl":255}` | Quay quạt |
-| `TẮT-QUAY` / `DỪNG-CHẾ-ĐỘ-QUAY` / `DỪNG-QUAY` | 22 / 23 / 24 | `{"cmd":2,"data":[6],"cmd_id":22\|23\|24,"cwsl":255}` | Dừng quay |
-| `TẮT-QUẠT-SAU-<N>-GIỜ` / `...-TIẾNG` | 25..48 | `{"cmd":7,"data":[N],"cmd_id":<id>,"cwsl":255}` | Hẹn tắt sau N giờ (`N=1..12`) |
-| `HỦY-HẸN-GIỜ` | 49 | `{"cmd":7,"data":[0],"cmd_id":49,"cwsl":255}` | Hủy hẹn giờ |
-| `GIẢM-ÂM-LƯỢNG` | 50 | `{"cmd":13,"data":[level],"cmd_id":50,"cwsl":255}` | Giảm một mức, clamp tại 1 và tự unmute |
-| `TĂNG-ÂM-LƯỢNG` | 51 | `{"cmd":13,"data":[level],"cmd_id":51,"cwsl":255}` | Tăng một mức, clamp tại 7 và tự unmute |
-| `ÂM-LƯỢNG-BÉ/NHỎ-NHẤT` | 52 / 53 | `{"cmd":13,"data":[1],"cmd_id":52\|53,"cwsl":255}` | Đặt mức 1 và tự unmute |
-| `ÂM-LƯỢNG-TO/LỚN-NHẤT` | 54 / 55 | `{"cmd":13,"data":[7],"cmd_id":54\|55,"cwsl":255}` | Đặt mức 7 và tự unmute |
-| `TẮT-ÂM-THANH` | 56 | `{"cmd":13,"data":[0],"cmd_id":56,"cwsl":255}` | Mute sau khi phát prompt xác nhận |
-| `BẬT-ÂM-THANH` | 57 | `{"cmd":13,"data":[level],"cmd_id":57,"cwsl":255}` | Unmute và gửi lại mức volume đang lưu |
-| `KÍCH-HOẠT-NGỮ-CẢNH-<N>` | 58..67 | `{"cmd":12,"data":[N],"cmd_id":<id>,"cwsl":255}` | Kích hoạt ngữ cảnh `N` (`N=1..10`) |
+| `TẮT-QUAY` / `DỪNG-CHẾ-ĐỘ-QUAY` / `DỪNG-QUAY` | 22 | `{"cmd":2,"data":[6],"cmd_id":22,"cwsl":255}` | Dừng quay |
+| `TẮT-QUẠT-SAU-<N>-GIỜ` / `...-TIẾNG` | 23..46 | `{"cmd":7,"data":[N],"cmd_id":<id>,"cwsl":255}` | Hẹn tắt sau N giờ (`N=1..12`, min_id = `23 + 2*(N-1)`) |
+| `HỦY-HẸN-GIỜ` | 47 | `{"cmd":7,"data":[0],"cmd_id":47,"cwsl":255}` | Hủy hẹn giờ |
+| `GIẢM-ÂM-LƯỢNG` | 48 | `{"cmd":13,"data":[level],"cmd_id":48,"cwsl":255}` | Giảm một mức, clamp tại 1 và tự unmute |
+| `TĂNG-ÂM-LƯỢNG` | 49 | `{"cmd":13,"data":[level],"cmd_id":49,"cwsl":255}` | Tăng một mức, clamp tại 7 và tự unmute |
+| `ÂM-LƯỢNG-BÉ/NHỎ-NHẤT` | 50 / 51 | `{"cmd":13,"data":[1],"cmd_id":50\|51,"cwsl":255}` | Đặt mức 1 và tự unmute |
+| `ÂM-LƯỢNG-TO/LỚN-NHẤT` | 52 / 53 | `{"cmd":13,"data":[7],"cmd_id":52\|53,"cwsl":255}` | Đặt mức 7 và tự unmute |
+| `TẮT-ÂM-THANH` | 54 | `{"cmd":13,"data":[0],"cmd_id":54,"cwsl":255}` | Mute sau khi phát prompt xác nhận |
+| `BẬT-ÂM-THANH` | 55 | `{"cmd":13,"data":[level],"cmd_id":55,"cwsl":255}` | Unmute và gửi lại mức volume đang lưu |
+| `KÍCH-HOẠT-NGỮ-CẢNH-<N>` | 56..65 | `{"cmd":12,"data":[N],"cmd_id":<id>,"cwsl":255}` | Kích hoạt ngữ cảnh `N` (`N=1..10`, cmd_id = `55 + N`) |
 
 Câu đã học CWSL đi lại đúng pipeline: `cmd`/`data`/`cmd_id` giống bảng trên,
 chỉ `"cwsl"` đổi thành slot `0..14` của lệnh đó. Từ đánh thức không có hàng
 nào — chip không gửi UART khi wake.
+
+### 4.1. Báo cáo lỗi lệnh giọng nói lên MQTT (`cmd: 299`)
+
+Khi MCU nhận bản tin UART từ IC Voice nhưng bị từ chối do lỗi định dạng (`INVALID_FORMAT`), sai mã lệnh (`UNKNOWN_COMMAND`) hoặc sai dải dữ liệu/metadata (`INVALID_DATA`), MCU sẽ tự động gửi một thông điệp báo lỗi lên MQTT với mã lệnh `299`:
+
+- **Định dạng JSON gửi đi:**
+  ```json
+  {"<dev_type>": 299, "raw": "<nội dung UART gốc đã escape>", "reason": "<lý do từ chối>"}
+  ```
+- **Ví dụ thực tế:**
+  ```json
+  {"fandc": 299, "raw": "{\"cmd\":13,\"data\":[8],\"cmd_id\":49,\"cwsl\":255}", "reason": "INVALID_DATA"}
+  ```
+- **Các mã lý do (`reason`):**
+  - `INVALID_DATA`: Giá trị `data` hoặc `cmd_id` nằm ngoài dải hợp lệ của câu lệnh (ví dụ dải âm lượng `1..7` nhưng gửi `[8]`, hẹn giờ ngoài dải `1..12`, hoặc `cmd_id` không khớp với hành động).
+  - `UNKNOWN_COMMAND`: Mã `cmd` không tồn tại trong danh mục lệnh MCU hỗ trợ.
+  - `INVALID_FORMAT`: Bản tin JSON bị sai cú pháp, thiếu ngoặc hoặc thiếu trường metadata bắt buộc (`cmd_id`, `cwsl`).
+  - `NUMBER_OVERFLOW`: Dữ liệu số nguyên vượt quá phạm vi lưu trữ.
 
 ## 5. Smoke test bằng web GUI
 

@@ -98,18 +98,18 @@ int main(void) {
     /* TEST 1: Init & Bounds */
     {
         reset_mocks();
-        mock_flash_mask = 0x0005; /* bits 0, 2 active -> slots 58, 60 */
+        mock_flash_mask = 0x0005; /* bits 0, 2 active -> slots 56, 58 */
         app_scene_init();
         assert(app_scene_is_active(1) == true);
         assert(app_scene_is_active(2) == false);
         assert(app_scene_is_active(3) == true);
         assert(app_scene_is_active(0) == false);
         assert(app_scene_is_active(11) == false);
-        assert(app_scene_is_cmd_id_active(58) == true);
-        assert(app_scene_is_cmd_id_active(59) == false);
-        assert(app_scene_is_cmd_id_active(60) == true);
+        assert(app_scene_is_cmd_id_active(56) == true);
         assert(app_scene_is_cmd_id_active(57) == false);
-        assert(app_scene_is_cmd_id_active(68) == false);
+        assert(app_scene_is_cmd_id_active(58) == true);
+        assert(app_scene_is_cmd_id_active(55) == false);
+        assert(app_scene_is_cmd_id_active(66) == false);
         assert(app_scene_is_cmd_id_active(255) == false);
         printf("  PASS: Test 1 - Init & bounds\n");
     }
@@ -117,25 +117,25 @@ int main(void) {
     /* TEST 2: Add Scene - Success & Lowest Free Slot Selection */
     {
         reset_mocks();
-        mock_flash_mask = 0x0001; /* bit 0 set (slot 58 used) */
+        mock_flash_mask = 0x0001; /* bit 0 set (slot 56 used) */
         app_scene_init();
 
         cJSON *req = cJSON_Parse("{\"fanoem\":227,\"u\":1001,\"act_id\":5}");
         app_scene_add(req);
         cJSON_Delete(req);
 
-        /* Should pick bit 1 -> candidate cmd_id 59 */
-        assert(mock_cwsl_learn_last_cmd_id == 59);
+        /* Should pick bit 1 -> candidate cmd_id 57 */
+        assert(mock_cwsl_learn_last_cmd_id == 57);
         assert(publish_count == 0); /* No immediate MQTT ACK */
 
         /* Callback arrives from FSM: LEARN_OK (32) */
-        app_scene_on_learn_result(32, 59);
+        app_scene_on_learn_result(32, 57);
         assert(publish_count == 1);
-        assert(strstr(last_published, "\"cmd_id\":59") != NULL);
+        assert(strstr(last_published, "\"cmd_id\":57") != NULL);
         assert(strstr(last_published, "\"result\":1") != NULL);
         assert(strstr(last_published, "\"u\":1001") != NULL);
         assert(strstr(last_published, "\"act_id\":5") != NULL);
-        assert(app_scene_is_cmd_id_active(59) == true);
+        assert(app_scene_is_cmd_id_active(57) == true);
         assert(mock_flash_mask == 0x0003); /* bits 0, 1 now set */
         printf("  PASS: Test 2 - Add scene lowest slot & success\n");
     }
@@ -196,57 +196,57 @@ int main(void) {
     /* TEST 6: Delete Single Slot - Success (33) & Failure (51) */
     {
         reset_mocks();
-        mock_flash_mask = 0x0003; /* slots 58, 59 active */
+        mock_flash_mask = 0x0003; /* slots 56, 57 active */
         app_scene_init();
 
-        /* Delete slot 58 */
-        cJSON *req = cJSON_Parse("{\"fanoem\":228,\"cmd_id\":58,\"u\":2001,\"act_id\":1}");
+        /* Delete slot 56 */
+        cJSON *req = cJSON_Parse("{\"fanoem\":228,\"cmd_id\":56,\"u\":2001,\"act_id\":1}");
         app_scene_delete(req);
         cJSON_Delete(req);
 
-        assert(mock_cwsl_delete_last_cmd_id == 58);
+        assert(mock_cwsl_delete_last_cmd_id == 56);
         assert(publish_count == 0);
 
         /* Chip responds with 33 (DELETE_OK) */
-        app_scene_on_delete_result(33, 58);
+        app_scene_on_delete_result(33, 56);
         assert(publish_count == 1);
-        assert(strstr(last_published, "\"cmd_id\":58") != NULL);
+        assert(strstr(last_published, "\"cmd_id\":56") != NULL);
         assert(strstr(last_published, "\"result\":1") != NULL);
         assert(strstr(last_published, "\"u\":2001") != NULL);
-        assert(app_scene_is_cmd_id_active(58) == false);
-        assert(app_scene_is_cmd_id_active(59) == true);
+        assert(app_scene_is_cmd_id_active(56) == false);
+        assert(app_scene_is_cmd_id_active(57) == true);
         assert(mock_flash_mask == 0x0002);
 
-        /* Delete slot 59 and chip returns 51 (slot empty) -> treated as success */
+        /* Delete slot 57 and chip returns 51 (slot empty) -> treated as success */
         publish_count = 0;
-        req = cJSON_Parse("{\"fanoem\":228,\"cmd_id\":59,\"u\":2002,\"act_id\":2}");
+        req = cJSON_Parse("{\"fanoem\":228,\"cmd_id\":57,\"u\":2002,\"act_id\":2}");
         app_scene_delete(req);
         cJSON_Delete(req);
 
-        app_scene_on_delete_result(51, 59);
+        app_scene_on_delete_result(51, 57);
         assert(publish_count == 1);
         assert(strstr(last_published, "\"result\":1") != NULL);
-        assert(strstr(last_published, "\"cmd_id\":59") != NULL);
-        assert(app_scene_is_cmd_id_active(59) == false); /* bit cleared! */
+        assert(strstr(last_published, "\"cmd_id\":57") != NULL);
+        assert(app_scene_is_cmd_id_active(57) == false); /* bit cleared! */
         assert(mock_flash_mask == 0x0000); /* flash updated! */
 
-        /* Delete slot 59 and chip returns error 70 -> reject */
+        /* Delete slot 57 and chip returns error 70 -> reject */
         publish_count = 0;
-        req = cJSON_Parse("{\"fanoem\":228,\"cmd_id\":59,\"u\":2003,\"act_id\":3}");
+        req = cJSON_Parse("{\"fanoem\":228,\"cmd_id\":57,\"u\":2003,\"act_id\":3}");
         app_scene_delete(req);
         cJSON_Delete(req);
 
-        app_scene_on_delete_result(70, 59);
+        app_scene_on_delete_result(70, 57);
         assert(publish_count == 1);
         assert(strstr(last_published, "\"result\":0") != NULL);
         assert(strstr(last_published, "\"code\":70") != NULL);
         printf("  PASS: Test 6 - Single slot delete success (33 and 51) & fail (70)\n");
     }
 
-    /* TEST 7: Delete All (cmd_id 255) - Sequence 58..67 with 33/51 producing 1 MQTT response */
+    /* TEST 7: Delete All (cmd_id 255) - Sequence 56..65 with 33/51 producing 1 MQTT response */
     {
         reset_mocks();
-        mock_flash_mask = 0x0005; /* slots 58, 60 active */
+        mock_flash_mask = 0x0005; /* slots 56, 58 active */
         app_scene_init();
 
         cJSON *req = cJSON_Parse("{\"fanoem\":228,\"cmd_id\":255,\"u\":3001,\"act_id\":7}");
@@ -255,31 +255,31 @@ int main(void) {
 
         assert(app_scene_is_pending() == true);
         assert(mock_cwsl_delete_call_count == 1);
-        assert(mock_cwsl_delete_last_cmd_id == 58);
+        assert(mock_cwsl_delete_last_cmd_id == 56);
         assert(publish_count == 0);
 
-        /* Step 58: returns 33 */
-        app_scene_on_delete_result(33, 58);
+        /* Step 56: returns 33 */
+        app_scene_on_delete_result(33, 56);
         assert(publish_count == 0);
         assert(mock_cwsl_delete_call_count == 2);
-        assert(mock_cwsl_delete_last_cmd_id == 59);
-        assert(mock_flash_mask == 0x0004); /* slot 58 cleared in flash immediately */
+        assert(mock_cwsl_delete_last_cmd_id == 57);
+        assert(mock_flash_mask == 0x0004); /* slot 56 cleared in flash immediately */
 
-        /* Step 59: returns 51 (empty) */
-        app_scene_on_delete_result(51, 59);
+        /* Step 57: returns 51 (empty) */
+        app_scene_on_delete_result(51, 57);
         assert(publish_count == 0);
         assert(mock_cwsl_delete_call_count == 3);
-        assert(mock_cwsl_delete_last_cmd_id == 60);
+        assert(mock_cwsl_delete_last_cmd_id == 58);
 
-        /* Step 60..66 */
-        for (uint8_t c = 60; c <= 66; c++) {
-            app_scene_on_delete_result((c == 60) ? 33 : 51, c);
+        /* Step 58..64 */
+        for (uint8_t c = 58; c <= 64; c++) {
+            app_scene_on_delete_result((c == 58) ? 33 : 51, c);
             assert(publish_count == 0);
             assert(mock_cwsl_delete_last_cmd_id == c + 1);
         }
 
-        /* Step 67 (final) */
-        app_scene_on_delete_result(51, 67);
+        /* Step 65 (final) */
+        app_scene_on_delete_result(51, 65);
         assert(publish_count == 1);
         assert(app_scene_is_pending() == false);
         assert(strstr(last_published, "\"cmd_id\":255") != NULL);
@@ -287,7 +287,7 @@ int main(void) {
         assert(strstr(last_published, "\"u\":3001") != NULL);
         assert(strstr(last_published, "\"act_id\":7") != NULL);
         assert(mock_flash_mask == 0);
-        printf("  PASS: Test 7 - Delete all 255 sequence 58..67 only 1 MQTT response & flash synced\n");
+        printf("  PASS: Test 7 - Delete all 255 sequence 56..65 only 1 MQTT response & flash synced\n");
     }
 
     /* TEST 8: Concurrency Protection - New request during Delete All (255) must reject 67 and NOT abort Delete All */
@@ -303,7 +303,7 @@ int main(void) {
         assert(app_scene_is_pending() == true);
 
         /* Another delete arrives concurrently */
-        cJSON *bad_req = cJSON_Parse("{\"fanoem\":228,\"cmd_id\":58,\"u\":9999,\"act_id\":9}");
+        cJSON *bad_req = cJSON_Parse("{\"fanoem\":228,\"cmd_id\":56,\"u\":9999,\"act_id\":9}");
         app_scene_delete(bad_req);
         cJSON_Delete(bad_req);
 
@@ -338,7 +338,7 @@ int main(void) {
 
         /* Now complete the delete all */
         publish_count = 0;
-        for (uint8_t c = 58; c <= 67; c++) {
+        for (uint8_t c = 56; c <= 65; c++) {
             app_scene_on_delete_result(51, c);
         }
         assert(publish_count == 1);
@@ -352,7 +352,7 @@ int main(void) {
     /* TEST 9: Query Scenes (cmd 229) */
     {
         reset_mocks();
-        mock_flash_mask = 0x0005; /* slots 58, 60 */
+        mock_flash_mask = 0x0005; /* slots 56, 58 */
         app_scene_init();
 
         cJSON *req = cJSON_Parse("{\"fanoem\":229,\"u\":4001,\"act_id\":9}");
@@ -360,7 +360,7 @@ int main(void) {
         cJSON_Delete(req);
 
         assert(publish_count == 1);
-        assert(strstr(last_published, "\"scenes\":[58,60]") != NULL);
+        assert(strstr(last_published, "\"scenes\":[56,58]") != NULL);
         assert(strstr(last_published, "\"total\":2") != NULL);
         assert(strstr(last_published, "\"u\":4001") != NULL);
         assert(strstr(last_published, "\"result\":1") != NULL);
@@ -387,14 +387,14 @@ int main(void) {
         app_scene_delete(req);
         cJSON_Delete(req);
 
-        /* Slot 58 deleted */
-        app_scene_on_delete_result(33, 58);
-        /* Slot 59 deleted */
-        app_scene_on_delete_result(33, 59);
+        /* Slot 56 deleted */
+        app_scene_on_delete_result(33, 56);
+        /* Slot 57 deleted */
+        app_scene_on_delete_result(33, 57);
 
-        /* Slot 60 times out (52) */
+        /* Slot 58 times out (52) */
         publish_count = 0;
-        app_scene_on_delete_result(52, 60);
+        app_scene_on_delete_result(52, 58);
         assert(publish_count == 1);
         assert(strstr(last_published, "\"code\":52") != NULL);
         assert(strstr(last_published, "\"result\":0") != NULL);
@@ -402,7 +402,7 @@ int main(void) {
         assert(app_scene_is_pending() == false);
         /* Bits 0 and 1 were cleared in flash mask */
         assert((mock_flash_mask & 0x0003) == 0);
-        assert((mock_flash_mask & 0x0004) != 0); /* bit 2 (slot 60) preserved */
+        assert((mock_flash_mask & 0x0004) != 0); /* bit 2 (slot 58) preserved */
         printf("  PASS: Test 10 - Delete all aborts on system error and syncs flash\n");
     }
 
@@ -410,7 +410,7 @@ int main(void) {
     {
         reset_mocks();
         /* Missing u */
-        cJSON *req1 = cJSON_Parse("{\"fanoem\":228,\"cmd_id\":58,\"act_id\":0}");
+        cJSON *req1 = cJSON_Parse("{\"fanoem\":228,\"cmd_id\":56,\"act_id\":0}");
         app_scene_delete(req1);
         cJSON_Delete(req1);
         assert(publish_count == 1);
@@ -419,7 +419,7 @@ int main(void) {
 
         /* Missing act_id */
         publish_count = 0;
-        cJSON *req2 = cJSON_Parse("{\"fanoem\":228,\"cmd_id\":58,\"u\":100}");
+        cJSON *req2 = cJSON_Parse("{\"fanoem\":228,\"cmd_id\":56,\"u\":100}");
         app_scene_delete(req2);
         cJSON_Delete(req2);
         assert(publish_count == 1);

@@ -184,9 +184,9 @@ int main(void)
         assert(strstr(s_last_published, "\"u\":1001") != NULL);
         assert(strstr(s_last_published, "\"act_id\":1") != NULL);
 
-        /* Mute (56) and Unmute (57) must be rejected with BAD_COMMAND_ID (65) */
+        /* Mute (54) and Unmute (55) must be rejected with BAD_COMMAND_ID (65) */
         reset_cwsl_mocks();
-        req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":56,\"slot\":0,\"u\":1002,\"act_id\":2}");
+        req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":54,\"slot\":0,\"u\":1002,\"act_id\":2}");
         app_cwsl_learn(req);
         cJSON_Delete(req);
         assert(s_publish_count == 1);
@@ -194,16 +194,16 @@ int main(void)
         assert(strstr(s_last_published, "\"result\":0") != NULL);
 
         reset_cwsl_mocks();
-        req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":57,\"slot\":255,\"u\":1003,\"act_id\":3}");
+        req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":55,\"slot\":255,\"u\":1003,\"act_id\":3}");
         app_cwsl_learn(req);
         cJSON_Delete(req);
         assert(s_publish_count == 1);
         assert(strstr(s_last_published, "\"code\":65") != NULL);
         assert(strstr(s_last_published, "\"result\":0") != NULL);
 
-        /* Scene commands (58..67) must be rejected with BAD_REQUEST (64) */
+        /* Scene commands (56..65) must be rejected with BAD_REQUEST (64) */
         reset_cwsl_mocks();
-        req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":58,\"slot\":255,\"u\":1004,\"act_id\":4}");
+        req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":56,\"slot\":255,\"u\":1004,\"act_id\":4}");
         app_cwsl_learn(req);
         cJSON_Delete(req);
         assert(s_publish_count == 1);
@@ -211,15 +211,15 @@ int main(void)
         assert(strstr(s_last_published, "\"result\":0") != NULL);
 
         reset_cwsl_mocks();
-        req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":67,\"slot\":255,\"u\":1005,\"act_id\":5}");
+        req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":65,\"slot\":255,\"u\":1005,\"act_id\":5}");
         app_cwsl_learn(req);
         cJSON_Delete(req);
         assert(s_publish_count == 1);
         assert(strstr(s_last_published, "\"code\":64") != NULL);
 
-        /* Out-of-bounds commands (> 67) must be rejected with BAD_COMMAND_ID (65) */
+        /* Out-of-bounds commands (> 65) must be rejected with BAD_COMMAND_ID (65) */
         reset_cwsl_mocks();
-        req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":68,\"slot\":0,\"u\":1006,\"act_id\":6}");
+        req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":66,\"slot\":0,\"u\":1006,\"act_id\":6}");
         app_cwsl_learn(req);
         cJSON_Delete(req);
         assert(s_publish_count == 1);

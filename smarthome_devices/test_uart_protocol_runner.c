@@ -18,6 +18,9 @@
 #include "bl_sys.h"
 #include "bl_wdt.h"
 
+#define AIIO_CI13162_UART_ENABLE 1
+#include "components/hardware/aiio_ci13162_uart.h"
+
 #define os_trace printf
 
 /* Guard unwanted SDK headers */
@@ -33,6 +36,21 @@
 #define BUZZ_PIN 17
 
 uint32_t device_type = FANDC;
+char *gs_dev_type[] = {"wswitch3v", "lhswitch3v", "swminiv2", "sswitch2v", "swshockv2", "swshohuv2", "fanoem", "fandc", "fanac", "fanproacv2"};
+
+static char s_last_app_send_data[512] = {0};
+static int s_app_send_data_count = 0;
+void app_send_data(char *data, uint32_t length) {
+    if (length < sizeof(s_last_app_send_data)) {
+        memcpy(s_last_app_send_data, data, length);
+        s_last_app_send_data[length] = '\0';
+    } else {
+        strncpy(s_last_app_send_data, data, sizeof(s_last_app_send_data) - 1);
+        s_last_app_send_data[sizeof(s_last_app_send_data) - 1] = '\0';
+    }
+    s_app_send_data_count++;
+}
+
 static int s_mock_voice_support = 1;
 bool hw_device_support_voice(void) {
     return s_mock_voice_support != 0;
@@ -104,9 +122,7 @@ BaseType_t xSemaphoreGive(SemaphoreHandle_t s) { (void)s; return pdTRUE; }
 TaskHandle_t xTaskCreateStatic(void (*f)(void *), const char *n, const uint32_t s, void *p, uint32_t pr, StackType_t *sb, StaticTask_t *tb) {
     (void)f; (void)n; (void)s; (void)p; (void)pr; (void)sb; (void)tb; return (TaskHandle_t)1;
 }
-QueueHandle_t xQueueCreateStatic(uint32_t a, uint32_t b, uint8_t *c, StaticQueue_t *d) {
-    (void)a; (void)b; (void)c; (void)d; return (QueueHandle_t)1;
-}
+QueueHandle_t xQueueCreateStatic(uint32_t a, uint32_t b, uint8_t *c, StaticQueue_t *d);
 
 void bl_sys_reset_por(void) {}
 
@@ -184,13 +200,37 @@ void m_fan_set_swing(uint8_t swing) {
 #include "components/hardware/aiio_ci13162_uart.c"
 #include "components/hardware/buzz.c"
 
+#define MOCK_Q_CMD ((QueueHandle_t)(uintptr_t)1)
+#define MOCK_Q_ERR ((QueueHandle_t)(uintptr_t)2)
+
+QueueHandle_t xQueueCreateStatic(uint32_t a, uint32_t b, uint8_t *c, StaticQueue_t *d) {
+    (void)a; (void)c; (void)d;
+    if (b == sizeof(aiio_ci13162_message_t)) {
+        return MOCK_Q_CMD;
+    }
+    return MOCK_Q_ERR;
+}
+
 /* Queue mock for aiio_ci13162_message_t */
 static aiio_ci13162_message_t s_test_q[16];
 static int s_test_q_head = 0;
 static int s_test_q_tail = 0;
 
+/* Queue mock for aiio_ci13162_error_event_t */
+static aiio_ci13162_error_event_t s_err_q[16];
+static int s_err_q_head = 0;
+static int s_err_q_tail = 0;
+
 BaseType_t xQueueReceive(QueueHandle_t xQueue, void *pvBuffer, TickType_t xTicksToWait) {
-    (void)xQueue; (void)xTicksToWait;
+    (void)xTicksToWait;
+    if (xQueue == MOCK_Q_ERR || xQueue == s_aiio_ci13162_error_queue) {
+        if (s_err_q_head == s_err_q_tail) {
+            return pdFALSE;
+        }
+        memcpy(pvBuffer, &s_err_q[s_err_q_tail], sizeof(aiio_ci13162_error_event_t));
+        s_err_q_tail = (s_err_q_tail + 1) % 16;
+        return pdPASS;
+    }
     if (s_test_q_head == s_test_q_tail) {
         return pdFALSE;
     }
@@ -200,7 +240,14 @@ BaseType_t xQueueReceive(QueueHandle_t xQueue, void *pvBuffer, TickType_t xTicks
 }
 
 BaseType_t xQueueSend(QueueHandle_t xQueue, const void *pvItemToQueue, TickType_t xTicksToWait) {
-    (void)xQueue; (void)xTicksToWait;
+    (void)xTicksToWait;
+    if (xQueue == MOCK_Q_ERR || xQueue == s_aiio_ci13162_error_queue) {
+        int next = (s_err_q_head + 1) % 16;
+        if (next == s_err_q_tail) return pdFALSE;
+        memcpy(&s_err_q[s_err_q_head], pvItemToQueue, sizeof(aiio_ci13162_error_event_t));
+        s_err_q_head = next;
+        return pdPASS;
+    }
     int next = (s_test_q_head + 1) % 16;
     if (next == s_test_q_tail) return pdFALSE;
     memcpy(&s_test_q[s_test_q_head], pvItemToQueue, sizeof(aiio_ci13162_message_t));
@@ -209,9 +256,14 @@ BaseType_t xQueueSend(QueueHandle_t xQueue, const void *pvItemToQueue, TickType_
 }
 
 BaseType_t xQueueReset(QueueHandle_t xQueue) {
-    (void)xQueue;
-    s_test_q_head = 0;
-    s_test_q_tail = 0;
+    if (xQueue == NULL || xQueue == MOCK_Q_CMD || xQueue == s_aiio_ci13162_command_queue) {
+        s_test_q_head = 0;
+        s_test_q_tail = 0;
+    }
+    if (xQueue == NULL || xQueue == MOCK_Q_ERR || xQueue == s_aiio_ci13162_error_queue) {
+        s_err_q_head = 0;
+        s_err_q_tail = 0;
+    }
     return pdPASS;
 }
 
@@ -226,10 +278,13 @@ static void reset_test_state(void) {
     s_fan_set_speed_call_count = 0;
     s_uart_tx_count = 0;
     s_uart_tx_buf[0] = '\0';
+    s_last_app_send_data[0] = '\0';
+    s_app_send_data_count = 0;
     s_buzz_last = SWITCH_IDLE_LEVEL;
     s_buzz_active_is_long = 0U;
     xQueueReset(NULL);
-    s_aiio_ci13162_command_queue = (QueueHandle_t)1;
+    s_aiio_ci13162_command_queue = MOCK_Q_CMD;
+    s_aiio_ci13162_error_queue = MOCK_Q_ERR;
 }
 
 int main(void) {
@@ -238,7 +293,7 @@ int main(void) {
     /* TEST 1: Run built-in parser and assembler tests */
     {
         printf("--- Test 1: Built-in Parser & Assembler Tests ---\n");
-        s_aiio_ci13162_command_queue = (QueueHandle_t)1;
+        reset_test_state();
         aiio_ci13162_run_parser_tests();
         aiio_ci13162_run_assembler_tests();
         printf("  PASS: Built-in parser and assembler tests succeeded\n");
@@ -409,7 +464,7 @@ int main(void) {
             .command = AIIO_CI13162_CMD_VOLUME_CHANGE,
             .data_count = 1U,
             .data = {5U},
-            .cmd_id = 50U,
+            .cmd_id = 49U,
             .cwsl = 0U,
             .has_metadata = 1U
         };
@@ -418,10 +473,10 @@ int main(void) {
 
         assert(s_vol_report_count == 1);
         assert(s_last_vol_report_level == 5U);
-        assert(s_last_vol_report_cmd_id == 50U);
+        assert(s_last_vol_report_cmd_id == 49U);
         assert(s_last_vol_report_cwsl == 0U);
         assert(s_cwsl_notify_count == 1);
-        assert(s_last_cwsl_notify_cmd_id == 50U);
+        assert(s_last_cwsl_notify_cmd_id == 49U);
         assert(s_last_cwsl_notify_cwsl == 0U);
 
         printf("  PASS: Volume change metadata passed through correctly\n");
@@ -503,13 +558,13 @@ int main(void) {
         assert(s_last_cwsl_notify_cmd_id == 9U);
         assert(s_last_cwsl_notify_cwsl == 3U);
 
-        /* Synonym timer (cmd_id 26: 1 tieng) */
+        /* Synonym timer (cmd_id 24: 1 tieng) */
         reset_test_state();
         aiio_ci13162_message_t timer_syn = {
             .command = AIIO_CI13162_CMD_TIMER,
             .data_count = 1U,
             .data = {1U},
-            .cmd_id = 26U,
+            .cmd_id = 24U,
             .cwsl = 255U,
             .has_metadata = 1U
         };
@@ -517,9 +572,9 @@ int main(void) {
         aiio_ci13162_uart_process();
         assert(s_timer_voice_count == 1);
         assert(s_last_timer_set == 3600U);
-        assert(s_last_timer_cmd_id == 26U);
+        assert(s_last_timer_cmd_id == 24U);
         assert(s_cwsl_notify_count == 1);
-        assert(s_last_cwsl_notify_cmd_id == 26U);
+        assert(s_last_cwsl_notify_cmd_id == 24U);
 
         printf("  PASS: Synonyms and learned commands correctly handled\n");
     }
@@ -609,12 +664,12 @@ int main(void) {
         printf("--- Test 11: Volume Boundaries ---\n");
         reset_test_state();
 
-        /* Mute cmd_id 56 -> data 0 */
+        /* Mute cmd_id 54 -> data 0 */
         aiio_ci13162_message_t mute_msg = {
             .command = AIIO_CI13162_CMD_VOLUME_CHANGE,
             .data_count = 1U,
             .data = {0U},
-            .cmd_id = 56U,
+            .cmd_id = 54U,
             .cwsl = 255U,
             .has_metadata = 1U
         };
@@ -622,15 +677,15 @@ int main(void) {
         aiio_ci13162_uart_process();
         assert(s_vol_report_count == 1);
         assert(s_last_vol_report_level == 0U);
-        assert(s_last_vol_report_cmd_id == 56U);
+        assert(s_last_vol_report_cmd_id == 54U);
 
-        /* Min volume cmd_id 52 -> data 1 */
+        /* Min volume cmd_id 50 -> data 1 */
         reset_test_state();
         aiio_ci13162_message_t min_vol_msg = {
             .command = AIIO_CI13162_CMD_VOLUME_CHANGE,
             .data_count = 1U,
             .data = {1U},
-            .cmd_id = 52U,
+            .cmd_id = 50U,
             .cwsl = 255U,
             .has_metadata = 1U
         };
@@ -638,15 +693,15 @@ int main(void) {
         aiio_ci13162_uart_process();
         assert(s_vol_report_count == 1);
         assert(s_last_vol_report_level == 1U);
-        assert(s_last_vol_report_cmd_id == 52U);
+        assert(s_last_vol_report_cmd_id == 50U);
 
-        /* Max volume cmd_id 54 -> data 7 */
+        /* Max volume cmd_id 52 -> data 7 */
         reset_test_state();
         aiio_ci13162_message_t max_vol_msg = {
             .command = AIIO_CI13162_CMD_VOLUME_CHANGE,
             .data_count = 1U,
             .data = {7U},
-            .cmd_id = 54U,
+            .cmd_id = 52U,
             .cwsl = 255U,
             .has_metadata = 1U
         };
@@ -654,15 +709,15 @@ int main(void) {
         aiio_ci13162_uart_process();
         assert(s_vol_report_count == 1);
         assert(s_last_vol_report_level == 7U);
-        assert(s_last_vol_report_cmd_id == 54U);
+        assert(s_last_vol_report_cmd_id == 52U);
 
-        /* Unmute cmd_id 57 -> data 4 */
+        /* Unmute cmd_id 55 -> data 4 */
         reset_test_state();
         aiio_ci13162_message_t unmute_msg = {
             .command = AIIO_CI13162_CMD_VOLUME_CHANGE,
             .data_count = 1U,
             .data = {4U},
-            .cmd_id = 57U,
+            .cmd_id = 55U,
             .cwsl = 255U,
             .has_metadata = 1U
         };
@@ -670,7 +725,7 @@ int main(void) {
         aiio_ci13162_uart_process();
         assert(s_vol_report_count == 1);
         assert(s_last_vol_report_level == 4U);
-        assert(s_last_vol_report_cmd_id == 57U);
+        assert(s_last_vol_report_cmd_id == 55U);
 
         printf("  PASS: Volume boundary levels and unmute verified\n");
     }
@@ -693,7 +748,7 @@ int main(void) {
             .command = AIIO_CI13162_CMD_TIMER,
             .data_count = 1U,
             .data = {2U},
-            .cmd_id = 27U,
+            .cmd_id = 26U,
             .cwsl = 255U,
             .has_metadata = 1U
         };
@@ -709,12 +764,62 @@ int main(void) {
 
         assert(s_timer_voice_count == 1);
         assert(s_last_timer_set == 7200U);
-        assert(s_last_timer_cmd_id == 27U);
+        assert(s_last_timer_cmd_id == 26U);
         assert(s_last_timer_cwsl == 255U);
 
         printf("  PASS: Consecutive commands executed cleanly with distinct metadata\n");
     }
 
-    printf("\nALL 12 PROTOCOL & HARDWARE TESTS PASSED 100%%!\n");
+    /* TEST 13: Voice error reporting via MQTT cmd 299 */
+    {
+        printf("--- Test 13: Voice Error Reporting to MQTT (cmd 299) ---\n");
+        reset_test_state();
+
+        /* Scenario A: INVALID_DATA - Volume command with out-of-range data 8 */
+        char bad_vol_line[] = "{\"cmd\":13,\"data\":[8],\"cmd_id\":49,\"cwsl\":255}";
+        aiio_ci13162_handle_line(bad_vol_line, strlen(bad_vol_line));
+
+        /* Application task processes events */
+        aiio_ci13162_uart_process();
+
+        assert(s_app_send_data_count == 1);
+        assert(strstr(s_last_app_send_data, "\"fandc\":299") != NULL);
+        assert(strstr(s_last_app_send_data, "\"reason\":\"INVALID_DATA\"") != NULL);
+        assert(strstr(s_last_app_send_data, "\\\"cmd\\\":13") != NULL);
+        assert(strstr(s_last_app_send_data, "\\\"data\\\":[8]") != NULL);
+
+        /* Scenario B: UNKNOWN_COMMAND */
+        reset_test_state();
+        char unknown_cmd_line[] = "{\"cmd\":8,\"data\":[0]}";
+        aiio_ci13162_handle_line(unknown_cmd_line, strlen(unknown_cmd_line));
+        aiio_ci13162_uart_process();
+
+        assert(s_app_send_data_count == 1);
+        assert(strstr(s_last_app_send_data, "\"fandc\":299") != NULL);
+        assert(strstr(s_last_app_send_data, "\"reason\":\"UNKNOWN_COMMAND\"") != NULL);
+
+        /* Scenario C: INVALID_FORMAT - corrupt syntax */
+        reset_test_state();
+        char malformed_line[] = "{\"cmd\":1,\"corrupt";
+        aiio_ci13162_handle_line(malformed_line, strlen(malformed_line));
+        aiio_ci13162_uart_process();
+
+        assert(s_app_send_data_count == 1);
+        assert(strstr(s_last_app_send_data, "\"fandc\":299") != NULL);
+        assert(strstr(s_last_app_send_data, "\"reason\":\"INVALID_FORMAT\"") != NULL);
+
+        /* Scenario D: Valid command does NOT report error */
+        reset_test_state();
+        char valid_line[] = "{\"cmd\":1,\"data\":[1],\"cmd_id\":7,\"cwsl\":255}";
+        aiio_ci13162_handle_line(valid_line, strlen(valid_line));
+        aiio_ci13162_uart_process();
+
+        assert(s_app_send_data_count == 0); /* No error MQTT published! */
+        assert(s_fan_respond_count == 1);   /* Regular voice action executed! */
+
+        printf("  PASS: Rejected voice commands properly reported via MQTT cmd 299\n");
+    }
+
+    printf("\nALL 13 PROTOCOL & HARDWARE TESTS PASSED 100%%!\n");
     return 0;
 }

@@ -116,8 +116,7 @@ COMPONENT_SRCS := database/m_database.c \
 				  ir/ir_Bosch.c \
 				  ir/ir_Voltas.c \
 				  ir/ir_Goodweather.c \
-				  ir/ir_SaijoDenki.c \
-				  ir/IRrecv_test.c \
+				  ir/ir_SaijoDenki.c
 				  
 COMPONENT_OBJS := $(patsubst %.c,%.o, $(COMPONENT_SRCS))
 

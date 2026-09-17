@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <blog.h>
 
-#define DEBUG_ENABLE 1   // if 1 need set CONFIG_HUNONIC_LOG_GPIO in proj_config.mk to 1
+#define DEBUG_ENABLE 0   // if 1 need set CONFIG_HUNONIC_LOG_GPIO in proj_config.mk to 1
 #define AIIO_WDT_TIMEOUT_MS 60000U
 
 void m_log(const char *fmt, ...);
@@ -15,7 +15,7 @@ void m_log(const char *fmt, ...);
 
 /* config for type of device, that will be used to parse json message */
 #define EXTRAS 1514
-#define FIRMWARE_VERSION "260916"
+#define FIRMWARE_VERSION "260917"
 #define FIRMWARE_VERSION_NUMBER 240702
 
 #ifndef BUILD_TEST
