@@ -211,7 +211,7 @@ static uint8_t app_cwsl_parse_mutating(cJSON *js_root,
         (request->cmd_id <= APP_SCENE_CMD_ID_MAX)) {
         return APP_CWSL_CODE_BAD_REQUEST;
     }
-    if ((request->cmd_id == 44U) || (request->cmd_id == 45U)) {
+    if ((request->cmd_id == 56U) || (request->cmd_id == 57U)) {
         return APP_CWSL_CODE_BAD_COMMAND_ID;
     }
 
@@ -739,22 +739,30 @@ static void app_cwsl_run_validation_tests(void)
         {"\"cmd_id\":43,\"slot\":255,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_LEARN, 0U},
         {"\"cmd_id\":44,\"slot\":0,\"u\":1,\"act_id\":0",
-         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_COMMAND_ID},
+         APP_CWSL_CMD_LEARN, 0U},
         {"\"cmd_id\":45,\"slot\":255,\"u\":1,\"act_id\":0",
-         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_COMMAND_ID},
-        {"\"cmd_id\":44,\"slot\":0,\"u\":1,\"act_id\":0",
-         APP_CWSL_CMD_DELETE, APP_CWSL_CODE_BAD_COMMAND_ID},
-        {"\"cmd_id\":45,\"slot\":255,\"u\":1,\"act_id\":0",
-         APP_CWSL_CMD_DELETE, APP_CWSL_CODE_BAD_COMMAND_ID},
+         APP_CWSL_CMD_LEARN, 0U},
         {"\"cmd_id\":46,\"slot\":255,\"u\":1,\"act_id\":0",
-         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
+         APP_CWSL_CMD_LEARN, 0U},
         {"\"cmd_id\":55,\"slot\":255,\"u\":1,\"act_id\":0",
-         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
-        {"\"cmd_id\":46,\"slot\":255,\"u\":1,\"act_id\":0",
-         APP_CWSL_CMD_DELETE, APP_CWSL_CODE_BAD_REQUEST},
-        {"\"cmd_id\":55,\"slot\":255,\"u\":1,\"act_id\":0",
-         APP_CWSL_CMD_DELETE, APP_CWSL_CODE_BAD_REQUEST},
+         APP_CWSL_CMD_LEARN, 0U},
         {"\"cmd_id\":56,\"slot\":0,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_COMMAND_ID},
+        {"\"cmd_id\":57,\"slot\":255,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_COMMAND_ID},
+        {"\"cmd_id\":56,\"slot\":0,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_DELETE, APP_CWSL_CODE_BAD_COMMAND_ID},
+        {"\"cmd_id\":57,\"slot\":255,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_DELETE, APP_CWSL_CODE_BAD_COMMAND_ID},
+        {"\"cmd_id\":58,\"slot\":255,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
+        {"\"cmd_id\":67,\"slot\":255,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
+        {"\"cmd_id\":58,\"slot\":255,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_DELETE, APP_CWSL_CODE_BAD_REQUEST},
+        {"\"cmd_id\":67,\"slot\":255,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_DELETE, APP_CWSL_CODE_BAD_REQUEST},
+        {"\"cmd_id\":68,\"slot\":0,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_COMMAND_ID},
         {"\"cmd_id\":99,\"slot\":0,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_COMMAND_ID},
@@ -797,6 +805,12 @@ static void app_cwsl_run_validation_tests(void)
         {"\"cmd_id\":55,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_QUERY, 0U},
         {"\"cmd_id\":56,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_QUERY, 0U},
+        {"\"cmd_id\":57,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_QUERY, 0U},
+        {"\"cmd_id\":67,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_QUERY, 0U},
+        {"\"cmd_id\":68,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_QUERY, APP_CWSL_CODE_BAD_COMMAND_ID},
         {"\"cmd_id\":99,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_QUERY, APP_CWSL_CODE_BAD_COMMAND_ID},
@@ -1320,12 +1334,12 @@ bool app_cwsl_factory_clear_done(void)
            (s_app_cwsl_mutating.active == 0U);
 }
 
-void app_cwsl_notify_voice_cmd(uint8_t cmd_id)
+void app_cwsl_notify_voice_cmd(uint8_t cmd_id, uint8_t cwsl)
 {
     char response[APP_CWSL_RESPONSE_SIZE];
     int response_length;
 
-    if (cmd_id == 0U) {
+    if ((cmd_id == 0U) || (cmd_id > APP_CWSL_CMD_ID_MAX)) {
         return;
     }
 
@@ -1343,10 +1357,11 @@ void app_cwsl_notify_voice_cmd(uint8_t cmd_id)
     response_length = snprintf(
         response,
         sizeof(response),
-        "{\"%s\":%u,\"cmd_id\":%u}",
+        "{\"%s\":%u,\"cmd_id\":%u,\"cwsl\":%u}",
         gs_dev_type[device_type],
         (unsigned int)APP_CWSL_CMD_VOICE_NOTIFY,
-        (unsigned int)cmd_id);
+        (unsigned int)cmd_id,
+        (unsigned int)cwsl);
 
     app_cwsl_publish(response, response_length);
 }

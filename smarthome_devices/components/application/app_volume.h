@@ -47,10 +47,12 @@ bool app_volume_is_pending(void);
 
 /** @brief Publish an unsolicited MQTT 225 report for a voice-driven volume change.
  *
- *  @param[in]  level  Absolute speaker volume in the range 0..7, where 0 is mute.
+ *  @param[in]  level   Absolute speaker volume in the range 0..7, where 0 is mute.
+ *  @param[in]  cmd_id  ASR command identifier (50..57).
+ *  @param[in]  cwsl    CWSL slot identifier (255 for default, 0..14 for learned).
  *  @return     None.
  *  @note       Levels outside 0..7 are ignored. This report does not complete a pending SET or GET.
  */
-void app_volume_report_voice(uint8_t level);
+void app_volume_report_voice(uint8_t level, uint8_t cmd_id, uint8_t cwsl);
 
 #endif /* APP_VOLUME_H */

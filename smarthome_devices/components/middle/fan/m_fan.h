@@ -42,6 +42,7 @@ void m_fan_off(uint8_t src);
 
 void m_fan_control(uint8_t mode_set, uint8_t speed_set, uint8_t pcn_set, uint8_t swing_set, uint8_t lamp_set, uint32_t uid, uint8_t act_id, uint8_t respond);
 void m_fan_set_time_off(uint32_t time_set);
+void m_fan_set_time_off_voice(uint32_t time_set, uint8_t cmd_id, uint8_t cwsl);
 void m_fan_toggle_natural_mode(void);
 
 uint8_t m_fan_get_current_speed_natural(void);

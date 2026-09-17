@@ -10,6 +10,7 @@ volatile uint8_t prevent_buzz = 0;
 
 void m_fan_need_buzz(uint8_t num_buzz)
 {
+    uint8_t is_long = (num_buzz >= 10U) ? 1U : 0U;
     num_buzz++;
     if (m_fan_get_instance()->disable_buzz != 1 && !prevent_buzz)
     {
@@ -17,17 +18,18 @@ void m_fan_need_buzz(uint8_t num_buzz)
         {
             buzz_num = num_buzz;
         }
-        hw_buzz_set(SWITCH_ACTIVE_LEVEL);
+        hw_buzz_set_type(SWITCH_ACTIVE_LEVEL, is_long);
     }
 }
 
 void m_buzz_play(uint8_t num_buzz)
 {
+    uint8_t is_long = (num_buzz >= 10U) ? 1U : 0U;
     num_buzz++;
-    if (m_fan_get_instance()->disable_buzz != 1)
+    if (m_fan_get_instance()->disable_buzz != 1 && !prevent_buzz)
     {
         buzz_num = num_buzz;
-        hw_buzz_set(SWITCH_ACTIVE_LEVEL);
+        hw_buzz_set_type(SWITCH_ACTIVE_LEVEL, is_long);
     }
 }
 
@@ -204,7 +206,7 @@ void buzz_loop(void)
         buzz_num--;
         if (buzz_num == 0)
         {
-            hw_buzz_set(SWITCH_IDLE_LEVEL);
+            hw_buzz_set_type(SWITCH_IDLE_LEVEL, 0U);
         }
     }
 }

@@ -71,6 +71,18 @@ void app_fan_respond_control(uint8_t mode, uint8_t speed, uint8_t pcn, uint8_t s
     }
 }
 
+void app_fan_respond_control_voice(uint8_t mode, uint8_t speed, uint8_t pcn, uint8_t swing, uint8_t light, uint32_t uid, uint8_t act_id, uint8_t cmd_id, uint8_t cwsl)
+{
+    uint8_t change = check_fan_change(mode, speed, pcn, swing, light);
+    if (m_mqtt_get_instance()._mqtt_state >= MQTT_INTIALIZED)
+    {
+        memset(respond, 0, sizeof(respond));
+        sprintf(respond, "{\"%s\":20,\"mode\":%u,\"lv\":%u,\"swing\":%u,\"pcn\":%u,\"lamp\":%u,\"u\":%lu,\"act_id\":%u,\"change\":%u,\"cmd_id\":%u,\"cwsl\":%u}", 
+            gs_dev_type[device_type], mode, speed, swing, pcn, light, (unsigned long)uid, act_id, change, (unsigned int)cmd_id, (unsigned int)cwsl);
+        app_send_data(respond, strlen(respond));
+    }
+}
+
 void app_fan_send_temperature(uint32_t temper)
 {
     if (m_mqtt_get_instance()._mqtt_state >= MQTT_INTIALIZED)

@@ -13,7 +13,7 @@
 #include "cJSON.h"
 
 /** Maximum ASR command identifier accepted by CWSL LEARN/DELETE/QUERY. */
-#define APP_CWSL_CMD_ID_MAX 55U
+#define APP_CWSL_CMD_ID_MAX 67U
 
 /** @brief Initialize the CWSL state machine and UART response callbacks.
  *
@@ -76,23 +76,24 @@ bool app_cwsl_factory_clear_done(void);
 
 /** @brief Notify application/cloud about a triggered voice command.
  *
- *  @param[in]  cmd_id  ASR command identifier (e.g. 7..55).
+ *  @param[in]  cmd_id  ASR command identifier (e.g. 7..67).
+ *  @param[in]  cwsl    CWSL slot identifier (255 for default, 0..14 for learned).
  *  @return     None.
  */
-void app_cwsl_notify_voice_cmd(uint8_t cmd_id);
+void app_cwsl_notify_voice_cmd(uint8_t cmd_id, uint8_t cwsl);
 
-/** @brief Start a scene learning session for an ASR command ID (46..55).
+/** @brief Start a scene learning session for an ASR command ID (58..67).
  *
- *  @param[in]  cmd_id   ASR command identifier (46..55).
+ *  @param[in]  cmd_id   ASR command identifier (58..67).
  *  @param[in]  user_id  Requesting user ID.
  *  @param[in]  act_id   Requesting action ID.
  *  @return     0 on success, or error code (67, 69, 70).
  */
 uint8_t app_cwsl_start_scene_learn(uint8_t cmd_id, uint32_t user_id, uint8_t act_id);
 
-/** @brief Start a scene deletion session for an ASR command ID (46..55).
+/** @brief Start a scene deletion session for an ASR command ID (58..67).
  *
- *  @param[in]  cmd_id   ASR command identifier (46..55).
+ *  @param[in]  cmd_id   ASR command identifier (58..67).
  *  @param[in]  user_id  Requesting user ID.
  *  @param[in]  act_id   Requesting action ID.
  *  @return     0 on success, or error code (67, 69, 70).

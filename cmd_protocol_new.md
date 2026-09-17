@@ -7,7 +7,7 @@ CWSL kèm phản hồi trạng thái.
 Quy ước chung của giao thức: **request và response luôn nằm ở hai `cmd` id khác
 nhau**, để một giá trị dữ liệu không bao giờ bị đọc nhầm thành câu lệnh khi hai
 chiều dùng chung một dây (`4` → `5`/`6` cho CWSL, `8` → `9` cho âm lượng).
-Ngoại lệ duy nhất là `CMD_VER`, phân biệt được nhờ độ dài payload.
+Ngoại lệ trước đây là `CMD_VER` và `CMD_STATE`. Hiện tại `CMD_STATE` phía MCU đã bỏ qua im lặng (không phản hồi), nên ngoại lệ hai chiều cùng `cmd` id chỉ còn duy nhất `CMD_VER` (phân biệt nhờ độ dài payload).
 
 ## 1. Cấu hình UART và frame
 
@@ -25,11 +25,28 @@ Format chung:
 {"cmd":<id>,"data":[<value_0>,<value_1>,...]}
 ```
 
-Ví dụ bật quạt:
+Mọi frame **chip → MCU** do một **câu điều khiển** kích hoạt luôn có đủ hai key
+ngoài `cmd`/`data`:
 
 ```text
-{"cmd":1,"data":[1]}\r\n
+{"cmd":1,"data":[1],"cmd_id":7,"cwsl":255}\r\n
+{"cmd":1,"data":[1],"cmd_id":7,"cwsl":0}\r\n
 ```
+
+| Key | Ý nghĩa |
+|---|---|
+| `"cmd_id"` | `cmd_id_t` trong sheet `<0>cmd` (lệnh gốc vừa nhận, ví dụ 7 = bật quạt) |
+| `"cwsl"` | `255` nếu nói câu gốc; `0..14` nếu nói mẫu CWSL đã học cho **đúng** `cmd_id` đó |
+
+`data[]` vẫn là hành động quạt như câu mặc định. Slot **không** nhét vào `data`.
+`(cmd_id=7, cwsl=0)` khác `(cmd_id=8, cwsl=0)`.
+
+**Từ đánh thức không gửi UART.** Wake mặc định và wake CWSL chỉ đánh thức chip;
+không có frame `cmd_id`/`cwsl` cho `WAKE_UP_ID = 1`.
+
+Hai key chỉ có trên frame do câu điều khiển kích hoạt. Frame trả lời MCU
+(version, volume info, CWSL status/query, debug) không gắn chúng.
+Chiều MCU → chip vẫn chỉ cần `cmd` và `data`; parser chip bỏ qua field lạ.
 
 Chiều MCU → chip chỉ chấp nhận `cmd` và từng phần tử `data` là số nguyên
 `0..255`. MCU chỉ nên giữ một CWSL request đang chờ tại một thời điểm.
@@ -53,7 +70,8 @@ typedef enum
     CMD_VOLUME_GET    = 11,
     CMD_SCENE         = 12,
     CMD_VOLUME_CHANGE = 13,
-    CMD_BUZZ          = 200,
+    CMD_STATE         = 14,
+    CMD_BEEP          = 200, /* []/[0] -> 1000; [1] -> 220 */
 } command_type_t;
 ```
 
@@ -80,11 +98,71 @@ typedef enum
 | `CMD_ASR_UNHANDLED` | 10 | `[asr_cmd_id]` | Chip → MCU | Chẩn đoán: ASR command không có callback firmware |
 | `CMD_VOLUME_GET` | 11 | `[]` | MCU → chip | Hỏi trạng thái âm lượng hiện tại |
 | `CMD_SCENE` | 12 | `[1]..[10]` | Chip → MCU | Kích hoạt ngữ cảnh tương ứng trên MCU |
-| `CMD_VOLUME_CHANGE` | 13 | `[0]..[7]` | Chip → MCU | Báo mức âm lượng mới sau lệnh thoại; `[0]` là tắt âm thanh |
-| `CMD_BUZZ` | 200 | `[]` | MCU → chip | Phát âm báo còi (buzzer feedback), fire-and-forget |
+| `CMD_VOLUME_CHANGE` | 13 | `[0]..[7]` | Chip → MCU | Báo trạng thái sau lệnh thoại volume/mute: `0` là mute, `1..7` là unmute ở mức tương ứng |
+| `CMD_STATE` | 14 | `[0]` | Chip → MCU | Hỏi trạng thái trước lệnh thoại bật/tắt hoặc chọn mode 1..4 (MCU bỏ qua không phản hồi để chip tự timeout) |
+| `CMD_STATE` | 14 | `[power,mode]` | MCU → chip | *(Đã bỏ qua / Không sử dụng: MCU không phản hồi)* `power`: 0 tắt / 1 bật; `mode`: 1..3 tốc độ, 4 tự nhiên, 5 thông minh |
+| `CMD_BEEP` | 200 | `[]` / `[0]` / `[1]` | MCU → chip | Beep; xem mục dưới |
 
 Giá trị version ở chiều chip → MCU có thể lớn hơn một byte. Đây là ngoại lệ của
 frame trả lời; parser chiều MCU → chip vẫn chỉ nhận từng phần tử `data` là byte.
+
+### Trạng thái quạt và guard prompt (`CMD_STATE`)
+
+> [!NOTE]
+> **Cập nhật thiết kế MCU:** MCU hiện tại bỏ qua im lặng (silent drop) khi nhận query `CMD_STATE` (`{"cmd":14,"data":[0]}`). MCU không gửi lại bất kỳ bản tin UART `{"cmd":14,...}` nào sang chip IC voice, không thay đổi trạng thái quạt và không gửi MQTT publish. Chip IC voice sẽ tự động timeout (500 ms) và tiếp tục xử lý lệnh thoại mà không phát prompt trùng.
+
+Ví dụ trao đổi trước đây khi MCU còn phản hồi (mỗi frame kết thúc bằng `\r\n`):
+
+```text
+Chip -> MCU: {"cmd":14,"data":[0]}
+MCU -> Chip: {"cmd":14,"data":[1,3]} (MCU hiện tại không gửi bản tin này nữa; chip tự timeout)
+Chip -> MCU: {"cmd":1,"data":[1]}
+```
+
+MCU trả `power = 1`: quạt đã bật, chip vẫn gửi `CMD_TURN [1]` nhưng **không
+phát prompt "Đã bật quạt"**. Nếu `power = 0`, chip gửi lệnh bật và phát prompt
+theo cơ chế cũ (vẫn tuân theo mute). Đây không phải ACK xác nhận motor đã bật.
+
+Guard theo từng lệnh; **chỉ bỏ prompt, vẫn gửi lệnh MCU**:
+
+| Lệnh thoại | Điều kiện bỏ prompt | Frame vẫn gửi |
+|---|---|---|
+| Bật quạt | `power == 1`, không phụ thuộc mode | `{"cmd":1,"data":[1]}` |
+| Tắt quạt | `power == 0`, không phụ thuộc mode | `{"cmd":1,"data":[0]}` |
+| Bật số 1 | `mode == 1` | `{"cmd":2,"data":[1]}` |
+| Bật số 2 | `mode == 2` | `{"cmd":2,"data":[2]}` |
+| Bật số 3 | `mode == 3` | `{"cmd":2,"data":[3]}` |
+| Gió tự nhiên | `mode == 4` | `{"cmd":2,"data":[4]}` |
+
+Mode `5` (thông minh) khác các mode `1..4`, nên nói "bật số 2" vẫn gửi
+`CMD_MODE [2]` và phát prompt bình thường nếu không mute. Ngược lại, đang
+thông minh mà nói "bật quạt" vẫn chỉ xét power. Rule mode chỉ so mode, kể cả
+khi power đang tắt. Quay/dừng quay, timer, scene và volume chưa có state tương
+ứng trong `CMD_STATE`, nên chưa thêm guard trùng trạng thái cho các lệnh đó.
+
+- Chip hỏi trạng thái **trước** khi gửi lệnh bật/tắt/chọn mode, tránh nhận
+  nhầm trạng thái sau khi MCU thực thi. Câu CWSL ánh xạ về cùng ASR ID cũng
+  dùng cùng rule.
+- MCU trả đúng hai số nguyên `[power,mode]`, kể cả khi quạt tắt: mode vẫn phải
+  trong `1..5` (mode hiện tại/đã chọn). Mode 5 được chấp nhận nhưng chip chưa có
+  câu lệnh thoại bật chế độ thông minh. Không nhầm mode 5 ở đây với
+  `CMD_MODE [5]`, vốn là lệnh bật quay quạt.
+- Timeout chờ phản hồi là 500 ms, kiểm tra trong app task mỗi tối đa khoảng
+  50 ms khi rảnh. Hết hạn vẫn gửi lệnh đang chờ nhưng **không phát prompt**.
+- Chỉ giữ một lệnh đang chờ state. Nếu có lệnh thoại mới, lệnh cũ được gửi
+  ngay nhưng im lặng; lệnh mới chạy theo rule của nó và hỏi lại state nếu cần.
+  Vào CWSL hoặc thoát SERVING hủy lệnh đang chờ, không phát/gửi trễ lúc học.
+- Payload sai bị bỏ qua. Phản hồi khi không có yêu cầu đang chờ không tạo
+  hành động hoặc prompt. MCU không echo request `[0]` về chip.
+- Giao thức chưa có sequence ID: MCU cần trả một phản hồi mới cho mỗi query,
+  không gửi lại phản hồi cũ. Không thể phân biệt phản hồi cũ đến muộn đúng lúc
+  một query mới đang chờ (kể cả khi nói nhiều lệnh liên tiếp); timeout không
+  thay thế sequence ID. MCU nên trả ngay và đúng thứ tự nhận query.
+
+Policy nằm trong `user/application/prompt/app_prompt.c`, hàm
+`s_rules` và `app_prompt_allowed()`: thêm guard sản phẩm mới ở đây; không đưa logic trạng
+thái quạt vào SDK player. Guard này cắt vòng lặp **prompt bật quạt** khi MCU
+báo trạng thái chính xác, không phải cơ chế chống mọi loại kích hoạt chéo.
 
 ### Hẹn giờ tắt quạt (`CMD_TIMER`)
 
@@ -118,22 +196,22 @@ ASR command ID là `45 + N`, tức ID `46..55` lần lượt ánh xạ sang scen
 
 ### Âm lượng loa (`CMD_VOLUME` / `CMD_VOLUME_INFO`)
 
-Âm lượng có 7 mức phát, `1` nhỏ nhất và `7` lớn nhất, cộng thêm `0` là tắt
-âm thanh (mute) khi người dùng nói câu thoại tương ứng. Mức hiện tại được ghi
+Âm lượng có 7 mức, `1` nhỏ nhất và `7` lớn nhất. Mức hiện tại được ghi
 NVDATA/flash nên giữ nguyên sau mất điện.
 
 | Chiều | Frame | Ý nghĩa |
 |---|---|---|
-| MCU → chip | `{"cmd":8,"data":[1..7]}` | Đặt mức âm lượng tuyệt đối; App không mute bằng SET |
+| MCU → chip | `{"cmd":8,"data":[1..7]}` | Đặt mức âm lượng tuyệt đối |
 | MCU → chip | `{"cmd":11,"data":[]}` | Chỉ hỏi trạng thái hiện tại |
-| Chip → MCU | `{"cmd":9,"data":[level,result,reserved]}` | Phản hồi cho request `cmd:8` hoặc `cmd:11`; `level` thuộc `0..7`; MCU bỏ qua `reserved` |
-| Chip → MCU | `{"cmd":13,"data":[level]}` | Thông báo sau lệnh thoại tăng/giảm/min/max/mute/unmute; `level` thuộc `0..7` |
+| Chip → MCU | `{"cmd":9,"data":[level,result,reserved]}` | Phản hồi cho request `cmd:8` hoặc `cmd:11`; MCU bỏ qua `reserved` |
+| Chip → MCU | `{"cmd":13,"data":[state]}` | Event sau lệnh thoại thay đổi volume, bật âm thanh hoặc tắt âm thanh |
 
 `CMD_VOLUME_CHANGE` chỉ là event một chiều chip → MCU, không phải phản hồi
-cho `CMD_VOLUME`. Chip gửi cả khi âm lượng đã ở biên: ví dụ, nói
-“Tăng âm lượng” khi đang ở mức `7` vẫn gửi `{"cmd":13,"data":[7]}`.
-Nói “tắt âm thanh” gửi `{"cmd":13,"data":[0]}`. GET sau mute có thể trả
-`{"cmd":9,"data":[0,1,reserved]}`.
+cho `CMD_VOLUME`. `state=0` nghĩa là đang mute; `state=1..7` vừa là mức volume
+hiện tại vừa xác nhận rằng loa đã unmute. Chip gửi cả khi âm lượng đã ở biên:
+ví dụ, nói “Tăng âm lượng” khi đang ở mức `7` vẫn gửi
+`{"cmd":13,"data":[7]}`. Nếu đang mute mà người dùng tăng, giảm hoặc đặt mức
+volume, chip tự unmute trước rồi gửi mức mới.
 
 `result` trong frame trả lời:
 
@@ -142,9 +220,8 @@ Nói “tắt âm thanh” gửi `{"cmd":13,"data":[0]}`. GET sau mute có thể
 | `0` | `VOLUME_RESULT_REJECTED` | Payload không hợp lệ; trạng thái giữ nguyên |
 | `1` | `VOLUME_RESULT_ACCEPTED` | Đã áp dụng request, hoặc đã trả lời query |
 
-Giá trị `0` hoặc lớn hơn `7` trong payload `CMD_VOLUME` (`cmd:8`) không hợp lệ
-và bị từ chối. Mute chỉ đến từ thoại qua `cmd:13` `[0]`, không từ SET App.
-Query luôn dùng `CMD_VOLUME_GET` (`cmd:11`) riêng.
+Giá trị `0` hoặc lớn hơn `7` trong payload `CMD_VOLUME` không hợp lệ và bị từ
+chối. Query luôn dùng `CMD_VOLUME_GET` (`cmd:11`) riêng.
 
 Hai điểm quan trọng:
 
@@ -176,6 +253,24 @@ Middleware `m_volume` cung cấp `m_volume_get()`, `m_volume_set()` và
 `m_volume_handle_request()`. Beep voice ID `1000` chỉ phát khi mức **thực sự
 thay đổi**, nên đặt lặp lại cùng một mức sẽ im lặng. Lệnh voice tăng/giảm dùng
 cùng persistence này.
+
+### Beep (`CMD_BEEP`)
+
+Một chiều MCU → chip, không có frame trả lời. Phát cả khi đang mute.
+
+```text
+{"cmd":200,"data":[]}
+{"cmd":200,"data":[0]}
+{"cmd":200,"data":[1]}
+```
+
+| `data` | Voice ID | File |
+|---|---:|---|
+| `[]` hoặc `[0]` | 1000 | `[1000]beep.mp3` |
+| `[1]` | 220 | `[220]beep_long.mp3` |
+
+Payload khác (`[2]`, hai phần tử, …) bị bỏ qua. Clip phải là MP3 CBR 16 kbps,
+16 kHz, **mono** (header `0xFFF328C4`); xem [note/voice_mp3_format.md](note/voice_mp3_format.md).
 
 ## 3. CWSL: học lệnh bằng giọng nói
 
@@ -214,6 +309,54 @@ Số slot **không phải** là index vật lý toàn cục `0..19`. Địa ch�
 `(cmd_id, slot)`, vì vậy `(6,0)` và `(7,0)` là hai mẫu khác nhau và có thể cùng
 tồn tại. SDK vẫn giới hạn tổng mọi command template là 15; khi tổng này đầy,
 học thêm sẽ nhận `NO_SLOT` dù command ID mới chưa dùng slot nào.
+
+### 3.1.1. Slot trên dây: `255` lúc học ≠ key lúc nhận diện
+
+Mọi phần tử `data[]` là **một byte 0..255**. Đó là lý do LEARN/STATUS hiện
+`0..255`: byte chứa được cả slot thật lẫn sentinel `255` (`CWSL_ANY` / `0xFF`).
+`255` **không phải** slot thứ 256.
+
+| Pha | Frame | Chỗ để số | Giá trị hợp lệ |
+|---|---|---|---|
+| Học / xóa / status | `cmd:4`, `cmd:5` | **`data[2]`** (cùng mảng với action/`cmd_id`) | Slot thật `0..4` (wake) hoặc `0..14` (command), **hoặc `255`** |
+| Hỏi occupancy | `cmd:6` | Bitmap trong `data[1..2]`, bit N = slot N | Không gửi một số slot |
+| Nhận diện câu điều khiển | `cmd:1`, `cmd:2`, … | Key **`"cmd_id"`** + **`"cwsl"`** (ngoài `data`) | `cmd_id` = ID sheet; `cwsl=255` câu gốc, `0..14` mẫu đã học |
+
+Cách MCU quản lý lúc học:
+
+1. Gửi `{"cmd":4,"data":[1,<cmd_id>,255]}` để chip chọn slot trống thấp nhất
+   **của đúng `cmd_id` đó** (không phải ô trống toàn cục 0..14), hoặc gửi
+   `slot` cụ thể để đè đúng ô.
+2. Chờ đúng một `{"cmd":5,"data":[<code>,<cmd_id>,<slot>]}`. `LEARN_OK`
+   (`code=32` / `0x20`) thì `<slot>` là ô vừa lưu — MCU **phải nhớ cặp
+   `(cmd_id, slot)`**, không nhớ mỗi số 0..14.
+3. `QUERY` `{"cmd":4,"data":[6,<cmd_id>]}` trả bitmap slot đang dùng của ID đó.
+4. Xóa đúng mẫu: `{"cmd":4,"data":[2,<cmd_id>,<slot>]}` với slot đã nhớ.
+
+Khi người dùng nói câu điều khiển, chip **không** đổi `data` của lệnh quạt.
+Luôn có đủ `"cmd_id"` và `"cwsl"`:
+
+```text
+# Câu gốc "bật quạt" (cmd_id 7)
+{"cmd":1,"data":[1],"cmd_id":7,"cwsl":255}
+
+# Cùng lệnh, mẫu CWSL đã học ở slot 0
+{"cmd":1,"data":[1],"cmd_id":7,"cwsl":0}
+
+# SAI — MCU hiểu TẮT quạt (TURN data[0]=0), không phải slot 0
+{"cmd":1,"data":[0]}
+
+# SAI — TURN không có schema data 2 phần tử
+{"cmd":1,"data":[1,0]}
+```
+
+Parser MCU đọc `cmd`+`data` để điều khiển quạt, đọc `cmd_id`+`cwsl` để biết
+nguồn câu. Nếu schema JSON từ chối field không biết, frame sẽ bị báo
+“không hiểu” dù lệnh quạt vẫn đúng.
+
+Wake không có frame nhận diện. Firmware hiện lấy `"cwsl"` là slot thấp nhất
+đang có mẫu của `cmd_id` đó (`m_cwsl_used_slot`); nếu một lệnh đã học nhiều
+câu thì số trên key có thể không đúng ô vừa match.
 
 ### 3.2. Action MCU gửi (`cmd:4`)
 
@@ -263,7 +406,7 @@ typedef enum
 
     /* Kết thúc thành công */
     CWSL_ST_LEARN_OK          = 0x20, /* đã lưu mẫu; prompt 211 */
-    CWSL_ST_DELETE_OK         = 0x21, /* đã xóa; prompt 213 */
+    CWSL_ST_DELETE_OK         = 0x21, /* đã xóa; không phát prompt */
     CWSL_ST_EXIT_OK           = 0x22, /* đã thoát học lệnh; prompt 217 */
 
     /* Kết thúc thất bại */
@@ -271,7 +414,7 @@ typedef enum
     CWSL_ST_LEARN_ABORTED     = 0x31, /* SDK abort giữa chừng */
     CWSL_ST_NO_SLOT           = 0x32, /* hết slot; prompt 212 */
     CWSL_ST_DELETE_FAIL       = 0x33, /* không xóa được; prompt 214 */
-    CWSL_ST_TIMEOUT           = 0x34, /* 30 s không tiến triển */
+    CWSL_ST_TIMEOUT           = 0x34, /* 30 s không tiến triển; prompt 218/1021 */
 
     /* Bị từ chối, chưa chạm SDK */
     CWSL_ST_BAD_REQUEST       = 0x40, /* payload sai hoặc action lạ */
@@ -291,8 +434,9 @@ Nibble cao là **lớp kết quả**, nên MCU không quan tâm chi tiết chỉ
 | `3` | Xong, thất bại |
 | `4` | Request bị từ chối |
 
-Firmware **không** gửi status tiến trình trung gian. Các prompt 1007/1008/1009
-vẫn phát cho người dùng nghe khi phải nói lại, nhưng không sinh frame UART.
+Firmware **không** gửi status tiến trình trung gian. Prompt retry 1007/1008/1009
+không sinh frame UART. Tối đa 3 lượt thu với cấu hình hiện tại; lượt thất bại
+thứ 3 phát 218 (command) hoặc 1021 (wake), trả `0x30 LEARN_FAIL`.
 
 ### 3.4. Flow học và xóa
 
@@ -300,18 +444,17 @@ vẫn phát cho người dùng nghe khi phải nói lại, nhưng không sinh fr
 # Học thêm một cách nói cho lệnh "bật quạt" (ID 7), tự chọn slot
 MCU  -> chip:  {"cmd":4,"data":[1,7,255]}
 chip           phát prompt 1010 "mời nói câu lệnh mới"
-người dùng     nói câu cần học
+người dùng     nói câu cần học một lần (vừa kiểm tra trùng, vừa ghi mẫu)
 chip           phát prompt 211 nếu thành công
 chip -> MCU:   {"cmd":5,"data":[32,7,0]}      # 0x20 LEARN_OK, đã vào slot 0
 
 # Học từ đánh thức
 MCU  -> chip:  {"cmd":4,"data":[1,1,255]}
-chip           phát prompt 1020, thu, rồi phát 211
+chip           phát prompt 1020, thu và kiểm tra câu một lần, rồi phát 211
 chip -> MCU:   {"cmd":5,"data":[32,1,2]}      # đã vào wake slot 2
 
 # Xóa đúng wake slot 2, các wake khác giữ nguyên
 MCU  -> chip:  {"cmd":4,"data":[2,1,2]}
-chip           phát prompt 213
 chip -> MCU:   {"cmd":5,"data":[33,1,2]}      # 0x21 DELETE_OK
 
 # Học thất bại vì hết slot
@@ -337,7 +480,8 @@ Trong lúc một thao tác đang chạy, mọi request CWSL khác bị từ ch�
 
 Timeout CWSL là 30 giây không có tiến triển (`CWSL_IDLE_TIMEOUT_MS`), tách khỏi
 timeout service/wake 15 giây. Bộ đếm được gia hạn khi SDK bắt đầu đăng ký mẫu và
-sau mỗi lần thu kết thúc. Hết giờ thì abort, trả `0x34 TIMEOUT` và về wake-only.
+sau mỗi lần thu kết thúc. Hết giờ thì abort, phát 218 cho command hoặc 1021 cho
+wake word, sau đó trả `0x34 TIMEOUT` và về wake-only.
 
 ### 3.5. Query sức chứa (`cmd:6`)
 
@@ -365,20 +509,36 @@ học. Nó không sinh frame `CMD_STATUS`.
 
 ### 3.6. Điều kiện học
 
-- Học mới chỉ thêm **cách nói**, không tạo chức năng mới. Học cho `cmd_id=7` thì
-  câu mới vẫn chạy đúng hành động bật quạt.
+- Học mới chỉ thêm **cách nói**, không tạo chức năng mới. Học cho `cmd_id=7`
+  hoặc `8` thì câu mới vẫn chạy đúng hành động bật quạt.
 - Firmware hiện kiểm tra `cmd_id` có tồn tại trong bảng ASR, không kiểm tra nó có
   action quạt hay không. Vì vậy một ID như `6` có thể học/xóa/query thành công nếu
   nó tồn tại trong `cmd_info`, nhưng khi nhận diện thì `cmd_dispatch()` không map
-  ID đó sang UART fan command. Với product hiện tại, MCU chỉ nên học command ID
-  `7..14`, timer ID `15..39`, volume ID `40..43` hoặc scene ID `46..55`; ID `1`
-  dành cho learned wake word. Mute/unmute ASR `44`/`45` không mở LEARN CWSL.
-- Câu học không được trùng command có sẵn trong model. Trong lúc thu, firmware
-  chuyển mọi command mặc định nhận được vào `cwsl_reg_check_other_asrcmd()` và
-  `send_nn_end_msg_to_cwsl()`. SDK trả `CWSL_RECORD_FAILED_BY_DEFAULTCMD`, chip
-  phát prompt 1009 và mời nói câu khác.
-- Mẫu chỉ được ghi sau `CWSL_REG_FINISHED`. Too-short, conflict, invalid, abort
-  hoặc quá số lần thử đều không chiếm slot.
+  ID đó sang UART fan command. MCU nên học theo ID sheet hiện tại (mục 4):
+  quạt `7..24`, timer `25..49`, volume `50..57`, scene `58..67`. ID `1..6`
+  là từ đánh thức.
+- Chỉ có một lượt nói. Trong chính lượt SDK record,
+  `m_cwsl_feed_default_command()` xử lý kết quả ASR theo hai bước nối tiếp:
+  semantic trùng **chính command đang học** thì firmware đánh dấu conflict;
+  semantic khác được chuyển cho `cwsl_reg_check_other_asrcmd()` để SDK kiểm tra
+  phần command mặc định còn lại.
+- Kết quả ASR gốc được observer chụp ngay trước `deal_cwsl_cmd()`. Việc này cần
+  thiết vì SDK có thể nuốt command cùng semantic trước khi message tới task/FSM.
+- Nếu custom guard phát hiện semantic đích, gọi `cwsl_set_reg_restart_flag()`
+  ngay tại ASR callback để SDK bỏ mẫu trước bước lưu. Kiểm tra cả handle gốc và
+  handle do `deal_cwsl_cmd()` giải mã cho câu đã học, kể cả khi vendor nuốt kết quả.
+  `wait_time=200 ms` cho bộ giải mã thời gian trả kết quả trước khi SDK chốt mẫu;
+  đây không phải một lượt nói bổ sung.
+- Conflict lần 1/2 phát 1009 rồi mở record lại cùng command/slot. Bộ đếm cộng
+  cả custom conflict và lỗi SDK; đủ `CWSL_REG_TIMES + 2` (hiện là 3) mới fail.
+  Nói câu hợp lệ ở lượt 2 hoặc 3 vẫn có thể LEARN_OK. Timeout im lặng vẫn 30 s.
+  Callback SDK đến muộn không được đổi kết quả đã chốt
+  thành LEARN_OK hoặc khởi động lại record.
+- Hai guard đều dựa trên kết quả nhận dạng âm thanh, không so chuỗi văn bản hoặc
+  feature thô. Một câu phát âm không đạt threshold của ASR/CWSL vẫn có thể không
+  bị nhận là trùng.
+- SDK ghi mẫu trước khi thông báo `CWSL_REG_FINISHED`. Vì vậy đổi `result` trong
+  callback kết thúc record không phải cách ngăn lưu mẫu.
 - Học đè lên slot đã có mẫu thì mẫu cũ bị **xóa trước**, rồi mới thu mẫu mới.
   Nếu lần thu đó thất bại, câu cũ đã mất và MCU nhận `0x30 LEARN_FAIL`.
 
@@ -393,7 +553,7 @@ Prompt phát trong quá trình học:
 | 218 | Học lệnh thất bại |
 | 1007 | Chưa nghe rõ, nói lại |
 | 1008 | Câu lệnh quá ngắn |
-| 1009 | Câu lệnh bị trùng với lệnh mặc định |
+| 1009 | Câu nói trùng command/wake mặc định hoặc mẫu CWSL đã học |
 | 1010 | Mời nói câu lệnh điều khiển mới |
 | 1020 | Mời nói từ đánh thức mới |
 | 1021 | Không thể học từ đánh thức |
@@ -410,47 +570,35 @@ Application là nơi duy nhất được phép chạy action điều khiển qu�
 | `APP_ST_SERVING` | Nhận wake/command điều khiển quạt, hoặc request CWSL |
 | `APP_ST_CWSL_BUSY` | Một thao tác CWSL độc chiếm engine; không phục vụ lệnh quạt |
 
-Một request `LEARN`/`DELETE` đi thẳng từ `IDLE` hoặc `SERVING` vào
-`APP_ST_CWSL_BUSY`, chạy tới đúng một kết quả, trả status rồi về `APP_ST_IDLE`.
-
-Trong `APP_ST_CWSL_BUSY` không tồn tại transition cho `EV_WAKE`/`EV_COMMAND`, nên
-kết quả nhận dạng không thể gọi `cmd_dispatch()`. Tuy vậy command mặc định vẫn
-được chuyển nội bộ vào `cwsl_reg_check_other_asrcmd()` để SDK phát hiện trùng;
-nhờ đó câu như "tắt quạt" không bị lưu thành câu học mới.
+`LEARN` và `DELETE` đi thẳng vào `APP_ST_CWSL_BUSY`. Kết quả ASR trong lúc record
+được đưa vào guard CWSL và không có transition phục vụ quạt. Mọi flow trả đúng
+một status rồi về `APP_ST_IDLE`.
 
 ## 4. Ánh xạ lệnh thoại mặc định sang MCU
 
-| Câu lệnh | ASR command ID | Message gửi sang MCU | Ý nghĩa |
+| Câu lệnh (alias) | ASR command ID | Message gửi sang MCU (câu gốc) | Ý nghĩa |
 |---|---:|---|---|
-| `BẬT-QUẠT` | 7 | `{"cmd":1,"data":[1]}` | Bật quạt |
-| `TẮT-QUẠT` | 8 | `{"cmd":1,"data":[0]}` | Tắt quạt |
-| `BẬT-SỐ-MỘT` | 9 | `{"cmd":2,"data":[1]}` | Tốc độ số 1 |
-| `BẬT-SỐ-HAI` | 10 | `{"cmd":2,"data":[2]}` | Tốc độ số 2 |
-| `BẬT-SỐ-BA` | 11 | `{"cmd":2,"data":[3]}` | Tốc độ số 3 |
-| `CHẾ-ĐỘ-GIÓ-TỰ-NHIÊN` | 12 | `{"cmd":2,"data":[4]}` | Gió tự nhiên |
-| `BẬT-CHẾ-ĐỘ-QUAY` | 13 | `{"cmd":2,"data":[5]}` | Quay quạt |
-| `DỪNG-QUAY` | 14 | `{"cmd":2,"data":[6]}` | Dừng quay |
-| `TẮT-QUẠT-SAU-<N>-GIỜ` / `...-TIẾNG` | 15..38 | `{"cmd":7,"data":[N]}` | Hẹn tắt sau N giờ (`N=1..12`) |
-| `HỦY-HẸN-GIỜ` | 39 | `{"cmd":7,"data":[0]}` | Hủy hẹn giờ |
-| `GIẢM-ÂM-LƯỢNG` | 40 | Chip-local | Giảm một mức, clamp tại 1 |
-| `TĂNG-ÂM-LƯỢNG` | 41 | Chip-local | Tăng một mức, clamp tại 7 |
-| `ÂM-LƯỢNG-NHỎ-NHẤT` | 42 | Chip-local | Đặt mức 1 |
-| `ÂM-LƯỢNG-LỚN-NHẤT` | 43 | Chip-local | Đặt mức 7 |
-| `TẮT-ÂM-THANH` | 44 | Chip-local | Mute; UART `{"cmd":13,"data":[0]}` |
-| `BẬT-ÂM-THANH` | 45 | Chip-local | Unmute về mức `1..7`; UART `{"cmd":13,"data":[1..7]}` |
-| `KÍCH-HOẠT-NGỮ-CẢNH-<N>` | 46..55 | `{"cmd":12,"data":[N]}` | Kích hoạt ngữ cảnh `N` (`N=1..10`) |
+| `MỞ-QUẠT` / `BẬT-QUẠT` | 7 / 8 | `{"cmd":1,"data":[1],"cmd_id":7\|8,"cwsl":255}` | Bật quạt |
+| `ĐÓNG-QUẠT` / `TẮT-QUẠT` | 9 / 10 | `{"cmd":1,"data":[0],"cmd_id":9\|10,"cwsl":255}` | Tắt quạt |
+| `MỞ/BẬT-SỐ-MỘT` | 11 / 12 | `{"cmd":2,"data":[1],"cmd_id":11\|12,"cwsl":255}` | Tốc độ số 1 |
+| `MỞ/BẬT-SỐ-HAI` | 13 / 14 | `{"cmd":2,"data":[2],"cmd_id":13\|14,"cwsl":255}` | Tốc độ số 2 |
+| `MỞ/BẬT-SỐ-BA` | 15 / 16 | `{"cmd":2,"data":[3],"cmd_id":15\|16,"cwsl":255}` | Tốc độ số 3 |
+| `MỞ-GIÓ-TỰ-NHIÊN` / `CHẾ-ĐỘ-GIÓ-TỰ-NHIÊN` | 17 / 18 | `{"cmd":2,"data":[4],"cmd_id":17\|18,"cwsl":255}` | Gió tự nhiên |
+| `BẬT-QUAY` / `MỞ-CHẾ-ĐỘ-QUAY` / `BẬT-CHẾ-ĐỘ-QUAY` | 19 / 20 / 21 | `{"cmd":2,"data":[5],"cmd_id":19\|20\|21,"cwsl":255}` | Quay quạt |
+| `TẮT-QUAY` / `DỪNG-CHẾ-ĐỘ-QUAY` / `DỪNG-QUAY` | 22 / 23 / 24 | `{"cmd":2,"data":[6],"cmd_id":22\|23\|24,"cwsl":255}` | Dừng quay |
+| `TẮT-QUẠT-SAU-<N>-GIỜ` / `...-TIẾNG` | 25..48 | `{"cmd":7,"data":[N],"cmd_id":<id>,"cwsl":255}` | Hẹn tắt sau N giờ (`N=1..12`) |
+| `HỦY-HẸN-GIỜ` | 49 | `{"cmd":7,"data":[0],"cmd_id":49,"cwsl":255}` | Hủy hẹn giờ |
+| `GIẢM-ÂM-LƯỢNG` | 50 | `{"cmd":13,"data":[level],"cmd_id":50,"cwsl":255}` | Giảm một mức, clamp tại 1 và tự unmute |
+| `TĂNG-ÂM-LƯỢNG` | 51 | `{"cmd":13,"data":[level],"cmd_id":51,"cwsl":255}` | Tăng một mức, clamp tại 7 và tự unmute |
+| `ÂM-LƯỢNG-BÉ/NHỎ-NHẤT` | 52 / 53 | `{"cmd":13,"data":[1],"cmd_id":52\|53,"cwsl":255}` | Đặt mức 1 và tự unmute |
+| `ÂM-LƯỢNG-TO/LỚN-NHẤT` | 54 / 55 | `{"cmd":13,"data":[7],"cmd_id":54\|55,"cwsl":255}` | Đặt mức 7 và tự unmute |
+| `TẮT-ÂM-THANH` | 56 | `{"cmd":13,"data":[0],"cmd_id":56,"cwsl":255}` | Mute sau khi phát prompt xác nhận |
+| `BẬT-ÂM-THANH` | 57 | `{"cmd":13,"data":[level],"cmd_id":57,"cwsl":255}` | Unmute và gửi lại mức volume đang lưu |
+| `KÍCH-HOẠT-NGỮ-CẢNH-<N>` | 58..67 | `{"cmd":12,"data":[N],"cmd_id":<id>,"cwsl":255}` | Kích hoạt ngữ cảnh `N` (`N=1..10`) |
 
-Payload `cmd:13` là mức loa, không phải ASR ID. MCU suy `cmd_id` MQTT 224:
-
-1. `level == 0` → `44` (tắt âm thanh), kể cả mute lặp `0→0`.
-2. Cache hợp lệ đang `0` và `level` thuộc `1..7` → `45` (bật âm thanh).
-3. Còn lại: heuristic tăng/giảm/min/max `40..43` như trước.
-
-Cache lúc boot `valid=0`, `level=0` nghĩa là **chưa có cache**, không phải mute,
-nên bước 2 bắt buộc cache đã valid. `cmd:13` không đóng SET/GET đang chờ.
-
-Khi một command ID học được nhận diện, nó đi lại đúng pipeline ASR mặc định,
-do đó message UART gửi sang MCU giống với câu lệnh mặc định mà nó trỏ tới.
+Câu đã học CWSL đi lại đúng pipeline: `cmd`/`data`/`cmd_id` giống bảng trên,
+chỉ `"cwsl"` đổi thành slot `0..14` của lệnh đó. Từ đánh thức không có hàng
+nào — chip không gửi UART khi wake.
 
 ## 5. Smoke test bằng web GUI
 
@@ -469,7 +617,8 @@ Trình duyệt sẽ mở `http://127.0.0.1:8765/`. Chọn COM đang nối UART0,
 
 1. Nhấn **Query capacity** để xem sức chứa hiện tại.
 2. Nhập Command ID (ví dụ `7`), để Slot `255`, nhấn **Learn**.
-3. Nói sau prompt 1010 và đợi frame `cmd:5`. Tool tự giải mã ra tên status,
+3. Nói **một lần** sau prompt 1010/1020 để chip vừa kiểm tra trùng vừa ghi mẫu,
+   rồi đợi frame `cmd:5`. Tool tự giải mã ra tên status,
    ví dụ `<- LEARN_OK (0x20, finished ok)  cmd_id=7 slot=0`.
 4. Nói lại câu vừa học để xác nhận chip phát ra command UART tương ứng.
 5. Nhấn **Query this ID** để xác nhận slot đã được đánh dấu đang dùng.
@@ -480,6 +629,29 @@ Trình duyệt sẽ mở `http://127.0.0.1:8765/`. Chọn COM đang nối UART0,
 
 Với wake word, dùng khu **Wake word shortcuts**: học nhiều câu đánh thức rồi
 xóa đúng một slot để xác nhận các câu còn lại vẫn đánh thức được.
+
+Test guard prompt ở khu **Fan MCU simulator — prompt guard**:
+
+1. Tách MCU quạt thật khỏi UART; nối USB-TTL với UART0 của chip giọng nói.
+2. Connect, chọn trạng thái ban đầu Power/Mode rồi nhấn
+   **Start simulator / Apply state**. Chỉ cần Apply lại khi muốn ép state.
+3. Wake chip rồi nói "bật quạt". Tool nhận `{"cmd":14,"data":[0]}` và
+   tự gửi `{"cmd":14,"data":[1,1]}` nếu preset ON/mode 1; chip gửi
+   `{"cmd":1,"data":[1]}` nhưng không prompt bật. Chọn OFF rồi Apply để
+   kiểm tra nhánh có prompt (nếu chip không mute).
+4. Mode 1 + nói số 1: không prompt; Mode 5 + nói số 2: có prompt và vẫn gửi
+   `CMD_MODE [2]`. Cả hai trường hợp đều gửi lệnh điều khiển.
+5. Nhấn **Stop simulator** để thử timeout: chip vẫn gửi lệnh sau khoảng
+   500 ms, không prompt. Giả lập mặc định tắt khi khởi động Python.
+
+Simulator giữ một struct `{power, mode}` trong RAM Python. Nó tự cập nhật
+`power` khi nhận `CMD_TURN [0/1]`, cập nhật `mode` khi nhận `CMD_MODE [1..4]`,
+rồi dùng state mới cho lần query kế tiếp. `CMD_MODE [5/6]` là quay/dừng quay,
+không phải smart mode nên không đổi trường `mode`; tool cũng không tự suy luận
+power khi nhận mode. Python trả lời ngay trong luồng UART, không chờ trình
+duyệt poll log. Không gửi request `[0]` từ tool vào chip: request do chip phát,
+tool đóng vai MCU trả response hai phần tử. State sống qua refresh trang nhưng
+mất khi khởi động lại Python; trạng thái live hiển thị ngay trên giao diện.
 
 Kiểm tra âm lượng ở khu **Speaker volume**:
 

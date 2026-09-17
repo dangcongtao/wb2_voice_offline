@@ -119,10 +119,20 @@ void aiio_ci13162_uart_set_cwsl_callbacks(
 /** @brief Send one buzzer beep request to the CI13162.
  *
  *  @return     Send status.
- *  @retval     0  Request `{"cmd":200,"data":[]}` was sent.
+ *  @retval     0  Request was sent.
  *  @retval     -1 UART unavailable, OTA active, or send failure.
  */
 int32_t aiio_ci13162_uart_send_buzz(void);
+
+/** @brief Send one buzzer beep request with specific type to the CI13162.
+ *
+ *  @param[in]  is_long  0 for short beep {"cmd":200,"data":[0]}, 1 for long beep {"cmd":200,"data":[1]}.
+ *  @return     Send status.
+ *  @retval     0  Request was sent.
+ *  @retval     -1 UART unavailable, OTA active, or send failure.
+ */
+int32_t aiio_ci13162_uart_send_buzz_type(uint8_t is_long);
+
 
 /** @brief Send one speaker volume set request to the CI13162.
  *

@@ -13,6 +13,7 @@ typedef struct
 
 uint8_t m_fan_get_current_speed_natural(void);
 void m_fan_set_time_off(uint32_t time_set);
+void m_fan_set_time_off_voice(uint32_t time_set, uint8_t cmd_id, uint8_t cwsl);
 uint32_t m_fan_get_time_remain(void);
 uint32_t m_fan_get_time_set(void);
 void m_fan_timer_toggle(void);

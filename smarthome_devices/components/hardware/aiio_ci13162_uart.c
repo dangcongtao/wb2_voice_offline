@@ -64,7 +64,6 @@
 static const char s_aiio_ci13162_reset_message[] = "{\"cmd\":0,\"data\":[]}\r\n";
 static const char s_aiio_ci13162_version_query[] = "{\"cmd\":3,\"data\":[]}\r\n";
 static const char s_aiio_ci13162_volume_query[] = "{\"cmd\":11,\"data\":[]}\r\n";
-static const char s_aiio_ci13162_buzz_message[] = "{\"cmd\":200,\"data\":[]}\r\n";
 
 extern hosal_uart_dev_t uart_stdio;
 
@@ -83,6 +82,7 @@ typedef enum {
     AIIO_CI13162_CMD_VOLUME_GET = 11,
     AIIO_CI13162_CMD_SCENE = 12,
     AIIO_CI13162_CMD_VOLUME_CHANGE = 13,
+    AIIO_CI13162_CMD_STATE = 14,
     AIIO_CI13162_CMD_BUZZ = 200,
 } aiio_ci13162_command_t;
 
@@ -100,6 +100,9 @@ typedef struct {
     uint8_t data_count;
     uint8_t data[AIIO_CI13162_CWSL_DATA_MAX];
     uint32_t version;
+    uint8_t cmd_id;
+    uint8_t cwsl;
+    uint8_t has_metadata;
 } aiio_ci13162_message_t;
 
 typedef struct {
@@ -538,49 +541,45 @@ static void aiio_ci13162_skip_spaces(const char **cursor)
     }
 }
 
-// Match one case-sensitive protocol token.
-static uint8_t aiio_ci13162_match_token(const char **cursor, const char *token)
-{
-    size_t token_length;
 
-    if ((cursor == NULL) || (*cursor == NULL) || (token == NULL)) {
-        return 0U;
-    }
-
-    token_length = strlen(token);
-    if (strncmp(*cursor, token, token_length) != 0) {
-        return 0U;
-    }
-
-    *cursor += token_length;
-    return 1U;
-}
-
-// Match a protocol key with optional double quotes.
+// Match a protocol key with optional double quotes without mutating cursor on mismatch.
 static uint8_t aiio_ci13162_match_key(const char **cursor, const char *key)
 {
+    const char *pos;
+    size_t key_len;
     uint8_t quoted;
 
     if ((cursor == NULL) || (*cursor == NULL) || (key == NULL)) {
         return 0U;
     }
 
-    quoted = (**cursor == '"') ? 1U : 0U;
+    pos = *cursor;
+    quoted = (*pos == '"') ? 1U : 0U;
     if (quoted != 0U) {
-        (*cursor)++;
+        pos++;
     }
 
-    if (aiio_ci13162_match_token(cursor, key) == 0U) {
+    key_len = strlen(key);
+    if (strncmp(pos, key, key_len) != 0) {
         return 0U;
     }
+    pos += key_len;
 
     if (quoted != 0U) {
-        if (**cursor != '"') {
+        if (*pos != '"') {
             return 0U;
         }
-        (*cursor)++;
+        pos++;
+    } else {
+        if (((*pos >= 'a') && (*pos <= 'z')) ||
+            ((*pos >= 'A') && (*pos <= 'Z')) ||
+            ((*pos >= '0') && (*pos <= '9')) ||
+            (*pos == '_')) {
+            return 0U;
+        }
     }
 
+    *cursor = pos;
     return 1U;
 }
 
@@ -644,6 +643,15 @@ static aiio_ci13162_parse_result_t aiio_ci13162_parse_uint32(const char **cursor
     return AIIO_CI13162_PARSE_OK;
 }
 
+static inline uint8_t aiio_ci13162_is_voice_command(uint8_t command)
+{
+    return ((command == AIIO_CI13162_CMD_TURN) ||
+            (command == AIIO_CI13162_CMD_MODE) ||
+            (command == AIIO_CI13162_CMD_TIMER) ||
+            (command == AIIO_CI13162_CMD_SCENE) ||
+            (command == AIIO_CI13162_CMD_VOLUME_CHANGE)) ? 1U : 0U;
+}
+
 // Validate the command-specific data count and range.
 static aiio_ci13162_parse_result_t aiio_ci13162_validate_message(
     const aiio_ci13162_message_t *message)
@@ -652,26 +660,73 @@ static aiio_ci13162_parse_result_t aiio_ci13162_validate_message(
         return AIIO_CI13162_PARSE_INVALID_ARGUMENT;
     }
 
+    if (aiio_ci13162_is_voice_command(message->command) != 0U) {
+        if ((message->cwsl > 14U) && (message->cwsl != 255U)) {
+            return AIIO_CI13162_PARSE_INVALID_DATA;
+        }
+    }
+
     switch (message->command) {
         case AIIO_CI13162_CMD_RESET:
             return (message->data_count == 0U) ? AIIO_CI13162_PARSE_OK
                                                : AIIO_CI13162_PARSE_INVALID_DATA;
 
         case AIIO_CI13162_CMD_TURN:
-            return ((message->data_count == 1U) && (message->data[0] <= 1U))
-                       ? AIIO_CI13162_PARSE_OK
-                       : AIIO_CI13162_PARSE_INVALID_DATA;
+            if (message->data_count != 1U) {
+                return AIIO_CI13162_PARSE_INVALID_FORMAT;
+            }
+            if (message->data[0] > 1U) {
+                return AIIO_CI13162_PARSE_INVALID_DATA;
+            }
+            if (message->data[0] == 1U) {
+                if ((message->cmd_id != 7U) && (message->cmd_id != 8U)) {
+                    return AIIO_CI13162_PARSE_INVALID_DATA;
+                }
+            } else {
+                if ((message->cmd_id != 9U) && (message->cmd_id != 10U)) {
+                    return AIIO_CI13162_PARSE_INVALID_DATA;
+                }
+            }
+            return AIIO_CI13162_PARSE_OK;
 
         case AIIO_CI13162_CMD_MODE:
-            return ((message->data_count == 1U) &&
-                    (message->data[0] >= 1U) &&
-                    (message->data[0] <= 6U))
-                       ? AIIO_CI13162_PARSE_OK
-                       : AIIO_CI13162_PARSE_INVALID_DATA;
+            if (message->data_count != 1U) {
+                return AIIO_CI13162_PARSE_INVALID_FORMAT;
+            }
+            if ((message->data[0] < 1U) || (message->data[0] > 6U)) {
+                return AIIO_CI13162_PARSE_INVALID_DATA;
+            }
+            if (message->data[0] == 1U) {
+                if ((message->cmd_id != 11U) && (message->cmd_id != 12U)) {
+                    return AIIO_CI13162_PARSE_INVALID_DATA;
+                }
+            } else if (message->data[0] == 2U) {
+                if ((message->cmd_id != 13U) && (message->cmd_id != 14U)) {
+                    return AIIO_CI13162_PARSE_INVALID_DATA;
+                }
+            } else if (message->data[0] == 3U) {
+                if ((message->cmd_id != 15U) && (message->cmd_id != 16U)) {
+                    return AIIO_CI13162_PARSE_INVALID_DATA;
+                }
+            } else if (message->data[0] == 4U) {
+                if ((message->cmd_id != 17U) && (message->cmd_id != 18U)) {
+                    return AIIO_CI13162_PARSE_INVALID_DATA;
+                }
+            } else if (message->data[0] == 5U) {
+                if ((message->cmd_id < 19U) || (message->cmd_id > 21U)) {
+                    return AIIO_CI13162_PARSE_INVALID_DATA;
+                }
+            } else if (message->data[0] == 6U) {
+                if ((message->cmd_id < 22U) || (message->cmd_id > 24U)) {
+                    return AIIO_CI13162_PARSE_INVALID_DATA;
+                }
+            }
+            return AIIO_CI13162_PARSE_OK;
 
         case AIIO_CI13162_CMD_VERSION:
-            return (message->data_count == 1U) ? AIIO_CI13162_PARSE_OK
-                                               : AIIO_CI13162_PARSE_INVALID_DATA;
+            return ((message->data_count == 1U) && (message->version > 0U))
+                       ? AIIO_CI13162_PARSE_OK
+                       : AIIO_CI13162_PARSE_INVALID_DATA;
 
         case AIIO_CI13162_CMD_CWSL_STATUS:
             return (message->data_count == 3U) ? AIIO_CI13162_PARSE_OK
@@ -692,23 +747,64 @@ static aiio_ci13162_parse_result_t aiio_ci13162_validate_message(
                        : AIIO_CI13162_PARSE_INVALID_DATA;
 
         case AIIO_CI13162_CMD_TIMER:
-            return ((message->data_count == 1U) &&
-                    (message->data[0] <= 12U))
-                       ? AIIO_CI13162_PARSE_OK
-                       : AIIO_CI13162_PARSE_INVALID_DATA;
+            if (message->data_count != 1U) {
+                return AIIO_CI13162_PARSE_INVALID_FORMAT;
+            }
+            if (message->data[0] > 12U) {
+                return AIIO_CI13162_PARSE_INVALID_DATA;
+            }
+            if (message->data[0] == 0U) {
+                if (message->cmd_id != 49U) {
+                    return AIIO_CI13162_PARSE_INVALID_DATA;
+                }
+            } else {
+                uint8_t min_id = (uint8_t)(25U + (2U * (message->data[0] - 1U)));
+                if ((message->cmd_id != min_id) && (message->cmd_id != (min_id + 1U))) {
+                    return AIIO_CI13162_PARSE_INVALID_DATA;
+                }
+            }
+            return AIIO_CI13162_PARSE_OK;
 
         case AIIO_CI13162_CMD_SCENE:
-            return ((message->data_count == 1U) &&
-                    (message->data[0] >= 1U) &&
-                    (message->data[0] <= 10U))
-                       ? AIIO_CI13162_PARSE_OK
-                       : AIIO_CI13162_PARSE_INVALID_DATA;
+            if (message->data_count != 1U) {
+                return AIIO_CI13162_PARSE_INVALID_FORMAT;
+            }
+            if ((message->data[0] < 1U) || (message->data[0] > 10U)) {
+                return AIIO_CI13162_PARSE_INVALID_DATA;
+            }
+            if (message->cmd_id != (uint8_t)(57U + message->data[0])) {
+                return AIIO_CI13162_PARSE_INVALID_DATA;
+            }
+            return AIIO_CI13162_PARSE_OK;
 
         case AIIO_CI13162_CMD_VOLUME_CHANGE:
-            return ((message->data_count == 1U) &&
-                    (message->data[0] <= AIIO_CI13162_VOLUME_LEVEL_MAX))
-                       ? AIIO_CI13162_PARSE_OK
-                       : AIIO_CI13162_PARSE_INVALID_DATA;
+            if (message->data_count != 1U) {
+                return AIIO_CI13162_PARSE_INVALID_FORMAT;
+            }
+            if (message->data[0] > AIIO_CI13162_VOLUME_LEVEL_MAX) {
+                return AIIO_CI13162_PARSE_INVALID_DATA;
+            }
+            if ((message->cmd_id < 50U) || (message->cmd_id > 57U)) {
+                return AIIO_CI13162_PARSE_INVALID_DATA;
+            }
+            if (message->cmd_id == 56U) {
+                if (message->data[0] != 0U) {
+                    return AIIO_CI13162_PARSE_INVALID_DATA;
+                }
+            } else if ((message->cmd_id == 52U) || (message->cmd_id == 53U)) {
+                if (message->data[0] != 1U) {
+                    return AIIO_CI13162_PARSE_INVALID_DATA;
+                }
+            } else if ((message->cmd_id == 54U) || (message->cmd_id == 55U)) {
+                if (message->data[0] != 7U) {
+                    return AIIO_CI13162_PARSE_INVALID_DATA;
+                }
+            } else {
+                if ((message->data[0] < 1U) || (message->data[0] > 7U)) {
+                    return AIIO_CI13162_PARSE_INVALID_DATA;
+                }
+            }
+            return AIIO_CI13162_PARSE_OK;
 
         case AIIO_CI13162_CMD_VOLUME_INFO:
             return ((message->data_count >= 2U) &&
@@ -722,9 +818,16 @@ static aiio_ci13162_parse_result_t aiio_ci13162_validate_message(
             return (message->data_count == 1U) ? AIIO_CI13162_PARSE_OK
                                                : AIIO_CI13162_PARSE_INVALID_DATA;
 
+        case AIIO_CI13162_CMD_STATE:
+            return ((message->data_count == 1U) && (message->data[0] == 0U))
+                       ? AIIO_CI13162_PARSE_OK
+                       : AIIO_CI13162_PARSE_INVALID_DATA;
+
         case AIIO_CI13162_CMD_BUZZ:
-            return (message->data_count == 0U) ? AIIO_CI13162_PARSE_OK
-                                               : AIIO_CI13162_PARSE_INVALID_DATA;
+            return ((message->data_count == 0U) ||
+                    ((message->data_count == 1U) && (message->data[0] <= 1U)))
+                       ? AIIO_CI13162_PARSE_OK
+                       : AIIO_CI13162_PARSE_INVALID_DATA;
 
         case AIIO_CI13162_CMD_CWSL:
         case AIIO_CI13162_CMD_VOLUME:
@@ -741,6 +844,10 @@ static aiio_ci13162_parse_result_t aiio_ci13162_parse_line(
 {
     const char *cursor = line;
     aiio_ci13162_parse_result_t result;
+    uint8_t has_cmd = 0U;
+    uint8_t has_data = 0U;
+    uint8_t has_cmd_id = 0U;
+    uint8_t has_cwsl = 0U;
 
     if ((line == NULL) || (message == NULL)) {
         return AIIO_CI13162_PARSE_INVALID_ARGUMENT;
@@ -752,83 +859,130 @@ static aiio_ci13162_parse_result_t aiio_ci13162_parse_line(
         return AIIO_CI13162_PARSE_INVALID_FORMAT;
     }
 
-    aiio_ci13162_skip_spaces(&cursor);
-    if (aiio_ci13162_match_key(&cursor, "cmd") == 0U) {
-        return AIIO_CI13162_PARSE_INVALID_FORMAT;
-    }
-    aiio_ci13162_skip_spaces(&cursor);
-    if (*cursor++ != ':') {
-        return AIIO_CI13162_PARSE_INVALID_FORMAT;
-    }
-    aiio_ci13162_skip_spaces(&cursor);
-    result = aiio_ci13162_parse_uint8(&cursor, &message->command);
-    if (result != AIIO_CI13162_PARSE_OK) {
-        return result;
-    }
+    while (1) {
+        aiio_ci13162_skip_spaces(&cursor);
+        if (*cursor == '}') {
+            break;
+        }
 
-    aiio_ci13162_skip_spaces(&cursor);
-    if (*cursor++ != ',') {
-        return AIIO_CI13162_PARSE_INVALID_FORMAT;
-    }
-    aiio_ci13162_skip_spaces(&cursor);
-    if (aiio_ci13162_match_key(&cursor, "data") == 0U) {
-        return AIIO_CI13162_PARSE_INVALID_FORMAT;
-    }
-    aiio_ci13162_skip_spaces(&cursor);
-    if (*cursor++ != ':') {
-        return AIIO_CI13162_PARSE_INVALID_FORMAT;
-    }
-    aiio_ci13162_skip_spaces(&cursor);
-    if (*cursor++ != '[') {
-        return AIIO_CI13162_PARSE_INVALID_FORMAT;
-    }
-
-    aiio_ci13162_skip_spaces(&cursor);
-    if (*cursor != ']') {
-        if (message->command == AIIO_CI13162_CMD_VERSION) {
-            result = aiio_ci13162_parse_uint32(&cursor, &message->version);
+        if (aiio_ci13162_match_key(&cursor, "cmd_id") != 0U) {
+            if (has_cmd_id != 0U) {
+                return AIIO_CI13162_PARSE_INVALID_FORMAT;
+            }
+            aiio_ci13162_skip_spaces(&cursor);
+            if (*cursor++ != ':') {
+                return AIIO_CI13162_PARSE_INVALID_FORMAT;
+            }
+            aiio_ci13162_skip_spaces(&cursor);
+            result = aiio_ci13162_parse_uint8(&cursor, &message->cmd_id);
             if (result != AIIO_CI13162_PARSE_OK) {
                 return result;
             }
-            message->data_count = 1U;
+            has_cmd_id = 1U;
+        } else if (aiio_ci13162_match_key(&cursor, "cmd") != 0U) {
+            if (has_cmd != 0U) {
+                return AIIO_CI13162_PARSE_INVALID_FORMAT;
+            }
             aiio_ci13162_skip_spaces(&cursor);
-        } else {
-            while (*cursor != ']') {
-                if (((message->command <= AIIO_CI13162_CMD_MODE) ||
-                     (message->command == AIIO_CI13162_CMD_TIMER) ||
-                     (message->command == AIIO_CI13162_CMD_SCENE) ||
-                     (message->command == AIIO_CI13162_CMD_VOLUME_CHANGE)) &&
-                    (message->data_count >= 1U)) {
-                    return AIIO_CI13162_PARSE_INVALID_FORMAT;
-                }
-                if (message->data_count >= AIIO_CI13162_CWSL_DATA_MAX) {
-                    return AIIO_CI13162_PARSE_INVALID_FORMAT;
-                }
+            if (*cursor++ != ':') {
+                return AIIO_CI13162_PARSE_INVALID_FORMAT;
+            }
+            aiio_ci13162_skip_spaces(&cursor);
+            result = aiio_ci13162_parse_uint8(&cursor, &message->command);
+            if (result != AIIO_CI13162_PARSE_OK) {
+                return result;
+            }
+            has_cmd = 1U;
+        } else if (aiio_ci13162_match_key(&cursor, "cwsl") != 0U) {
+            if (has_cwsl != 0U) {
+                return AIIO_CI13162_PARSE_INVALID_FORMAT;
+            }
+            aiio_ci13162_skip_spaces(&cursor);
+            if (*cursor++ != ':') {
+                return AIIO_CI13162_PARSE_INVALID_FORMAT;
+            }
+            aiio_ci13162_skip_spaces(&cursor);
+            result = aiio_ci13162_parse_uint8(&cursor, &message->cwsl);
+            if (result != AIIO_CI13162_PARSE_OK) {
+                return result;
+            }
+            has_cwsl = 1U;
+        } else if (aiio_ci13162_match_key(&cursor, "data") != 0U) {
+            if (has_data != 0U) {
+                return AIIO_CI13162_PARSE_INVALID_FORMAT;
+            }
+            aiio_ci13162_skip_spaces(&cursor);
+            if (*cursor++ != ':') {
+                return AIIO_CI13162_PARSE_INVALID_FORMAT;
+            }
+            aiio_ci13162_skip_spaces(&cursor);
+            if (*cursor++ != '[') {
+                return AIIO_CI13162_PARSE_INVALID_FORMAT;
+            }
 
-                result = aiio_ci13162_parse_uint8(
-                    &cursor,
-                    &message->data[message->data_count]);
-                if (result != AIIO_CI13162_PARSE_OK) {
-                    return result;
-                }
-                message->data_count++;
-                aiio_ci13162_skip_spaces(&cursor);
-                if (*cursor != ',') {
-                    break;
-                }
-                cursor++;
-                aiio_ci13162_skip_spaces(&cursor);
-                if (*cursor == ']') {
-                    return AIIO_CI13162_PARSE_INVALID_FORMAT;
+            aiio_ci13162_skip_spaces(&cursor);
+            if (*cursor != ']') {
+                while (*cursor != ']') {
+                    uint32_t val32 = 0U;
+
+                    if (has_cmd != 0U) {
+                        if (((message->command <= AIIO_CI13162_CMD_MODE) ||
+                             (message->command == AIIO_CI13162_CMD_TIMER) ||
+                             (message->command == AIIO_CI13162_CMD_SCENE) ||
+                             (message->command == AIIO_CI13162_CMD_VOLUME_CHANGE) ||
+                             (message->command == AIIO_CI13162_CMD_STATE)) &&
+                            (message->data_count >= 1U)) {
+                            return AIIO_CI13162_PARSE_INVALID_FORMAT;
+                        }
+                    }
+
+                    if (message->data_count >= AIIO_CI13162_CWSL_DATA_MAX) {
+                        return AIIO_CI13162_PARSE_INVALID_FORMAT;
+                    }
+
+                    result = aiio_ci13162_parse_uint32(&cursor, &val32);
+                    if (result != AIIO_CI13162_PARSE_OK) {
+                        return result;
+                    }
+
+                    if (message->data_count == 0U) {
+                        message->version = val32;
+                    }
+                    if (val32 <= UINT8_MAX) {
+                        message->data[message->data_count] = (uint8_t)val32;
+                    } else {
+                        message->data[message->data_count] = 0U;
+                    }
+                    message->data_count++;
+
+                    aiio_ci13162_skip_spaces(&cursor);
+                    if (*cursor != ',') {
+                        break;
+                    }
+                    cursor++;
+                    aiio_ci13162_skip_spaces(&cursor);
+                    if (*cursor == ']') {
+                        return AIIO_CI13162_PARSE_INVALID_FORMAT;
+                    }
                 }
             }
+            if (*cursor++ != ']') {
+                return AIIO_CI13162_PARSE_INVALID_FORMAT;
+            }
+            has_data = 1U;
+        } else {
+            return AIIO_CI13162_PARSE_INVALID_FORMAT;
+        }
+
+        aiio_ci13162_skip_spaces(&cursor);
+        if (*cursor == '}') {
+            break;
+        }
+        if (*cursor++ != ',') {
+            return AIIO_CI13162_PARSE_INVALID_FORMAT;
         }
     }
-    if (*cursor++ != ']') {
-        return AIIO_CI13162_PARSE_INVALID_FORMAT;
-    }
 
-    aiio_ci13162_skip_spaces(&cursor);
     if (*cursor++ != '}') {
         return AIIO_CI13162_PARSE_INVALID_FORMAT;
     }
@@ -837,123 +991,23 @@ static aiio_ci13162_parse_result_t aiio_ci13162_parse_line(
         return AIIO_CI13162_PARSE_INVALID_FORMAT;
     }
 
+    if ((has_cmd == 0U) || (has_data == 0U)) {
+        return AIIO_CI13162_PARSE_INVALID_FORMAT;
+    }
+
+    if (aiio_ci13162_is_voice_command(message->command) != 0U) {
+        if ((has_cmd_id == 0U) || (has_cwsl == 0U)) {
+            return AIIO_CI13162_PARSE_INVALID_FORMAT;
+        }
+        message->has_metadata = 1U;
+    } else {
+        if ((has_cmd_id != 0U) || (has_cwsl != 0U)) {
+            return AIIO_CI13162_PARSE_INVALID_FORMAT;
+        }
+        message->has_metadata = 0U;
+    }
+
     return aiio_ci13162_validate_message(message);
-}
-
-// Report the current fan state using the voice source identifier.
-static void aiio_ci13162_report_fan_state(const m_fan_info_t *fan_info)
-{
-    if (fan_info == NULL) {
-        return;
-    }
-
-    app_fan_respond_control(fan_info->mode,
-                            fan_info->speed,
-                            fan_info->pcn,
-                            fan_info->swing,
-                            fan_info->light,
-                            0U,
-                            SRC_ACTION_VOICE);
-}
-
-// Map the CI13162 UART command and payload to the corresponding ASR command ID.
-static uint8_t aiio_ci13162_get_cmd_id(uint8_t command, uint8_t data)
-{
-    if (command == AIIO_CI13162_CMD_TURN) {
-        return (data == 1U) ? 7U : 8U;
-    }
-    if (command == AIIO_CI13162_CMD_MODE) {
-        if ((data >= 1U) && (data <= 3U)) {
-            return (uint8_t)(8U + data);
-        }
-        if (data == 4U) {
-            return 12U;
-        }
-        if (data == 5U) {
-            return 13U;
-        }
-        if (data == 6U) {
-            return 14U;
-        }
-    }
-    if (command == AIIO_CI13162_CMD_TIMER) {
-        if (data == 0U) {
-            return 39U;
-        }
-        if (data <= 12U) {
-            return (uint8_t)(15U + (2U * (data - 1U)));
-        }
-    }
-    if (command == AIIO_CI13162_CMD_SCENE) {
-        if ((data >= 1U) && (data <= 10U)) {
-            return (uint8_t)(45U + data);
-        }
-    }
-    /* CMD_VOLUME_CHANGE payload is a speaker level, not an ASR ID. */
-    return 0U;
-}
-
-// Infer ASR 40..45 from cmd 13 level versus the cached speaker level.
-static uint8_t aiio_ci13162_get_volume_change_cmd_id(uint8_t old_valid,
-                                                     uint8_t old_level,
-                                                     uint8_t new_level)
-{
-    int16_t delta;
-
-    if (new_level > AIIO_CI13162_VOLUME_LEVEL_MAX) {
-        return AIIO_CI13162_ASR_VOLUME_UP;
-    }
-
-    if (new_level == 0U) {
-        return AIIO_CI13162_ASR_VOLUME_MUTE;
-    }
-
-    /* Cached mute is valid=1, level=0. Boot cache valid=0 is not mute. */
-    if ((old_valid != 0U) &&
-        (old_level == 0U) &&
-        (new_level >= AIIO_CI13162_VOLUME_LEVEL_MIN) &&
-        (new_level <= AIIO_CI13162_VOLUME_LEVEL_MAX)) {
-        return AIIO_CI13162_ASR_VOLUME_UNMUTE;
-    }
-
-    /* No cache yet: 1 -> min (42), 7 -> max (43), else increase (41). */
-    if ((old_valid == 0U) ||
-        (old_level < AIIO_CI13162_VOLUME_LEVEL_MIN) ||
-        (old_level > AIIO_CI13162_VOLUME_LEVEL_MAX)) {
-        if (new_level == AIIO_CI13162_VOLUME_LEVEL_MIN) {
-            return AIIO_CI13162_ASR_VOLUME_MIN;
-        }
-        if (new_level == AIIO_CI13162_VOLUME_LEVEL_MAX) {
-            return AIIO_CI13162_ASR_VOLUME_MAX;
-        }
-        return AIIO_CI13162_ASR_VOLUME_UP;
-    }
-
-    delta = (int16_t)new_level - (int16_t)old_level;
-    if (delta == 1) {
-        return AIIO_CI13162_ASR_VOLUME_UP;
-    }
-    if (delta == -1) {
-        return AIIO_CI13162_ASR_VOLUME_DOWN;
-    }
-    if (delta > 1) {
-        return (new_level == AIIO_CI13162_VOLUME_LEVEL_MAX)
-                   ? AIIO_CI13162_ASR_VOLUME_MAX
-                   : AIIO_CI13162_ASR_VOLUME_UP;
-    }
-    if (delta < -1) {
-        return (new_level == AIIO_CI13162_VOLUME_LEVEL_MIN)
-                   ? AIIO_CI13162_ASR_VOLUME_MIN
-                   : AIIO_CI13162_ASR_VOLUME_DOWN;
-    }
-
-    if (new_level == AIIO_CI13162_VOLUME_LEVEL_MIN) {
-        return AIIO_CI13162_ASR_VOLUME_MIN;
-    }
-    if (new_level == AIIO_CI13162_VOLUME_LEVEL_MAX) {
-        return AIIO_CI13162_ASR_VOLUME_MAX;
-    }
-    return AIIO_CI13162_ASR_VOLUME_UP;
 }
 
 // Send the scheduled version query without blocking the application task.
@@ -1027,7 +1081,8 @@ static void aiio_ci13162_handle_line(char *line, size_t length)
         return;
     }
 
-    if (message.command == AIIO_CI13162_CMD_BUZZ) {
+    if ((message.command == AIIO_CI13162_CMD_BUZZ) ||
+        (message.command == AIIO_CI13162_CMD_STATE)) {
         return;
     }
 
@@ -1050,151 +1105,181 @@ static void aiio_ci13162_run_parser_tests(void)
         uint8_t expected_data_count;
         uint8_t expected_data[AIIO_CI13162_CWSL_DATA_MAX];
         uint32_t expected_version;
+        uint8_t expected_cmd_id;
+        uint8_t expected_cwsl;
     } test_cases[] = {
         {"{cmd:0,data:[]}", AIIO_CI13162_PARSE_OK, AIIO_CI13162_CMD_RESET, 0U,
-         {0U, 0U, 0U, 0U}, 0U},
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
         {"{\"cmd\":200,\"data\":[]}", AIIO_CI13162_PARSE_OK,
-         AIIO_CI13162_CMD_BUZZ, 0U, {0U, 0U, 0U, 0U}, 0U},
+         AIIO_CI13162_CMD_BUZZ, 0U, {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
         {"{cmd:200,data:[]}", AIIO_CI13162_PARSE_OK,
-         AIIO_CI13162_CMD_BUZZ, 0U, {0U, 0U, 0U, 0U}, 0U},
-        {"{\"cmd\":200,\"data\":[1]}", AIIO_CI13162_PARSE_INVALID_DATA,
-         0U, 0U, {0U, 0U, 0U, 0U}, 0U},
-        {"{cmd:1,data:[0]}", AIIO_CI13162_PARSE_OK, AIIO_CI13162_CMD_TURN, 1U,
-         {0U, 0U, 0U, 0U}, 0U},
-        {"{cmd:1,data:[1]}", AIIO_CI13162_PARSE_OK, AIIO_CI13162_CMD_TURN, 1U,
-         {1U, 0U, 0U, 0U}, 0U},
-        {"{cmd:2,data:[1]}", AIIO_CI13162_PARSE_OK, AIIO_CI13162_CMD_MODE, 1U,
-         {1U, 0U, 0U, 0U}, 0U},
-        {"{cmd:2,data:[4]}", AIIO_CI13162_PARSE_OK, AIIO_CI13162_CMD_MODE, 1U,
-         {4U, 0U, 0U, 0U}, 0U},
-        {" { \"cmd\" : 2 , \"data\" : [ 3 ] } ", AIIO_CI13162_PARSE_OK,
-         AIIO_CI13162_CMD_MODE, 1U, {3U, 0U, 0U, 0U}, 0U},
+         AIIO_CI13162_CMD_BUZZ, 0U, {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
+        {"{\"cmd\":200,\"data\":[0]}", AIIO_CI13162_PARSE_OK,
+         AIIO_CI13162_CMD_BUZZ, 1U, {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
+        {"{\"cmd\":200,\"data\":[1]}", AIIO_CI13162_PARSE_OK,
+         AIIO_CI13162_CMD_BUZZ, 1U, {1U, 0U, 0U, 0U}, 0U, 0U, 0U},
+        {"{\"cmd\":200,\"data\":[2]}", AIIO_CI13162_PARSE_INVALID_DATA,
+         0U, 0U, {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
+        {"{\"cmd\":14,\"data\":[0]}", AIIO_CI13162_PARSE_OK,
+         AIIO_CI13162_CMD_STATE, 1U, {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
+        {"{\"cmd\":14,\"data\":[1]}", AIIO_CI13162_PARSE_INVALID_DATA,
+         0U, 0U, {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
+        {"{\"cmd\":14,\"data\":[0],\"cmd_id\":1}", AIIO_CI13162_PARSE_INVALID_FORMAT,
+         0U, 0U, {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
+        {"{cmd:1,data:[0]}", AIIO_CI13162_PARSE_INVALID_FORMAT,
+         0U, 0U, {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
+        {"{cmd:1,data:[0],cmd_id:9,cwsl:255}", AIIO_CI13162_PARSE_OK,
+         AIIO_CI13162_CMD_TURN, 1U, {0U, 0U, 0U, 0U}, 0U, 9U, 255U},
+        {"{cmd:1,data:[1],cmd_id:7,cwsl:255}", AIIO_CI13162_PARSE_OK,
+         AIIO_CI13162_CMD_TURN, 1U, {1U, 0U, 0U, 0U}, 0U, 7U, 255U},
+        {"{cmd:1,data:[1],cmd_id:8,cwsl:0}", AIIO_CI13162_PARSE_OK,
+         AIIO_CI13162_CMD_TURN, 1U, {1U, 0U, 0U, 0U}, 0U, 8U, 0U},
+        {"{cmd:1,data:[1],cmd_id:7,cwsl:15}", AIIO_CI13162_PARSE_INVALID_DATA,
+         0U, 0U, {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
+        {"{cmd:1,data:[0],cmd_id:7,cwsl:255}", AIIO_CI13162_PARSE_INVALID_DATA,
+         0U, 0U, {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
+        {"{cmd:2,data:[1],cmd_id:11,cwsl:255}", AIIO_CI13162_PARSE_OK,
+         AIIO_CI13162_CMD_MODE, 1U, {1U, 0U, 0U, 0U}, 0U, 11U, 255U},
+        {"{cmd:2,data:[4],cmd_id:17,cwsl:255}", AIIO_CI13162_PARSE_OK,
+         AIIO_CI13162_CMD_MODE, 1U, {4U, 0U, 0U, 0U}, 0U, 17U, 255U},
+        {"{cmd:2,data:[5],cmd_id:19,cwsl:255}", AIIO_CI13162_PARSE_OK,
+         AIIO_CI13162_CMD_MODE, 1U, {5U, 0U, 0U, 0U}, 0U, 19U, 255U},
+        {"{cmd:2,data:[6],cmd_id:22,cwsl:255}", AIIO_CI13162_PARSE_OK,
+         AIIO_CI13162_CMD_MODE, 1U, {6U, 0U, 0U, 0U}, 0U, 22U, 255U},
+        {" { \"cmd\" : 2 , \"data\" : [ 3 ] , \"cmd_id\" : 15 , \"cwsl\" : 255 } ",
+         AIIO_CI13162_PARSE_OK, AIIO_CI13162_CMD_MODE, 1U, {3U, 0U, 0U, 0U}, 0U, 15U, 255U},
         {"{\"cmd\":3,\"data\":[260813]}", AIIO_CI13162_PARSE_OK,
-         AIIO_CI13162_CMD_VERSION, 1U, {0U, 0U, 0U, 0U}, 260813U},
+         AIIO_CI13162_CMD_VERSION, 1U, {0U, 0U, 0U, 0U}, 260813U, 0U, 0U},
         {"{\"cmd\":5,\"data\":[32,7,0]}", AIIO_CI13162_PARSE_OK,
-         AIIO_CI13162_CMD_CWSL_STATUS, 3U, {32U, 7U, 0U, 0U}, 0U},
+         AIIO_CI13162_CMD_CWSL_STATUS, 3U, {32U, 7U, 0U, 0U}, 0U, 0U, 0U},
         {" { cmd : 6 , data : [ 7 , 5 , 0 ] } ", AIIO_CI13162_PARSE_OK,
-         AIIO_CI13162_CMD_CWSL_INFO, 3U, {7U, 5U, 0U, 0U}, 0U},
+         AIIO_CI13162_CMD_CWSL_INFO, 3U, {7U, 5U, 0U, 0U}, 0U, 0U, 0U},
         {"{\"cmd\":6,\"data\":[255,2,6,12]}", AIIO_CI13162_PARSE_OK,
-         AIIO_CI13162_CMD_CWSL_INFO, 4U, {255U, 2U, 6U, 12U}, 0U},
+         AIIO_CI13162_CMD_CWSL_INFO, 4U, {255U, 2U, 6U, 12U}, 0U, 0U, 0U},
         {"{cmd:6,data:[15,1,0]}", AIIO_CI13162_PARSE_OK,
-         AIIO_CI13162_CMD_CWSL_INFO, 3U, {15U, 1U, 0U, 0U}, 0U},
+         AIIO_CI13162_CMD_CWSL_INFO, 3U, {15U, 1U, 0U, 0U}, 0U, 0U, 0U},
         {"{cmd:6,data:[39,1,0]}", AIIO_CI13162_PARSE_OK,
-         AIIO_CI13162_CMD_CWSL_INFO, 3U, {39U, 1U, 0U, 0U}, 0U},
+         AIIO_CI13162_CMD_CWSL_INFO, 3U, {39U, 1U, 0U, 0U}, 0U, 0U, 0U},
         {"{cmd:6,data:[43,1,0]}", AIIO_CI13162_PARSE_OK,
-         AIIO_CI13162_CMD_CWSL_INFO, 3U, {43U, 1U, 0U, 0U}, 0U},
+         AIIO_CI13162_CMD_CWSL_INFO, 3U, {43U, 1U, 0U, 0U}, 0U, 0U, 0U},
         {"{cmd:6,data:[44,1,0]}", AIIO_CI13162_PARSE_OK,
-         AIIO_CI13162_CMD_CWSL_INFO, 3U, {44U, 1U, 0U, 0U}, 0U},
+         AIIO_CI13162_CMD_CWSL_INFO, 3U, {44U, 1U, 0U, 0U}, 0U, 0U, 0U},
         {"{cmd:6,data:[55,1,0]}", AIIO_CI13162_PARSE_OK,
-         AIIO_CI13162_CMD_CWSL_INFO, 3U, {55U, 1U, 0U, 0U}, 0U},
-        {"{cmd:6,data:[56,1,0]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
-         {0U, 0U, 0U, 0U}, 0U},
-        {"{cmd:7,data:[]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
-         {0U, 0U, 0U, 0U}, 0U},
-        {"{cmd:7,data:[0]}", AIIO_CI13162_PARSE_OK, AIIO_CI13162_CMD_TIMER, 1U,
-         {0U, 0U, 0U, 0U}, 0U},
-        {"{cmd:7,data:[1]}", AIIO_CI13162_PARSE_OK, AIIO_CI13162_CMD_TIMER, 1U,
-         {1U, 0U, 0U, 0U}, 0U},
-        {"{cmd:7,data:[12]}", AIIO_CI13162_PARSE_OK, AIIO_CI13162_CMD_TIMER, 1U,
-         {12U, 0U, 0U, 0U}, 0U},
-        {"{cmd:7,data:[13]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
-         {0U, 0U, 0U, 0U}, 0U},
-        {"{cmd:7,data:[1,2]}", AIIO_CI13162_PARSE_INVALID_FORMAT, 0U, 0U,
-         {0U, 0U, 0U, 0U}, 0U},
+         AIIO_CI13162_CMD_CWSL_INFO, 3U, {55U, 1U, 0U, 0U}, 0U, 0U, 0U},
+        {"{cmd:6,data:[67,1,0]}", AIIO_CI13162_PARSE_OK,
+         AIIO_CI13162_CMD_CWSL_INFO, 3U, {67U, 1U, 0U, 0U}, 0U, 0U, 0U},
+        {"{cmd:6,data:[68,1,0]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
+        {"{cmd:7,data:[],cmd_id:49,cwsl:255}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
+        {"{cmd:7,data:[0],cmd_id:49,cwsl:255}", AIIO_CI13162_PARSE_OK,
+         AIIO_CI13162_CMD_TIMER, 1U, {0U, 0U, 0U, 0U}, 0U, 49U, 255U},
+        {"{cmd:7,data:[1],cmd_id:25,cwsl:255}", AIIO_CI13162_PARSE_OK,
+         AIIO_CI13162_CMD_TIMER, 1U, {1U, 0U, 0U, 0U}, 0U, 25U, 255U},
+        {"{cmd:7,data:[12],cmd_id:47,cwsl:255}", AIIO_CI13162_PARSE_OK,
+         AIIO_CI13162_CMD_TIMER, 1U, {12U, 0U, 0U, 0U}, 0U, 47U, 255U},
+        {"{cmd:7,data:[13],cmd_id:47,cwsl:255}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
+        {"{cmd:7,data:[1,2],cmd_id:25,cwsl:255}", AIIO_CI13162_PARSE_INVALID_FORMAT, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
         {"{cmd:8,data:[0]}", AIIO_CI13162_PARSE_UNKNOWN_COMMAND, 0U, 0U,
-         {0U, 0U, 0U, 0U}, 0U},
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
         {"{cmd:8,data:[3]}", AIIO_CI13162_PARSE_UNKNOWN_COMMAND, 0U, 0U,
-         {0U, 0U, 0U, 0U}, 0U},
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
         {"{cmd:9,data:[3,1]}", AIIO_CI13162_PARSE_OK,
-         AIIO_CI13162_CMD_VOLUME_INFO, 2U, {3U, 1U, 0U, 0U}, 0U},
+         AIIO_CI13162_CMD_VOLUME_INFO, 2U, {3U, 1U, 0U, 0U}, 0U, 0U, 0U},
         {"{cmd:9,data:[7,0]}", AIIO_CI13162_PARSE_OK,
-         AIIO_CI13162_CMD_VOLUME_INFO, 2U, {7U, 0U, 0U, 0U}, 0U},
+         AIIO_CI13162_CMD_VOLUME_INFO, 2U, {7U, 0U, 0U, 0U}, 0U, 0U, 0U},
         {"{\"cmd\":9,\"data\":[3,1,0]}", AIIO_CI13162_PARSE_OK,
-         AIIO_CI13162_CMD_VOLUME_INFO, 3U, {3U, 1U, 0U, 0U}, 0U},
+         AIIO_CI13162_CMD_VOLUME_INFO, 3U, {3U, 1U, 0U, 0U}, 0U, 0U, 0U},
         {"{cmd:9,data:[0,1]}", AIIO_CI13162_PARSE_OK,
-         AIIO_CI13162_CMD_VOLUME_INFO, 2U, {0U, 1U, 0U, 0U}, 0U},
+         AIIO_CI13162_CMD_VOLUME_INFO, 2U, {0U, 1U, 0U, 0U}, 0U, 0U, 0U},
         {"{\"cmd\":9,\"data\":[0,1,0]}", AIIO_CI13162_PARSE_OK,
-         AIIO_CI13162_CMD_VOLUME_INFO, 3U, {0U, 1U, 0U, 0U}, 0U},
+         AIIO_CI13162_CMD_VOLUME_INFO, 3U, {0U, 1U, 0U, 0U}, 0U, 0U, 0U},
         {"{cmd:9,data:[8,1]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
-         {0U, 0U, 0U, 0U}, 0U},
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
         {"{cmd:9,data:[3,2]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
-         {0U, 0U, 0U, 0U}, 0U},
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
         {"{cmd:9,data:[3]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
-         {0U, 0U, 0U, 0U}, 0U},
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
         {"{cmd:9,data:[3,1,0,0]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
-         {0U, 0U, 0U, 0U}, 0U},
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
         {"{cmd:10,data:[1]}", AIIO_CI13162_PARSE_OK, AIIO_CI13162_CMD_ASR_UNHANDLED, 1U,
-         {1U, 0U, 0U, 0U}, 0U},
+         {1U, 0U, 0U, 0U}, 0U, 0U, 0U},
         {"{cmd:10,data:[40]}", AIIO_CI13162_PARSE_OK, AIIO_CI13162_CMD_ASR_UNHANDLED, 1U,
-         {40U, 0U, 0U, 0U}, 0U},
+         {40U, 0U, 0U, 0U}, 0U, 0U, 0U},
         {"{cmd:10,data:[]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
-         {0U, 0U, 0U, 0U}, 0U},
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
         {"{cmd:10,data:[1,2]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
-         {0U, 0U, 0U, 0U}, 0U},
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
         {"{cmd:11,data:[]}", AIIO_CI13162_PARSE_UNKNOWN_COMMAND, 0U, 0U,
-         {0U, 0U, 0U, 0U}, 0U},
-        {"{cmd:12,data:[]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
-         {0U, 0U, 0U, 0U}, 0U},
-        {"{cmd:12,data:[1]}", AIIO_CI13162_PARSE_OK, AIIO_CI13162_CMD_SCENE, 1U,
-         {1U, 0U, 0U, 0U}, 0U},
-        {"{cmd:12,data:[10]}", AIIO_CI13162_PARSE_OK, AIIO_CI13162_CMD_SCENE, 1U,
-         {10U, 0U, 0U, 0U}, 0U},
-        {"{cmd:12,data:[0]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
-         {0U, 0U, 0U, 0U}, 0U},
-        {"{cmd:12,data:[11]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
-         {0U, 0U, 0U, 0U}, 0U},
-        {"{cmd:12,data:[1,2]}", AIIO_CI13162_PARSE_INVALID_FORMAT, 0U, 0U,
-         {0U, 0U, 0U, 0U}, 0U},
-        {"{cmd:13,data:[1]}", AIIO_CI13162_PARSE_OK,
-         AIIO_CI13162_CMD_VOLUME_CHANGE, 1U, {1U, 0U, 0U, 0U}, 0U},
-        {"{cmd:13,data:[4]}", AIIO_CI13162_PARSE_OK,
-         AIIO_CI13162_CMD_VOLUME_CHANGE, 1U, {4U, 0U, 0U, 0U}, 0U},
-        {"{cmd:13,data:[7]}", AIIO_CI13162_PARSE_OK,
-         AIIO_CI13162_CMD_VOLUME_CHANGE, 1U, {7U, 0U, 0U, 0U}, 0U},
-        {"{cmd:13,data:[0]}", AIIO_CI13162_PARSE_OK,
-         AIIO_CI13162_CMD_VOLUME_CHANGE, 1U, {0U, 0U, 0U, 0U}, 0U},
-        {"{\"cmd\":13,\"data\":[0]}", AIIO_CI13162_PARSE_OK,
-         AIIO_CI13162_CMD_VOLUME_CHANGE, 1U, {0U, 0U, 0U, 0U}, 0U},
-        {"{cmd:13,data:[8]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
-         {0U, 0U, 0U, 0U}, 0U},
-        {"{cmd:13,data:[]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
-         {0U, 0U, 0U, 0U}, 0U},
-        {"{cmd:13,data:[3,1]}", AIIO_CI13162_PARSE_INVALID_FORMAT, 0U, 0U,
-         {0U, 0U, 0U, 0U}, 0U},
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
+        {"{cmd:12,data:[],cmd_id:58,cwsl:255}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
+        {"{cmd:12,data:[1],cmd_id:58,cwsl:255}", AIIO_CI13162_PARSE_OK, AIIO_CI13162_CMD_SCENE, 1U,
+         {1U, 0U, 0U, 0U}, 0U, 58U, 255U},
+        {"{cmd:12,data:[10],cmd_id:67,cwsl:255}", AIIO_CI13162_PARSE_OK, AIIO_CI13162_CMD_SCENE, 1U,
+         {10U, 0U, 0U, 0U}, 0U, 67U, 255U},
+        {"{cmd:12,data:[0],cmd_id:58,cwsl:255}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
+        {"{cmd:12,data:[11],cmd_id:68,cwsl:255}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
+        {"{cmd:12,data:[1,2],cmd_id:58,cwsl:255}", AIIO_CI13162_PARSE_INVALID_FORMAT, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
+        {"{cmd:13,data:[1],cmd_id:52,cwsl:255}", AIIO_CI13162_PARSE_OK,
+         AIIO_CI13162_CMD_VOLUME_CHANGE, 1U, {1U, 0U, 0U, 0U}, 0U, 52U, 255U},
+        {"{cmd:13,data:[4],cmd_id:50,cwsl:255}", AIIO_CI13162_PARSE_OK,
+         AIIO_CI13162_CMD_VOLUME_CHANGE, 1U, {4U, 0U, 0U, 0U}, 0U, 50U, 255U},
+        {"{cmd:13,data:[7],cmd_id:54,cwsl:255}", AIIO_CI13162_PARSE_OK,
+         AIIO_CI13162_CMD_VOLUME_CHANGE, 1U, {7U, 0U, 0U, 0U}, 0U, 54U, 255U},
+        {"{cmd:13,data:[0],cmd_id:56,cwsl:255}", AIIO_CI13162_PARSE_OK,
+         AIIO_CI13162_CMD_VOLUME_CHANGE, 1U, {0U, 0U, 0U, 0U}, 0U, 56U, 255U},
+        {"{\"cmd\":13,\"data\":[0],\"cmd_id\":56,\"cwsl\":255}", AIIO_CI13162_PARSE_OK,
+         AIIO_CI13162_CMD_VOLUME_CHANGE, 1U, {0U, 0U, 0U, 0U}, 0U, 56U, 255U},
+        {"{cmd:13,data:[8],cmd_id:50,cwsl:255}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
+        {"{cmd:13,data:[],cmd_id:50,cwsl:255}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
+        {"{cmd:13,data:[3,1],cmd_id:50,cwsl:255}", AIIO_CI13162_PARSE_INVALID_FORMAT, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
         {"{cmd:3,data:[]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
-         {0U, 0U, 0U, 0U}, 0U},
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
         {"{cmd:3,data:[1,2]}", AIIO_CI13162_PARSE_INVALID_FORMAT, 0U, 0U,
-         {0U, 0U, 0U, 0U}, 0U},
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
         {"{cmd:0,data:[0]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
-         {0U, 0U, 0U, 0U}, 0U},
-        {"{cmd:1,data:[1,0]}", AIIO_CI13162_PARSE_INVALID_FORMAT, 0U, 0U,
-         {0U, 0U, 0U, 0U}, 0U},
-        {"{cmd:1,data:[2]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
-         {0U, 0U, 0U, 0U}, 0U},
-        {"{cmd:2,data:[5]}", AIIO_CI13162_PARSE_OK, AIIO_CI13162_CMD_MODE, 1U,
-         {5U, 0U, 0U, 0U}, 0U},
-        {"{cmd:2,data:[6]}", AIIO_CI13162_PARSE_OK, AIIO_CI13162_CMD_MODE, 1U,
-         {6U, 0U, 0U, 0U}, 0U},
-        {"{cmd:2,data:[7]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
-         {0U, 0U, 0U, 0U}, 0U},
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
+        {"{cmd:1,data:[1,0],cmd_id:7,cwsl:255}", AIIO_CI13162_PARSE_INVALID_FORMAT, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
+        {"{cmd:1,data:[2],cmd_id:7,cwsl:255}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
+        {"{cmd:2,data:[7],cmd_id:11,cwsl:255}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
         {"{cmd:4,data:[1,7,255]}", AIIO_CI13162_PARSE_UNKNOWN_COMMAND, 0U, 0U,
-         {0U, 0U, 0U, 0U}, 0U},
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
         {"{cmd:5,data:[32,7]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
-         {0U, 0U, 0U, 0U}, 0U},
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
         {"{cmd:6,data:[255,2,6]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
-         {0U, 0U, 0U, 0U}, 0U},
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
         {"{cmd:6,data:[7,5,0,1]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
-         {0U, 0U, 0U, 0U}, 0U},
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
         {"{cmd:6,data:[255,2,6,12,0]}", AIIO_CI13162_PARSE_INVALID_FORMAT, 0U, 0U,
-         {0U, 0U, 0U, 0U}, 0U},
-        {"{cmd:1,data:[-1]}", AIIO_CI13162_PARSE_INVALID_FORMAT, 0U, 0U,
-         {0U, 0U, 0U, 0U}, 0U},
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
+        {"{cmd:1,data:[-1],cmd_id:7,cwsl:255}", AIIO_CI13162_PARSE_INVALID_FORMAT, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
         {"{cmd:5,data:[32,300,0]}", AIIO_CI13162_PARSE_NUMBER_OVERFLOW, 0U, 0U,
-         {0U, 0U, 0U, 0U}, 0U},
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
         {"{cmd:256,data:[]}", AIIO_CI13162_PARSE_NUMBER_OVERFLOW, 0U, 0U,
-         {0U, 0U, 0U, 0U}, 0U},
-        {"{cmd:1,data:[1],x:1}", AIIO_CI13162_PARSE_INVALID_FORMAT, 0U, 0U,
-         {0U, 0U, 0U, 0U}, 0U},
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
+        {"{cmd:1,data:[1],cmd_id:7,cwsl:255,x:1}", AIIO_CI13162_PARSE_INVALID_FORMAT, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
+        {"{cmd:1,cmd:1,data:[1],cmd_id:7,cwsl:255}", AIIO_CI13162_PARSE_INVALID_FORMAT, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
+        {"{cmd:1,data:[1],data:[1],cmd_id:7,cwsl:255}", AIIO_CI13162_PARSE_INVALID_FORMAT, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
+        {"{cmd:1,data:[1],cmd_id:7,cmd_id:7,cwsl:255}", AIIO_CI13162_PARSE_INVALID_FORMAT, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
+        {"{cmd:1,data:[1],cmd_id:7,cwsl:255,cwsl:255}", AIIO_CI13162_PARSE_INVALID_FORMAT, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
     };
     aiio_ci13162_message_t message;
     aiio_ci13162_parse_result_t result;
@@ -1210,7 +1295,9 @@ static void aiio_ci13162_run_parser_tests(void)
               (memcmp(message.data,
                       test_cases[i].expected_data,
                       sizeof(message.data)) != 0) ||
-              (message.version != test_cases[i].expected_version)))) {
+              (message.version != test_cases[i].expected_version) ||
+              (message.cmd_id != test_cases[i].expected_cmd_id) ||
+              (message.cwsl != test_cases[i].expected_cwsl)))) {
             failed_count++;
         }
     }
@@ -1327,16 +1414,16 @@ static void aiio_ci13162_process_byte(
 // Run byte-assembler tests without executing any fan command.
 static void aiio_ci13162_run_assembler_tests(void)
 {
-    static const uint8_t fragmented_part_1[] = "{cmd:1,da";
+    static const uint8_t fragmented_part_1[] = "{\"cmd\":1,\"cmd_id\":7,\"cwsl\":255,\"da";
     static const uint8_t fragmented_part_2[] = "ta:[1]}\r\n";
     static const uint8_t coalesced_messages[] =
-        "{cmd:5,data:[32,7,0]}\r\n{cmd:6,data:[7,5,0]}\r\n";
-    static const uint8_t stray_cr_message[] = "\r{cmd:2,data:[4]}\r\n";
+        "{\"cmd\":5,\"data\":[32,7,0]}\r\n{\"cmd\":6,\"data\":[7,5,0]}\r\n";
+    static const uint8_t stray_cr_message[] = "\r{\"cmd\":2,\"cmd_id\":17,\"cwsl\":255,\"data\":[4]}\r\n";
     static const uint8_t overflow_message[] =
-        "{cmd:5,data:[32,7,0],padding:1234567890123456789012345678901234567890}"
-        "\r\n{cmd:1,data:[1]}\r\n";
+        "{\"cmd\":5,\"data\":[32,7,0],\"padding\":1234567890123456789012345678901234567890}"
+        "\r\n{\"cmd\":1,\"cmd_id\":7,\"cwsl\":255,\"data\":[1]}\r\n";
     static const uint8_t embedded_null_message[] = {
-        '{', 'c', 'm', 'd', ':', '1', ',', 'd', 'a', 't', 'a', ':', '[', '1', ']', '}',
+        '{', '"', 'c', 'm', 'd', '"', ':', '1', ',', '"', 'c', 'm', 'd', '_', 'i', 'd', '"', ':', '7', ',', '"', 'c', 'w', 's', 'l', '"', ':', '2', '5', '5', ',', '"', 'd', 'a', 't', 'a', '"', ':', '[', '1', ']', '}',
         '\0', 'X', '\r', '\n'
     };
     aiio_ci13162_line_assembler_t assembler;
@@ -1354,7 +1441,9 @@ static void aiio_ci13162_run_assembler_tests(void)
     }
     if ((xQueueReceive(s_aiio_ci13162_command_queue, &message, 0U) != pdPASS) ||
         (message.command != AIIO_CI13162_CMD_TURN) ||
-        (message.data[0] != 1U)) {
+        (message.data[0] != 1U) ||
+        (message.cmd_id != 7U) ||
+        (message.cwsl != 255U)) {
         failed_count++;
     }
 
@@ -1383,7 +1472,9 @@ static void aiio_ci13162_run_assembler_tests(void)
     }
     if ((xQueueReceive(s_aiio_ci13162_command_queue, &message, 0U) != pdPASS) ||
         (message.command != AIIO_CI13162_CMD_MODE) ||
-        (message.data[0] != 4U)) {
+        (message.data[0] != 4U) ||
+        (message.cmd_id != 17U) ||
+        (message.cwsl != 255U)) {
         failed_count++;
     }
 
@@ -1394,6 +1485,8 @@ static void aiio_ci13162_run_assembler_tests(void)
     if ((xQueueReceive(s_aiio_ci13162_command_queue, &message, 0U) != pdPASS) ||
         (message.command != AIIO_CI13162_CMD_TURN) ||
         (message.data[0] != 1U) ||
+        (message.cmd_id != 7U) ||
+        (message.cwsl != 255U) ||
         (xQueueReceive(s_aiio_ci13162_command_queue, &message, 0U) == pdPASS)) {
         failed_count++;
     }
@@ -1426,97 +1519,6 @@ static void aiio_ci13162_run_assembler_tests(void)
     (void)failed_count;
 #endif
     xQueueReset(s_aiio_ci13162_command_queue);
-}
-
-// Run UART-to-ASR cmd_id mapping cases without MQTT or UART side effects.
-static void aiio_ci13162_run_cmd_id_tests(void)
-{
-    static const struct {
-        uint8_t command;
-        uint8_t data;
-        uint8_t expected;
-    } uart_cases[] = {
-        {AIIO_CI13162_CMD_TURN, 1U, 7U},
-        {AIIO_CI13162_CMD_TURN, 0U, 8U},
-        {AIIO_CI13162_CMD_MODE, 1U, 9U},
-        {AIIO_CI13162_CMD_MODE, 2U, 10U},
-        {AIIO_CI13162_CMD_MODE, 3U, 11U},
-        {AIIO_CI13162_CMD_MODE, 4U, 12U},
-        {AIIO_CI13162_CMD_MODE, 5U, 13U},
-        {AIIO_CI13162_CMD_MODE, 6U, 14U},
-        {AIIO_CI13162_CMD_TIMER, 0U, 39U},
-        {AIIO_CI13162_CMD_TIMER, 1U, 15U},
-        {AIIO_CI13162_CMD_TIMER, 12U, 37U},
-        {AIIO_CI13162_CMD_SCENE, 1U, 46U},
-        {AIIO_CI13162_CMD_SCENE, 10U, 55U},
-        {AIIO_CI13162_CMD_VOLUME_CHANGE, 3U, 0U},
-        {AIIO_CI13162_CMD_VOLUME_CHANGE, 7U, 0U},
-    };
-    static const struct {
-        uint8_t old_valid;
-        uint8_t old_level;
-        uint8_t new_level;
-        uint8_t expected;
-    } volume_cases[] = {
-        {0U, 0U, 1U, AIIO_CI13162_ASR_VOLUME_MIN},
-        {0U, 0U, 7U, AIIO_CI13162_ASR_VOLUME_MAX},
-        {0U, 0U, 4U, AIIO_CI13162_ASR_VOLUME_UP},
-        {0U, 0U, 0U, AIIO_CI13162_ASR_VOLUME_MUTE},
-        {1U, 5U, 0U, AIIO_CI13162_ASR_VOLUME_MUTE},
-        {1U, 0U, 0U, AIIO_CI13162_ASR_VOLUME_MUTE},
-        {1U, 0U, 4U, AIIO_CI13162_ASR_VOLUME_UNMUTE},
-        {1U, 3U, 4U, AIIO_CI13162_ASR_VOLUME_UP},
-        {1U, 4U, 3U, AIIO_CI13162_ASR_VOLUME_DOWN},
-        {1U, 6U, 7U, AIIO_CI13162_ASR_VOLUME_UP},
-        {1U, 2U, 1U, AIIO_CI13162_ASR_VOLUME_DOWN},
-        {1U, 3U, 7U, AIIO_CI13162_ASR_VOLUME_MAX},
-        {1U, 5U, 1U, AIIO_CI13162_ASR_VOLUME_MIN},
-        {1U, 1U, 1U, AIIO_CI13162_ASR_VOLUME_MIN},
-        {1U, 7U, 7U, AIIO_CI13162_ASR_VOLUME_MAX},
-        {1U, 4U, 4U, AIIO_CI13162_ASR_VOLUME_UP},
-        {1U, 1U, 2U, AIIO_CI13162_ASR_VOLUME_UP},
-        {1U, 7U, 6U, AIIO_CI13162_ASR_VOLUME_DOWN},
-        {1U, 2U, 7U, AIIO_CI13162_ASR_VOLUME_MAX},
-        {1U, 6U, 1U, AIIO_CI13162_ASR_VOLUME_MIN},
-    };
-    uint32_t failed_count = 0U;
-    size_t i;
-
-    for (i = 0U; i < (sizeof(uart_cases) / sizeof(uart_cases[0])); i++) {
-        if (aiio_ci13162_get_cmd_id(uart_cases[i].command,
-                                    uart_cases[i].data) != uart_cases[i].expected) {
-            failed_count++;
-        }
-    }
-
-    for (i = 0U; i < (sizeof(volume_cases) / sizeof(volume_cases[0])); i++) {
-        if (aiio_ci13162_get_volume_change_cmd_id(volume_cases[i].old_valid,
-                                                  volume_cases[i].old_level,
-                                                  volume_cases[i].new_level) !=
-            volume_cases[i].expected) {
-            failed_count++;
-        }
-    }
-
-#if DEBUG_ENABLE == 1
-    {
-        char output[80];
-        int output_length;
-
-        output_length = snprintf(output,
-                                 sizeof(output),
-                                 "[CI13162][TEST] cmd_id failed=%lu\r\n",
-                                 (unsigned long)failed_count);
-        if (output_length > 0) {
-            if ((size_t)output_length >= sizeof(output)) {
-                output_length = (int)(sizeof(output) - 1U);
-            }
-            aiio_ci13162_uart_send(output, (uint32_t)output_length);
-        }
-    }
-#else
-    (void)failed_count;
-#endif
 }
 
 #endif
@@ -1805,7 +1807,6 @@ int32_t aiio_ci13162_uart_init(void)
 #if BUILD_TEST == 1
     aiio_ci13162_run_parser_tests();
     aiio_ci13162_run_assembler_tests();
-    aiio_ci13162_run_cmd_id_tests();
 #endif
     return 0;
 #else
@@ -1862,19 +1863,14 @@ void aiio_ci13162_uart_process(void)
         }
 
         if (message.command == AIIO_CI13162_CMD_VOLUME_CHANGE) {
-            uint8_t cmd_id;
-
-            cmd_id = aiio_ci13162_get_volume_change_cmd_id(
-                s_aiio_ci13162_volume_valid,
-                s_aiio_ci13162_volume,
-                message.data[0]);
             s_aiio_ci13162_volume = message.data[0];
             s_aiio_ci13162_volume_valid = 1U;
-            os_trace("[CI13162] volume change=%u cmd_id=%u\r\n",
+            os_trace("[CI13162] volume change=%u cmd_id=%u cwsl=%u\r\n",
                      (unsigned int)message.data[0],
-                     (unsigned int)cmd_id);
-            app_cwsl_notify_voice_cmd(cmd_id);
-            app_volume_report_voice(message.data[0]);
+                     (unsigned int)message.cmd_id,
+                     (unsigned int)message.cwsl);
+            app_cwsl_notify_voice_cmd(message.cmd_id, message.cwsl);
+            app_volume_report_voice(message.data[0], message.cmd_id, message.cwsl);
             continue;
         }
 
@@ -1884,15 +1880,17 @@ void aiio_ci13162_uart_process(void)
             continue;
         }
 
+        if (message.command == AIIO_CI13162_CMD_STATE) {
+            continue;
+        }
+
         fan_info = m_fan_get_instance();
         if (fan_info == NULL) {
             return;
         }
 
         uint8_t prev_prevent_buzz = prevent_buzz;
-        if (hw_device_support_voice()) {
-            prevent_buzz = 1U;
-        }
+        prevent_buzz = 1U;
 
         switch (message.command) {
             case AIIO_CI13162_CMD_RESET:
@@ -1905,36 +1903,30 @@ void aiio_ci13162_uart_process(void)
             case AIIO_CI13162_CMD_TURN:
                 if (message.data[0] == 0U) {
                     if (fan_info->mode != M_FAN_MODE_OFF) {
-                        m_fan_off(SRC_ACTION_VOICE);
-                    } else {
-                        (void)check_fan_change(fan_info->mode,
-                                               fan_info->speed,
-                                               fan_info->pcn,
-                                               fan_info->swing,
-                                               fan_info->light);
-                        aiio_ci13162_report_fan_state(fan_info);
+                        if (fan_info->time_set > 0U) {
+                            m_fan_set_time_off_voice(0U, message.cmd_id, message.cwsl);
+                        }
+                        m_fan_set_speed(M_FAN_MODE_OFF, M_FAN_SPEED_OFF);
                     }
                 } else if (fan_info->mode == M_FAN_MODE_OFF) {
                     m_fan_set_speed(M_FAN_MODE_ON, M_FAN_SPEED_1);
-                    m_fan_need_buzz(1U);
-                    aiio_ci13162_report_fan_state(fan_info);
-                } else {
-                    (void)check_fan_change(fan_info->mode,
-                                           fan_info->speed,
-                                           fan_info->pcn,
-                                           fan_info->swing,
-                                           fan_info->light);
-                    aiio_ci13162_report_fan_state(fan_info);
                 }
-                app_cwsl_notify_voice_cmd(aiio_ci13162_get_cmd_id(message.command, message.data[0]));
+                app_fan_respond_control_voice(fan_info->mode,
+                                              fan_info->speed,
+                                              fan_info->pcn,
+                                              fan_info->swing,
+                                              fan_info->light,
+                                              0U,
+                                              SRC_ACTION_VOICE,
+                                              message.cmd_id,
+                                              message.cwsl);
+                app_cwsl_notify_voice_cmd(message.cmd_id, message.cwsl);
                 break;
 
             case AIIO_CI13162_CMD_MODE:
                 if (message.data[0] <= M_FAN_SPEED_3) {
-                    m_fan_need_buzz(1U);
                     m_fan_set_speed(M_FAN_MODE_ON, message.data[0]);
                 } else if (message.data[0] == 4U) {
-                    m_fan_need_buzz(1U);
                     base_speed = fan_info->speed;
                     if ((base_speed < M_FAN_SPEED_1) || (base_speed > M_FAN_SPEED_3)) {
                         base_speed = M_FAN_SPEED_1;
@@ -1945,22 +1937,29 @@ void aiio_ci13162_uart_process(void)
                                         ? M_FAN_SWING_ON
                                         : M_FAN_SWING_OFF);
                 }
-                aiio_ci13162_report_fan_state(fan_info);
-                app_cwsl_notify_voice_cmd(aiio_ci13162_get_cmd_id(message.command, message.data[0]));
+                app_fan_respond_control_voice(fan_info->mode,
+                                              fan_info->speed,
+                                              fan_info->pcn,
+                                              fan_info->swing,
+                                              fan_info->light,
+                                              0U,
+                                              SRC_ACTION_VOICE,
+                                              message.cmd_id,
+                                              message.cwsl);
+                app_cwsl_notify_voice_cmd(message.cmd_id, message.cwsl);
                 break;
 
             case AIIO_CI13162_CMD_TIMER:
-                m_fan_need_buzz(1U);
-                m_fan_set_time_off((uint32_t)message.data[0] * 3600U);
-                app_cwsl_notify_voice_cmd(aiio_ci13162_get_cmd_id(message.command,
-                                                                  message.data[0]));
+                m_fan_set_time_off_voice((uint32_t)message.data[0] * 3600U,
+                                         message.cmd_id,
+                                         message.cwsl);
+                app_cwsl_notify_voice_cmd(message.cmd_id, message.cwsl);
                 break;
 
             case AIIO_CI13162_CMD_SCENE:
                 os_trace("[CI13162] scene=%u\r\n",
                          (unsigned int)message.data[0]);
-                app_cwsl_notify_voice_cmd(aiio_ci13162_get_cmd_id(message.command,
-                                                                  message.data[0]));
+                app_cwsl_notify_voice_cmd(message.cmd_id, message.cwsl);
                 break;
 
             default:
@@ -2338,24 +2337,39 @@ int32_t aiio_ci13162_uart_request_version(void)
 #endif
 }
 
-int32_t aiio_ci13162_uart_send_buzz(void)
+int32_t aiio_ci13162_uart_send_buzz_type(uint8_t is_long)
 {
 #if AIIO_CI13162_UART_ENABLE == 1
-    int sent_length;
+    static const char s_buzz_short[] = "{\"cmd\":200,\"data\":[0]}\r\n";
+    static const char s_buzz_long[] = "{\"cmd\":200,\"data\":[1]}\r\n";
+    const char *msg;
     uint32_t message_length;
+    int sent_length;
 
     if ((s_aiio_ci13162_command_queue == NULL) ||
         (s_aiio_ci13162_ota_held != 0U)) {
         return -1;
     }
 
-    message_length = (uint32_t)(sizeof(s_aiio_ci13162_buzz_message) - 1U);
-    sent_length = aiio_ci13162_uart_tx(s_aiio_ci13162_buzz_message,
-                                       message_length);
+    if (is_long != 0U) {
+        msg = s_buzz_long;
+        message_length = (uint32_t)(sizeof(s_buzz_long) - 1U);
+    } else {
+        msg = s_buzz_short;
+        message_length = (uint32_t)(sizeof(s_buzz_short) - 1U);
+    }
+
+    sent_length = aiio_ci13162_uart_tx(msg, message_length);
     return (sent_length == (int)message_length) ? 0 : -1;
 #else
+    (void)is_long;
     return -1;
 #endif
+}
+
+int32_t aiio_ci13162_uart_send_buzz(void)
+{
+    return aiio_ci13162_uart_send_buzz_type(0U);
 }
 
 uint32_t aiio_ci13162_uart_get_voice_version(void)

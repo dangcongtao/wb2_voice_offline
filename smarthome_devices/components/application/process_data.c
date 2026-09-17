@@ -340,6 +340,17 @@ void app_response_time_release(uint32_t uid, uint8_t result)
     app_send_data(respond, strlen(respond));
 }
 
+void app_response_time_release_voice(uint32_t uid, uint8_t result, uint8_t cmd_id, uint8_t cwsl)
+{
+    uint32_t time = m_fan_get_time_set();
+    memset(respond, 0, sizeof(respond));
+    sprintf(respond,
+            "{\"%s\":131,\"u\":%lu,\"index\":0,\"time\":%lu,\"mode\":1,"
+            "\"result\":%d,\"cmd_id\":%u,\"cwsl\":%u}",
+            gs_dev_type[device_type], (unsigned long)uid, (unsigned long)time, (int)result, (unsigned int)cmd_id, (unsigned int)cwsl);
+    app_send_data(respond, strlen(respond));
+}
+
 /* {"atmwifi":131, "u":1,"index":0} */
 static void app_get_time_release(cJSON *jsRoot)
 {
@@ -521,7 +532,10 @@ static void app_control_fan_with_one(cJSON *js_Root)
     {
         mode = jsMode->valueint;
         os_trace("Get JSON jsMode mqtt message\n");
-        m_fan_need_buzz(1);
+        if (mode != M_FAN_MODE_OFF)
+        {
+            m_fan_need_buzz(1);
+        }
         m_fan_set_speed(mode, M_FAN_SPEED_INVALID);
     }
 

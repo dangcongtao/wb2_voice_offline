@@ -16,6 +16,7 @@ uint8_t m_fan_get_current_speed_natural(void)
 
 void m_fan_set_time_off(uint32_t _time_set)
 {
+    uint32_t prev_time = m_fan_get_instance()->time_set;
     os_trace("%s time_set: %u\r\n", __func__, _time_set);
     time_remain = _time_set * 1000;
     m_fan_get_instance()->time_set = _time_set * 1000;
@@ -28,7 +29,28 @@ void m_fan_set_time_off(uint32_t _time_set)
     {
         hw_led_stt_set_stt(M_FAN_BUTTON_TIMER_INDEX, LED_INDICATE_OFF);
     }
+    if ((_time_set == 0U) && (prev_time == 0U))
+    {
+        return;
+    }
     app_response_time_release(0, 1);
+}
+
+void m_fan_set_time_off_voice(uint32_t _time_set, uint8_t cmd_id, uint8_t cwsl)
+{
+    os_trace("%s time_set: %u\r\n", __func__, _time_set);
+    time_remain = _time_set * 1000;
+    m_fan_get_instance()->time_set = _time_set * 1000;
+    last_tick_timer_toggle = 0;
+    if (time_remain > 0)
+    {
+        hw_led_stt_set_stt(M_FAN_BUTTON_TIMER_INDEX, LED_INDICATE_ON);
+    }
+    else
+    {
+        hw_led_stt_set_stt(M_FAN_BUTTON_TIMER_INDEX, LED_INDICATE_OFF);
+    }
+    app_response_time_release_voice(0U, 1U, cmd_id, cwsl);
 }
 
 uint32_t m_fan_get_time_remain(void)

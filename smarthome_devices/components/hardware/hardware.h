@@ -118,6 +118,7 @@ void hw_74hc595_loop(void);
 
 /* buzz */
 void hw_buzz_set(uint8_t buzz_set);
+void hw_buzz_set_type(uint8_t buzz_set, uint8_t is_long);
 void hw_buzz_init(void);
 
 /** @brief Check whether the current device supports voice IC.

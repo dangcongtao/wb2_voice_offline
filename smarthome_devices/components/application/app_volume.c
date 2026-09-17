@@ -290,11 +290,29 @@ bool app_volume_is_pending(void)
 }
 
 // Publish MQTT 225 for a voice-driven volume change without completing a pending SET or GET.
-void app_volume_report_voice(uint8_t level)
+void app_volume_report_voice(uint8_t level, uint8_t cmd_id, uint8_t cwsl)
 {
+    char response[APP_VOLUME_RESPONSE_SIZE];
+    int response_length;
+
     if (level > APP_VOLUME_LEVEL_MAX) {
         return;
     }
 
-    app_volume_publish(APP_VOLUME_CMD_SET, level, 0U, SRC_ACTION_VOICE, 1U);
+    response_length = snprintf(
+        response,
+        sizeof(response),
+        "{\"%s\":225,\"vol\":%u,\"u\":0,\"act_id\":%u,\"result\":1,\"cmd_id\":%u,\"cwsl\":%u}",
+        gs_dev_type[device_type],
+        (unsigned int)level,
+        (unsigned int)SRC_ACTION_VOICE,
+        (unsigned int)cmd_id,
+        (unsigned int)cwsl);
+    if ((response_length <= 0) ||
+        ((size_t)response_length >= sizeof(response))) {
+        os_trace("[VOLUME] voice response formatting failed\r\n");
+        return;
+    }
+
+    app_send_data(response, (uint32_t)response_length);
 }

@@ -15,8 +15,8 @@
 #define APP_SCENE_CMD_QUERY    229U
 
 #define APP_SCENE_COUNT_MAX    10U
-#define APP_SCENE_CMD_ID_MIN   46U
-#define APP_SCENE_CMD_ID_MAX   55U
+#define APP_SCENE_CMD_ID_MIN   58U
+#define APP_SCENE_CMD_ID_MAX   67U
 
 #define APP_SCENE_CODE_FULL    71U
 
@@ -44,8 +44,8 @@ void app_scene_query(cJSON *js_root);
  */
 bool app_scene_is_active(uint8_t scene_index);
 
-/** @brief Check if an ASR command ID (46..55) is active as a scene.
- *  @param[in] cmd_id ASR command ID (46..55).
+/** @brief Check if an ASR command ID (58..67) is active as a scene.
+ *  @param[in] cmd_id ASR command ID (58..67).
  *  @return true if active, false otherwise.
  */
 bool app_scene_is_cmd_id_active(uint8_t cmd_id);
