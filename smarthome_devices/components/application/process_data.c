@@ -461,8 +461,6 @@ static void app_control_fan(cJSON *js_Root)
 
     // m_fan_set_light(lamp);
     m_fan_control(mode, level, pcn, swing, lamp, uid, act_id, 0);
-    change = check_fan_change(mode, level, pcn, swing, lamp);
-
     if (mode != M_FAN_MODE_PCN)
     {
         switch (level)
@@ -484,6 +482,8 @@ static void app_control_fan(cJSON *js_Root)
             break;
         }
     }
+
+    change = check_fan_change(my_fan->mode, my_fan->speed, my_fan->pcn, my_fan->swing, my_fan->light);
 
     result = 1;
 
