@@ -604,6 +604,12 @@ static void app_cwsl_on_status(uint8_t code, uint8_t cmd_id, uint8_t slot)
     } else if (pending.request.mqtt_cmd == APP_SCENE_CMD_DELETE) {
         app_scene_on_delete_result(code, pending.request.cmd_id);
     } else {
+        if ((pending.request.mqtt_cmd == APP_CWSL_CMD_DELETE) &&
+            (pending.request.cmd_id == APP_CWSL_ANY) &&
+            (pending.request.slot == APP_CWSL_ANY) &&
+            (code == APP_CWSL_CODE_DELETE_OK)) {
+            app_scene_clear_all();
+        }
         app_cwsl_publish_mutating_final(&pending, cmd_id, slot, code);
     }
 }

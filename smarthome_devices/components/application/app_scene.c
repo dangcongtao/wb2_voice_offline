@@ -176,6 +176,13 @@ bool app_scene_is_pending(void)
     return (s_app_scene_delete_all_active != 0U);
 }
 
+void app_scene_clear_all(void)
+{
+    s_app_scene_delete_all_active = 0U;
+    s_app_scene_mask = 0U;
+    (void)app_scene_save_mask(0U);
+}
+
 void app_scene_add(cJSON *js_root)
 {
     uint32_t u = 0U;

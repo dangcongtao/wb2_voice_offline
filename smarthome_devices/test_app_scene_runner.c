@@ -437,6 +437,25 @@ int main(void) {
         printf("  PASS: Test 11 - Delete scene rejects code 65 when missing u or act_id\n");
     }
 
-    printf("\nALL 11 UNIT TEST SCENARIOS PASSED 100%%!\n");
+    /* Test 12: app_scene_clear_all wipes RAM mask and Flash storage */
+    {
+        mock_flash_mask = 0x0005U; /* scenes 1 and 3 active */
+        app_scene_init();
+        assert(app_scene_is_active(1U) == true);
+        assert(app_scene_is_active(3U) == true);
+        assert(app_scene_is_cmd_id_active(56U) == true);
+        assert(app_scene_is_cmd_id_active(58U) == true);
+
+        app_scene_clear_all();
+        assert(app_scene_is_active(1U) == false);
+        assert(app_scene_is_active(3U) == false);
+        assert(app_scene_is_cmd_id_active(56U) == false);
+        assert(app_scene_is_cmd_id_active(58U) == false);
+        assert(mock_flash_mask == 0U);
+        assert(app_scene_is_pending() == false);
+        printf("  PASS: Test 12 - app_scene_clear_all resets RAM mask and saves 0 to flash\n");
+    }
+
+    printf("\nALL 12 UNIT TEST SCENARIOS PASSED 100%%!\n");
     return 0;
 }

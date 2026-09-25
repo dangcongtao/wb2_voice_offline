@@ -118,6 +118,12 @@ void app_scene_on_delete_result(uint8_t code, uint8_t cmd_id)
     (void)cmd_id;
 }
 
+static int s_scene_clear_all_count = 0;
+void app_scene_clear_all(void)
+{
+    s_scene_clear_all_count++;
+}
+
 void m_fan_need_buzz(uint8_t num_buzz)
 {
     (void)num_buzz;
@@ -138,6 +144,7 @@ static void reset_cwsl_mocks(void)
     memset(s_mock_uart_data, 0, sizeof(s_mock_uart_data));
     s_mock_uart_data_count = 0;
     s_uart_send_count = 0;
+    s_scene_clear_all_count = 0;
     s_mock_uart_ret = 0;
     s_mock_tick = 0;
 }
@@ -250,8 +257,9 @@ int main(void)
         assert(s_publish_count == 1);
         assert(strstr(s_last_published, "\"fanoem\":221") != NULL);
         assert(strstr(s_last_published, "\"code\":33") != NULL);
+        assert(s_scene_clear_all_count == 0);
 
-        /* Delete All (255, 255) */
+        /* Delete All (255, 255) success clears scene_mask */
         reset_cwsl_mocks();
         req = cJSON_Parse("{\"fanoem\":221,\"cmd_id\":255,\"slot\":255,\"u\":2002,\"act_id\":2}");
         app_cwsl_delete(req);
@@ -260,12 +268,25 @@ int main(void)
         assert(s_uart_send_count == 1);
         assert(s_mock_uart_data[0] == 255U);
         assert(s_mock_uart_data[1] == 255U);
+        assert(s_scene_clear_all_count == 0);
 
         s_registered_status_cb(33U, 255U, 255U);
         assert(s_publish_count == 1);
         assert(strstr(s_last_published, "\"code\":33") != NULL);
+        assert(s_scene_clear_all_count == 1);
 
-        printf("  PASS: DELETE operations and Delete All verified\n");
+        /* Delete All failure/timeout does NOT clear scene_mask */
+        reset_cwsl_mocks();
+        req = cJSON_Parse("{\"fanoem\":221,\"cmd_id\":255,\"slot\":255,\"u\":2003,\"act_id\":3}");
+        app_cwsl_delete(req);
+        cJSON_Delete(req);
+        assert(s_uart_send_count == 1);
+        s_registered_status_cb(51U, 255U, 255U);
+        assert(s_publish_count == 1);
+        assert(strstr(s_last_published, "\"code\":51") != NULL);
+        assert(s_scene_clear_all_count == 0);
+
+        printf("  PASS: DELETE operations and Delete All verified (including scene clear)\n");
     }
 
     /* TEST 4: QUERY Requests (Capacity & Slots) */

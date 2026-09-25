@@ -67,4 +67,9 @@ void app_scene_on_delete_result(uint8_t code, uint8_t cmd_id);
  */
 bool app_scene_is_pending(void);
 
+/** @brief Clear all active scenes from RAM and Flash immediately.
+ *  @note  Invoked when a global voice template wipe (CWSL delete all 255,255) succeeds.
+ */
+void app_scene_clear_all(void);
+
 #endif /* APP_SCENE_H */

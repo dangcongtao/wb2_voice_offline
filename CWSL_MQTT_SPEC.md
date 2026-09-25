@@ -816,6 +816,14 @@ UART:
 {"cmd":4,"data":[2,255,255]}\r\n
 ```
 
+Kết quả thành công:
+
+```json
+{"fanoem":221,"cmd_id":255,"slot":255,"code":33,"u":55519,"act_id":0}
+```
+
+> **Lưu ý đồng bộ ngữ cảnh (Scene sync):** Khi lệnh Delete all (`cmd_id: 255, slot: 255`) được chip CI13162 xác nhận xóa thành công (`code: 33`), firmware MCU đồng thời tự động xóa sạch toàn bộ mặt nạ ngữ cảnh (`scene_mask = 0`) trong RAM và EasyFlash. Mọi ngữ cảnh giọng nói đã thêm trước đó (cmd 227) đều bị xóa đồng bộ. Không phát sinh thêm bản tin MQTT cmd 228 riêng biệt.
+
 Không nên đưa thao tác này thành nút thông thường trong App.
 
 ### 12.8. Stop phiên học
