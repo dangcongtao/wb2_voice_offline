@@ -80,6 +80,7 @@ typedef enum
     FANDC,   // Quạt DC có IR, có đèn
     FANAC,   // Quạt AC ko có IR
     FANACIR, // Quạt AC có IR
+    VOICEBOX, // Hộp điều khiển giọng nói voiceboxv1
 } device_type_t;
 
 extern uint32_t device_type;

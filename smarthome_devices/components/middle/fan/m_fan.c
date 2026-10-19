@@ -553,6 +553,15 @@ uint8_t last_reason_reset;
 
 void m_fan_prepare_for_ota(void)
 {
+    if (device_type == VOICEBOX)
+    {
+        prevent_buzz = 1;
+        hw_buzz_set(SWITCH_IDLE_LEVEL);
+        buzz_num = 0;
+        flash_set_rs_reason(3);
+        return;
+    }
+
     prevent_buzz = 1;
     hw_buzz_set(SWITCH_IDLE_LEVEL);
     buzz_num = 0;

@@ -1969,6 +1969,20 @@ void aiio_ci13162_uart_process(void)
             continue;
         }
 
+        if (device_type == VOICEBOX) {
+            if (message.command == AIIO_CI13162_CMD_SCENE) {
+                os_trace("[CI13162] scene=%u\r\n",
+                         (unsigned int)message.data[0]);
+                app_cwsl_notify_voice_cmd(message.cmd_id, message.cwsl);
+            } else if (message.command == AIIO_CI13162_CMD_RESET) {
+#if DEBUG_ENABLE == 1
+                os_trace("[CI13162] software reset\r\n");
+#endif
+                bl_sys_reset_por();
+            }
+            continue;
+        }
+
         fan_info = m_fan_get_instance();
         if (fan_info == NULL) {
             return;

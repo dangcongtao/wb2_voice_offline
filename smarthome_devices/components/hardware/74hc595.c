@@ -24,7 +24,7 @@ static const uint8_t arr_seg_7[] = {
 
 void hw_74hc595_init(void)
 {
-    if (device_type == FANAC)
+    if (device_type == FANAC || device_type == VOICEBOX)
     {
         return;
     }
@@ -46,7 +46,7 @@ void hw_74hc595_init(void)
 
 void hw_74hc595_set_bit(uint8_t bit, uint8_t val)
 {
-    if (device_type == FANAC)
+    if (device_type == FANAC || device_type == VOICEBOX)
     {
         return;
     }
@@ -57,7 +57,7 @@ void hw_74hc595_set_bit(uint8_t bit, uint8_t val)
 
 void hw_74hc595_set_number(uint8_t num)
 {
-    if (device_type == FANAC)
+    if (device_type == FANAC || device_type == VOICEBOX)
     {
         return;
     }
@@ -69,7 +69,7 @@ void hw_74hc595_set_number(uint8_t num)
 
 void hw_74hc595_write_byte(uint16_t data, uint8_t num_hc595)
 {
-    if (device_type == FANAC)
+    if (device_type == FANAC || device_type == VOICEBOX)
     {
         return;
     }
@@ -99,7 +99,7 @@ void hw_74hc595_write_byte(uint16_t data, uint8_t num_hc595)
 
 void hw_74hc595_loop(void)
 {
-    if (device_type == FANAC)
+    if (device_type == FANAC || device_type == VOICEBOX)
     {
         return;
     }

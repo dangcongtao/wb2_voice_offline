@@ -22,7 +22,7 @@
 #include "components/third_party/cJson/cJSON.c"
 
 /* Mock dependencies needed by app_scene.c */
-char *gs_dev_type[] = {"fanoem"};
+char *gs_dev_type[] = {"fanoem", "lhswitch3v", "swminiv2", "sswitch2v", "swshockv2", "swshohuv2", "fanoem", "fandc", "fanac", "fanproacv2", "voiceboxv1"};
 int device_type = 0;
 
 static uint16_t mock_flash_mask = 0;
@@ -456,6 +456,60 @@ int main(void) {
         printf("  PASS: Test 12 - app_scene_clear_all resets RAM mask and saves 0 to flash\n");
     }
 
-    printf("\nALL 12 UNIT TEST SCENARIOS PASSED 100%%!\n");
+    /* Test 13: VOICEBOX (voiceboxv1) scene add, query, and delete */
+    {
+        reset_mocks();
+        device_type = 10; /* voiceboxv1 */
+        app_scene_init();
+
+        /* Add scene for voiceboxv1 */
+        cJSON *add_req = cJSON_Parse("{\"voiceboxv1\":227,\"u\":101,\"act_id\":1}");
+        assert(add_req != NULL);
+        app_scene_add(add_req);
+        cJSON_Delete(add_req);
+
+        assert(mock_cwsl_learn_last_cmd_id == 56);
+        assert(publish_count == 0);
+
+        /* Complete learning */
+        app_scene_on_learn_result(32, 56);
+        assert(publish_count == 1);
+        assert(strstr(last_published, "\"voiceboxv1\":227") != NULL);
+        assert(strstr(last_published, "\"cmd_id\":56") != NULL);
+        assert(strstr(last_published, "\"result\":1") != NULL);
+        assert(app_scene_is_active(1) == true);
+
+        /* Query scene for voiceboxv1 */
+        publish_count = 0;
+        cJSON *query_req = cJSON_Parse("{\"voiceboxv1\":229,\"u\":102,\"act_id\":2}");
+        assert(query_req != NULL);
+        app_scene_query(query_req);
+        cJSON_Delete(query_req);
+
+        assert(publish_count == 1);
+        assert(strstr(last_published, "\"voiceboxv1\":229") != NULL);
+        assert(strstr(last_published, "\"scenes\":[56]") != NULL);
+        assert(strstr(last_published, "\"total\":1") != NULL);
+
+        /* Delete scene for voiceboxv1 */
+        publish_count = 0;
+        cJSON *del_req = cJSON_Parse("{\"voiceboxv1\":228,\"cmd_id\":56,\"u\":103,\"act_id\":3}");
+        assert(del_req != NULL);
+        app_scene_delete(del_req);
+        cJSON_Delete(del_req);
+
+        assert(mock_cwsl_delete_last_cmd_id == 56);
+        app_scene_on_delete_result(33, 56);
+        assert(publish_count == 1);
+        assert(strstr(last_published, "\"voiceboxv1\":228") != NULL);
+        assert(strstr(last_published, "\"cmd_id\":56") != NULL);
+        assert(strstr(last_published, "\"result\":1") != NULL);
+        assert(app_scene_is_active(1) == false);
+
+        device_type = 0; /* restore */
+        printf("  PASS: Test 13 - voiceboxv1 scene operations with voiceboxv1 MQTT key\n");
+    }
+
+    printf("\nALL 13 UNIT TEST SCENARIOS PASSED 100%%!\n");
     return 0;
 }

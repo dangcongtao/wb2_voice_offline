@@ -16,8 +16,10 @@
    status LED in debug builds so the pin is free for log output */
 #if DEBUG_ENABLE == 1
 #define LED_STT 0xFF
+#define LED_STT_VOICEBOX 0xFF
 #else
 #define LED_STT 14
+#define LED_STT_VOICEBOX 14
 #endif
 #define LED_STT_SSW 1
 #define LED_STT_MINI 0xFF
@@ -46,6 +48,7 @@
 #define BUTTON_NATURAL_INDEX 2
 
 #define BTN_CFG_MINI 22
+#define BTN_CFG_VOICEBOX 22
 #define BUTTON_SSW 0xFF
 
 #define MAX_NUM_SWITCH 4
@@ -124,7 +127,7 @@ void hw_buzz_init(void);
 /** @brief Check whether the current device supports voice IC.
  *
  *  @return     Voice IC support status.
- *  @retval     true   Device supports voice IC (e.g. fanproacv2).
+ *  @retval     true   Device supports voice IC (e.g. fanproacv2, voiceboxv1).
  *  @retval     false  Device does not support voice IC.
  */
 bool hw_device_support_voice(void);

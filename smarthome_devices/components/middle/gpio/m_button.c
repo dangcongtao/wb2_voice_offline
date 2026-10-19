@@ -52,13 +52,48 @@ void on_button_event_cb(int button_pin, int event, void *data)
     {
     case APP_BTN_EVT_PRESSED:
     {
-        m_buzz_play(1);
+        if (device_type == VOICEBOX)
+        {
+            hw_buzz_set_type(SWITCH_ACTIVE_LEVEL, 0U);
+        }
+        else
+        {
+            m_buzz_play(1);
+        }
     }
     break;
 
     case APP_BTN_EVT_RELEASED:
     {
         time_cnt_down_reset_TS04 = TIME_OUT_RESET_TS04_WITHOUT_PRESS;
+
+        if (device_type == VOICEBOX)
+        {
+            hw_buzz_set_type(SWITCH_IDLE_LEVEL, 0U);
+            if (ignore_event_release[button_pin] == EVENT_BTN_HOLD)
+            {
+                app_send_offline_message(1);
+                vTaskDelay(pdMS_TO_TICKS(100));
+
+                m_db_get_instance()->_reset_db_without_sync_cb();
+                m_wifi_get_instance().start_smart_config_cb();
+                ignore_event_release[button_pin] = 0;
+                return;
+            }
+            else if (ignore_event_release[button_pin] == EVENT_BTN_HOLD_SO_LONG ||
+                     ignore_event_release[button_pin] == EVENT_BTN_HOLD_HONG_PHIM)
+            {
+                app_send_offline_message(1);
+                vTaskDelay(pdMS_TO_TICKS(100));
+
+                m_db_get_instance()->_reset_db_without_sync_cb();
+                m_wifi_get_instance().start_ap_config_cb();
+                ignore_event_release[button_pin] = 0;
+                return;
+            }
+            ignore_event_release[button_pin] = 0;
+            return;
+        }
 
         if (ignore_event_release[button_pin] == EVENT_BTN_RELEASE)
         {
@@ -121,6 +156,10 @@ void on_button_event_cb(int button_pin, int event, void *data)
     break;
     case APP_BTN_EVT_HOLD_HONG_PHIM:
     {
+        if (device_type == VOICEBOX)
+        {
+            return;
+        }
         m_ft62f28_send_reset_touch();
         for (uint8_t i = 0; i < MAX_NUM_BUTTON; i++)
         {
@@ -174,9 +213,16 @@ static void m_button_config(void)
         m_hw_button_initialize_value[i].pin = i;
     }
 
+    if (device_type == VOICEBOX)
+    {
+        m_hw_button_initialize_value[0].idle_level = 1;
+        m_hw_button_initialize_value[0].last_state = 1;
+        m_hw_button_initialize_value[0].pin = 0;
+    }
+
     app_btn_config_t conf;
     conf.config = &m_hw_button_initialize_value[0];
-    conf.btn_count = MAX_NUM_BUTTON;
+    conf.btn_count = (device_type == VOICEBOX) ? 1 : MAX_NUM_BUTTON;
     conf.get_tick_cb = sys_get_tick_ms;
     conf.btn_initialize = hw_button_config;
     conf.btn_read = hw_btn_read;
@@ -241,10 +287,13 @@ static void button_scan_task(void *param)
 
         hw_uart_loop();
         app_btn_scan(NULL);
-        m_led_7_seg_loop(50);
         m_ft62f28_check_send_change();
-        buzz_loop();
-        m_button_reset_touch_loop();
+        if (device_type != VOICEBOX)
+        {
+            m_led_7_seg_loop(50);
+            buzz_loop();
+            m_button_reset_touch_loop();
+        }
 
         vTaskDelay(pdMS_TO_TICKS(50));
     }
@@ -254,7 +303,10 @@ static void button_scan_task(void *param)
 void m_button_init(void)
 {
     m_button_config();
-    hw_temp_config();
+    if (device_type != VOICEBOX)
+    {
+        hw_temp_config();
+    }
 
     os_trace("m_button_init: %ld\r\n", max_number_channel);
     xTaskCreate(button_scan_task,  /* Function that implements the task. */

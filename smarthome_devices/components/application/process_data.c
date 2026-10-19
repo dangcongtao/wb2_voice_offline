@@ -190,19 +190,45 @@ static void app_startup_message(void)
     /* respond server here */
     memset(respond, 0, sizeof(respond));
 
-    sprintf(respond,
-            "{\"%s\":100,\"reason\":%lu,\"id\":\"%s\",\"ver\":%s,\"voice_ver\":%lu,"
-            "\"ssid\":\"%s\",\"pass\":\"%s\",\"streng\":%d,"
-            "\"ip\":\"%s\",\"vermqtt\":%lu,\"mode\":%u,\"lv\":%u,\"pcn\":%u,\"swing\":%u,"
-            "\"buzz\":%u,\"t\":%lu,\"temp\":%lu,\"lamp\":%u,\"lp\":%u,\"bat\":%u,\"charging\":%u}",
-            gs_dev_type[device_type], num_send * 100U + last_reason_reset * 10U + (uint32_t)bl_sys_rstinfo_get_hun(), // hang chuc: flash_reason reset, hang don vi: BL_RST_REASON_E
-            m_db_get_instance()->_get_dev_id(), FIRMWARE_VERSION,
-            (unsigned long)aiio_ci13162_uart_get_voice_version(),
-            app_databse._wifi_info->_ssid, app_databse._wifi_info->_passwd,
-            app_databse._wifi_info->_rssi, app_databse._wifi_info->_ip, app_databse._mqtt_info->vermqtt,
-            app_databse._fan_info->mode, app_databse._fan_info->speed, app_databse._fan_info->pcn, app_databse._fan_info->swing,
-            !app_databse._fan_info->disable_buzz, m_fan_get_time_remain(), val_temperature, app_databse._fan_info->light, app_databse._fan_info->power_save,
-            bat_percent, bat_charging_status);
+    if (device_type == VOICEBOX)
+    {
+        uint8_t vol = 0;
+        uint8_t buzz_enabled = (app_databse._fan_info != NULL) ? !app_databse._fan_info->disable_buzz : 1U;
+        int32_t vol_ret = aiio_ci13162_uart_get_volume(&vol);
+        uint8_t vol_val = (vol_ret == 0) ? vol : 7U;
+
+        sprintf(respond,
+                "{\"%s\":100,\"reason\":%lu,\"id\":\"%s\",\"ver\":%s,\"voice_ver\":%lu,"
+                "\"ssid\":\"%s\",\"streng\":%d,\"ip\":\"%s\",\"vermqtt\":%lu,"
+                "\"buzz\":%u,\"volume\":%u}",
+                gs_dev_type[device_type],
+                num_send * 100U + last_reason_reset * 10U + (uint32_t)bl_sys_rstinfo_get_hun(),
+                m_db_get_instance()->_get_dev_id(),
+                FIRMWARE_VERSION,
+                (unsigned long)aiio_ci13162_uart_get_voice_version(),
+                app_databse._wifi_info->_ssid,
+                app_databse._wifi_info->_rssi,
+                app_databse._wifi_info->_ip,
+                app_databse._mqtt_info->vermqtt,
+                buzz_enabled,
+                vol_val);
+    }
+    else
+    {
+        sprintf(respond,
+                "{\"%s\":100,\"reason\":%lu,\"id\":\"%s\",\"ver\":%s,\"voice_ver\":%lu,"
+                "\"ssid\":\"%s\",\"pass\":\"%s\",\"streng\":%d,"
+                "\"ip\":\"%s\",\"vermqtt\":%lu,\"mode\":%u,\"lv\":%u,\"pcn\":%u,\"swing\":%u,"
+                "\"buzz\":%u,\"t\":%lu,\"temp\":%lu,\"lamp\":%u,\"lp\":%u,\"bat\":%u,\"charging\":%u}",
+                gs_dev_type[device_type], num_send * 100U + last_reason_reset * 10U + (uint32_t)bl_sys_rstinfo_get_hun(), // hang chuc: flash_reason reset, hang don vi: BL_RST_REASON_E
+                m_db_get_instance()->_get_dev_id(), FIRMWARE_VERSION,
+                (unsigned long)aiio_ci13162_uart_get_voice_version(),
+                app_databse._wifi_info->_ssid, app_databse._wifi_info->_passwd,
+                app_databse._wifi_info->_rssi, app_databse._wifi_info->_ip, app_databse._mqtt_info->vermqtt,
+                app_databse._fan_info->mode, app_databse._fan_info->speed, app_databse._fan_info->pcn, app_databse._fan_info->swing,
+                !app_databse._fan_info->disable_buzz, m_fan_get_time_remain(), val_temperature, app_databse._fan_info->light, app_databse._fan_info->power_save,
+                bat_percent, bat_charging_status);
+    }
 
     num_send++;
 
@@ -909,19 +935,42 @@ static void app_get_info(cJSON *jsRoot)
     /* respond server here */
     memset(respond, 0, sizeof(respond));
 
-    sprintf(respond,
-            "{\"%s\":%ld,\"u\":0,\"id\":\"%s\",\"ver\":%s,\"voice_ver\":%lu,"
-            "\"extras\":%d,\"ssid\":\"%s\",\"pass\":\"%s\",\"streng\":%d,"
-            "\"ip\":\"%s\",\"mode\":%u,\"lv\":%u,\"pcn\":%u,\"swing\":%u,"
-            "\"buzz\":%u,\"t\":%lu,\"temp\":%lu,\"lamp\":%u,\"lp\":%u,\"bat\":%u,\"charging\":%u}",
-            gs_dev_type[device_type], type,
-            m_db_get_instance()->_get_dev_id(), FIRMWARE_VERSION,
-            (unsigned long)aiio_ci13162_uart_get_voice_version(), EXTRAS,
-            app_databse._wifi_info->_ssid, app_databse._wifi_info->_passwd,
-            app_databse._wifi_info->_rssi, app_databse._wifi_info->_ip,
-            app_databse._fan_info->mode, app_databse._fan_info->speed, app_databse._fan_info->pcn, app_databse._fan_info->swing,
-            !app_databse._fan_info->disable_buzz, m_fan_get_time_remain(), val_temperature, app_databse._fan_info->light, app_databse._fan_info->power_save,
-            bat_percent, bat_charging_status);
+    if (device_type == VOICEBOX)
+    {
+        uint8_t vol = 0;
+        uint8_t buzz_enabled = (app_databse._fan_info != NULL) ? !app_databse._fan_info->disable_buzz : 1U;
+        int32_t vol_ret = aiio_ci13162_uart_get_volume(&vol);
+        uint8_t vol_val = (vol_ret == 0) ? vol : 7U;
+
+        sprintf(respond,
+                "{\"%s\":%ld,\"u\":0,\"id\":\"%s\",\"ver\":%s,\"voice_ver\":%lu,"
+                "\"extras\":%d,\"ssid\":\"%s\",\"streng\":%d,\"ip\":\"%s\","
+                "\"buzz\":%u,\"volume\":%u}",
+                gs_dev_type[device_type], (long)type,
+                m_db_get_instance()->_get_dev_id(), FIRMWARE_VERSION,
+                (unsigned long)aiio_ci13162_uart_get_voice_version(), EXTRAS,
+                app_databse._wifi_info->_ssid,
+                app_databse._wifi_info->_rssi,
+                app_databse._wifi_info->_ip,
+                buzz_enabled,
+                vol_val);
+    }
+    else
+    {
+        sprintf(respond,
+                "{\"%s\":%ld,\"u\":0,\"id\":\"%s\",\"ver\":%s,\"voice_ver\":%lu,"
+                "\"extras\":%d,\"ssid\":\"%s\",\"pass\":\"%s\",\"streng\":%d,"
+                "\"ip\":\"%s\",\"mode\":%u,\"lv\":%u,\"pcn\":%u,\"swing\":%u,"
+                "\"buzz\":%u,\"t\":%lu,\"temp\":%lu,\"lamp\":%u,\"lp\":%u,\"bat\":%u,\"charging\":%u}",
+                gs_dev_type[device_type], type,
+                m_db_get_instance()->_get_dev_id(), FIRMWARE_VERSION,
+                (unsigned long)aiio_ci13162_uart_get_voice_version(), EXTRAS,
+                app_databse._wifi_info->_ssid, app_databse._wifi_info->_passwd,
+                app_databse._wifi_info->_rssi, app_databse._wifi_info->_ip,
+                app_databse._fan_info->mode, app_databse._fan_info->speed, app_databse._fan_info->pcn, app_databse._fan_info->swing,
+                !app_databse._fan_info->disable_buzz, m_fan_get_time_remain(), val_temperature, app_databse._fan_info->light, app_databse._fan_info->power_save,
+                bat_percent, bat_charging_status);
+    }
 
     app_send_data(respond, strlen(respond));
 }
@@ -1466,6 +1515,26 @@ void app_handler_msg_task(void *arg)
             {
                 uint32_t cmd = jsType->valueint;
 
+                if (device_type == VOICEBOX)
+                {
+                    if (cmd == 1 || cmd == 2 || cmd == 4 || cmd == 15 || cmd == 16 ||
+                        cmd == 20 || cmd == 21 || cmd == 25 || cmd == 26 || cmd == 27 ||
+                        cmd == 28 || cmd == 107 || cmd == 131)
+                    {
+                        os_trace("[VOICEBOX] Unsupported command %lu ignored\r\n", (unsigned long)cmd);
+                        cJSON_Delete(jsRoot);
+                        continue;
+                    }
+
+                    if (cmd == 130)
+                    {
+                        os_trace("[VOICEBOX] OTA MCU command 130 received\r\n");
+                        app_request_ota(jsRoot);
+                        cJSON_Delete(jsRoot);
+                        continue;
+                    }
+                }
+
                 uint32_t arr_size = sizeof(array_handler) / sizeof(array_handler[0]);
                 os_trace("arr_size_mqtt: %lu\r\n", arr_size);
                 for (uint32_t i = 0; i < arr_size; i++)
@@ -1485,7 +1554,10 @@ void app_handler_msg_task(void *arg)
         {
             ble_loop();
             m_mqtt_get_instance()._mqtt_loop();
-            app_ir_send_response_from_remote_brand_check_loop();
+            if (device_type != VOICEBOX)
+            {
+                app_ir_send_response_from_remote_brand_check_loop();
+            }
         }
 
         aiio_ci13162_uart_poll();

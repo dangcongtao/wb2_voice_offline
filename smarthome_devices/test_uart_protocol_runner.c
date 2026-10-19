@@ -36,7 +36,7 @@
 #define BUZZ_PIN 17
 
 uint32_t device_type = FANDC;
-char *gs_dev_type[] = {"wswitch3v", "lhswitch3v", "swminiv2", "sswitch2v", "swshockv2", "swshohuv2", "fanoem", "fandc", "fanac", "fanproacv2"};
+char *gs_dev_type[] = {"wswitch3v", "lhswitch3v", "swminiv2", "sswitch2v", "swshockv2", "swshohuv2", "fanoem", "fandc", "fanac", "fanproacv2", "voiceboxv1"};
 
 static char s_last_app_send_data[512] = {0};
 static int s_app_send_data_count = 0;
@@ -53,6 +53,9 @@ void app_send_data(char *data, uint32_t length) {
 
 static int s_mock_voice_support = 1;
 bool hw_device_support_voice(void) {
+    if (s_mock_voice_support == -1) {
+        return (device_type == FANACIR || device_type == VOICEBOX);
+    }
     return s_mock_voice_support != 0;
 }
 
@@ -122,9 +125,10 @@ BaseType_t xSemaphoreGive(SemaphoreHandle_t s) { (void)s; return pdTRUE; }
 TaskHandle_t xTaskCreateStatic(void (*f)(void *), const char *n, const uint32_t s, void *p, uint32_t pr, StackType_t *sb, StaticTask_t *tb) {
     (void)f; (void)n; (void)s; (void)p; (void)pr; (void)sb; (void)tb; return (TaskHandle_t)1;
 }
-QueueHandle_t xQueueCreateStatic(uint32_t a, uint32_t b, uint8_t *c, StaticQueue_t *d);
-
-void bl_sys_reset_por(void) {}
+static int s_reset_por_count = 0;
+void bl_sys_reset_por(void) {
+    s_reset_por_count++;
+}
 
 /* Mocks for application callbacks */
 static uint8_t s_last_cwsl_notify_cmd_id = 0;
@@ -280,6 +284,7 @@ static void reset_test_state(void) {
     s_uart_tx_buf[0] = '\0';
     s_last_app_send_data[0] = '\0';
     s_app_send_data_count = 0;
+    s_reset_por_count = 0;
     s_buzz_last = SWITCH_IDLE_LEVEL;
     s_buzz_active_is_long = 0U;
     xQueueReset(NULL);
@@ -820,6 +825,92 @@ int main(void) {
         printf("  PASS: Rejected voice commands properly reported via MQTT cmd 299\n");
     }
 
-    printf("\nALL 13 PROTOCOL & HARDWARE TESTS PASSED 100%%!\n");
+    /* TEST 14: VOICEBOX (voiceboxv1) CI13162 Voice Support, Scene Handling, Fan Bypass, and Buzzer */
+    {
+        printf("--- Test 14: VOICEBOX CI13162 Protocol & Fan Bypass ---\n");
+        reset_test_state();
+        s_mock_voice_support = -1; /* Use real voice support logic */
+
+        /* 14.1: Verify hw_device_support_voice() */
+        device_type = VOICEBOX;
+        assert(hw_device_support_voice() == true);
+        device_type = FANACIR;
+        assert(hw_device_support_voice() == true);
+        device_type = FANDC;
+        assert(hw_device_support_voice() == false);
+        device_type = FANAC;
+        assert(hw_device_support_voice() == false);
+
+        /* Set to VOICEBOX for remaining subtests */
+        device_type = VOICEBOX;
+        s_mock_voice_support = 1;
+
+        /* 14.2: Buzzer over UART for VOICEBOX */
+        reset_test_state();
+        hw_buzz_set_type(SWITCH_ACTIVE_LEVEL, 0U);
+        assert(s_uart_tx_count == 1);
+        assert(strcmp(s_uart_tx_buf, "{\"cmd\":200,\"data\":[0]}\r\n") == 0);
+        hw_buzz_set_type(SWITCH_IDLE_LEVEL, 0U);
+
+        /* Long buzzer */
+        reset_test_state();
+        hw_buzz_set_type(SWITCH_ACTIVE_LEVEL, 1U);
+        assert(s_uart_tx_count == 1);
+        assert(strcmp(s_uart_tx_buf, "{\"cmd\":200,\"data\":[1]}\r\n") == 0);
+        hw_buzz_set_type(SWITCH_IDLE_LEVEL, 0U);
+
+        /* 14.3: Scene command executes via app_cwsl_notify_voice_cmd without fan touch */
+        reset_test_state();
+        aiio_ci13162_message_t scene_msg = {
+            .command = AIIO_CI13162_CMD_SCENE,
+            .data_count = 1U,
+            .data = {1U}, /* scene 1 */
+            .cmd_id = 56U,
+            .cwsl = 255U,
+            .has_metadata = 1U
+        };
+        xQueueSend(NULL, &scene_msg, 0U);
+        aiio_ci13162_uart_process();
+        assert(s_cwsl_notify_count == 1);
+        assert(s_last_cwsl_notify_cmd_id == 56U);
+        assert(s_last_cwsl_notify_cwsl == 255U);
+        assert(s_fan_respond_count == 0);
+        assert(s_fan_set_speed_call_count == 0);
+
+        /* 14.4: Fan commands (TURN, MODE, TIMER) are ignored on VOICEBOX */
+        reset_test_state();
+        aiio_ci13162_message_t fan_turn_msg = {
+            .command = AIIO_CI13162_CMD_TURN,
+            .data_count = 1U,
+            .data = {1U},
+            .cmd_id = 7U,
+            .cwsl = 255U,
+            .has_metadata = 1U
+        };
+        xQueueSend(NULL, &fan_turn_msg, 0U);
+        aiio_ci13162_uart_process();
+        assert(s_cwsl_notify_count == 0);
+        assert(s_fan_respond_count == 0);
+        assert(s_fan_set_speed_call_count == 0);
+        assert(s_app_send_data_count == 0);
+
+        /* 14.5: Reset command executes bl_sys_reset_por on VOICEBOX */
+        reset_test_state();
+        aiio_ci13162_message_t reset_msg = {
+            .command = AIIO_CI13162_CMD_RESET,
+            .data_count = 0U,
+            .has_metadata = 0U
+        };
+        xQueueSend(NULL, &reset_msg, 0U);
+        aiio_ci13162_uart_process();
+        assert(s_reset_por_count == 1);
+        assert(s_cwsl_notify_count == 0);
+        assert(s_fan_respond_count == 0);
+
+        device_type = FANDC; /* restore */
+        printf("  PASS: VOICEBOX voice support, buzzer, scene execution, fan bypass and reset verified\n");
+    }
+
+    printf("\nALL 14 PROTOCOL & HARDWARE TESTS PASSED 100%%!\n");
     return 0;
 }

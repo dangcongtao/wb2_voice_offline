@@ -174,7 +174,7 @@ static void set_led_stt_not_config(void)
 
 static void set_led_stt_disconnect_mqtt(void)
 {
-    if (device_type == WSWITCH || device_type == LHSWITCH || device_type == IRWIFI || device_type == SSWITCH || device_type == SWMINI || device_type == FANDC || device_type == FANAC || device_type == FANACIR)
+    if (device_type == WSWITCH || device_type == LHSWITCH || device_type == IRWIFI || device_type == SSWITCH || device_type == SWMINI || device_type == FANDC || device_type == FANAC || device_type == FANACIR || device_type == VOICEBOX)
     {
         if (s_led_stt_obj._led_stt_type != LED_STYLE_MQTT_DISCONN)
         {
@@ -272,3 +272,53 @@ m_led_stt_t m_led_stt_get_instance(void)
 {
     return s_led_stt_obj;
 }
+
+static TimerHandle_t xPulseTimer = NULL;
+static volatile uint8_t s_is_pulsing = 0;
+
+static void vPulseTimerCallback(TimerHandle_t xTimer)
+{
+    (void)xTimer;
+    s_is_pulsing = 0;
+    if (s_led_stt_obj._led_stt_type == LED_STYLE_ON)
+    {
+        s_led_stt_obj._set_led_stt_on_cb();
+    }
+    else if (s_led_stt_obj._led_stt_type == LED_STYLE_OFF)
+    {
+        s_led_stt_obj._set_led_stt_off_cb();
+    }
+}
+
+// Trigger a temporary visual pulse on status LED
+void m_led_stt_flash_pulse(uint32_t duration_ms)
+{
+    if (duration_ms == 0)
+    {
+        duration_ms = 200;
+    }
+
+    if (!s_is_pulsing)
+    {
+        s_is_pulsing = 1;
+        if (s_led_stt_obj._toggle_led_stt_cb != NULL)
+        {
+            s_led_stt_obj._toggle_led_stt_cb();
+        }
+    }
+
+    if (xPulseTimer == NULL)
+    {
+        xPulseTimer = xTimerCreate("led_pulse_timer",
+                                   pdMS_TO_TICKS(duration_ms),
+                                   pdFALSE,
+                                   (void *)0,
+                                   vPulseTimerCallback);
+    }
+    if (xPulseTimer != NULL)
+    {
+        xTimerStop(xPulseTimer, 0);
+        xTimerChangePeriod(xPulseTimer, pdMS_TO_TICKS(duration_ms), 0);
+        xTimerStart(xPulseTimer, 0);
+    }
+}

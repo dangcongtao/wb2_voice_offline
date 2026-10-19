@@ -18,6 +18,7 @@
 #include "system_typedef.h"
 #include "app_scene.h"
 #include "m_fan_control.h"
+#include "m_led_stt.h"
 
 #define APP_CWSL_CMD_LEARN 220U
 #define APP_CWSL_CMD_DELETE 221U
@@ -215,6 +216,12 @@ static uint8_t app_cwsl_parse_mutating(cJSON *js_root,
         return APP_CWSL_CODE_BAD_COMMAND_ID;
     }
 
+    if (device_type == VOICEBOX) {
+        if ((request->cmd_id != 1U) && (request->cmd_id != APP_CWSL_ANY)) {
+            return APP_CWSL_CODE_BAD_COMMAND_ID;
+        }
+    }
+
     if (request->cmd_id == 1U) {
         return ((request->slot <= 4U) || (request->slot == APP_CWSL_ANY))
                    ? 0U
@@ -241,6 +248,11 @@ static uint8_t app_cwsl_parse_query(cJSON *js_root,
     }
 
     request->cmd_id = (uint8_t)cmd_id;
+    if (device_type == VOICEBOX) {
+        if ((request->cmd_id != 1U) && (request->cmd_id != APP_CWSL_ANY)) {
+            return APP_CWSL_CODE_BAD_COMMAND_ID;
+        }
+    }
     if (((request->cmd_id >= 1U) && (request->cmd_id <= APP_CWSL_CMD_ID_MAX)) ||
         (request->cmd_id == APP_CWSL_ANY)) {
         return 0U;
@@ -1358,7 +1370,11 @@ void app_cwsl_notify_voice_cmd(uint8_t cmd_id, uint8_t cwsl)
             os_trace("[SCENE] cmd_id=%u not active in app_scene, skip MQTT\r\n", (unsigned int)cmd_id);
             return;
         }
-        m_fan_need_buzz(1U);
+        if (device_type == VOICEBOX) {
+            m_led_stt_flash_pulse(200);
+        } else {
+            m_fan_need_buzz(1U);
+        }
     }
 
     response_length = snprintf(

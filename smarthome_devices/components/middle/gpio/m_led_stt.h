@@ -52,4 +52,11 @@ void m_led_stt_init(void);
 
 m_led_stt_t m_led_stt_get_instance(void);
 
-#endif /* _LED_DRV_H_ */
+/** @brief Trigger a temporary visual flash/pulse on status LED (e.g. 200ms on voice scene recognition).
+ *
+ *  @param[in]  duration_ms  Duration of pulse in milliseconds (defaults to 200ms if 0).
+ *  @return     None.
+ */
+void m_led_stt_flash_pulse(uint32_t duration_ms);
+
+#endif /* _LED_DRV_H_ */

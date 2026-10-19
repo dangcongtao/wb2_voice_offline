@@ -6,7 +6,7 @@
 uint32_t device_type = 0;
 uint32_t max_number_channel = 0;
 /* refer to system_typedef.h/device_type_t */
-char *gs_dev_type[] = {"wswitch3v", "lhswitch3v", "swminiv2", "sswitch2v", "swshockv2", "swshohuv2", "fanoem", "fandc", "fanac", "fanproacv2"};
+char *gs_dev_type[] = {"wswitch3v", "lhswitch3v", "swminiv2", "sswitch2v", "swshockv2", "swshohuv2", "fanoem", "fandc", "fanac", "fanproacv2", "voiceboxv1"};
 
 #define MAX_WIDTH   100
 #define MAX_LEN     512
@@ -45,5 +45,5 @@ uint32_t sys_get_tick_ms(void) { return (uint32_t)aos_now_ms(); }
 // Check whether the active device model supports the CI13162 voice IC.
 bool hw_device_support_voice(void)
 {
-    return (device_type == FANACIR);
+    return (device_type == FANACIR || device_type == VOICEBOX);
 }

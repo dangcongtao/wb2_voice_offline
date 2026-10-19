@@ -37,6 +37,7 @@ extern uint32_t val_temperature;
 extern uint8_t is_ota;
 extern uint8_t bat_percent;
 extern uint8_t bat_charging_status;
+extern uint8_t last_reason_reset;
 
 void main_loop(void)
 {
@@ -50,13 +51,16 @@ void main_loop(void)
 
         if (!is_ota)
         {
-            if (hw_temp_read())
+            if (device_type != VOICEBOX)
             {
-                app_fan_send_temperature(val_temperature);
-            }
-            else if (hw_bat_read())
-            {
-                app_fan_send_battery(bat_percent, bat_charging_status);
+                if (hw_temp_read())
+                {
+                    app_fan_send_temperature(val_temperature);
+                }
+                else if (hw_bat_read())
+                {
+                    app_fan_send_battery(bat_percent, bat_charging_status);
+                }
             }
         }
 
@@ -158,7 +162,10 @@ void main(void)
         }
     }
 
-    hw_74hc595_init();
+    if (device_type != VOICEBOX)
+    {
+        hw_74hc595_init();
+    }
     tcpip_init(NULL, NULL);
     blog_set_level_log_component(BLOG_LEVEL_INFO, "hardware");
 
@@ -176,12 +183,24 @@ void main(void)
     process_data_init();
     m_event_init();
 
-    m_fan_init();
+    if (device_type != VOICEBOX)
+    {
+        m_fan_init();
 
 #if DEBUG_ENABLE == 1
-    _tolerance = kTolerance;
+        _tolerance = kTolerance;
 #endif
-    m_ir_init();
+        m_ir_init();
+    }
+    else
+    {
+        uint8_t reason_reset = flash_read_rs_reason();
+        if (reason_reset)
+        {
+            last_reason_reset = reason_reset;
+            flash_set_rs_reason(0);
+        }
+    }
 
     /* start stack */
 

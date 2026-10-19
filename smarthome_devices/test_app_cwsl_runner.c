@@ -12,7 +12,6 @@
 #define __EASY_FLASH_COMMON_H__
 #define _APP_MQTT_H__
 #define _APP_MQTT_H_
-#define CJSON_KEYWORD_H__
 
 #define BUILD_TEST 1
 
@@ -22,6 +21,7 @@
 #include "semphr.h"
 #include "stream_buffer.h"
 
+#include "components/app_config/system_typedef.h"
 #include "components/third_party/cJson/cJSON.c"
 #include "components/hardware/aiio_ci13162_uart.h"
 
@@ -29,8 +29,8 @@
 #define CJSON_KEY_USER_ID "u"
 #define CJSON_KEY_ACT_ID "act_id"
 
-char *gs_dev_type[] = {"fanoem"};
-int device_type = 0;
+char *gs_dev_type[] = {"fanoem", "lhswitch3v", "swminiv2", "sswitch2v", "swshockv2", "swshohuv2", "fanoem", "fandc", "fanac", "fanproacv2", "voiceboxv1"};
+uint32_t device_type = 0;
 
 static char s_last_published[256];
 static int s_publish_count = 0;
@@ -127,6 +127,14 @@ void app_scene_clear_all(void)
 void m_fan_need_buzz(uint8_t num_buzz)
 {
     (void)num_buzz;
+}
+
+static uint32_t s_mock_led_pulse_duration = 0;
+static int s_mock_led_pulse_count = 0;
+void m_led_stt_flash_pulse(uint32_t duration_ms)
+{
+    s_mock_led_pulse_duration = duration_ms;
+    s_mock_led_pulse_count++;
 }
 
 void vTaskDelay(TickType_t xTicksToDelay) { (void)xTicksToDelay; }
@@ -364,6 +372,140 @@ int main(void)
         printf("  PASS: Voice notifications publish proper JSON with cmd_id and cwsl\n");
     }
 
-    printf("\nALL 5 CWSL TEST SCENARIOS PASSED 100%%!\n");
+    /* TEST 6: VOICEBOX (voiceboxv1) CWSL Scope & LED Pulse on Scene */
+    {
+        printf("--- Test 6: VOICEBOX CWSL & LED Pulse Verification ---\n");
+        reset_cwsl_mocks();
+        device_type = 10; /* VOICEBOX */
+        s_mock_led_pulse_count = 0;
+        s_mock_led_pulse_duration = 0;
+
+        /* Learn wake word (cmd_id 1) must be allowed */
+        cJSON *req = cJSON_Parse("{\"voiceboxv1\":220,\"cmd_id\":1,\"slot\":0,\"u\":5001,\"act_id\":1}");
+        assert(req != NULL);
+        app_cwsl_learn(req);
+        cJSON_Delete(req);
+        assert(s_uart_send_count == 1);
+        assert(s_mock_uart_action == APP_CWSL_ACTION_LEARN);
+        assert(s_mock_uart_data[0] == 1);
+
+        /* Complete learn */
+        s_registered_status_cb(32U, 1U, 0U);
+        assert(s_publish_count == 1);
+        assert(strstr(s_last_published, "\"voiceboxv1\":220") != NULL);
+        assert(strstr(s_last_published, "\"code\":32") != NULL);
+        assert(strstr(s_last_published, "\"cmd_id\":1") != NULL);
+        assert(strstr(s_last_published, "\"slot\":0") != NULL);
+
+        /* Learn fan command (cmd_id 7) must be rejected with 65 on voicebox */
+        reset_cwsl_mocks();
+        req = cJSON_Parse("{\"voiceboxv1\":220,\"cmd_id\":7,\"slot\":0,\"u\":5002,\"act_id\":2}");
+        assert(req != NULL);
+        app_cwsl_learn(req);
+        cJSON_Delete(req);
+        assert(s_publish_count == 1);
+        assert(strstr(s_last_published, "\"voiceboxv1\":220") != NULL);
+        assert(strstr(s_last_published, "\"code\":65") != NULL);
+        assert(strstr(s_last_published, "\"result\":0") != NULL);
+        assert(s_uart_send_count == 0); /* did not send to UART */
+
+        /* Delete fan command (cmd_id 7) must be rejected with 65 on voicebox */
+        reset_cwsl_mocks();
+        req = cJSON_Parse("{\"voiceboxv1\":221,\"cmd_id\":7,\"slot\":0,\"u\":5003,\"act_id\":3}");
+        assert(req != NULL);
+        app_cwsl_delete(req);
+        cJSON_Delete(req);
+        assert(s_publish_count == 1);
+        assert(strstr(s_last_published, "\"voiceboxv1\":221") != NULL);
+        assert(strstr(s_last_published, "\"code\":65") != NULL);
+        assert(strstr(s_last_published, "\"result\":0") != NULL);
+
+        /* Delete wake word (cmd_id 1) must be allowed */
+        reset_cwsl_mocks();
+        req = cJSON_Parse("{\"voiceboxv1\":221,\"cmd_id\":1,\"slot\":0,\"u\":5004,\"act_id\":4}");
+        assert(req != NULL);
+        app_cwsl_delete(req);
+        cJSON_Delete(req);
+        assert(s_uart_send_count == 1);
+        assert(s_mock_uart_action == APP_CWSL_ACTION_DELETE);
+        assert(s_mock_uart_data[0] == 1);
+        s_registered_status_cb(33U, 1U, 0U);
+        assert(s_publish_count == 1);
+        assert(strstr(s_last_published, "\"voiceboxv1\":221") != NULL);
+        assert(strstr(s_last_published, "\"code\":33") != NULL);
+
+        /* Delete all (cmd_id 255, slot 255) must be allowed */
+        reset_cwsl_mocks();
+        req = cJSON_Parse("{\"voiceboxv1\":221,\"cmd_id\":255,\"slot\":255,\"u\":5005,\"act_id\":5}");
+        assert(req != NULL);
+        app_cwsl_delete(req);
+        cJSON_Delete(req);
+        assert(s_uart_send_count == 1);
+        assert(s_mock_uart_action == APP_CWSL_ACTION_DELETE);
+        assert(s_mock_uart_data[0] == 255);
+        s_registered_status_cb(33U, 255U, 255U);
+        assert(s_publish_count == 1);
+        assert(strstr(s_last_published, "\"voiceboxv1\":221") != NULL);
+        assert(strstr(s_last_published, "\"code\":33") != NULL);
+
+        /* Query fan command (cmd_id 7) must be rejected with 65 on voicebox */
+        reset_cwsl_mocks();
+        req = cJSON_Parse("{\"voiceboxv1\":223,\"cmd_id\":7,\"u\":5006,\"act_id\":6}");
+        assert(req != NULL);
+        app_cwsl_query(req);
+        cJSON_Delete(req);
+        assert(s_publish_count == 1);
+        assert(strstr(s_last_published, "\"voiceboxv1\":223") != NULL);
+        assert(strstr(s_last_published, "\"code\":65") != NULL);
+        assert(strstr(s_last_published, "\"result\":0") != NULL);
+
+        /* Query wake word (cmd_id 1) must be allowed */
+        reset_cwsl_mocks();
+        req = cJSON_Parse("{\"voiceboxv1\":223,\"cmd_id\":1,\"u\":5007,\"act_id\":7}");
+        assert(req != NULL);
+        app_cwsl_query(req);
+        cJSON_Delete(req);
+        assert(s_uart_send_count == 1);
+        assert(s_mock_uart_action == APP_CWSL_ACTION_QUERY);
+        uint8_t data_info[2] = {1U, 0U};
+        s_registered_info_cb(1U, data_info, 2U);
+        assert(s_publish_count == 1);
+        assert(strstr(s_last_published, "\"voiceboxv1\":223") != NULL);
+        assert(strstr(s_last_published, "\"bitmap\":1") != NULL);
+
+        /* Query capacity (cmd_id 255) must be allowed */
+        reset_cwsl_mocks();
+        req = cJSON_Parse("{\"voiceboxv1\":223,\"cmd_id\":255,\"u\":5008,\"act_id\":8}");
+        assert(req != NULL);
+        app_cwsl_query(req);
+        cJSON_Delete(req);
+        assert(s_uart_send_count == 1);
+        uint8_t data_total[3] = {1U, 0U, 15U};
+        s_registered_info_cb(255U, data_total, 3U);
+        assert(s_publish_count == 1);
+        assert(strstr(s_last_published, "\"wake\":1") != NULL);
+
+        /* Voice notify on scene command (cmd_id 56) triggers MQTT 224 AND LED 200ms pulse */
+        reset_cwsl_mocks();
+        s_mock_led_pulse_count = 0;
+        app_cwsl_notify_voice_cmd(56U, 255U);
+        assert(s_publish_count == 1);
+        assert(strcmp(s_last_published, "{\"voiceboxv1\":224,\"cmd_id\":56,\"cwsl\":255}") == 0);
+        assert(s_mock_led_pulse_count == 1);
+        assert(s_mock_led_pulse_duration == 200);
+
+        /* Voice notify on wake word (cmd_id 1) triggers MQTT 224 but NOT LED pulse */
+        reset_cwsl_mocks();
+        s_mock_led_pulse_count = 0;
+        app_cwsl_notify_voice_cmd(1U, 255U);
+        assert(s_publish_count == 1);
+        assert(strcmp(s_last_published, "{\"voiceboxv1\":224,\"cmd_id\":1,\"cwsl\":255}") == 0);
+        assert(s_mock_led_pulse_count == 0);
+
+        device_type = 0; /* restore */
+        printf("  PASS: VOICEBOX wake-only CWSL validation, MQTT 224, and 200ms LED pulse verified\n");
+    }
+
+    printf("\nALL 6 CWSL TEST SCENARIOS PASSED 100%%!\n");
     return 0;
 }

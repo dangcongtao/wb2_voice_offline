@@ -41,7 +41,7 @@ void m_db_read_device_id(void)
     uint32_t len_device_id = sizeof(s_device_id);
     memset(s_device_id, 0, sizeof(s_device_id));
 #if 0
-    sprintf(s_device_id, "HUN178840469966fanproacv2N1");
+    sprintf(s_device_id, "HUN179152916376voiceboxv1N1");
     flash_write_device_id((void *)(&s_device_id), len_device_id);
 #endif
     flash_read_device_id((void *)(&s_device_id), len_device_id);
@@ -56,6 +56,11 @@ void m_db_read_device_id(void)
     if (strstr(s_device_id, gs_dev_type[IRWIFI]) != NULL)
     {
         device_type = IRWIFI;
+    }
+    else if (strstr(s_device_id, gs_dev_type[VOICEBOX]) != NULL)
+    {
+        device_type = VOICEBOX;
+        max_number_channel = 1;
     }
     else if (strstr(s_device_id, gs_dev_type[FANDC]) != NULL)
     {
