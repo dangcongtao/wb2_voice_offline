@@ -166,8 +166,8 @@ int main(void) {
      * ========================================================================= */
     {
         printf("--- Test 2: Hardware Pinout Macros & Voice Support ---\n");
-        assert(LED_STT_VOICEBOX == 14);
-        assert(BTN_CFG_VOICEBOX == 22);
+        assert(LED_STT_VOICEBOX == 2);
+        assert(BTN_CFG_VOICEBOX == 1);
         assert(AIIO_CI13162_UART_RX_PIN == 7U);
         assert(AIIO_CI13162_POWER_PIN == 17U);
 
@@ -184,15 +184,16 @@ int main(void) {
     }
 
     /* =========================================================================
-     * TEST 3: 74HC595 Protection on VOICEBOX (Protects BTN_CFG_VOICEBOX on GPIO 22)
+     * TEST 3: 74HC595 Protection on VOICEBOX (Protects LED_STT_VOICEBOX on GPIO 2)
      * ========================================================================= */
     {
-        printf("--- Test 3: 74HC595 Protection for VOICEBOX (GPIO 22 safety) ---\n");
+        printf("--- Test 3: 74HC595 Protection for VOICEBOX (GPIO 2 & 22 safety) ---\n");
         reset_all_mocks();
         device_type = VOICEBOX;
 
-        /* Verify hw_74hc595_init() exits immediately and does not configure GPIO 22 */
+        /* Verify hw_74hc595_init() exits immediately and does not configure GPIO 2 or 22 */
         hw_74hc595_init();
+        assert(s_mock_gpio_output_pins[LED_COM_PIN] == 0);
         assert(s_mock_gpio_output_pins[DS_PIN] == 0);
         assert(s_mock_gpio_output_calls == 0);
 
@@ -206,11 +207,12 @@ int main(void) {
         /* Confirm that on FANDC, 74hc595 does configure output pins */
         device_type = FANDC;
         hw_74hc595_init();
+        assert(s_mock_gpio_output_pins[LED_COM_PIN] == 1);
         assert(s_mock_gpio_output_pins[DS_PIN] == 1);
         assert(s_mock_gpio_output_calls > 0);
 
         device_type = VOICEBOX; /* restore */
-        printf("  PASS: 74HC595 completely disabled on VOICEBOX, protecting GPIO 22\n");
+        printf("  PASS: 74HC595 completely disabled on VOICEBOX, protecting GPIO 2 & 22\n");
     }
 
     /* =========================================================================
