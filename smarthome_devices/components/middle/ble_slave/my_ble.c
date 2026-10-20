@@ -9,8 +9,11 @@
 #include "conn_internal.h"
 #include "hci_core.h"
 #include "m_database.h"
+#include "event_driven.h"
+#include "hardware.h"
 
 static char ble_name[64] = {0};
+static uint8_t s_beacon_adv_buf[30] = {0};
 // #define NAME_DEVICE "HUN167291413297wswitch2vN1"
 
 /*自定义UUID*/
@@ -115,6 +118,50 @@ void my_ble_start_advertise(void)
     {
         printf("Advertising started\r\n");
     }
+}
+
+void m_ble_get_mac_addr(uint8_t *my_mac)
+{
+    bt_addr_le_t adv_addr;
+    bt_get_local_public_address(&adv_addr);
+    memset(my_mac, 0, 6);
+    memcpy(my_mac, adv_addr.a.val, 6);
+}
+
+uint8_t my_ble_update_data(uint8_t *data_adv, uint8_t data_adv_len)
+{
+    if (dev_is_doing_config())
+    {
+        return 0;
+    }
+
+    if (data_adv == NULL || data_adv_len == 0 || data_adv_len > sizeof(s_beacon_adv_buf))
+    {
+        return 0;
+    }
+
+    bt_le_adv_stop();
+    memset(s_beacon_adv_buf, 0, sizeof(s_beacon_adv_buf));
+    memcpy(s_beacon_adv_buf, data_adv, data_adv_len);
+
+    struct bt_le_adv_param param;
+    param.id = BT_ID_DEFAULT;
+    param.interval_min = 0x0010;
+    param.interval_max = 0x0030;
+    param.options = (BT_LE_ADV_OPT_NONE);
+
+    memset(&adv_data[0], 0, sizeof(struct bt_data));
+    adv_data[0].type = BT_DATA_SVC_DATA16;
+    adv_data[0].data = (u8_t *)s_beacon_adv_buf;
+    adv_data[0].data_len = data_adv_len;
+
+    int err = bt_le_adv_start(&param, adv_data, ARRAY_SIZE(adv_data), NULL, 0);
+    if (err)
+    {
+        os_trace("Failed to update data adv (err %d)\r\n", err);
+        return 0;
+    }
+    return 1;
 }
 
 static void bt_ready_cb(int err)

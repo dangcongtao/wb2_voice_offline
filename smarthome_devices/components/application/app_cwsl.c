@@ -19,6 +19,7 @@
 #include "app_scene.h"
 #include "m_fan_control.h"
 #include "m_led_stt.h"
+#include "m_ble.h"
 
 #define APP_CWSL_CMD_LEARN 220U
 #define APP_CWSL_CMD_DELETE 221U
@@ -1370,11 +1371,14 @@ void app_cwsl_notify_voice_cmd(uint8_t cmd_id, uint8_t cwsl)
             os_trace("[SCENE] cmd_id=%u not active in app_scene, skip MQTT\r\n", (unsigned int)cmd_id);
             return;
         }
-        if (device_type == VOICEBOX) {
-            m_led_stt_flash_pulse(200);
-        } else {
+        if (device_type != VOICEBOX) {
             m_fan_need_buzz(1U);
         }
+    }
+
+    if ((device_type == VOICEBOX) && (cmd_id >= 7U)) {
+        m_led_stt_flash_pulse(200);
+        m_ble_send_voicebox_state(cmd_id);
     }
 
     response_length = snprintf(

@@ -877,7 +877,7 @@ int main(void) {
         assert(s_fan_respond_count == 0);
         assert(s_fan_set_speed_call_count == 0);
 
-        /* 14.4: Fan commands (TURN, MODE, TIMER) are ignored on VOICEBOX */
+        /* 14.4: Control commands (TURN, MODE, TIMER) forward to app_cwsl_notify_voice_cmd on VOICEBOX without fan touch */
         reset_test_state();
         aiio_ci13162_message_t fan_turn_msg = {
             .command = AIIO_CI13162_CMD_TURN,
@@ -889,10 +889,42 @@ int main(void) {
         };
         xQueueSend(NULL, &fan_turn_msg, 0U);
         aiio_ci13162_uart_process();
-        assert(s_cwsl_notify_count == 0);
+        assert(s_cwsl_notify_count == 1);
+        assert(s_last_cwsl_notify_cmd_id == 7U);
+        assert(s_last_cwsl_notify_cwsl == 255U);
         assert(s_fan_respond_count == 0);
         assert(s_fan_set_speed_call_count == 0);
         assert(s_app_send_data_count == 0);
+
+        reset_test_state();
+        aiio_ci13162_message_t fan_mode_msg = {
+            .command = AIIO_CI13162_CMD_MODE,
+            .data_count = 1U,
+            .data = {1U},
+            .cmd_id = 19U,
+            .cwsl = 255U,
+            .has_metadata = 1U
+        };
+        xQueueSend(NULL, &fan_mode_msg, 0U);
+        aiio_ci13162_uart_process();
+        assert(s_cwsl_notify_count == 1);
+        assert(s_last_cwsl_notify_cmd_id == 19U);
+        assert(s_fan_respond_count == 0);
+
+        reset_test_state();
+        aiio_ci13162_message_t fan_timer_msg = {
+            .command = AIIO_CI13162_CMD_TIMER,
+            .data_count = 1U,
+            .data = {1U},
+            .cmd_id = 25U,
+            .cwsl = 255U,
+            .has_metadata = 1U
+        };
+        xQueueSend(NULL, &fan_timer_msg, 0U);
+        aiio_ci13162_uart_process();
+        assert(s_cwsl_notify_count == 1);
+        assert(s_last_cwsl_notify_cmd_id == 25U);
+        assert(s_fan_respond_count == 0);
 
         /* 14.5: Reset command executes bl_sys_reset_por on VOICEBOX */
         reset_test_state();

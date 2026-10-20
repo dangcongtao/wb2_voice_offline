@@ -130,6 +130,7 @@ bool hw_device_support_voice(void) {
 /* Include source files directly for deep testing */
 #include "components/hardware/buzz.c"
 #include "components/hardware/74hc595.c"
+#include "components/middle/ble_slave/security.c"
 
 static void reset_all_mocks(void) {
     memset(s_mock_gpio_output_pins, 0, sizeof(s_mock_gpio_output_pins));
@@ -342,7 +343,7 @@ int main(void) {
     }
 
     /* =========================================================================
-     * TEST 7: Startup Message (cmd 100) JSON Format for VOICEBOX
+     * TEST 7: Startup Message (cmd 100) and Get Info (cmd 105) JSON Format for VOICEBOX
      * ========================================================================= */
     {
         printf("--- Test 7: Startup Message (cmd 100) and Get Info (cmd 105) Format ---\n");
@@ -351,11 +352,13 @@ int main(void) {
         uint32_t vermqtt = 1;
         uint8_t buzz_enabled = 1;
         uint8_t vol_val = 5;
+        uint8_t mac_bt[6] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
 
         sprintf(respond,
                 "{\"%s\":100,\"reason\":%lu,\"id\":\"%s\",\"ver\":%s,\"voice_ver\":%lu,"
                 "\"ssid\":\"%s\",\"streng\":%d,\"ip\":\"%s\",\"vermqtt\":%lu,"
-                "\"buzz\":%u,\"volume\":%u}",
+                "\"buzz\":%u,\"volume\":%u,"
+                "\"mac_bt\":\"%02x:%02x:%02x:%02x:%02x:%02x\"}",
                 gs_dev_type[VOICEBOX],
                 (unsigned long)(num_send * 100U + 0U + 1U),
                 "HUN123456789voiceboxv1N1",
@@ -366,7 +369,8 @@ int main(void) {
                 "192.168.1.50",
                 (unsigned long)vermqtt,
                 buzz_enabled,
-                vol_val);
+                vol_val,
+                mac_bt[0], mac_bt[1], mac_bt[2], mac_bt[3], mac_bt[4], mac_bt[5]);
 
         /* Parse generated JSON and verify fields */
         cJSON *root = cJSON_Parse(respond);
@@ -383,6 +387,8 @@ int main(void) {
         assert(cJSON_GetObjectItem(root, "vermqtt") != NULL);
         assert(cJSON_GetObjectItem(root, "buzz") != NULL);
         assert(cJSON_GetObjectItem(root, "volume") != NULL);
+        assert(cJSON_GetObjectItem(root, "mac_bt") != NULL);
+        assert(strcmp(cJSON_GetObjectItem(root, "mac_bt")->valuestring, "aa:bb:cc:dd:ee:ff") == 0);
 
         /* Fan / lamp / battery fields must be omitted */
         assert(cJSON_GetObjectItem(root, "mode") == NULL);
@@ -396,7 +402,7 @@ int main(void) {
         assert(cJSON_GetObjectItem(root, "t") == NULL);
 
         cJSON_Delete(root);
-        printf("  PASS: Cmd 100 contains all voicebox fields and cleanly omits fan/lamp/bat fields\n");
+        printf("  PASS: Cmd 100 contains all voicebox fields including mac_bt and omits fan/lamp/bat fields\n");
     }
 
     /* =========================================================================
@@ -435,6 +441,50 @@ int main(void) {
         printf("  PASS: Status LED flash pulse re-entrancy protection verified\n");
     }
 
-    printf("\nALL 8 VOICEBOX UNIT TESTS PASSED 100%%!\n");
+    /* =========================================================================
+     * TEST 9: BLE Beacon Packet Format & Encryption/Decryption Compatibility
+     * ========================================================================= */
+    {
+        printf("--- Test 9: BLE Beacon Packet Format & Encryption/Decryption ---\n");
+        typedef struct __attribute__((packed)) {
+            uint8_t src_mac[6];
+            uint8_t cmd_id;
+        } test_encode_data_t;
+
+        typedef struct __attribute__((packed)) {
+            uint8_t service_uuid[2];
+            uint8_t cmd;
+            uint8_t tid;
+            uint16_t checksum;
+            test_encode_data_t content;
+        } test_hunonic_voicebox_msg_t;
+
+        assert(sizeof(test_encode_data_t) == 7);
+        assert(sizeof(test_hunonic_voicebox_msg_t) == 13);
+
+        uint8_t expected_mac[6] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66};
+        for (uint8_t tid = 1; tid < 50; tid++) {
+            test_hunonic_voicebox_msg_t msg;
+            memset(&msg, 0, sizeof(msg));
+            msg.service_uuid[0] = 0xFA;
+            msg.service_uuid[1] = 0xFB;
+            msg.cmd = 0x9A;
+            msg.tid = tid;
+            memcpy(msg.content.src_mac, expected_mac, 6);
+            msg.content.cmd_id = 56U;
+
+            msg.checksum = calculate_checksum((uint8_t *)&msg.content, sizeof(test_encode_data_t));
+            encrypt_data((uint8_t *)&msg.content, sizeof(test_encode_data_t), msg.tid);
+
+            /* Verify switch side decryption & checksum verification */
+            uint16_t rx_chk = decrypt_data((uint8_t *)&msg.content, sizeof(msg) - 6, msg.tid);
+            assert(rx_chk == msg.checksum);
+            assert(memcmp(msg.content.src_mac, expected_mac, 6) == 0);
+            assert(msg.content.cmd_id == 56U);
+        }
+        printf("  PASS: BLE Beacon 13-byte frame layout and security round-trip verified\n");
+    }
+
+    printf("\nALL 9 VOICEBOX UNIT TESTS PASSED 100%%!\n");
     return 0;
 }

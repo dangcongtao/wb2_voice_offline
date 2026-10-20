@@ -26,6 +26,8 @@ void my_ble_deinit(void);
 void my_ble_recv_register(my_ble_recv_data_cb_t ble_reve_cb);
 void my_ble_connect_register(my_ble_connet_status_cb_t ble_connet_cb);
 void my_ble_set_name(char* name, uint8_t is_restart_adv);
+uint8_t my_ble_update_data(uint8_t *data_adv, uint8_t data_adv_len);
+void m_ble_get_mac_addr(uint8_t *my_mac);
 /*自定义UUID*/
 /* service UUID: 0x6e400001-0xb5a3-0xf393-0xe0a9-0xe50e24dcca9e */
 /* rx chracteristic: 0x6e400002-0xb5a3-0xf393-0xe0a9-0xe50e24dcca9e */

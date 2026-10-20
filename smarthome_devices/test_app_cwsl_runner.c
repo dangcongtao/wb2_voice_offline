@@ -137,6 +137,14 @@ void m_led_stt_flash_pulse(uint32_t duration_ms)
     s_mock_led_pulse_count++;
 }
 
+static uint8_t s_mock_ble_beacon_cmd_id = 0;
+static int s_mock_ble_beacon_count = 0;
+void m_ble_send_voicebox_state(uint8_t cmd_id)
+{
+    s_mock_ble_beacon_cmd_id = cmd_id;
+    s_mock_ble_beacon_count++;
+}
+
 void vTaskDelay(TickType_t xTicksToDelay) { (void)xTicksToDelay; }
 static TickType_t s_mock_tick = 0;
 TickType_t xTaskGetTickCount(void) { return s_mock_tick; }
@@ -155,6 +163,10 @@ static void reset_cwsl_mocks(void)
     s_scene_clear_all_count = 0;
     s_mock_uart_ret = 0;
     s_mock_tick = 0;
+    s_mock_led_pulse_duration = 0;
+    s_mock_led_pulse_count = 0;
+    s_mock_ble_beacon_cmd_id = 0;
+    s_mock_ble_beacon_count = 0;
 }
 
 int main(void)
@@ -485,25 +497,36 @@ int main(void)
         assert(s_publish_count == 1);
         assert(strstr(s_last_published, "\"wake\":1") != NULL);
 
-        /* Voice notify on scene command (cmd_id 56) triggers MQTT 224 AND LED 200ms pulse */
+        /* Voice notify on scene command (cmd_id 56) triggers MQTT 224, LED 200ms pulse, AND BLE beacon */
         reset_cwsl_mocks();
-        s_mock_led_pulse_count = 0;
         app_cwsl_notify_voice_cmd(56U, 255U);
         assert(s_publish_count == 1);
         assert(strcmp(s_last_published, "{\"voiceboxv1\":224,\"cmd_id\":56,\"cwsl\":255}") == 0);
         assert(s_mock_led_pulse_count == 1);
         assert(s_mock_led_pulse_duration == 200);
+        assert(s_mock_ble_beacon_count == 1);
+        assert(s_mock_ble_beacon_cmd_id == 56U);
 
-        /* Voice notify on wake word (cmd_id 1) triggers MQTT 224 but NOT LED pulse */
+        /* Voice notify on default voice command (cmd_id 7) triggers MQTT 224, LED 200ms pulse, AND BLE beacon */
         reset_cwsl_mocks();
-        s_mock_led_pulse_count = 0;
+        app_cwsl_notify_voice_cmd(7U, 255U);
+        assert(s_publish_count == 1);
+        assert(strcmp(s_last_published, "{\"voiceboxv1\":224,\"cmd_id\":7,\"cwsl\":255}") == 0);
+        assert(s_mock_led_pulse_count == 1);
+        assert(s_mock_led_pulse_duration == 200);
+        assert(s_mock_ble_beacon_count == 1);
+        assert(s_mock_ble_beacon_cmd_id == 7U);
+
+        /* Voice notify on wake word (cmd_id 1) triggers MQTT 224 but NOT LED pulse or BLE beacon */
+        reset_cwsl_mocks();
         app_cwsl_notify_voice_cmd(1U, 255U);
         assert(s_publish_count == 1);
         assert(strcmp(s_last_published, "{\"voiceboxv1\":224,\"cmd_id\":1,\"cwsl\":255}") == 0);
         assert(s_mock_led_pulse_count == 0);
+        assert(s_mock_ble_beacon_count == 0);
 
         device_type = 0; /* restore */
-        printf("  PASS: VOICEBOX wake-only CWSL validation, MQTT 224, and 200ms LED pulse verified\n");
+        printf("  PASS: VOICEBOX wake-only CWSL validation, MQTT 224, BLE beacon, and 200ms LED pulse verified\n");
     }
 
     printf("\nALL 6 CWSL TEST SCENARIOS PASSED 100%%!\n");

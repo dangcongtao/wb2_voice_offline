@@ -1970,9 +1970,13 @@ void aiio_ci13162_uart_process(void)
         }
 
         if (device_type == VOICEBOX) {
-            if (message.command == AIIO_CI13162_CMD_SCENE) {
-                os_trace("[CI13162] scene=%u\r\n",
-                         (unsigned int)message.data[0]);
+            if (message.command == AIIO_CI13162_CMD_SCENE ||
+                message.command == AIIO_CI13162_CMD_TURN ||
+                message.command == AIIO_CI13162_CMD_MODE ||
+                message.command == AIIO_CI13162_CMD_TIMER) {
+                os_trace("[CI13162] voicebox cmd=0x%02X cmd_id=%u\r\n",
+                         (unsigned int)message.command,
+                         (unsigned int)message.cmd_id);
                 app_cwsl_notify_voice_cmd(message.cmd_id, message.cwsl);
             } else if (message.command == AIIO_CI13162_CMD_RESET) {
 #if DEBUG_ENABLE == 1

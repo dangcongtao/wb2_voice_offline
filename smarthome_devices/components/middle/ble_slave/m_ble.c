@@ -123,9 +123,13 @@ static void ble_user_init(void)
     bleuart_connect_status = 0;
 }
 
+bool ble_is_inited(void)
+{
+    return (is_inited != 0);
+}
+
 bool ble_init_queue(void)
 {
-    is_inited = 1;
     if (ble_tx_queue == NULL)
     {
         ble_tx_queue = xQueueCreate(BLE_MAX_QUEUE_ITEM, sizeof(m_ble_data_t));
@@ -150,6 +154,7 @@ m_ble_data_t message;
 void ble_init_first(void)
 {
     ble_user_init();
+    is_inited = 1;
 
     memset(&message, 0, sizeof(message));
     memset(msg_aes, 0, sizeof(msg_aes));
@@ -157,7 +162,14 @@ void ble_init_first(void)
 
 void ble_loop(void)
 {
-    if (is_inited && xQueueReceive(ble_tx_queue, &message, 0) == pdPASS)
+    if (!is_inited)
+    {
+        return;
+    }
+
+    m_ble_beacon_loop();
+
+    if (xQueueReceive(ble_tx_queue, &message, 0) == pdPASS)
     {
         os_trace("[%s]:\r\n", message.data);
 

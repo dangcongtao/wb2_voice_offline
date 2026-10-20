@@ -193,14 +193,17 @@ static void app_startup_message(void)
     if (device_type == VOICEBOX)
     {
         uint8_t vol = 0;
+        uint8_t mac_bt[6] = {0};
         uint8_t buzz_enabled = (app_databse._fan_info != NULL) ? !app_databse._fan_info->disable_buzz : 1U;
         int32_t vol_ret = aiio_ci13162_uart_get_volume(&vol);
         uint8_t vol_val = (vol_ret == 0) ? vol : 7U;
+        m_ble_get_mac_addr(mac_bt);
 
         sprintf(respond,
                 "{\"%s\":100,\"reason\":%lu,\"id\":\"%s\",\"ver\":%s,\"voice_ver\":%lu,"
                 "\"ssid\":\"%s\",\"streng\":%d,\"ip\":\"%s\",\"vermqtt\":%lu,"
-                "\"buzz\":%u,\"volume\":%u}",
+                "\"buzz\":%u,\"volume\":%u,"
+                "\"mac_bt\":\"%02x:%02x:%02x:%02x:%02x:%02x\"}",
                 gs_dev_type[device_type],
                 num_send * 100U + last_reason_reset * 10U + (uint32_t)bl_sys_rstinfo_get_hun(),
                 m_db_get_instance()->_get_dev_id(),
@@ -211,7 +214,8 @@ static void app_startup_message(void)
                 app_databse._wifi_info->_ip,
                 app_databse._mqtt_info->vermqtt,
                 buzz_enabled,
-                vol_val);
+                vol_val,
+                mac_bt[0], mac_bt[1], mac_bt[2], mac_bt[3], mac_bt[4], mac_bt[5]);
     }
     else
     {
@@ -938,14 +942,17 @@ static void app_get_info(cJSON *jsRoot)
     if (device_type == VOICEBOX)
     {
         uint8_t vol = 0;
+        uint8_t mac_bt[6] = {0};
         uint8_t buzz_enabled = (app_databse._fan_info != NULL) ? !app_databse._fan_info->disable_buzz : 1U;
         int32_t vol_ret = aiio_ci13162_uart_get_volume(&vol);
         uint8_t vol_val = (vol_ret == 0) ? vol : 7U;
+        m_ble_get_mac_addr(mac_bt);
 
         sprintf(respond,
                 "{\"%s\":%ld,\"u\":0,\"id\":\"%s\",\"ver\":%s,\"voice_ver\":%lu,"
                 "\"extras\":%d,\"ssid\":\"%s\",\"streng\":%d,\"ip\":\"%s\","
-                "\"buzz\":%u,\"volume\":%u}",
+                "\"buzz\":%u,\"volume\":%u,"
+                "\"mac_bt\":\"%02x:%02x:%02x:%02x:%02x:%02x\"}",
                 gs_dev_type[device_type], (long)type,
                 m_db_get_instance()->_get_dev_id(), FIRMWARE_VERSION,
                 (unsigned long)aiio_ci13162_uart_get_voice_version(), EXTRAS,
@@ -953,7 +960,8 @@ static void app_get_info(cJSON *jsRoot)
                 app_databse._wifi_info->_rssi,
                 app_databse._wifi_info->_ip,
                 buzz_enabled,
-                vol_val);
+                vol_val,
+                mac_bt[0], mac_bt[1], mac_bt[2], mac_bt[3], mac_bt[4], mac_bt[5]);
     }
     else
     {
