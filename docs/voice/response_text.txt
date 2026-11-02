@@ -1,0 +1,199 @@
+CÂU TRẢ LỜI CỦA MODULE GIỌNG NÓI THEO TỪNG GIỌNG
+
+- id: response id, MCU gửi làm value trong CMD_RESP_SET {"cmd":15,"data":[cmd_id, id]}.
+  value 0 = ngẫu nhiên, 1 = câu mặc định của lệnh (với wake word là câu id 1).
+- Giọng chọn bằng CMD_VOICE_SET {"cmd":17,"data":[1..4]}.
+- Cùng một id, mỗi giọng nói một câu khác nhau (cùng ý), xem 4 bảng dưới.
+- id 11..19, 70, 71 chip tự phát (học lệnh, khởi động, đi ngủ), không gắn với lệnh nào.
+
+NAM BẮC (giọng 1):
+   1 - Dạ có em nghe
+   2 - Dạ có em đây
+   3 - Dạ anh chị gọi em ạ
+
+  11 - Dạ lệnh mới là gì ạ
+  12 - Dạ em chưa nghe rõ rồi
+  13 - Dạ câu này ngắn quá ạ
+  14 - Dạ câu này trùng mất rồi ạ
+  15 - Dạ em học được rồi
+  16 - Dạ em chưa học được ạ
+  17 - Dạ bộ nhớ em đầy mất rồi
+  18 - Dạ em xóa thất bại rồi
+  19 - Dạ em sẽ dừng học lệnh ạ
+
+  40 - Đã giảm âm lượng ạ
+  41 - Đã tăng âm lượng ạ
+  42 - Dạ nhỏ nhất rồi ạ
+  43 - Dạ lớn nhất rồi ạ
+  44 - Em đã tắt tiếng ạ
+  45 - Em đã bật tiếng ạ
+
+  46 - Đã thực hiện hành động
+  47 - Em làm rồi ạ
+
+  50 - Dạ em bật đèn rồi
+  51 - Dạ em tắt đèn rồi
+  52 - Dạ em bật điều hòa rồi ạ
+  53 - Dạ em tắt điều hòa rồi ạ
+  54 - Dạ em bật quạt rồi ạ
+  55 - Dạ em tắt quạt rồi ạ
+  56 - Dạ em bật ti vi rồi ạ
+  57 - Dạ em tắt ti vi rồi ạ
+  58 - Dạ em mở rèm rồi ạ
+  59 - Dạ em đóng rèm rồi ạ
+  60 - Dạ em bật hết rồi ạ
+  61 - Dạ em tắt hết rồi ạ
+  62 - Dạ chúc anh chị ngủ ngon ạ
+  63 - Dạ anh chị đi cẩn thận ạ
+  64 - Dạ anh chị nghỉ ngơi đi ạ
+  65 - Dạ mừng anh chị về nhà ạ
+  66 - Dạ anh chị dậy rồi ạ
+  67 - Dạ chúc anh chị xem phim vui vẻ
+  68 - Dạ em chào cả nhà ạ
+
+  70 - [file welcome.wav]
+  71 - [file sleep.wav]
+
+NỮ BẮC (giọng 2):
+   1 - Dạ em nghe
+   2 - Có em đây ạ
+   3 - Dạ em có thể phục vụ gì ạ
+
+  11 - Dạ câu lệnh mới là gì thế
+  12 - Em chưa nghe rõ rồi
+  13 - Của anh ngắn quá cái khác đi
+  14 - Trùng lệnh mất rồi
+  15 - Em học được rồi
+  16 - Em học thất bại rồi
+  17 - Của em đầy mất rồi
+  18 - Em xóa thất bại rồi
+  19 - Em kết thúc học lệnh nhé
+
+  40 - Em nói đủ bé chưa
+  41 - Nói lớn hơn rồi nhé
+  42 - Vậy để em nói thầm nhé
+  43 - Muốn em mắng anh đấy hả
+  44 - Vâng em sẽ trật tự ạ
+  45 - Được nói chuyện với anh rồi
+
+  46 - Dạ em thực hiện hành động rồi nhé
+  47 - Em làm rồi ạ
+
+  50 - Đèn sáng rồi ạ
+  51 - Em tắt đèn rồi
+  52 - Em bật điều hòa rồi
+  53 - Em tắt điều hòa rồi
+  54 - Em bật quạt rồi ạ
+  55 - Em tắt quạt rồi nhé
+  56 - Em bật ti vi rồi ạ
+  57 - Em tắt ti vi rồi
+  58 - Em mở rèm rồi
+  59 - Em đóng rèm rồi
+  60 - Em bật hết rồi
+  61 - Em tắt hết rồi
+  62 - Chúc anh ngủ ngon nha
+  63 - Anh nhớ về sớm nhé
+  64 - Anh nghỉ ngơi đi nè
+  65 - Mừng anh về nhà
+  66 - Giờ mới chịu dậy đấy hả
+  67 - Chúc anh xem phim vui vẻ nha
+  68 - Mừng mọi người tới chơi ạ
+
+  70 - [file welcome.wav]
+  71 - [file sleep.wav]
+
+NAM MIỀN NAM (giọng 3):
+   1 - Dạ em nghe
+   2 - Dạ có em đây
+   3 - Dạ anh chị gọi em ạ
+
+  11 - Dạ lệnh mới là gì thế ạ
+  12 - Dạ anh chị có thể nói lại không ạ
+  13 - Dạ câu này hơi ngắn rồi
+  14 - Dạ câu này bị trùng rồi ạ
+  15 - Dạ em học được rồi
+  16 - Dạ em học thất bại mất rồi
+  17 - Dạ bộ nhớ của em đầy mất rồi
+  18 - Dạ em xóa thất bại mất rồi
+  19 - Dạ em kết thúc học lệnh nha
+
+  40 - Dạ âm lượng đã giảm rồi ạ
+  41 - Dạ âm lượng đã tăng rồi ạ
+  42 - Dạ em chuyển bé nhất rồi ạ
+  43 - Dạ em chuyển lớn nhất rồi ạ
+  44 - Dạ em tắt âm thanh rồi ạ
+  45 - Dạ em bật âm thanh rồi ạ
+
+  46 - Đã thực hiện hành động
+  47 - Dạ em làm rồi ạ
+
+  50 - Dạ em mở đèn rồi ạ
+  51 - Dạ em tắt đèn rồi ạ
+  52 - Dạ em bật điều hòa rồi
+  53 - Dạ em tắt điều hòa rồi
+  54 - Dạ em bật quạt rồi
+  55 - Dạ em tắt quạt rồi
+  56 - Dạ em bật ti vi rồi
+  57 - Dạ em tắt ti vi rồi
+  58 - Dạ em mở rèm rồi
+  59 - Dạ em đóng rèm rồi
+  60 - Dạ em bật tất cả rồi ạ
+  61 - Dạ em tắt tất cả rồi ạ
+  62 - Dạ em chúc anh chị ngủ ngon
+  63 - Dạ anh chị nhớ về sớm nha
+  64 - Dạ anh chị nghỉ ngơi đi nhé
+  65 - Dạ mừng anh chị về nhà ạ
+  66 - Dạ anh chị dậy rồi ạ
+  67 - Dạ chúc anh chị coi phim vui vẻ nha
+  68 - Dạ anh chị có cần em tiếp giúp không ạ
+
+  70 - [file welcome.wav]
+  71 - [file sleep.wav]
+
+NỮ MIỀN NAM (giọng 4):
+   1 - Dạ có em nghe
+   2 - Có em đây ạ
+   3 - Dạ anh chị cần gì ạ
+
+  11 - Dạ lệnh mới là gì vậy ạ
+  12 - Anh có thể nói lại không ạ
+  13 - Dạ câu này hơi ngắn rồi
+  14 - Dạ câu này bị trùng ạ
+  15 - Dạ em học được rồi
+  16 - Dạ em học thất bại mất rồi
+  17 - Dạ bộ nhớ của em đầy mất rồi
+  18 - Dạ em xóa thất bại rồi
+  19 - Dạ em kết thúc học lệnh nha
+
+  40 - Em giảm âm lượng rồi ạ
+  41 - Em tăng âm lượng rồi ạ
+  42 - Dạ em chuyển bé nhất rồi nha
+  43 - Dạ em chuyển lớn nhất rồi ạ
+  44 - Dạ em tắt âm thanh rồi
+  45 - Dạ em bật âm thanh rồi
+
+  46 - Đã thực hiện hành động
+  47 - Em làm rồi ạ
+
+  50 - Dạ em mở đèn rồi ạ
+  51 - Dạ em tắt đèn rồi
+  52 - Dạ em bật điều hòa rồi
+  53 - Dạ em tắt điều hòa rồi
+  54 - Dạ em bật quạt rồi
+  55 - Dạ em tắt quạt rồi
+  56 - Dạ em bật ti vi rồi
+  57 - Dạ em tắt ti vi rồi
+  58 - Dạ em mở rèm rồi
+  59 - Dạ em đóng rèm rồi
+  60 - Dạ em bật tất cả rồi ạ
+  61 - Dạ em tắt tất cả rồi ạ
+  62 - Dạ chúc anh chị ngủ ngon
+  63 - Dạ anh chị nhớ về sớm ạ
+  64 - Dạ anh chị nghỉ ngơi đi ha
+  65 - Dạ mừng anh chị về nhà ạ
+  66 - Dạ anh chị dậy rồi ạ
+  67 - Dạ chúc anh chị coi phim vui vẻ ạ
+  68 - Dạ em chào cả nhà ạ
+
+  70 - [file welcome.wav]
+  71 - [file sleep.wav]
