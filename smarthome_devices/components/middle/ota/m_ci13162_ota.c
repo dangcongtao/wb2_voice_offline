@@ -18,8 +18,6 @@
 #include "ci13162_ota_fw2.h"
 #include "ci13162_ota_http.h"
 #include "ci13162_ota_protocol.h"
-#include "IRrecv.h"
-#undef IR_RX
 #include "hardware.h"
 #include "m_ble.h"
 #include "m_mqtt.h"
@@ -1142,7 +1140,6 @@ static void ci13162_ota_task(void *argument)
     is_ota = STATE_OTA_PROCESS;
     if (!m_ci13162_ota_boot_is_active()) {
         ble_deinit();
-        m_ir_deinit();
         m_mqtt_stop();
     }
 

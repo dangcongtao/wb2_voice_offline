@@ -25,7 +25,6 @@
 #include "event_driven.h"
 
 #include <bl_wdt.h>
-#include "IRrecv.h"
 #include "m_fan.h"
 #include "hw_uart.h"
 #include "aiio_ci13162_uart.h"
@@ -186,11 +185,6 @@ void main(void)
     if (device_type != VOICEBOX)
     {
         m_fan_init();
-
-#if DEBUG_ENABLE == 1
-        _tolerance = kTolerance;
-#endif
-        m_ir_init();
     }
     else
     {

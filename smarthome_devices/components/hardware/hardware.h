@@ -66,19 +66,12 @@
 #define TS04_IDLE_LEVEL 0
 #define TS04_ACTIVE_LEVEL 1
 
-#define IR_RX 12
-#define IR_RX_POS 1
-
-#define IR_RX_DC 2
-#define IR_RX_DC_POS 1
 #define BAT_LV_PIN 12
 #define BAT_LV_ADC_CHANNEL 0
 #define BAT_CHARGE_STATUS_PIN  17
 
 #define BAT_CHARGE_STATUS_CHARGING 0
 #define BAT_CHARGE_STATUS_DISCHARGING 1
-
-#define IRpin 5
 
 #define LED_COM_PIN 2
 #define SHCP_PIN 21

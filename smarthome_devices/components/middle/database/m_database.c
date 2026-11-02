@@ -13,8 +13,6 @@
 #include <task.h>
 #include <event_groups.h>
 
-#include "IRrecv.h"
-
 char key[16], iv[16];
 
 char s_device_id[64];
@@ -340,7 +338,6 @@ void m_database_init(void)
 
     s_m_database._m_device._mqtt_info = m_mqtt_get_info_reference();
     s_m_database._m_device._wifi_info = m_wifi_get_info_reference();
-    s_m_database._m_device._ac_info = m_ac_info_get_reference();
     s_m_database._m_device._fan_info = m_fan_get_instance();
 
     s_m_database._set_dev_pair_state = m_db_dev_set_pair;

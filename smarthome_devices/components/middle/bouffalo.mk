@@ -33,7 +33,6 @@ COMPONENT_ADD_INCLUDEDIRS += 	database \
 								ble_slave \
 								http \
 								event_driven \
-								ir \
 								fan \
 
 ## not be exported to project level
@@ -75,50 +74,7 @@ COMPONENT_SRCS := database/m_database.c \
 				  fan/m_fan_control.c \
 				  fan/m_fan_event.c \
 				  fan/m_fan.c \
-				  fan/m_ft62f28.c \
-				  ir/IRrecv.c \
-				  ir/IRutils.c \
-				  ir/IRtimer.c \
-				  ir/IRsend.c \
-				  ir/ir_LG.c \
-				  ir/ir_NEC.c \
-				  ir/ir_Samsung.c \
-				  ir/ir_Funiki.c \
-				  ir/ir_Casper.c \
-				  ir/ir_Toshiba.c \
-				  ir/ir_Daikin.c \
-				  ir/ir_Gree.c \
-				  ir/ir_Mitsubishi.c \
-				  ir/ir_Nagakawa.c \
-				  ir/ir_Tcl.c \
-				  ir/ir_Midea.c \
-				  ir/ir_Sharp.c \
-				  ir/ir_Hitachi.c \
-				  ir/ir_Panasonic.c \
-				  ir/ir_Electra.c \
-				  ir/ir_MitsubishiHeavy.c \
-				  ir/ir_Airwell.c \
-				  ir/ir_Fujitsu.c \
-				  ir/ir_Vestel.c \
-				  ir/ir_Sanyo.c \
-				  ir/ir_Coolix.c \
-				  ir/ir_Kelvinator.c \
-				  ir/ir_Carrier.c \
-				  ir/ir_Haier.c \
-				  ir/ir_Teco.c \
-				  ir/ir_Mirage.c \
-				  ir/ir_Amcor.c \
-				  ir/ir_Whirlpool.c \
-				  ir/ir_Neoclima.c \
-				  ir/ir_York.c \
-				  ir/ir_Corona.c \
-				  ir/ir_Trotec.c \
-				  ir/ir_Argo.c \
-				  ir/ir_Delonghi.c \
-				  ir/ir_Bosch.c \
-				  ir/ir_Voltas.c \
-				  ir/ir_Goodweather.c \
-				  ir/ir_SaijoDenki.c
+				  fan/m_ft62f28.c
 				  
 COMPONENT_OBJS := $(patsubst %.c,%.o, $(COMPONENT_SRCS))
 

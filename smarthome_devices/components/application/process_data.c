@@ -27,14 +27,10 @@
 
 #include "m_http_services.h"
 #include "bl_sys.h"
-#include "IRremoteWB2.h"
-#include "IRsend.h"
-#include "IRrecv.h"
 #include "hardware.h"
 #include "event_driven.h"
 #include "m_fan_event.h"
 #include "m_fan.h"
-#include "app_ir.h"
 #include "flash_api.h"
 #include "m_fan_control.h"
 #include "app_fan.h"
@@ -74,13 +70,6 @@ static void app_set_power_saving(cJSON *js_Root);
 static void app_set_auto_threshold(cJSON *js_Root);
 static void app_get_auto_threshold(cJSON *js_Root);
 
-// IR
-extern void ir_control(cJSON *jsRoot);
-extern void ir_start_learn(cJSON *jsRoot);
-extern void ir_stop_learn(cJSON *jsRoot);
-extern void ir_start_learn_auto(cJSON *jsRoot);
-extern void ir_stop_learn_auto(cJSON *jsRoot);
-
 // ble
 static void ble_config_step1(cJSON *jsRoot);
 static void ble_config_step2(cJSON *jsRoot);
@@ -104,12 +93,6 @@ wswitch_handler_t array_handler[] = {
     {app_set_static_ip, 132},
     // {app_set_lock, 133},
     {app_backup_db, 151},
-
-    {ir_control, 1},
-    {ir_start_learn, 2},
-    {ir_stop_learn, 4},
-    {ir_start_learn_auto, 15},
-    {ir_stop_learn_auto, 16},
 
     // fan
     {app_control_fan, 20},
@@ -1562,10 +1545,6 @@ void app_handler_msg_task(void *arg)
         {
             ble_loop();
             m_mqtt_get_instance()._mqtt_loop();
-            if (device_type != VOICEBOX)
-            {
-                app_ir_send_response_from_remote_brand_check_loop();
-            }
         }
 
         aiio_ci13162_uart_poll();

@@ -30,7 +30,6 @@
 #include "bl_sys.h"
 #include <stdbool.h>
 #include "m_database.h"
-#include "IRrecv.h"
 #include "m_fan.h"
 #include "flash_api.h"
 #include "system_typedef.h"
@@ -207,7 +206,6 @@ int m_ota_start(char *url)
 
     is_ota = STATE_OTA_PROCESS;
     m_fan_prepare_for_ota();
-    m_ir_deinit();
     flash_set_rs_reason(3);
     // os_trace("Free memory: %d\r\n", xPortGetFreeHeapSize());
     m_mqtt_get_instance()._mqtt_stop();

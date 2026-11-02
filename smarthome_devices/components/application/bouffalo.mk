@@ -11,8 +11,7 @@ COMPONENT_SRCS := process_data.c \
                   app_cwsl.c \
                   app_scene.c \
                   app_volume.c \
-                  app_fan.c \
-                  app_ir.c
+                  app_fan.c
 
 COMPONENT_OBJS := $(patsubst %.c,%.o, $(COMPONENT_SRCS))
 

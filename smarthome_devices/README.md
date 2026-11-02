@@ -18,14 +18,3 @@ cp ~/Ai-Thinker-WB2/applications/peripherals/smarthome_devices/Flash_Partition_t
 docker run -it --name "hunonic-wb2" -h dungnt98 --rm -v /home/dungnt98/:/home/dungnt98/ --device=/dev/ttyUSB0 ntdungembedded98/hunonic-esp8266
 sudo chmod 777 /dev/ttyUSB0 && make -j16 && make flash b=921600 && picocom /dev/ttyUSB0 -b 115200 --logfile=log-$(date +%s).txt
 # to exit screen serial log: press sequence keys as: Ctrl+A -> k -> y
-
-IR:
-trước khi gửi lệnh phải có hàm: 
-vTaskEnterCritical();
-sau khi gửi xong thì dùng hàm:
-vTaskExitCritical();
-để có thể gửi thành công
-
-nếu khi gửi mà nhận đc data ở IRrecv thì cần sử dụng 2 hàm trên khi gửi
-
-Casper là biến thể của WhirlpoolAC

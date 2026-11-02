@@ -15,7 +15,6 @@
 
 #define WIFI_INFO "wifi_info"
 #define MQTT_INFO "mqtt_info"
-#define AC_INFO "ac_info"
 #define FAN_INFO "fan_info"
 #define PAIR_STATE "pair_state"
 #define VERSION_INFO "ver"
@@ -58,17 +57,6 @@ void flash_write_database(m_device_t object_data, uint8_t request_flag)
         ef_set_bytes(MQTT_INFO, (uint8_t *)object_data._mqtt_info, size);
     }
 
-    if (object_data._ac_info == NULL)
-    {
-        os_trace("object_data._ac_info NULL\r\n");
-    }
-    else if (GET(request_flag, BIT_FLAG_SYNC_AC))
-    {
-        size = sizeof(m_ac_info_t);
-        os_trace("sync ac info %lu\r\n", size);
-        ef_set_bytes(AC_INFO, (uint8_t *)object_data._ac_info, size);
-    }
-
     if (object_data._fan_info== NULL)
     {
         os_trace("object_data._fan_info NULL\r\n");
@@ -104,17 +92,6 @@ void flash_read_database(m_device_t *object_data)
         /* read wifi info */
         size = sizeof(m_wifi_info_t);
         ef_get_bytes(WIFI_INFO, (uint8_t *)object_data->_wifi_info, size);
-    }
-
-    if (object_data->_ac_info == NULL)
-    {
-        os_trace("object_data->_ac_info NULL\r\n");
-    }
-    else
-    {
-        /* read ac info */
-        size = sizeof(m_ac_info_t);
-        ef_get_bytes(AC_INFO, (uint8_t *)object_data->_ac_info, size);
     }
 
     if (object_data->_fan_info == NULL)
