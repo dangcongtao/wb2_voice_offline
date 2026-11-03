@@ -121,6 +121,13 @@ bool app_volume_is_pending(void)
     return false;
 }
 
+static bool s_mock_voice_pending = false;
+
+bool app_voice_is_pending(void)
+{
+    return s_mock_voice_pending;
+}
+
 bool app_scene_is_pending(void)
 {
     return false;
@@ -826,6 +833,29 @@ int main(void)
         printf("  PASS: Scene respond_id edit verified\n");
     }
 
-    printf("\nALL 9 CWSL TEST SCENARIOS PASSED 100%%!\n");
+    /* TEST 10: CWSL refuses with code 67 while a voice request is pending (230/231) */
+    {
+        printf("--- Test 10: Voice pending blocks CWSL ---\n");
+        reset_cwsl_mocks();
+        reset_cwsl_sessions();
+        s_mock_voice_pending = true;
+        int sent = s_uart_send_count;
+        cJSON *req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":7,\"slot\":255,\"u\":1001,\"act_id\":1}");
+        app_cwsl_learn(req); cJSON_Delete(req);
+        assert(strstr(s_last_published, "\"code\":67") != NULL && s_uart_send_count == sent);
+        assert(app_cwsl_start_scene_learn(56U, 1U, 0U, 47U) == 67U);
+        assert(app_cwsl_start_scene_delete(56U, 1U, 0U) == 67U);
+        assert(app_cwsl_start_scene_resp_set(56U, 47U) == 67U);
+        req = cJSON_Parse("{\"fanoem\":222,\"u\":1001,\"act_id\":1}");
+        app_cwsl_stop(req); cJSON_Delete(req);
+        assert(strstr(s_last_published, "\"code\":67") != NULL);
+        req = cJSON_Parse("{\"fanoem\":223,\"cmd_id\":255,\"u\":1001,\"act_id\":1}");
+        app_cwsl_query(req); cJSON_Delete(req);
+        assert(strstr(s_last_published, "\"code\":67") != NULL && s_uart_send_count == sent);
+        s_mock_voice_pending = false;
+        printf("  PASS: Voice pending blocks CWSL\n");
+    }
+
+    printf("\nALL 10 CWSL TEST SCENARIOS PASSED 100%%!\n");
     return 0;
 }

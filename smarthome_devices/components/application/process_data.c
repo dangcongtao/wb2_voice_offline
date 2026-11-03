@@ -36,6 +36,7 @@
 #include "app_fan.h"
 #include "app_cwsl.h"
 #include "app_volume.h"
+#include "app_voice.h"
 #include "app_scene.h"
 
 char respond[512];
@@ -118,6 +119,8 @@ wswitch_handler_t array_handler[] = {
     {app_scene_add, 227},
     {app_scene_delete, 228},
     {app_scene_query, 229},
+    {app_voice_set, 230},
+    {app_voice_get, 231},
 };
 
 wswitch_handler_t array_ble_handler[] = {
@@ -186,7 +189,7 @@ static void app_startup_message(void)
         sprintf(respond,
                 "{\"%s\":100,\"reason\":%lu,\"id\":\"%s\",\"ver\":%s,\"voice_ver\":%lu,"
                 "\"ssid\":\"%s\",\"streng\":%d,\"ip\":\"%s\",\"vermqtt\":%lu,"
-                "\"buzz\":%u,\"volume\":%u,"
+                "\"buzz\":%u,\"volume\":%u,\"voice_id\":%u,"
                 "\"mac_bt\":\"%02x:%02x:%02x:%02x:%02x:%02x\"}",
                 gs_dev_type[device_type],
                 num_send * 100U + last_reason_reset * 10U + (uint32_t)bl_sys_rstinfo_get_hun(),
@@ -199,6 +202,7 @@ static void app_startup_message(void)
                 app_databse._mqtt_info->vermqtt,
                 buzz_enabled,
                 vol_val,
+                (unsigned int)aiio_ci13162_uart_get_voice_id(),
                 mac_bt[0], mac_bt[1], mac_bt[2], mac_bt[3], mac_bt[4], mac_bt[5]);
     }
     else
@@ -935,7 +939,7 @@ static void app_get_info(cJSON *jsRoot)
         sprintf(respond,
                 "{\"%s\":%ld,\"u\":0,\"id\":\"%s\",\"ver\":%s,\"voice_ver\":%lu,"
                 "\"extras\":%d,\"ssid\":\"%s\",\"streng\":%d,\"ip\":\"%s\","
-                "\"buzz\":%u,\"volume\":%u,"
+                "\"buzz\":%u,\"volume\":%u,\"voice_id\":%u,"
                 "\"mac_bt\":\"%02x:%02x:%02x:%02x:%02x:%02x\"}",
                 gs_dev_type[device_type], (long)type,
                 m_db_get_instance()->_get_dev_id(), FIRMWARE_VERSION,
@@ -945,6 +949,7 @@ static void app_get_info(cJSON *jsRoot)
                 app_databse._wifi_info->_ip,
                 buzz_enabled,
                 vol_val,
+                (unsigned int)aiio_ci13162_uart_get_voice_id(),
                 mac_bt[0], mac_bt[1], mac_bt[2], mac_bt[3], mac_bt[4], mac_bt[5]);
     }
     else
@@ -1087,9 +1092,10 @@ static void app_request_ota(cJSON *jsRoot)
     if (m_ci13162_ota_is_busy() ||
         m_ota_is_busy() ||
         app_cwsl_is_pending() ||
-        app_volume_is_pending())
+        app_volume_is_pending() ||
+        app_voice_is_pending())
     {
-        os_trace("OTA, CWSL, or volume operation already in progress\r\n");
+        os_trace("OTA, CWSL, volume, or voice operation already in progress\r\n");
         goto RESPONSE;
     }
 
@@ -1149,7 +1155,8 @@ static void app_request_ci13162_ota(cJSON *jsRoot)
         m_ci13162_ota_is_busy() ||
         m_ota_is_busy() ||
         app_cwsl_is_pending() ||
-        app_volume_is_pending())
+        app_volume_is_pending() ||
+        app_voice_is_pending())
     {
         goto RESPONSE;
     }
@@ -1452,6 +1459,7 @@ void app_handler_msg_task(void *arg)
         aiio_ci13162_uart_process();
         app_cwsl_poll();
         app_volume_poll();
+        app_voice_poll();
 
         if (xQueueReceive(pqueue, &message_rcv_mqtt, 0) == pdPASS)
         {
@@ -1562,6 +1570,7 @@ void process_data_init(void)
     app_cwsl_init();
     app_scene_init();
     app_volume_init();
+    app_voice_init();
     pdata_queue_init();
     ble_init_queue();
     m_mqtt_command_startup_register_handler(app_startup_message);

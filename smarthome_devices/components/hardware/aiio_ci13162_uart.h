@@ -40,6 +40,20 @@ typedef void (*aiio_ci13162_cwsl_info_cb_t)(uint8_t cmd_id,
  */
 typedef void (*aiio_ci13162_resp_set_cb_t)(uint8_t applied);
 
+/** @brief Handle the chip reply to CMD_VOICE_SET (cmd 17).
+ *
+ *  @param[in]  applied  1 when the chip applied the voice, 0 when rejected.
+ *  @return     None.
+ */
+typedef void (*aiio_ci13162_voice_set_cb_t)(uint8_t applied);
+
+/** @brief Handle the chip reply to CMD_VOICE_GET (cmd 18).
+ *
+ *  @param[in]  voice_id  Voice currently selected on the chip, 1..4.
+ *  @return     None.
+ */
+typedef void (*aiio_ci13162_voice_get_cb_t)(uint8_t voice_id);
+
 /** @brief Handle one speaker volume response received from the CI13162.
  *
  *  @param[in]  level   Current speaker volume level from 0 to 7, where 0 is mute.
@@ -196,11 +210,49 @@ void aiio_ci13162_uart_set_volume_callback(
  */
 int32_t aiio_ci13162_uart_get_volume(uint8_t *level);
 
+/** @brief Send one voice select request (cmd 17) to the CI13162.
+ *
+ *  @param[in]  voice_id  Voice to select, 1..4.
+ *  @return     Send status.
+ *  @retval     0  Request `{"cmd":17,"data":[voice_id]}` was sent.
+ *  @retval     -1 Invalid voice_id, UART unavailable, OTA active, or send failure.
+ *  @note       The cache is updated only when the chip replies `[1]`.
+ */
+int32_t aiio_ci13162_uart_send_voice_set(uint8_t voice_id);
+
+/** @brief Query the selected voice (cmd 18) from the CI13162.
+ *
+ *  @return     Send status.
+ *  @retval     0  Query `{"cmd":18,"data":[]}` was sent.
+ *  @retval     -1 UART unavailable, OTA active, or send failure.
+ */
+int32_t aiio_ci13162_uart_query_voice(void);
+
+/** @brief Register the application callbacks for voice replies (cmd 17/18).
+ *
+ *  @param[in]  set_cb  Callback for cmd 17 replies, or NULL to disable.
+ *  @param[in]  get_cb  Callback for cmd 18 replies, or NULL to disable.
+ *  @return     None.
+ */
+void aiio_ci13162_uart_set_voice_callbacks(aiio_ci13162_voice_set_cb_t set_cb,
+                                           aiio_ci13162_voice_get_cb_t get_cb);
+
+/** @brief Read the cached voice id.
+ *
+ *  @return     Cached voice 1..4, or 0 when unknown.
+ *  @note       This function never sends a UART request. The driver asks the chip
+ *              only after the version reply arrives and only while the cache is 0,
+ *              up to 3 times, 1000 ms apart. The query is paused while CWSL
+ *              pauses the version query and while OTA holds the UART.
+ */
+uint8_t aiio_ci13162_uart_get_voice_id(void);
+
 /** @brief Pause or resume automatic CI13162 version requests.
  *
  *  @param[in]  paused  Non-zero to pause requests, zero to resume them.
  *  @return     None.
  *  @note       Incoming version responses are still cached while paused.
+ *              The boot-time voice query (cmd 18) is held while paused too.
  */
 void aiio_ci13162_uart_set_version_query_paused(uint8_t paused);
 

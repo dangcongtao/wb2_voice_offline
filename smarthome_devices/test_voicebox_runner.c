@@ -359,7 +359,7 @@ int main(void) {
         sprintf(respond,
                 "{\"%s\":100,\"reason\":%lu,\"id\":\"%s\",\"ver\":%s,\"voice_ver\":%lu,"
                 "\"ssid\":\"%s\",\"streng\":%d,\"ip\":\"%s\",\"vermqtt\":%lu,"
-                "\"buzz\":%u,\"volume\":%u,"
+                "\"buzz\":%u,\"volume\":%u,\"voice_id\":%u,"
                 "\"mac_bt\":\"%02x:%02x:%02x:%02x:%02x:%02x\"}",
                 gs_dev_type[VOICEBOX],
                 (unsigned long)(num_send * 100U + 0U + 1U),
@@ -372,6 +372,7 @@ int main(void) {
                 (unsigned long)vermqtt,
                 buzz_enabled,
                 vol_val,
+                2U,
                 mac_bt[0], mac_bt[1], mac_bt[2], mac_bt[3], mac_bt[4], mac_bt[5]);
 
         /* Parse generated JSON and verify fields */
@@ -389,6 +390,7 @@ int main(void) {
         assert(cJSON_GetObjectItem(root, "vermqtt") != NULL);
         assert(cJSON_GetObjectItem(root, "buzz") != NULL);
         assert(cJSON_GetObjectItem(root, "volume") != NULL);
+        assert(cJSON_GetObjectItem(root, "voice_id") != NULL);
         assert(cJSON_GetObjectItem(root, "mac_bt") != NULL);
         assert(strcmp(cJSON_GetObjectItem(root, "mac_bt")->valuestring, "aa:bb:cc:dd:ee:ff") == 0);
 

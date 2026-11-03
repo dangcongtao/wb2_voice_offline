@@ -110,7 +110,8 @@ int hosal_uart_callback_set(hosal_uart_dev_t *dev, int c, int (*p)(void *), void
 }
 
 void vTaskDelay(TickType_t xTicksToDelay) { (void)xTicksToDelay; }
-TickType_t xTaskGetTickCount(void) { return 0; }
+static TickType_t s_mock_tick = 0;
+TickType_t xTaskGetTickCount(void) { return s_mock_tick; }
 size_t xStreamBufferReceive(StreamBufferHandle_t xStreamBuffer, void *pvRxData, size_t xBufferLengthBytes, TickType_t xTicksToWait) {
     (void)xStreamBuffer; (void)pvRxData; (void)xBufferLengthBytes; (void)xTicksToWait; return 0;
 }
@@ -280,7 +281,50 @@ static void test_resp_set_cb(uint8_t applied) {
     s_resp_set_cb_last = applied;
 }
 
+static int s_voice_set_cb_count;
+static uint8_t s_voice_set_cb_last;
+static int s_voice_get_cb_count;
+static uint8_t s_voice_get_cb_last;
+static void test_voice_set_cb(uint8_t applied) {
+    s_voice_set_cb_count++;
+    s_voice_set_cb_last = applied;
+}
+static void test_voice_get_cb(uint8_t voice_id) {
+    s_voice_get_cb_count++;
+    s_voice_get_cb_last = voice_id;
+}
+
+static aiio_ci13162_parse_result_t parse(const char *line) {
+    aiio_ci13162_message_t msg;
+    return aiio_ci13162_parse_line(line, &msg);
+}
+
+static void queue_and_process(uint8_t command, uint8_t value) {
+    aiio_ci13162_message_t m = {.command = command, .data_count = 1U, .data = {value}};
+    xQueueSend(NULL, &m, 0U);
+    aiio_ci13162_uart_process();
+}
+
+static void queue_and_process_version(uint32_t version) {
+    aiio_ci13162_message_t m = {.command = AIIO_CI13162_CMD_VERSION, .data_count = 1U, .version = version};
+    xQueueSend(NULL, &m, 0U);
+    aiio_ci13162_uart_process();
+}
+
 static void reset_test_state(void) {
+    s_mock_tick = 0;
+    s_aiio_ci13162_voice_id = 0U;
+    s_aiio_ci13162_voice_set_sent = 0U;
+    s_aiio_ci13162_voice_query_scheduled = 0U;
+    s_aiio_ci13162_voice_query_attempts = 0U;
+    aiio_ci13162_uart_set_voice_callbacks(NULL, NULL);
+    s_voice_set_cb_count = 0;
+    s_voice_set_cb_last = 0U;
+    s_voice_get_cb_count = 0;
+    s_voice_get_cb_last = 0U;
+    s_aiio_ci13162_voice_version_valid = 0U;
+    s_aiio_ci13162_version_query_scheduled = 0U;
+    s_aiio_ci13162_version_query_paused = 0U;
     memset(&s_mock_fan_info, 0, sizeof(s_mock_fan_info));
     s_last_cwsl_notify_cmd_id = 0;
     s_last_cwsl_notify_cwsl = 0;
@@ -1042,6 +1086,92 @@ int main(void) {
         printf("  PASS: CMD_RESP_SET verified\n");
     }
 
-    printf("\nALL 17 PROTOCOL & HARDWARE TESTS PASSED 100%%!\n");
+    /* TEST 18: CMD_VOICE_SET / CMD_VOICE_GET (cmd 17/18) */
+    {
+        printf("--- Test 18: CMD_VOICE_SET / CMD_VOICE_GET (cmd 17/18) ---\n");
+        reset_test_state();
+        assert(aiio_ci13162_uart_send_voice_set(2U) == 0);
+        assert(strcmp((char *)s_uart_tx_buf, "{\"cmd\":17,\"data\":[2]}\r\n") == 0);
+        assert(aiio_ci13162_uart_send_voice_set(0U) == -1);
+        assert(aiio_ci13162_uart_send_voice_set(5U) == -1);
+        assert(aiio_ci13162_uart_query_voice() == 0);
+        assert(strcmp((char *)s_uart_tx_buf, "{\"cmd\":18,\"data\":[]}\r\n") == 0);
+        s_aiio_ci13162_ota_held = 1U;
+        assert(aiio_ci13162_uart_send_voice_set(2U) == -1);
+        assert(aiio_ci13162_uart_query_voice() == -1);
+        s_aiio_ci13162_ota_held = 0U;
+        /* parser */
+        assert(parse("{\"cmd\":17,\"data\":[1]}") == AIIO_CI13162_PARSE_OK);
+        assert(parse("{\"cmd\":17,\"data\":[0]}") == AIIO_CI13162_PARSE_OK);
+        assert(parse("{\"cmd\":17,\"data\":[2]}") == AIIO_CI13162_PARSE_INVALID_DATA);
+        assert(parse("{\"cmd\":17,\"data\":[]}") == AIIO_CI13162_PARSE_INVALID_DATA);
+        assert(parse("{\"cmd\":17,\"data\":[1],\"cmd_id\":1,\"cwsl\":255}") == AIIO_CI13162_PARSE_INVALID_FORMAT);
+        assert(parse("{\"cmd\":18,\"data\":[1]}") == AIIO_CI13162_PARSE_OK);
+        assert(parse("{\"cmd\":18,\"data\":[4]}") == AIIO_CI13162_PARSE_OK);
+        assert(parse("{\"cmd\":18,\"data\":[0]}") == AIIO_CI13162_PARSE_INVALID_DATA);
+        assert(parse("{\"cmd\":18,\"data\":[5]}") == AIIO_CI13162_PARSE_INVALID_DATA);
+        assert(parse("{\"cmd\":18,\"data\":[]}") == AIIO_CI13162_PARSE_INVALID_DATA);
+        assert(parse("{\"cmd\":18,\"data\":[1,2]}") == AIIO_CI13162_PARSE_INVALID_DATA);
+        /* dispatch + cache */
+        aiio_ci13162_uart_set_voice_callbacks(test_voice_set_cb, test_voice_get_cb);
+        assert(aiio_ci13162_uart_get_voice_id() == 0U);
+        assert(aiio_ci13162_uart_send_voice_set(3U) == 0);
+        queue_and_process(AIIO_CI13162_CMD_VOICE_SET, 1U);  /* reply may come any time later */
+        assert(s_voice_set_cb_count == 1 && s_voice_set_cb_last == 1U);
+        assert(aiio_ci13162_uart_get_voice_id() == 3U);
+        queue_and_process(AIIO_CI13162_CMD_VOICE_SET, 1U);  /* unsolicited: no value was sent */
+        assert(s_voice_set_cb_count == 2 && aiio_ci13162_uart_get_voice_id() == 3U);
+        assert(aiio_ci13162_uart_send_voice_set(2U) == 0);
+        queue_and_process(AIIO_CI13162_CMD_VOICE_SET, 0U);
+        assert(s_voice_set_cb_last == 0U && aiio_ci13162_uart_get_voice_id() == 3U);
+        queue_and_process(AIIO_CI13162_CMD_VOICE_GET, 4U);
+        assert(s_voice_get_cb_count == 1 && s_voice_get_cb_last == 4U);
+        assert(aiio_ci13162_uart_get_voice_id() == 4U);
+        printf("  PASS: CMD_VOICE_SET/GET verified\n");
+    }
+
+    /* TEST 19: boot voice query after version */
+    {
+        printf("--- Test 19: boot voice query after version ---\n");
+        reset_test_state();
+        queue_and_process_version(261102U);
+        int base = s_uart_tx_count;
+        aiio_ci13162_uart_poll();
+        assert(s_uart_tx_count == base + 1);
+        assert(strcmp((char *)s_uart_tx_buf, "{\"cmd\":18,\"data\":[]}\r\n") == 0);
+        s_mock_tick = 999;  aiio_ci13162_uart_poll(); assert(s_uart_tx_count == base + 1);
+        s_mock_tick = 1000; aiio_ci13162_uart_poll(); assert(s_uart_tx_count == base + 2);
+        s_mock_tick = 2000; aiio_ci13162_uart_poll(); assert(s_uart_tx_count == base + 3);
+        s_mock_tick = 3000; aiio_ci13162_uart_poll(); assert(s_uart_tx_count == base + 3);   /* max 3 */
+        queue_and_process(AIIO_CI13162_CMD_VOICE_GET, 2U);
+        assert(aiio_ci13162_uart_get_voice_id() == 2U);
+
+        /* stops once the cache is valid */
+        reset_test_state();
+        queue_and_process_version(261102U);
+        aiio_ci13162_uart_poll();
+        queue_and_process(AIIO_CI13162_CMD_VOICE_GET, 3U);
+        base = s_uart_tx_count;
+        s_mock_tick = 1000; aiio_ci13162_uart_poll(); assert(s_uart_tx_count == base);
+
+        /* paused (CWSL session) holds the query without spending attempts */
+        reset_test_state();
+        aiio_ci13162_uart_set_version_query_paused(1U);
+        queue_and_process_version(261102U);
+        base = s_uart_tx_count;
+        aiio_ci13162_uart_poll(); assert(s_uart_tx_count == base);
+        aiio_ci13162_uart_set_version_query_paused(0U);
+        aiio_ci13162_uart_poll(); assert(s_uart_tx_count == base + 1);
+
+        /* no version reply -> no voice query */
+        reset_test_state();
+        base = s_uart_tx_count;
+        s_mock_tick = 5000; aiio_ci13162_uart_poll();
+        assert(s_uart_tx_count == base);
+        assert(strcmp((char *)s_uart_tx_buf, "{\"cmd\":18,\"data\":[]}\r\n") != 0);
+        printf("  PASS: boot voice query verified\n");
+    }
+
+    printf("\nALL 19 PROTOCOL & HARDWARE TESTS PASSED 100%%!\n");
     return 0;
 }

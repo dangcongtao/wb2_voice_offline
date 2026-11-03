@@ -49,6 +49,9 @@ extern void app_send_data(char *data, uint32_t length);
 #define AIIO_CI13162_VERSION_INITIAL_DELAY_MS   3000U
 #define AIIO_CI13162_VERSION_RETRY_DELAY_MS     1000U
 #define AIIO_CI13162_VERSION_MAX_ATTEMPTS       3U
+#define AIIO_CI13162_VOICE_QUERY_RETRY_MS       1000U
+#define AIIO_CI13162_VOICE_QUERY_MAX_ATTEMPTS   3U
+#define AIIO_CI13162_VOICE_ID_MAX               4U
 #define AIIO_CI13162_UART_GPIO_FUNCTION         7U
 #define AIIO_CI13162_UART_DIAG_BUFFER_SIZE      384U
 #define AIIO_CI13162_VOLUME_LEVEL_MIN           1U
@@ -84,6 +87,8 @@ typedef enum {
     AIIO_CI13162_CMD_VOLUME_CHANGE = 13,
     AIIO_CI13162_CMD_STATE = 14,
     AIIO_CI13162_CMD_RESP_SET = 15,
+    AIIO_CI13162_CMD_VOICE_SET = 17,
+    AIIO_CI13162_CMD_VOICE_GET = 18,
     AIIO_CI13162_CMD_BUZZ = 200,
 } aiio_ci13162_command_t;
 
@@ -162,6 +167,13 @@ static uint8_t s_aiio_ci13162_version_query_scheduled;
 static uint8_t s_aiio_ci13162_version_query_paused;
 static uint8_t s_aiio_ci13162_volume;
 static uint8_t s_aiio_ci13162_volume_valid;
+static uint8_t s_aiio_ci13162_voice_id;
+static uint8_t s_aiio_ci13162_voice_set_sent;
+static uint8_t s_aiio_ci13162_voice_query_scheduled;
+static uint8_t s_aiio_ci13162_voice_query_attempts;
+static TickType_t s_aiio_ci13162_voice_query_last_tick;
+static aiio_ci13162_voice_set_cb_t s_aiio_ci13162_voice_set_cb;
+static aiio_ci13162_voice_get_cb_t s_aiio_ci13162_voice_get_cb;
 static aiio_ci13162_cwsl_status_cb_t s_aiio_ci13162_cwsl_status_cb;
 static aiio_ci13162_cwsl_info_cb_t s_aiio_ci13162_cwsl_info_cb;
 static aiio_ci13162_resp_set_cb_t s_aiio_ci13162_resp_set_cb;
@@ -794,6 +806,18 @@ static aiio_ci13162_parse_result_t aiio_ci13162_validate_message(
                        ? AIIO_CI13162_PARSE_OK
                        : AIIO_CI13162_PARSE_INVALID_DATA;
 
+        case AIIO_CI13162_CMD_VOICE_SET:
+            return ((message->data_count == 1U) && (message->data[0] <= 1U))
+                       ? AIIO_CI13162_PARSE_OK
+                       : AIIO_CI13162_PARSE_INVALID_DATA;
+
+        case AIIO_CI13162_CMD_VOICE_GET:
+            return ((message->data_count == 1U) &&
+                    (message->data[0] >= 1U) &&
+                    (message->data[0] <= AIIO_CI13162_VOICE_ID_MAX))
+                       ? AIIO_CI13162_PARSE_OK
+                       : AIIO_CI13162_PARSE_INVALID_DATA;
+
         case AIIO_CI13162_CMD_TIMER:
             if (message->data_count != 1U) {
                 return AIIO_CI13162_PARSE_INVALID_FORMAT;
@@ -1089,6 +1113,31 @@ static void aiio_ci13162_process_version_query(void)
     s_aiio_ci13162_version_last_query_tick = current_tick;
     s_aiio_ci13162_version_query_attempts++;
     (void)aiio_ci13162_uart_request_version();
+}
+
+// Ask the chip for the selected voice after boot, until the cache is valid.
+static void aiio_ci13162_process_voice_query(void)
+{
+    TickType_t current_tick;
+
+    if ((s_aiio_ci13162_voice_query_scheduled == 0U) ||
+        (s_aiio_ci13162_voice_id != 0U) ||
+        (s_aiio_ci13162_voice_query_attempts >= AIIO_CI13162_VOICE_QUERY_MAX_ATTEMPTS) ||
+        (s_aiio_ci13162_ota_held != 0U) ||
+        (s_aiio_ci13162_version_query_paused != 0U)) {
+        return;
+    }
+
+    current_tick = xTaskGetTickCount();
+    if ((s_aiio_ci13162_voice_query_attempts != 0U) &&
+        ((TickType_t)(current_tick - s_aiio_ci13162_voice_query_last_tick) <
+         pdMS_TO_TICKS(AIIO_CI13162_VOICE_QUERY_RETRY_MS))) {
+        return;
+    }
+
+    s_aiio_ci13162_voice_query_last_tick = current_tick;
+    s_aiio_ci13162_voice_query_attempts++;
+    (void)aiio_ci13162_uart_query_voice();
 }
 
 // Queue one validated command for application-context dispatch.
@@ -1856,6 +1905,11 @@ int32_t aiio_ci13162_uart_init(void)
     s_aiio_ci13162_version_query_paused = 0U;
     s_aiio_ci13162_volume = 0U;
     s_aiio_ci13162_volume_valid = 0U;
+    s_aiio_ci13162_voice_id = 0U;
+    s_aiio_ci13162_voice_set_sent = 0U;
+    s_aiio_ci13162_voice_query_scheduled = 0U;
+    s_aiio_ci13162_voice_query_attempts = 0U;
+    s_aiio_ci13162_voice_query_last_tick = 0U;
 
 #if DEBUG_ENABLE == 1
     {
@@ -1941,6 +1995,10 @@ void aiio_ci13162_uart_process(void)
             s_aiio_ci13162_voice_version = message.version;
             s_aiio_ci13162_voice_version_valid = 1U;
             s_aiio_ci13162_version_query_scheduled = 0U;
+            if (s_aiio_ci13162_voice_id == 0U) {
+                s_aiio_ci13162_voice_query_scheduled = 1U;
+                s_aiio_ci13162_voice_query_attempts = 0U;
+            }
             os_trace("[CI13162] version=%lu\r\n", (unsigned long)message.version);
             continue;
         }
@@ -1966,6 +2024,25 @@ void aiio_ci13162_uart_process(void)
         if (message.command == AIIO_CI13162_CMD_RESP_SET) {
             if (s_aiio_ci13162_resp_set_cb != NULL) {
                 s_aiio_ci13162_resp_set_cb(message.data[0]);
+            }
+            continue;
+        }
+
+        if (message.command == AIIO_CI13162_CMD_VOICE_SET) {
+            if ((message.data[0] == 1U) && (s_aiio_ci13162_voice_set_sent != 0U)) {
+                s_aiio_ci13162_voice_id = s_aiio_ci13162_voice_set_sent;
+            }
+            s_aiio_ci13162_voice_set_sent = 0U;
+            if (s_aiio_ci13162_voice_set_cb != NULL) {
+                s_aiio_ci13162_voice_set_cb(message.data[0]);
+            }
+            continue;
+        }
+
+        if (message.command == AIIO_CI13162_CMD_VOICE_GET) {
+            s_aiio_ci13162_voice_id = message.data[0];
+            if (s_aiio_ci13162_voice_get_cb != NULL) {
+                s_aiio_ci13162_voice_get_cb(message.data[0]);
             }
             continue;
         }
@@ -2111,6 +2188,7 @@ void aiio_ci13162_uart_poll(void)
 {
 #if AIIO_CI13162_UART_ENABLE == 1
     aiio_ci13162_process_version_query();
+    aiio_ci13162_process_voice_query();
 #endif
 }
 
@@ -2419,6 +2497,83 @@ void aiio_ci13162_uart_set_resp_set_callback(aiio_ci13162_resp_set_cb_t cb)
     s_aiio_ci13162_resp_set_cb = cb;
 #else
     (void)cb;
+#endif
+}
+
+int32_t aiio_ci13162_uart_send_voice_set(uint8_t voice_id)
+{
+#if AIIO_CI13162_UART_ENABLE == 1
+    char request[40];
+    int request_length;
+    int sent_length;
+
+    if ((voice_id < 1U) ||
+        (voice_id > AIIO_CI13162_VOICE_ID_MAX) ||
+        (s_aiio_ci13162_command_queue == NULL) ||
+        (s_aiio_ci13162_ota_held != 0U)) {
+        return -1;
+    }
+
+    request_length = snprintf(request,
+                              sizeof(request),
+                              "{\"cmd\":17,\"data\":[%u]}\r\n",
+                              (unsigned int)voice_id);
+    if ((request_length <= 0) || ((size_t)request_length >= sizeof(request))) {
+        return -1;
+    }
+
+    sent_length = aiio_ci13162_uart_tx(request,
+                                       (uint32_t)request_length);
+    if (sent_length != request_length) {
+        return -1;
+    }
+
+    s_aiio_ci13162_voice_set_sent = voice_id;
+    return 0;
+#else
+    (void)voice_id;
+    return -1;
+#endif
+}
+
+int32_t aiio_ci13162_uart_query_voice(void)
+{
+#if AIIO_CI13162_UART_ENABLE == 1
+    static const char query[] = "{\"cmd\":18,\"data\":[]}\r\n";
+    int sent_length;
+    uint32_t query_length;
+
+    if ((s_aiio_ci13162_command_queue == NULL) ||
+        (s_aiio_ci13162_ota_held != 0U)) {
+        return -1;
+    }
+
+    query_length = (uint32_t)(sizeof(query) - 1U);
+    sent_length = aiio_ci13162_uart_tx(query, query_length);
+    return (sent_length == (int)query_length) ? 0 : -1;
+#else
+    return -1;
+#endif
+}
+
+void aiio_ci13162_uart_set_voice_callbacks(aiio_ci13162_voice_set_cb_t set_cb,
+                                           aiio_ci13162_voice_get_cb_t get_cb)
+{
+#if AIIO_CI13162_UART_ENABLE == 1
+    s_aiio_ci13162_voice_set_cb = set_cb;
+    s_aiio_ci13162_voice_get_cb = get_cb;
+#else
+    (void)set_cb;
+    (void)get_cb;
+#endif
+}
+
+uint8_t aiio_ci13162_uart_get_voice_id(void)
+{
+#if AIIO_CI13162_UART_ENABLE == 1
+    return s_aiio_ci13162_voice_id;
+#else
+    return 0U;
 #endif
 }
 

@@ -13,6 +13,7 @@
 #include "aiio_ci13162_uart.h"
 #include "app_config.h"
 #include "app_cwsl.h"
+#include "app_voice.h"
 #include "m_ci13162_ota.h"
 #include "m_ota.h"
 #include "process_data.h"
@@ -168,6 +169,7 @@ static bool app_volume_busy(void)
     return (s_app_volume_pending.active != 0U) ||
            (s_app_volume_draining != 0U) ||
            app_cwsl_is_pending() ||
+           app_voice_is_pending() ||
            app_volume_ota_active();
 }
 

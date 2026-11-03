@@ -12,6 +12,7 @@
 #include "aiio_ci13162_uart.h"
 #include "app_config.h"
 #include "app_volume.h"
+#include "app_voice.h"
 #include "m_ci13162_ota.h"
 #include "m_ota.h"
 #include "process_data.h"
@@ -906,7 +907,7 @@ static void app_cwsl_start_mutating(cJSON *js_root,
         app_cwsl_publish_mutating_reject(&request, APP_CWSL_CODE_OTA_HOLD);
         return;
     }
-    if (app_volume_is_pending()) {
+    if (app_volume_is_pending() || app_voice_is_pending()) {
         app_cwsl_publish_mutating_reject(&request, APP_CWSL_CODE_BUSY);
         return;
     }
@@ -950,7 +951,7 @@ uint8_t app_cwsl_start_scene_learn(uint8_t cmd_id, uint32_t user_id, uint8_t act
     if (app_cwsl_ota_active()) {
         return APP_CWSL_CODE_OTA_HOLD;
     }
-    if (app_volume_is_pending()) {
+    if (app_volume_is_pending() || app_voice_is_pending()) {
         return APP_CWSL_CODE_BUSY;
     }
     if ((s_app_cwsl_mutating.active != 0U) ||
@@ -995,7 +996,7 @@ uint8_t app_cwsl_start_scene_delete(uint8_t cmd_id, uint32_t user_id, uint8_t ac
     if (app_cwsl_ota_active()) {
         return APP_CWSL_CODE_OTA_HOLD;
     }
-    if (app_volume_is_pending()) {
+    if (app_volume_is_pending() || app_voice_is_pending()) {
         return APP_CWSL_CODE_BUSY;
     }
     if ((s_app_cwsl_mutating.active != 0U) ||
@@ -1057,7 +1058,7 @@ uint8_t app_cwsl_start_scene_resp_set(uint8_t cmd_id, uint8_t respond_id)
     if (s_app_cwsl_resp_set.draining != 0U) {
         return APP_CWSL_CODE_BUSY;
     }
-    if (app_volume_is_pending()) {
+    if (app_volume_is_pending() || app_voice_is_pending()) {
         return APP_CWSL_CODE_BUSY;
     }
     if ((s_app_cwsl_mutating.active != 0U) ||
@@ -1123,7 +1124,7 @@ void app_cwsl_stop(cJSON *js_root)
         app_cwsl_publish_stop_reject(&request, APP_CWSL_CODE_OTA_HOLD);
         return;
     }
-    if (app_volume_is_pending()) {
+    if (app_volume_is_pending() || app_voice_is_pending()) {
         app_cwsl_publish_stop_reject(&request, APP_CWSL_CODE_BUSY);
         return;
     }
@@ -1202,7 +1203,7 @@ void app_cwsl_query(cJSON *js_root)
         app_cwsl_publish_query_reject(&request, APP_CWSL_CODE_OTA_HOLD);
         return;
     }
-    if (app_volume_is_pending()) {
+    if (app_volume_is_pending() || app_voice_is_pending()) {
         app_cwsl_publish_query_reject(&request, APP_CWSL_CODE_BUSY);
         return;
     }
