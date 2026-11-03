@@ -45,4 +45,13 @@ void app_voice_poll(void);
  */
 bool app_voice_is_pending(void);
 
+/** @brief Select the next assistant voice (1..4, wrapping) from a physical button.
+ *
+ *  @return     false when busy or OTA owns the UART (nothing sent), otherwise true
+ *              (request sent, or the TX failure was already reported).
+ *  @note       Asks the chip first when the current voice is unknown. The result is
+ *              reported to the App as MQTT 230 with u=0 and act_id=SRC_ACTION_DEVICE.
+ */
+bool app_voice_button_next(void);
+
 #endif /* APP_VOICE_H */

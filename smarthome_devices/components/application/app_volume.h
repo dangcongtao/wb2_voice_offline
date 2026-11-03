@@ -45,6 +45,16 @@ void app_volume_poll(void);
  */
 bool app_volume_is_pending(void);
 
+/** @brief Step the speaker volume one level up or down from a physical button.
+ *
+ *  @param[in]  up  true to raise the volume, false to lower it.
+ *  @return     false when busy or OTA owns the UART (nothing sent), otherwise true
+ *              (request sent, or the TX failure was already reported).
+ *  @note       Asks the chip first when the level is unknown. The result is reported
+ *              to the App as MQTT 225 with u=0 and act_id=SRC_ACTION_DEVICE.
+ */
+bool app_volume_button_step(bool up);
+
 /** @brief Publish an unsolicited MQTT 225 report for a voice-driven volume change.
  *
  *  @param[in]  level   Absolute speaker volume in the range 0..7, where 0 is mute.

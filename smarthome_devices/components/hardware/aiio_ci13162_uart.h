@@ -58,10 +58,13 @@ typedef void (*aiio_ci13162_voice_get_cb_t)(uint8_t voice_id);
  *
  *  @param[in]  level   Current speaker volume level from 0 to 7, where 0 is mute.
  *  @param[in]  result  Request result: 1 when accepted, otherwise 0.
+ *  @param[in]  muted   1 when the speaker is muted, otherwise 0.
  *  @return     None.
+ *  @note       The cached level and muted state are updated before the call.
  */
 typedef void (*aiio_ci13162_volume_info_cb_t)(uint8_t level,
-                                              uint8_t result);
+                                              uint8_t result,
+                                              uint8_t muted);
 
 /** @brief Drive UART1 TX (GPIO4) idle-high before the port is remuxed.
  *
@@ -191,6 +194,14 @@ int32_t aiio_ci13162_uart_send_volume(uint8_t value);
  */
 int32_t aiio_ci13162_uart_query_volume(void);
 
+/** @brief Send one speaker mute request to the CI13162.
+ *
+ *  @return     Send status.
+ *  @retval     0  Request `{"cmd":8,"data":[8]}` was sent.
+ *  @retval     -1 UART unavailable, OTA active, or send failure.
+ */
+int32_t aiio_ci13162_uart_send_mute(void);
+
 /** @brief Register the application callback for speaker volume responses.
  *
  *  @param[in]  callback  Response callback, or NULL to disable delivery.
@@ -209,6 +220,17 @@ void aiio_ci13162_uart_set_volume_callback(
  *               no cache (valid=0), which is not mute.
  */
 int32_t aiio_ci13162_uart_get_volume(uint8_t *level);
+
+/** @brief Read the cached speaker volume level and muted state.
+ *
+ *  @param[out]  level  Destination for the cached level from 0 to 7.
+ *  @param[out]  muted  Destination for the muted flag, 1 when muted.
+ *  @return      Cache status.
+ *  @retval      0  A valid cached state was copied.
+ *  @retval      -1 A pointer is NULL or no valid response has been received.
+ *  @note        This function never sends a UART request.
+ */
+int32_t aiio_ci13162_uart_get_volume_state(uint8_t *level, uint8_t *muted);
 
 /** @brief Send one voice select request (cmd 17) to the CI13162.
  *

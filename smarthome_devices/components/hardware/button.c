@@ -1,17 +1,32 @@
 #include "hardware.h"
 #include "system_typedef.h"
 
-#include "hosal_adc.h"
-
 static uint8_t val_button = 0;
+
+/** Map a VOICEBOX button index to its GPIO pin, or -1 if out of range. */
+static int hw_button_voicebox_pin(uint32_t index)
+{
+    switch (index)
+    {
+    case 0U:
+        return BTN_VOICEBOX_VOLUME_UP_PIN;
+    case 1U:
+        return BTN_VOICEBOX_FUNCTION_PIN;
+    case 2U:
+        return BTN_VOICEBOX_VOLUME_DOWN_PIN;
+    default:
+        return -1;
+    }
+}
 
 void hw_button_config(uint32_t index)
 {
     if (device_type == VOICEBOX)
     {
-        if (index == 0)
+        int pin = hw_button_voicebox_pin(index);
+        if (pin >= 0)
         {
-            gpio_set_input(BTN_CFG_VOICEBOX);
+            gpio_set_input(pin);
         }
     }
 }
@@ -26,18 +41,12 @@ uint32_t hw_btn_read(uint32_t index)
 {
     if (device_type == VOICEBOX)
     {
-        if (index == 0)
+        int pin = hw_button_voicebox_pin(index);
+        if (pin >= 0)
         {
-            uint8_t gpio_val = (uint8_t)gpio_get_level(BTN_CFG_VOICEBOX);
-            uint8_t touch_val = (val_button >> BUTTON_POWER_INDEX) & 1U;
-            /* Active low: 0 means pressed. Active if GPIO pulled low OR touch pad active (1) */
-            if ((gpio_val == 0U) || (touch_val == 1U))
-            {
-                return 0U; /* pressed */
-            }
-            return 1U; /* idle */
+            return (uint32_t)gpio_get_level(pin);
         }
-        return 1U;
+        return BTN_VOICEBOX_IDLE_LEVEL;
     }
     return (val_button >> index) & 1;
 }

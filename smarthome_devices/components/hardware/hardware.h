@@ -41,7 +41,12 @@
 #define BUTTON_NATURAL_INDEX 2
 
 #define BTN_CFG_MINI 22
-#define BTN_CFG_VOICEBOX 1
+/* VOICEBOX buttons: index 0 = volume up, 1 = function (config / next voice), 2 = volume down */
+#define BTN_VOICEBOX_VOLUME_UP_PIN 21
+#define BTN_VOICEBOX_FUNCTION_PIN 20
+#define BTN_VOICEBOX_VOLUME_DOWN_PIN 0
+#define BTN_VOICEBOX_IDLE_LEVEL 1
+#define BTN_VOICEBOX_COUNT 3U
 #define BUTTON_SSW 0xFF
 
 #define MAX_NUM_SWITCH 4

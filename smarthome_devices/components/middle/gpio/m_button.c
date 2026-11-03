@@ -21,6 +21,7 @@
 #include "m_ft62f28.h"
 #include "m_ci13162_ota.h"
 #include "m_ota.h"
+#include "app_button.h"
 
 #define TIME_OUT_RESET_TS04_WITHOUT_PRESS 2400
 
@@ -44,56 +45,69 @@ static const char *event_name[] = {"pressed", "release",
 extern void app_send_offline_message(uint8_t src);
 extern int is_wifi_connected(void);
 
+/**
+ * @brief VOICEBOX button handler: feed the state machine and run its action.
+ * @param button_pin Button index (0 = volume up, 1 = function, 2 = volume down).
+ * @param event      APP_BTN_EVT_* event.
+ */
+static void m_button_voicebox_event(int button_pin, int event)
+{
+    app_button_action_t action = app_button_voicebox_event((uint32_t)button_pin, event);
+
+    switch (action)
+    {
+    case APP_BUTTON_ACTION_VOLUME_UP:
+    case APP_BUTTON_ACTION_VOLUME_DOWN:
+    case APP_BUTTON_ACTION_VOICE_NEXT:
+        /* Queue full or not ready: do nothing, no beep. */
+        (void)app_button_post(action);
+        break;
+    case APP_BUTTON_ACTION_LED_SMART_CONFIG:
+        m_led_stt_get_instance()._set_led_stt_smart_config_cb();
+        break;
+    case APP_BUTTON_ACTION_LED_AP_CONFIG:
+        m_led_stt_get_instance()._set_led_stt_ap_config_cb();
+        break;
+    case APP_BUTTON_ACTION_SMART_CONFIG:
+        app_send_offline_message(1);
+        vTaskDelay(pdMS_TO_TICKS(100));
+
+        m_db_get_instance()->_reset_db_without_sync_cb();
+        m_wifi_get_instance().start_smart_config_cb();
+        break;
+    case APP_BUTTON_ACTION_AP_CONFIG:
+        app_send_offline_message(1);
+        vTaskDelay(pdMS_TO_TICKS(100));
+
+        m_db_get_instance()->_reset_db_without_sync_cb();
+        m_wifi_get_instance().start_ap_config_cb();
+        break;
+    default:
+        break;
+    }
+}
+
 void on_button_event_cb(int button_pin, int event, void *data)
 {
     os_trace("Button %d, event %s\r\n", button_pin, event_name[event]);
+
+    if (device_type == VOICEBOX)
+    {
+        m_button_voicebox_event(button_pin, event);
+        return;
+    }
 
     switch (event)
     {
     case APP_BTN_EVT_PRESSED:
     {
-        if (device_type == VOICEBOX)
-        {
-            hw_buzz_set_type(SWITCH_ACTIVE_LEVEL, 0U);
-        }
-        else
-        {
-            m_buzz_play(1);
-        }
+        m_buzz_play(1);
     }
     break;
 
     case APP_BTN_EVT_RELEASED:
     {
         time_cnt_down_reset_TS04 = TIME_OUT_RESET_TS04_WITHOUT_PRESS;
-
-        if (device_type == VOICEBOX)
-        {
-            hw_buzz_set_type(SWITCH_IDLE_LEVEL, 0U);
-            if (ignore_event_release[button_pin] == EVENT_BTN_HOLD)
-            {
-                app_send_offline_message(1);
-                vTaskDelay(pdMS_TO_TICKS(100));
-
-                m_db_get_instance()->_reset_db_without_sync_cb();
-                m_wifi_get_instance().start_smart_config_cb();
-                ignore_event_release[button_pin] = 0;
-                return;
-            }
-            else if (ignore_event_release[button_pin] == EVENT_BTN_HOLD_SO_LONG ||
-                     ignore_event_release[button_pin] == EVENT_BTN_HOLD_HONG_PHIM)
-            {
-                app_send_offline_message(1);
-                vTaskDelay(pdMS_TO_TICKS(100));
-
-                m_db_get_instance()->_reset_db_without_sync_cb();
-                m_wifi_get_instance().start_ap_config_cb();
-                ignore_event_release[button_pin] = 0;
-                return;
-            }
-            ignore_event_release[button_pin] = 0;
-            return;
-        }
 
         if (ignore_event_release[button_pin] == EVENT_BTN_RELEASE)
         {
@@ -156,10 +170,6 @@ void on_button_event_cb(int button_pin, int event, void *data)
     break;
     case APP_BTN_EVT_HOLD_HONG_PHIM:
     {
-        if (device_type == VOICEBOX)
-        {
-            return;
-        }
         m_ft62f28_send_reset_touch();
         for (uint8_t i = 0; i < MAX_NUM_BUTTON; i++)
         {
@@ -215,14 +225,16 @@ static void m_button_config(void)
 
     if (device_type == VOICEBOX)
     {
-        m_hw_button_initialize_value[0].idle_level = 1;
-        m_hw_button_initialize_value[0].last_state = 1;
-        m_hw_button_initialize_value[0].pin = 0;
+        for (uint32_t i = 0; i < BTN_VOICEBOX_COUNT; i++)
+        {
+            m_hw_button_initialize_value[i].idle_level = BTN_VOICEBOX_IDLE_LEVEL;
+            m_hw_button_initialize_value[i].last_state = BTN_VOICEBOX_IDLE_LEVEL;
+        }
     }
 
     app_btn_config_t conf;
     conf.config = &m_hw_button_initialize_value[0];
-    conf.btn_count = (device_type == VOICEBOX) ? 1 : MAX_NUM_BUTTON;
+    conf.btn_count = (device_type == VOICEBOX) ? BTN_VOICEBOX_COUNT : MAX_NUM_BUTTON;
     conf.get_tick_cb = sys_get_tick_ms;
     conf.btn_initialize = hw_button_config;
     conf.btn_read = hw_btn_read;

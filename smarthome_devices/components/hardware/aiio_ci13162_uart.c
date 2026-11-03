@@ -65,6 +65,7 @@ extern void app_send_data(char *data, uint32_t length);
 
 static const char s_aiio_ci13162_reset_message[] = "{\"cmd\":0,\"data\":[]}\r\n";
 static const char s_aiio_ci13162_version_query[] = "{\"cmd\":3,\"data\":[]}\r\n";
+static const char s_aiio_ci13162_volume_mute[] = "{\"cmd\":8,\"data\":[8]}\r\n";
 static const char s_aiio_ci13162_volume_query[] = "{\"cmd\":11,\"data\":[]}\r\n";
 
 // UART1 device owned by this driver; UART0 stays with the SDK log.
@@ -167,6 +168,7 @@ static uint8_t s_aiio_ci13162_version_query_scheduled;
 static uint8_t s_aiio_ci13162_version_query_paused;
 static uint8_t s_aiio_ci13162_volume;
 static uint8_t s_aiio_ci13162_volume_valid;
+static uint8_t s_aiio_ci13162_volume_muted;
 static uint8_t s_aiio_ci13162_voice_id;
 static uint8_t s_aiio_ci13162_voice_set_sent;
 static uint8_t s_aiio_ci13162_voice_query_scheduled;
@@ -837,10 +839,12 @@ static aiio_ci13162_parse_result_t aiio_ci13162_validate_message(
             }
             return AIIO_CI13162_PARSE_OK;
 
+        /* cmd scene */
         case AIIO_CI13162_CMD_SCENE:
             if (message->data_count != 1U) {
                 return AIIO_CI13162_PARSE_INVALID_FORMAT;
             }
+            /* problem here */
             if ((message->data[0] < 1U) || (message->data[0] > APP_SCENE_COUNT_MAX)) {
                 return AIIO_CI13162_PARSE_INVALID_DATA;
             }
@@ -879,10 +883,10 @@ static aiio_ci13162_parse_result_t aiio_ci13162_validate_message(
             return AIIO_CI13162_PARSE_OK;
 
         case AIIO_CI13162_CMD_VOLUME_INFO:
-            return ((message->data_count >= 2U) &&
-                    (message->data_count <= 3U) &&
+            return ((message->data_count == 3U) &&
                     (message->data[0] <= AIIO_CI13162_VOLUME_LEVEL_MAX) &&
-                    (message->data[1] <= 1U))
+                    (message->data[1] <= 1U) &&
+                    (message->data[2] <= 1U))
                        ? AIIO_CI13162_PARSE_OK
                        : AIIO_CI13162_PARSE_INVALID_DATA;
 
@@ -1290,19 +1294,23 @@ static void aiio_ci13162_run_parser_tests(void)
          {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
         {"{cmd:8,data:[3]}", AIIO_CI13162_PARSE_UNKNOWN_COMMAND, 0U, 0U,
          {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
-        {"{cmd:9,data:[3,1]}", AIIO_CI13162_PARSE_OK,
-         AIIO_CI13162_CMD_VOLUME_INFO, 2U, {3U, 1U, 0U, 0U}, 0U, 0U, 0U},
-        {"{cmd:9,data:[7,0]}", AIIO_CI13162_PARSE_OK,
-         AIIO_CI13162_CMD_VOLUME_INFO, 2U, {7U, 0U, 0U, 0U}, 0U, 0U, 0U},
-        {"{\"cmd\":9,\"data\":[3,1,0]}", AIIO_CI13162_PARSE_OK,
-         AIIO_CI13162_CMD_VOLUME_INFO, 3U, {3U, 1U, 0U, 0U}, 0U, 0U, 0U},
-        {"{cmd:9,data:[0,1]}", AIIO_CI13162_PARSE_OK,
-         AIIO_CI13162_CMD_VOLUME_INFO, 2U, {0U, 1U, 0U, 0U}, 0U, 0U, 0U},
-        {"{\"cmd\":9,\"data\":[0,1,0]}", AIIO_CI13162_PARSE_OK,
-         AIIO_CI13162_CMD_VOLUME_INFO, 3U, {0U, 1U, 0U, 0U}, 0U, 0U, 0U},
-        {"{cmd:9,data:[8,1]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
+        {"{cmd:9,data:[3,1]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
          {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
-        {"{cmd:9,data:[3,2]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
+        {"{cmd:9,data:[7,0]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
+        {"{cmd:9,data:[0,1]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
+        {"{cmd:9,data:[3,1,0]}", AIIO_CI13162_PARSE_OK,
+         AIIO_CI13162_CMD_VOLUME_INFO, 3U, {3U, 1U, 0U, 0U}, 0U, 0U, 0U},
+        {"{cmd:9,data:[0,1,1]}", AIIO_CI13162_PARSE_OK,
+         AIIO_CI13162_CMD_VOLUME_INFO, 3U, {0U, 1U, 1U, 0U}, 0U, 0U, 0U},
+        {"{cmd:9,data:[7,0,1]}", AIIO_CI13162_PARSE_OK,
+         AIIO_CI13162_CMD_VOLUME_INFO, 3U, {7U, 0U, 1U, 0U}, 0U, 0U, 0U},
+        {"{cmd:9,data:[3,1,2]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
+        {"{cmd:9,data:[8,1,0]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
+         {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
+        {"{cmd:9,data:[3,2,0]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
          {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
         {"{cmd:9,data:[3]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
          {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
@@ -1905,6 +1913,7 @@ int32_t aiio_ci13162_uart_init(void)
     s_aiio_ci13162_version_query_paused = 0U;
     s_aiio_ci13162_volume = 0U;
     s_aiio_ci13162_volume_valid = 0U;
+    s_aiio_ci13162_volume_muted = 0U;
     s_aiio_ci13162_voice_id = 0U;
     s_aiio_ci13162_voice_set_sent = 0U;
     s_aiio_ci13162_voice_query_scheduled = 0U;
@@ -2048,16 +2057,19 @@ void aiio_ci13162_uart_process(void)
         }
 
         if (message.command == AIIO_CI13162_CMD_VOLUME_INFO) {
-            if (s_aiio_ci13162_volume_info_cb != NULL) {
-                s_aiio_ci13162_volume_info_cb(message.data[0], message.data[1]);
-            }
             s_aiio_ci13162_volume = message.data[0];
+            s_aiio_ci13162_volume_muted = message.data[2];
             s_aiio_ci13162_volume_valid = 1U;
+            if (s_aiio_ci13162_volume_info_cb != NULL) {
+                s_aiio_ci13162_volume_info_cb(message.data[0], message.data[1],
+                                              message.data[2]);
+            }
             continue;
         }
 
         if (message.command == AIIO_CI13162_CMD_VOLUME_CHANGE) {
             s_aiio_ci13162_volume = message.data[0];
+            s_aiio_ci13162_volume_muted = (message.data[0] == 0U) ? 1U : 0U;
             s_aiio_ci13162_volume_valid = 1U;
             os_trace("[CI13162] volume change=%u cmd_id=%u cwsl=%u\r\n",
                      (unsigned int)message.data[0],
@@ -2628,6 +2640,26 @@ int32_t aiio_ci13162_uart_query_volume(void)
 #endif
 }
 
+int32_t aiio_ci13162_uart_send_mute(void)
+{
+#if AIIO_CI13162_UART_ENABLE == 1
+    int sent_length;
+    uint32_t request_length;
+
+    if ((s_aiio_ci13162_command_queue == NULL) ||
+        (s_aiio_ci13162_ota_held != 0U)) {
+        return -1;
+    }
+
+    request_length = (uint32_t)(sizeof(s_aiio_ci13162_volume_mute) - 1U);
+    sent_length = aiio_ci13162_uart_tx(s_aiio_ci13162_volume_mute,
+                                       request_length);
+    return (sent_length == (int)request_length) ? 0 : -1;
+#else
+    return -1;
+#endif
+}
+
 void aiio_ci13162_uart_set_volume_callback(
     aiio_ci13162_volume_info_cb_t callback)
 {
@@ -2635,6 +2667,24 @@ void aiio_ci13162_uart_set_volume_callback(
     s_aiio_ci13162_volume_info_cb = callback;
 #else
     (void)callback;
+#endif
+}
+
+int32_t aiio_ci13162_uart_get_volume_state(uint8_t *level, uint8_t *muted)
+{
+#if AIIO_CI13162_UART_ENABLE == 1
+    if ((level == NULL) || (muted == NULL) ||
+        (s_aiio_ci13162_volume_valid == 0U)) {
+        return -1;
+    }
+
+    *level = s_aiio_ci13162_volume;
+    *muted = s_aiio_ci13162_volume_muted;
+    return 0;
+#else
+    (void)level;
+    (void)muted;
+    return -1;
 #endif
 }
 

@@ -29,12 +29,16 @@ typedef enum {
     APP_VOLUME_OPERATION_NONE = 0,
     APP_VOLUME_OPERATION_MQTT_SET,
     APP_VOLUME_OPERATION_MQTT_GET,
+    APP_VOLUME_OPERATION_BUTTON_QUERY,
+    APP_VOLUME_OPERATION_BUTTON_SET,
 } app_volume_operation_t;
 
 typedef struct {
     uint8_t active;
     app_volume_operation_t operation;
     uint8_t target;
+    uint8_t target_mute;
+    uint8_t button_up;
     uint32_t mqtt_cmd;
     uint32_t user_id;
     uint8_t act_id;
@@ -133,8 +137,51 @@ static void app_volume_clear_pending(uint8_t drain_late_response)
     }
 }
 
-// Complete the MQTT request that owns the received volume response.
-static void app_volume_on_info(uint8_t level, uint8_t result)
+// Return the value reported to the App for a button step target (mute is 0).
+static uint8_t app_volume_button_report_value(const app_volume_pending_t *pending)
+{
+    return (pending->target_mute != 0U) ? 0U : pending->target;
+}
+
+// Compute the button target from the known level and mute state.
+static void app_volume_button_target(bool up,
+                                     uint8_t level,
+                                     uint8_t muted,
+                                     uint8_t *target,
+                                     uint8_t *target_mute)
+{
+    *target_mute = 0U;
+    if (muted != 0U) {
+        if (up) {
+            *target = APP_VOLUME_LEVEL_MIN;
+        } else {
+            *target = 0U;
+            *target_mute = 1U;
+        }
+    } else if (up) {
+        *target = (level >= APP_VOLUME_LEVEL_MAX) ? APP_VOLUME_LEVEL_MAX
+                                                  : (uint8_t)(level + 1U);
+    } else {
+        *target = (level <= APP_VOLUME_LEVEL_MIN) ? APP_VOLUME_LEVEL_MIN
+                                                  : (uint8_t)(level - 1U);
+    }
+}
+
+// Send the button target to the chip: absolute mute (cmd 8 [8]) for a mute target, absolute level otherwise.
+static int32_t app_volume_button_send(uint8_t target, uint8_t target_mute)
+{
+    return (target_mute != 0U) ? aiio_ci13162_uart_send_mute()
+                               : aiio_ci13162_uart_send_volume(target);
+}
+
+// Publish one device-originated (button) 225 report.
+static void app_volume_button_publish(uint8_t vol, uint8_t result)
+{
+    app_volume_publish(APP_VOLUME_CMD_SET, vol, 0U, (uint8_t)SRC_ACTION_DEVICE, result);
+}
+
+// Complete the request that owns the received volume response.
+static void app_volume_on_info(uint8_t level, uint8_t result, uint8_t muted)
 {
     app_volume_pending_t pending;
 
@@ -146,9 +193,46 @@ static void app_volume_on_info(uint8_t level, uint8_t result)
         return;
     }
 
+    if (s_app_volume_pending.operation == APP_VOLUME_OPERATION_BUTTON_QUERY) {
+        uint8_t target;
+        uint8_t target_mute;
+
+        if (result == 0U) {
+            app_volume_clear_pending(0U);
+            app_volume_button_publish(0U, 0U);
+            return;
+        }
+        app_volume_button_target(s_app_volume_pending.button_up != 0U,
+                                 level,
+                                 muted,
+                                 &target,
+                                 &target_mute);
+        s_app_volume_pending.operation = APP_VOLUME_OPERATION_BUTTON_SET;
+        s_app_volume_pending.target = target;
+        s_app_volume_pending.target_mute = target_mute;
+        s_app_volume_pending.start_tick = xTaskGetTickCount();
+        if (app_volume_button_send(target, target_mute) != 0) {
+            app_volume_clear_pending(0U);
+            app_volume_button_publish((target_mute != 0U) ? 0U : target, 0U);
+        }
+        return;
+    }
+
     pending = s_app_volume_pending;
     app_volume_clear_pending(0U);
-    if (pending.operation == APP_VOLUME_OPERATION_MQTT_SET) {
+    if (pending.operation == APP_VOLUME_OPERATION_BUTTON_SET) {
+        uint8_t ok;
+
+        if (pending.target_mute != 0U) {
+            ok = ((result != 0U) && (muted != 0U)) ? 1U : 0U;
+        } else {
+            ok = ((result != 0U) && (muted == 0U) && (level == pending.target)) ? 1U : 0U;
+        }
+        app_volume_button_publish(
+            (ok != 0U) ? ((muted != 0U) ? 0U : level)
+                       : app_volume_button_report_value(&pending),
+            ok);
+    } else if (pending.operation == APP_VOLUME_OPERATION_MQTT_SET) {
         app_volume_publish(pending.mqtt_cmd,
                            level,
                            pending.user_id,
@@ -271,11 +355,20 @@ void app_volume_poll(void)
         app_volume_pending_t pending = s_app_volume_pending;
 
         app_volume_clear_pending(1U);
-        app_volume_publish(pending.mqtt_cmd,
-                           app_volume_cached_or(pending.target),
-                           pending.user_id,
-                           pending.act_id,
-                           0U);
+        if ((pending.operation == APP_VOLUME_OPERATION_BUTTON_QUERY) ||
+            (pending.operation == APP_VOLUME_OPERATION_BUTTON_SET)) {
+            app_volume_button_publish(
+                (pending.operation == APP_VOLUME_OPERATION_BUTTON_SET)
+                    ? app_volume_button_report_value(&pending)
+                    : 0U,
+                0U);
+        } else {
+            app_volume_publish(pending.mqtt_cmd,
+                               app_volume_cached_or(pending.target),
+                               pending.user_id,
+                               pending.act_id,
+                               0U);
+        }
     }
 
     if ((s_app_volume_draining != 0U) &&
@@ -289,6 +382,42 @@ bool app_volume_is_pending(void)
 {
     return (s_app_volume_pending.active != 0U) ||
            (s_app_volume_draining != 0U);
+}
+
+bool app_volume_button_step(bool up)
+{
+    uint8_t level = 0U;
+    uint8_t muted = 0U;
+    uint8_t target = 0U;
+    uint8_t target_mute = 0U;
+    int32_t send_result;
+
+    if (app_volume_busy()) {
+        return false;
+    }
+
+    memset(&s_app_volume_pending, 0, sizeof(s_app_volume_pending));
+    s_app_volume_pending.active = 1U;
+    s_app_volume_pending.mqtt_cmd = APP_VOLUME_CMD_SET;
+    s_app_volume_pending.act_id = (uint8_t)SRC_ACTION_DEVICE;
+    s_app_volume_pending.button_up = up ? 1U : 0U;
+    s_app_volume_pending.start_tick = xTaskGetTickCount();
+
+    if (aiio_ci13162_uart_get_volume_state(&level, &muted) == 0) {
+        app_volume_button_target(up, level, muted, &target, &target_mute);
+        s_app_volume_pending.operation = APP_VOLUME_OPERATION_BUTTON_SET;
+        s_app_volume_pending.target = target;
+        s_app_volume_pending.target_mute = target_mute;
+        send_result = app_volume_button_send(target, target_mute);
+    } else {
+        s_app_volume_pending.operation = APP_VOLUME_OPERATION_BUTTON_QUERY;
+        send_result = aiio_ci13162_uart_query_volume();
+    }
+    if (send_result != 0) {
+        app_volume_clear_pending(0U);
+        app_volume_button_publish((target_mute != 0U) ? 0U : target, 0U);
+    }
+    return true;
 }
 
 // Publish MQTT 225 for a voice-driven volume change without completing a pending SET or GET.

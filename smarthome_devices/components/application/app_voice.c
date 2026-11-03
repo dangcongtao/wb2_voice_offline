@@ -35,6 +35,7 @@ typedef enum {
     APP_VOICE_OPERATION_NONE = 0,
     APP_VOICE_OPERATION_SET,
     APP_VOICE_OPERATION_GET,
+    APP_VOICE_OPERATION_BUTTON_QUERY,
 } app_voice_operation_t;
 
 typedef struct {
@@ -148,8 +149,10 @@ static void app_voice_publish(uint32_t mqtt_cmd,
 // Return the MQTT command number that owns the given operation.
 static uint32_t app_voice_cmd_of(app_voice_operation_t operation)
 {
-    return (operation == APP_VOICE_OPERATION_SET) ? APP_VOICE_CMD_SET
-                                                  : APP_VOICE_CMD_GET;
+    return ((operation == APP_VOICE_OPERATION_SET) ||
+            (operation == APP_VOICE_OPERATION_BUTTON_QUERY))
+               ? APP_VOICE_CMD_SET
+               : APP_VOICE_CMD_GET;
 }
 
 // Clear the current request and optionally reserve a drain window for a late reply.
@@ -163,6 +166,12 @@ static void app_voice_clear_pending(uint8_t drain_late_response)
         s_app_voice_drain_operation = operation;
         s_app_voice_drain_tick = xTaskGetTickCount();
     }
+}
+
+// Return the voice that follows the given one (1..4, wrapping).
+static uint8_t app_voice_next_of(uint8_t voice_id)
+{
+    return (uint8_t)((voice_id % APP_VOICE_ID_MAX) + 1U);
 }
 
 // Complete a pending SET with the chip verdict, or swallow its late reply.
@@ -196,17 +205,43 @@ static void app_voice_on_get(uint8_t voice_id)
     app_voice_pending_t pending;
 
     if ((s_app_voice_draining != 0U) &&
-        (s_app_voice_drain_operation == APP_VOICE_OPERATION_GET)) {
+        ((s_app_voice_drain_operation == APP_VOICE_OPERATION_GET) ||
+         (s_app_voice_drain_operation == APP_VOICE_OPERATION_BUTTON_QUERY))) {
         s_app_voice_draining = 0U;
         return;
     }
     if ((s_app_voice_pending.active == 0U) ||
-        (s_app_voice_pending.operation != APP_VOICE_OPERATION_GET)) {
+        ((s_app_voice_pending.operation != APP_VOICE_OPERATION_GET) &&
+         (s_app_voice_pending.operation != APP_VOICE_OPERATION_BUTTON_QUERY))) {
         return;
     }
 
     pending = s_app_voice_pending;
     app_voice_clear_pending(0U);
+    if (pending.operation == APP_VOICE_OPERATION_BUTTON_QUERY) {
+        uint8_t target;
+        int32_t send_result;
+
+        if ((voice_id < APP_VOICE_ID_MIN) || (voice_id > APP_VOICE_ID_MAX)) {
+            app_voice_publish(APP_VOICE_CMD_SET, 0U, 0U, (uint8_t)SRC_ACTION_DEVICE,
+                              0U, APP_VOICE_CODE_BAD_REQUEST);
+            return;
+        }
+        target = app_voice_next_of(voice_id);
+        s_app_voice_pending.active = 1U;
+        s_app_voice_pending.operation = APP_VOICE_OPERATION_SET;
+        s_app_voice_pending.target = target;
+        s_app_voice_pending.user_id = 0U;
+        s_app_voice_pending.act_id = (uint8_t)SRC_ACTION_DEVICE;
+        s_app_voice_pending.start_tick = xTaskGetTickCount();
+        send_result = aiio_ci13162_uart_send_voice_set(target);
+        if (send_result != 0) {
+            app_voice_clear_pending(0U);
+            app_voice_publish(APP_VOICE_CMD_SET, target, 0U, (uint8_t)SRC_ACTION_DEVICE,
+                              0U, APP_VOICE_CODE_TX_FAIL);
+        }
+        return;
+    }
     app_voice_publish(APP_VOICE_CMD_GET,
                       voice_id,
                       pending.user_id,
@@ -340,6 +375,39 @@ void app_voice_poll(void)
          pdMS_TO_TICKS(AIIO_CI13162_VOICE_DRAIN_MS))) {
         s_app_voice_draining = 0U;
     }
+}
+
+bool app_voice_button_next(void)
+{
+    uint8_t current;
+    int32_t send_result;
+    uint8_t reported = 0U;
+
+    if (app_voice_ota_active() || app_voice_busy()) {
+        return false;
+    }
+
+    current = aiio_ci13162_uart_get_voice_id();
+    memset(&s_app_voice_pending, 0, sizeof(s_app_voice_pending));
+    s_app_voice_pending.active = 1U;
+    s_app_voice_pending.user_id = 0U;
+    s_app_voice_pending.act_id = (uint8_t)SRC_ACTION_DEVICE;
+    s_app_voice_pending.start_tick = xTaskGetTickCount();
+    if ((current >= APP_VOICE_ID_MIN) && (current <= APP_VOICE_ID_MAX)) {
+        reported = app_voice_next_of(current);
+        s_app_voice_pending.operation = APP_VOICE_OPERATION_SET;
+        s_app_voice_pending.target = reported;
+        send_result = aiio_ci13162_uart_send_voice_set(reported);
+    } else {
+        s_app_voice_pending.operation = APP_VOICE_OPERATION_BUTTON_QUERY;
+        send_result = aiio_ci13162_uart_query_voice();
+    }
+    if (send_result != 0) {
+        app_voice_clear_pending(0U);
+        app_voice_publish(APP_VOICE_CMD_SET, reported, 0U, (uint8_t)SRC_ACTION_DEVICE,
+                          0U, APP_VOICE_CODE_TX_FAIL);
+    }
+    return true;
 }
 
 bool app_voice_is_pending(void)

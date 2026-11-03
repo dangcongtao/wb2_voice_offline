@@ -61,6 +61,12 @@ void app_cwsl_poll(void);
  */
 bool app_cwsl_is_pending(void);
 
+/** @brief Check whether a 220 learn or 227 add session is active.
+ *
+ *  @return     true while such a session is in any phase, otherwise false.
+ */
+bool app_cwsl_is_learning(void);
+
 /** @brief Start a best-effort clear of all learned templates.
  *
  *  @return     true when the factory reset may proceed immediately, otherwise false.

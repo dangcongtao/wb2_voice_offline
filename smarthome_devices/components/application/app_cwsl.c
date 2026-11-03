@@ -1382,6 +1382,13 @@ bool app_cwsl_is_pending(void)
            app_scene_is_pending();
 }
 
+bool app_cwsl_is_learning(void)
+{
+    return (s_app_cwsl_mutating.active != 0U) &&
+           ((s_app_cwsl_mutating.request.mqtt_cmd == APP_CWSL_CMD_LEARN) ||
+            (s_app_cwsl_mutating.request.mqtt_cmd == APP_SCENE_CMD_ADD));
+}
+
 bool app_cwsl_factory_clear(void)
 {
     static const uint8_t delete_all[2] = {APP_CWSL_ANY, APP_CWSL_ANY};

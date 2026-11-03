@@ -37,6 +37,7 @@
 #include "app_cwsl.h"
 #include "app_volume.h"
 #include "app_voice.h"
+#include "app_button.h"
 #include "app_scene.h"
 
 char respond[512];
@@ -1460,6 +1461,7 @@ void app_handler_msg_task(void *arg)
         app_cwsl_poll();
         app_volume_poll();
         app_voice_poll();
+        app_button_poll();
 
         if (xQueueReceive(pqueue, &message_rcv_mqtt, 0) == pdPASS)
         {
@@ -1571,6 +1573,7 @@ void process_data_init(void)
     app_scene_init();
     app_volume_init();
     app_voice_init();
+    app_button_init();
     pdata_queue_init();
     ble_init_queue();
     m_mqtt_command_startup_register_handler(app_startup_message);
