@@ -33,14 +33,24 @@ static inline void bl_gpio_enable_output(uint8_t pin, uint8_t pullup, uint8_t pu
     }
 }
 
+static int s_mock_gpio_input_pins[32] = {0};
+static int s_mock_gpio_input_pullup[32] = {0};
+static int s_mock_gpio_input_levels[32] = {0};
+
 static inline void bl_gpio_enable_input(uint8_t pin, uint8_t pullup, uint8_t pulldown) {
-    (void)pin; (void)pullup; (void)pulldown;
+    (void)pulldown;
+    if (pin < 32) {
+        s_mock_gpio_input_pins[pin] = 1;
+        s_mock_gpio_input_pullup[pin] = pullup;
+    }
 }
 
 static inline int bl_gpio_input_get_value(int pin) {
-    (void)pin;
-    return 1; /* idle high */
+    if (pin < 0 || pin >= 32) return 1;
+    return s_mock_gpio_input_levels[pin]; /* idle high, set in reset */
 }
+
+void gpio_set_input(int pin) { bl_gpio_enable_input((uint8_t)pin, 1, 0); }
 
 void gpio_set_output(int pin) {
     (void)pin;
@@ -130,6 +140,7 @@ bool hw_device_support_voice(void) {
 /* Include source files directly for deep testing */
 #include "components/hardware/buzz.c"
 #include "components/hardware/74hc595.c"
+#include "components/hardware/button.c"
 #include "components/middle/ble_slave/security.c"
 
 static void reset_all_mocks(void) {
@@ -138,6 +149,7 @@ static void reset_all_mocks(void) {
     s_mock_gpio_output_calls = 0;
     s_last_uart_tx[0] = '\0';
     s_uart_tx_count = 0;
+    for (int i = 0; i < 32; i++) s_mock_gpio_input_levels[i] = 1; /* idle high */
     s_mock_flash_rs_reason = 0;
     s_smart_config_count = 0;
     s_ap_config_count = 0;
@@ -168,7 +180,11 @@ int main(void) {
     {
         printf("--- Test 2: Hardware Pinout Macros & Voice Support ---\n");
         assert(LED_STT_VOICEBOX == 2);
-        assert(BTN_CFG_VOICEBOX == 1);
+        assert(BTN_VOICEBOX_VOLUME_UP_PIN == 21);
+        assert(BTN_VOICEBOX_FUNCTION_PIN == 20);
+        assert(BTN_VOICEBOX_VOLUME_DOWN_PIN == 0);
+        assert(BTN_VOICEBOX_IDLE_LEVEL == 1);
+        assert(BTN_VOICEBOX_COUNT == 3U);
         assert(AIIO_CI13162_UART_RX_PIN == 3U);
         assert(AIIO_CI13162_UART_TX_PIN == 4U);
         assert(AIIO_CI13162_UART_ID == 1U);
@@ -489,6 +505,33 @@ int main(void) {
         printf("  PASS: BLE Beacon 13-byte frame layout and security round-trip verified\n");
     }
 
-    printf("\nALL 9 VOICEBOX UNIT TESTS PASSED 100%%!\n");
+    /* =========================================================================
+     * TEST 10: VOICEBOX button pins (real button.c)
+     * ========================================================================= */
+    {
+        printf("--- Test 10: VOICEBOX button pins and levels ---\n");
+        for (int i = 0; i < 32; i++) {
+            s_mock_gpio_input_pins[i] = 0;
+            s_mock_gpio_input_pullup[i] = 0;
+            s_mock_gpio_input_levels[i] = 1;
+        }
+        device_type = VOICEBOX;
+        hw_button_config(0U); hw_button_config(1U); hw_button_config(2U);
+        assert(s_mock_gpio_input_pins[21] && s_mock_gpio_input_pullup[21] == 1);
+        assert(s_mock_gpio_input_pins[20] && s_mock_gpio_input_pullup[20] == 1);
+        assert(s_mock_gpio_input_pins[0]  && s_mock_gpio_input_pullup[0]  == 1);
+        assert(s_mock_gpio_input_pins[1] == 0);
+        assert(hw_btn_read(0U) == 1U && hw_btn_read(1U) == 1U && hw_btn_read(2U) == 1U);
+        s_mock_gpio_input_levels[21] = 0; assert(hw_btn_read(0U) == 0U);
+        s_mock_gpio_input_levels[20] = 0; assert(hw_btn_read(1U) == 0U);
+        s_mock_gpio_input_levels[0]  = 0; assert(hw_btn_read(2U) == 0U);
+        hw_btn_set_val_button(0xFF); s_mock_gpio_input_levels[21] = 1;
+        assert(hw_btn_read(0U) == 1U);
+        assert(hw_btn_read(3U) == BTN_VOICEBOX_IDLE_LEVEL);
+        hw_btn_set_val_button(0);
+        printf("  PASS: VOICEBOX buttons 21/20/0 active-low, touch ignored\n");
+    }
+
+    printf("\nALL 10 VOICEBOX UNIT TESTS PASSED 100%%!\n");
     return 0;
 }

@@ -294,6 +294,17 @@ static void test_voice_get_cb(uint8_t voice_id) {
     s_voice_get_cb_last = voice_id;
 }
 
+static int s_volume_cb_count;
+static uint8_t s_volume_cb_level;
+static uint8_t s_volume_cb_result;
+static uint8_t s_volume_cb_muted;
+static void test_volume_cb(uint8_t level, uint8_t result, uint8_t muted) {
+    s_volume_cb_count++;
+    s_volume_cb_level = level;
+    s_volume_cb_result = result;
+    s_volume_cb_muted = muted;
+}
+
 static aiio_ci13162_parse_result_t parse(const char *line) {
     aiio_ci13162_message_t msg;
     return aiio_ci13162_parse_line(line, &msg);
@@ -301,6 +312,20 @@ static aiio_ci13162_parse_result_t parse(const char *line) {
 
 static void queue_and_process(uint8_t command, uint8_t value) {
     aiio_ci13162_message_t m = {.command = command, .data_count = 1U, .data = {value}};
+    xQueueSend(NULL, &m, 0U);
+    aiio_ci13162_uart_process();
+}
+
+static void queue_and_process_volume_info(uint8_t level, uint8_t result, uint8_t muted) {
+    aiio_ci13162_message_t m = {.command = AIIO_CI13162_CMD_VOLUME_INFO, .data_count = 3U,
+                                .data = {level, result, muted}};
+    xQueueSend(NULL, &m, 0U);
+    aiio_ci13162_uart_process();
+}
+
+static void queue_and_process_volume_change(uint8_t level, uint8_t cmd_id, uint8_t cwsl) {
+    aiio_ci13162_message_t m = {.command = AIIO_CI13162_CMD_VOLUME_CHANGE, .data_count = 1U,
+                                .data = {level}, .cmd_id = cmd_id, .cwsl = cwsl};
     xQueueSend(NULL, &m, 0U);
     aiio_ci13162_uart_process();
 }
@@ -313,6 +338,12 @@ static void queue_and_process_version(uint32_t version) {
 
 static void reset_test_state(void) {
     s_mock_tick = 0;
+    s_aiio_ci13162_volume_muted = 0U;
+    s_aiio_ci13162_volume_valid = 0U;
+    s_volume_cb_count = 0;
+    s_volume_cb_level = 0U;
+    s_volume_cb_result = 0U;
+    s_volume_cb_muted = 0U;
     s_aiio_ci13162_voice_id = 0U;
     s_aiio_ci13162_voice_set_sent = 0U;
     s_aiio_ci13162_voice_query_scheduled = 0U;
@@ -1172,6 +1203,71 @@ int main(void) {
         printf("  PASS: boot voice query verified\n");
     }
 
-    printf("\nALL 19 PROTOCOL & HARDWARE TESTS PASSED 100%%!\n");
+    /* TEST 20: volume muted state + mute send */
+    {
+        printf("--- Test 20: volume muted state + mute send ---\n");
+        reset_test_state();
+        assert(aiio_ci13162_uart_send_mute() == 0);
+        assert(strcmp((char *)s_uart_tx_buf, "{\"cmd\":8,\"data\":[8]}\r\n") == 0);
+        s_aiio_ci13162_ota_held = 1U; assert(aiio_ci13162_uart_send_mute() == -1); s_aiio_ci13162_ota_held = 0U;
+        uint8_t lv = 9U, mu = 9U;
+        s_aiio_ci13162_volume_valid = 0U;
+        assert(aiio_ci13162_uart_get_volume_state(&lv, &mu) == -1);
+        assert(aiio_ci13162_uart_get_volume_state(NULL, &mu) == -1);
+        aiio_ci13162_uart_set_volume_callback(test_volume_cb);
+        queue_and_process_volume_info(3U, 1U, 1U);
+        assert(s_volume_cb_count == 1 && s_volume_cb_level == 3U && s_volume_cb_result == 1U && s_volume_cb_muted == 1U);
+        assert(aiio_ci13162_uart_get_volume_state(&lv, &mu) == 0 && lv == 3U && mu == 1U);
+        queue_and_process_volume_change(4U, 49U, 255U);
+        assert(aiio_ci13162_uart_get_volume_state(&lv, &mu) == 0 && lv == 4U && mu == 0U);
+        queue_and_process_volume_change(0U, 54U, 255U);
+        assert(aiio_ci13162_uart_get_volume_state(&lv, &mu) == 0 && lv == 0U && mu == 1U);
+        aiio_ci13162_uart_set_volume_callback(NULL);
+        printf("  PASS: volume muted state + mute send verified\n");
+    }
+
+    /* TEST 21: Home command 71..103 (cmd 12) */
+    {
+        printf("--- Test 21: Home command 71..103 (cmd 12) ---\n");
+        aiio_ci13162_message_t msg;
+        assert(aiio_ci13162_parse_line("{\"cmd\":12,\"data\":[71],\"cmd_id\":71,\"cwsl\":255}", &msg) == AIIO_CI13162_PARSE_OK);
+        assert(aiio_ci13162_parse_line("{\"cmd\":12,\"data\":[102],\"cmd_id\":102,\"cwsl\":255}", &msg) == AIIO_CI13162_PARSE_OK);
+        assert(msg.command == AIIO_CI13162_CMD_SCENE && msg.data[0] == 102U && msg.cmd_id == 102U && msg.cwsl == 255U);
+        assert(aiio_ci13162_parse_line("{\"cmd\":12,\"data\":[103],\"cmd_id\":103,\"cwsl\":3}", &msg) == AIIO_CI13162_PARSE_OK);
+        assert(msg.cmd_id == 103U && msg.cwsl == 3U);
+        assert(aiio_ci13162_parse_line("{\"cmd\":12,\"data\":[104],\"cmd_id\":104,\"cwsl\":255}", &msg) == AIIO_CI13162_PARSE_INVALID_DATA);
+        assert(aiio_ci13162_parse_line("{\"cmd\":12,\"data\":[70],\"cmd_id\":70,\"cwsl\":255}", &msg) == AIIO_CI13162_PARSE_INVALID_DATA);
+        assert(aiio_ci13162_parse_line("{\"cmd\":12,\"data\":[16],\"cmd_id\":16,\"cwsl\":255}", &msg) == AIIO_CI13162_PARSE_INVALID_DATA);
+        assert(aiio_ci13162_parse_line("{\"cmd\":12,\"data\":[0],\"cmd_id\":0,\"cwsl\":255}", &msg) == AIIO_CI13162_PARSE_INVALID_DATA);
+        assert(aiio_ci13162_parse_line("{\"cmd\":12,\"data\":[102],\"cmd_id\":103,\"cwsl\":255}", &msg) == AIIO_CI13162_PARSE_INVALID_DATA);
+        assert(aiio_ci13162_parse_line("{\"cmd\":12,\"data\":[102],\"cmd_id\":157,\"cwsl\":255}", &msg) == AIIO_CI13162_PARSE_INVALID_DATA);
+        assert(aiio_ci13162_parse_line("{\"cmd\":12,\"data\":[15],\"cmd_id\":70,\"cwsl\":255}", &msg) == AIIO_CI13162_PARSE_OK);
+
+        /* 21.2: valid home command line reaches app_cwsl_notify_voice_cmd on VOICEBOX, no 299 */
+        uint8_t saved_device_type = device_type;
+        reset_test_state();
+        device_type = VOICEBOX;
+        char home_line[] = "{\"cmd\":12,\"data\":[102],\"cmd_id\":102,\"cwsl\":255}";
+        aiio_ci13162_handle_line(home_line, strlen(home_line));
+        aiio_ci13162_uart_process();
+        assert(s_app_send_data_count == 0);
+        assert(s_cwsl_notify_count == 1);
+        assert(s_last_cwsl_notify_cmd_id == 102U);
+        assert(s_last_cwsl_notify_cwsl == 255U);
+
+        /* 21.3: home command above 103 is still rejected via MQTT 299 */
+        reset_test_state();
+        char bad_home_line[] = "{\"cmd\":12,\"data\":[104],\"cmd_id\":104,\"cwsl\":255}";
+        aiio_ci13162_handle_line(bad_home_line, strlen(bad_home_line));
+        aiio_ci13162_uart_process();
+        assert(s_app_send_data_count == 1);
+        assert(strstr(s_last_app_send_data, "\"voiceboxv1\":299") != NULL);
+        assert(strstr(s_last_app_send_data, "\"reason\":\"INVALID_DATA\"") != NULL);
+        assert(s_cwsl_notify_count == 0);
+        device_type = saved_device_type;
+        printf("  PASS: Home command 71..103 parser and dispatch verified\n");
+    }
+
+    printf("\nALL 21 PROTOCOL & HARDWARE TESTS PASSED 100%%!\n");
     return 0;
 }

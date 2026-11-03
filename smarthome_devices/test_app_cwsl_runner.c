@@ -133,10 +133,11 @@ bool app_scene_is_pending(void)
     return false;
 }
 
+static bool s_mock_scene_active = true;
 bool app_scene_is_cmd_id_active(uint8_t cmd_id)
 {
     (void)cmd_id;
-    return true;
+    return s_mock_scene_active;
 }
 
 static int s_scene_learn_result_count = 0;
@@ -213,6 +214,7 @@ static void reset_cwsl_mocks(void)
     s_mock_resp_set_ret = 0;
     s_scene_resp_set_result_count = 0;
     s_scene_resp_set_result_code = 0;
+    s_mock_scene_active = true;
 }
 
 /* Drop CWSL sessions left by earlier tests (app_cwsl_init would rerun the validation suite). */
@@ -447,13 +449,15 @@ int main(void)
         assert(s_publish_count == 1);
         assert(strcmp(s_last_published, "{\"fanoem\":224,\"cmd_id\":70,\"cwsl\":255}") == 0);
 
-        /* Invalid command IDs (0, 71) must not publish */
+        /* Invalid command ID 0 must not publish */
         reset_cwsl_mocks();
         app_cwsl_notify_voice_cmd(0U, 255U);
         assert(s_publish_count == 0);
 
+        /* Home command 71 is published */
         app_cwsl_notify_voice_cmd(71U, 255U);
-        assert(s_publish_count == 0);
+        assert(s_publish_count == 1);
+        assert(strcmp(s_last_published, "{\"fanoem\":224,\"cmd_id\":71,\"cwsl\":255}") == 0);
 
         printf("  PASS: Voice notifications publish proper JSON with cmd_id and cwsl\n");
     }
@@ -856,6 +860,90 @@ int main(void)
         printf("  PASS: Voice pending blocks CWSL\n");
     }
 
-    printf("\nALL 10 CWSL TEST SCENARIOS PASSED 100%%!\n");
+    /* TEST 11: app_cwsl_is_learning is true only for 220 learn / 227 add sessions */
+    {
+        printf("--- Test 11: app_cwsl_is_learning ---\n");
+        reset_cwsl_mocks();
+        reset_cwsl_sessions();
+        assert(!app_cwsl_is_learning());
+        cJSON *req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":7,\"slot\":255,\"u\":1001,\"act_id\":1}");
+        app_cwsl_learn(req); cJSON_Delete(req);
+        assert(app_cwsl_is_learning());
+        reset_cwsl_mocks();
+        reset_cwsl_sessions();
+        assert(app_cwsl_start_scene_learn(56U, 1U, 0U, 47U) == 0U);
+        assert(app_cwsl_is_learning());
+        reset_cwsl_mocks();
+        reset_cwsl_sessions();
+        assert(app_cwsl_start_scene_delete(56U, 1U, 0U) == 0U);
+        assert(!app_cwsl_is_learning());
+        reset_cwsl_mocks();
+        reset_cwsl_sessions();
+        req = cJSON_Parse("{\"fanoem\":223,\"cmd_id\":255,\"u\":1001,\"act_id\":1}");
+        app_cwsl_query(req); cJSON_Delete(req);
+        assert(!app_cwsl_is_learning());
+        reset_cwsl_mocks();
+        reset_cwsl_sessions();
+        assert(app_cwsl_start_scene_resp_set(56U, 47U) == 0U);
+        assert(!app_cwsl_is_learning());
+        printf("  PASS: app_cwsl_is_learning verified\n");
+    }
+
+    /* TEST 12: Home command notify 71..103 */
+    {
+        printf("--- Test 12: Home command notify 71..103 ---\n");
+
+        /* 12.1: VOICEBOX home command ignores scene mask: LED + BLE + MQTT 224 */
+        reset_cwsl_mocks();
+        device_type = 10; /* VOICEBOX */
+        s_mock_scene_active = false;
+        app_cwsl_notify_voice_cmd(102U, 255U);
+        assert(s_publish_count == 1);
+        assert(strcmp(s_last_published, "{\"voiceboxv1\":224,\"cmd_id\":102,\"cwsl\":255}") == 0);
+        assert(s_mock_led_pulse_count == 1);
+        assert(s_mock_led_pulse_duration == 200);
+        assert(s_mock_ble_beacon_count == 1);
+        assert(s_mock_ble_beacon_cmd_id == 102U);
+
+        /* 12.2: range bounds and learned template cwsl */
+        reset_cwsl_mocks();
+        device_type = 10;
+        app_cwsl_notify_voice_cmd(71U, 255U);
+        app_cwsl_notify_voice_cmd(103U, 3U);
+        assert(s_publish_count == 2);
+        assert(strcmp(s_last_published, "{\"voiceboxv1\":224,\"cmd_id\":103,\"cwsl\":3}") == 0);
+        assert(s_mock_ble_beacon_cmd_id == 103U);
+
+        /* 12.3: IDs above 103 do nothing */
+        reset_cwsl_mocks();
+        device_type = 10;
+        app_cwsl_notify_voice_cmd(104U, 255U);
+        app_cwsl_notify_voice_cmd(255U, 255U);
+        assert(s_publish_count == 0);
+        assert(s_mock_led_pulse_count == 0);
+        assert(s_mock_ble_beacon_count == 0);
+
+        /* 12.4: non-VOICEBOX publishes 224 without LED or BLE */
+        reset_cwsl_mocks();
+        device_type = 0; /* fanoem */
+        app_cwsl_notify_voice_cmd(102U, 255U);
+        assert(s_publish_count == 1);
+        assert(strcmp(s_last_published, "{\"fanoem\":224,\"cmd_id\":102,\"cwsl\":255}") == 0);
+        assert(s_mock_led_pulse_count == 0);
+        assert(s_mock_ble_beacon_count == 0);
+
+        /* 12.5: regression - inactive scene still skipped */
+        reset_cwsl_mocks();
+        device_type = 10;
+        s_mock_scene_active = false;
+        app_cwsl_notify_voice_cmd(56U, 255U);
+        assert(s_publish_count == 0);
+        assert(s_mock_ble_beacon_count == 0);
+
+        device_type = 0;
+        printf("  PASS: Home command notify 71..103 verified\n");
+    }
+
+    printf("\nALL 12 CWSL TEST SCENARIOS PASSED 100%%!\n");
     return 0;
 }
