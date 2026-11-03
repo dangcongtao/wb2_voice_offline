@@ -844,14 +844,20 @@ static aiio_ci13162_parse_result_t aiio_ci13162_validate_message(
             if (message->data_count != 1U) {
                 return AIIO_CI13162_PARSE_INVALID_FORMAT;
             }
-            /* problem here */
-            if ((message->data[0] < 1U) || (message->data[0] > APP_SCENE_COUNT_MAX)) {
-                return AIIO_CI13162_PARSE_INVALID_DATA;
+            /* Scene 1..15: cmd_id = 55 + data (56..70). */
+            if ((message->data[0] >= 1U) && (message->data[0] <= APP_SCENE_COUNT_MAX)) {
+                return (message->cmd_id == (uint8_t)(55U + message->data[0]))
+                           ? AIIO_CI13162_PARSE_OK
+                           : AIIO_CI13162_PARSE_INVALID_DATA;
             }
-            if (message->cmd_id != (uint8_t)(55U + message->data[0])) {
-                return AIIO_CI13162_PARSE_INVALID_DATA;
+            /* Home command 71..103: cmd_id = data. */
+            if ((message->data[0] >= APP_CWSL_HOME_CMD_ID_MIN) &&
+                (message->data[0] <= APP_CWSL_HOME_CMD_ID_MAX)) {
+                return (message->cmd_id == message->data[0])
+                           ? AIIO_CI13162_PARSE_OK
+                           : AIIO_CI13162_PARSE_INVALID_DATA;
             }
-            return AIIO_CI13162_PARSE_OK;
+            return AIIO_CI13162_PARSE_INVALID_DATA;
 
         case AIIO_CI13162_CMD_VOLUME_CHANGE:
             if (message->data_count != 1U) {

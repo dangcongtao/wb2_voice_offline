@@ -15,6 +15,11 @@
 /** Maximum ASR command identifier accepted by CWSL LEARN/DELETE/QUERY. */
 #define APP_CWSL_CMD_ID_MAX 70U
 
+/** First/last home-appliance command ID the chip reports via CMD_SCENE
+ *  with data[0] == cmd_id (voice model 2026-11-01). */
+#define APP_CWSL_HOME_CMD_ID_MIN 71U
+#define APP_CWSL_HOME_CMD_ID_MAX 103U
+
 /** @brief Initialize the CWSL state machine and UART response callbacks.
  *
  *  @return     None.

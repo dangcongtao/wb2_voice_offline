@@ -141,6 +141,10 @@ void m_mqtt_publish_directly(char *data, uint32_t length)
             os_trace("\tlen_msg_encrypted:%lu\r\n", len_msg_encrypted);
             os_trace("\t%smqtt_client: publish message fail\r\n", __func__);
         }
+        else
+        {
+            os_trace("[MQTT] TX: [%s]\r\n", data);
+        }
     }
 }
 

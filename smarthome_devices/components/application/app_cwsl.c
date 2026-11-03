@@ -1448,7 +1448,10 @@ void app_cwsl_notify_voice_cmd(uint8_t cmd_id, uint8_t cwsl)
     char response[APP_CWSL_RESPONSE_SIZE];
     int response_length;
 
-    if ((cmd_id == 0U) || (cmd_id > APP_CWSL_CMD_ID_MAX)) {
+    // Accept 1..70 and home commands 71..103; home commands skip the scene mask check below.
+    if ((cmd_id == 0U) ||
+        ((cmd_id > APP_CWSL_CMD_ID_MAX) &&
+         ((cmd_id < APP_CWSL_HOME_CMD_ID_MIN) || (cmd_id > APP_CWSL_HOME_CMD_ID_MAX)))) {
         return;
     }
 
