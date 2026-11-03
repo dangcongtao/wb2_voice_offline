@@ -102,16 +102,17 @@ void main(void)
     {
         printf("Watchdog initialization failed\r\n");
     }
-    ci13162_uart_result = aiio_ci13162_uart_init();
-    if (ci13162_uart_result != 0)
-    {
-        printf("CI13162 UART initialization failed\r\n");
-    }
 
     easyflash_init();
     m_db_read_device_id();
+    ci13162_uart_result = -1;
     if (hw_device_support_voice())
     {
+        ci13162_uart_result = aiio_ci13162_uart_init();
+        if (ci13162_uart_result != 0)
+        {
+            printf("CI13162 UART initialization failed\r\n");
+        }
         aiio_ci13162_power_init();
     }
     if (m_ci13162_ota_boot_prepare(&wifi_info))
@@ -175,7 +176,10 @@ void main(void)
 
     /* have to init gpio after init database, because gpio init need number_channel
     which initialized by database */
-    hw_uart_init();
+    if (device_type != VOICEBOX)
+    {
+        hw_uart_init();
+    }
     m_button_init();
     m_led_stt_init();
 

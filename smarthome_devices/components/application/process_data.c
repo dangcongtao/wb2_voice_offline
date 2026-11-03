@@ -108,6 +108,7 @@ wswitch_handler_t array_handler[] = {
     {app_ble_discover, 35},
     {app_ble_authen_connection, 36},
 
+    /* voicebox */
     {app_cwsl_learn, 220},
     {app_cwsl_delete, 221},
     {app_cwsl_stop, 222},

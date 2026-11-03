@@ -1170,7 +1170,7 @@ static void ci13162_ota_task(void *argument)
     }
 
     os_trace("[CI13162][OTA] Firmware URL %s\r\n", s_ci13162_ota_firmware_url);
-    os_trace("[CI13162][OTA] Taking UART0, console paused during chip OTA\r\n");
+    os_trace("[CI13162][OTA] Taking UART1, console log stays on\r\n");
     (void)fflush(stdout);
     ci13162_ota_log_stage("uart_acquire");
     if (aiio_ci13162_uart_ota_acquire() != 0) {

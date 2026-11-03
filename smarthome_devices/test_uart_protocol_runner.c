@@ -54,7 +54,7 @@ void app_send_data(char *data, uint32_t length) {
 static int s_mock_voice_support = 1;
 bool hw_device_support_voice(void) {
     if (s_mock_voice_support == -1) {
-        return (device_type == FANACIR || device_type == VOICEBOX);
+        return (device_type == VOICEBOX);
     }
     return s_mock_voice_support != 0;
 }
@@ -87,9 +87,10 @@ static int mock_uart_tx(const void *data, uint32_t length) {
     return (int)length;
 }
 
-hosal_uart_dev_t uart_stdio;
+static hosal_uart_dev_t s_last_send_dev, s_last_ioctl_dev, s_last_init_dev;
+static int s_init_calls, s_send_calls, s_ioctl_calls;
 int hosal_uart_send(hosal_uart_dev_t *dev, const void *data, uint32_t length) {
-    (void)dev;
+    s_last_send_dev = *dev; s_send_calls++;
     return mock_uart_tx(data, length);
 }
 int hosal_uart_receive(hosal_uart_dev_t *dev, void *data, uint32_t length) {
@@ -97,10 +98,11 @@ int hosal_uart_receive(hosal_uart_dev_t *dev, void *data, uint32_t length) {
     return 0;
 }
 int hosal_uart_ioctl(hosal_uart_dev_t *dev, int ctl, void *arg) {
-    (void)dev; (void)ctl; (void)arg;
+    (void)ctl; (void)arg;
+    s_last_ioctl_dev = *dev; s_ioctl_calls++;
     return 0;
 }
-int hosal_uart_init(hosal_uart_dev_t *dev) { (void)dev; return 0; }
+int hosal_uart_init(hosal_uart_dev_t *dev) { s_last_init_dev = *dev; s_init_calls++; return 0; }
 int hosal_uart_init_only_tx(hosal_uart_dev_t *dev) { (void)dev; return 0; }
 int hosal_uart_finalize(hosal_uart_dev_t *dev) { (void)dev; return 0; }
 int hosal_uart_callback_set(hosal_uart_dev_t *dev, int c, int (*p)(void *), void *a) {
@@ -271,6 +273,13 @@ BaseType_t xQueueReset(QueueHandle_t xQueue) {
     return pdPASS;
 }
 
+static int s_resp_set_cb_count;
+static uint8_t s_resp_set_cb_last;
+static void test_resp_set_cb(uint8_t applied) {
+    s_resp_set_cb_count++;
+    s_resp_set_cb_last = applied;
+}
+
 static void reset_test_state(void) {
     memset(&s_mock_fan_info, 0, sizeof(s_mock_fan_info));
     s_last_cwsl_notify_cmd_id = 0;
@@ -302,6 +311,42 @@ int main(void) {
         aiio_ci13162_run_parser_tests();
         aiio_ci13162_run_assembler_tests();
         printf("  PASS: Built-in parser and assembler tests succeeded\n");
+    }
+
+    /* TEST 1b: CI13162 driver owns UART1 and leaves UART0 (log) alone */
+    {
+        printf("--- Test 1b: UART1 config ---\n");
+        reset_test_state();
+        s_mock_voice_support = 1;
+        g_mock_uart_fun_sel_count = 0;
+        assert(aiio_ci13162_uart_init() == 0);
+        assert(s_init_calls == 1);
+        /* SIG7 must be handed back to UART0_RXD so UART1_RXD is selected only on SIG(rx % 8). */
+        assert(g_mock_uart_fun_sel_count == 1);
+        assert(g_mock_uart_fun_sel_last_sig == GLB_UART_SIG_7);
+        assert(g_mock_uart_fun_sel_last_fun == GLB_UART_SIG_FUN_UART0_RXD);
+        assert(s_last_init_dev.config.uart_id == 1);
+        assert(s_last_init_dev.config.tx_pin == 4);
+        assert(s_last_init_dev.config.rx_pin == 3);
+        assert(s_last_init_dev.config.baud_rate == 115200);
+        assert(s_last_init_dev.config.mode == HOSAL_UART_MODE_INT);
+        aiio_ci13162_uart_send_volume(3);
+        assert(s_send_calls > 0);
+        assert(s_last_send_dev.config.uart_id == 1);
+        assert(aiio_ci13162_uart_ota_acquire() == 0);
+        assert(aiio_ci13162_uart_ota_set_baud(921600) == 0);
+        assert(s_ioctl_calls > 0);
+        assert(s_last_ioctl_dev.config.uart_id == 1);
+        aiio_ci13162_uart_ota_release();
+        assert(g_mock_logall_disable_count == 0);
+        assert(g_mock_logall_enable_count == 0);
+        g_mock_gpio_last_out_pin = -1;
+        g_mock_gpio_last_out_val = -1;
+        aiio_ci13162_uart_hold_tx_idle();
+        assert(g_mock_gpio_last_out_pin == 4);
+        assert(g_mock_gpio_last_out_val == 1);
+        assert(g_mock_uart_disable_count == 0);
+        printf("  PASS: CI13162 uses UART1 only\n");
     }
 
     /* TEST 2: Duplicate key rejection */
@@ -835,7 +880,7 @@ int main(void) {
         device_type = VOICEBOX;
         assert(hw_device_support_voice() == true);
         device_type = FANACIR;
-        assert(hw_device_support_voice() == true);
+        assert(hw_device_support_voice() == false);
         device_type = FANDC;
         assert(hw_device_support_voice() == false);
         device_type = FANAC;
@@ -943,6 +988,60 @@ int main(void) {
         printf("  PASS: VOICEBOX voice support, buzzer, scene execution, fan bypass and reset verified\n");
     }
 
-    printf("\nALL 14 PROTOCOL & HARDWARE TESTS PASSED 100%%!\n");
+    /* TEST 15: Scene 1..15 parser */
+    {
+        printf("--- Test 15: Scene 1..15 parser ---\n");
+        aiio_ci13162_message_t msg;
+        assert(aiio_ci13162_parse_line("{\"cmd\":12,\"data\":[11],\"cmd_id\":66,\"cwsl\":255}", &msg) == AIIO_CI13162_PARSE_OK);
+        assert(aiio_ci13162_parse_line("{\"cmd\":12,\"data\":[15],\"cmd_id\":70,\"cwsl\":3}", &msg) == AIIO_CI13162_PARSE_OK);
+        assert(msg.cmd_id == 70U && msg.cwsl == 3U && msg.data[0] == 15U);
+        assert(aiio_ci13162_parse_line("{\"cmd\":12,\"data\":[16],\"cmd_id\":71,\"cwsl\":255}", &msg) == AIIO_CI13162_PARSE_INVALID_DATA);
+        assert(aiio_ci13162_parse_line("{\"cmd\":12,\"data\":[15],\"cmd_id\":69,\"cwsl\":255}", &msg) == AIIO_CI13162_PARSE_INVALID_DATA);
+        assert(aiio_ci13162_parse_line("{\"cmd\":6,\"data\":[70,1,0]}", &msg) == AIIO_CI13162_PARSE_OK);
+        assert(aiio_ci13162_parse_line("{\"cmd\":6,\"data\":[71,1,0]}", &msg) == AIIO_CI13162_PARSE_INVALID_DATA);
+        printf("  PASS: Scene 1..15 parser verified\n");
+    }
+    /* TEST 16: CWSL LEARN with value */
+    {
+        printf("--- Test 16: CWSL LEARN with value ---\n");
+        reset_test_state();
+        uint8_t learn3[3] = {56U, 255U, 47U};
+        uint8_t learn2[2] = {56U, 255U};
+        assert(aiio_ci13162_uart_send_cwsl(1U, learn3, 3U) == 0);
+        assert(strcmp((char *)s_uart_tx_buf, "{\"cmd\":4,\"data\":[1,56,255,47]}\r\n") == 0);
+        assert(aiio_ci13162_uart_send_cwsl(1U, learn2, 2U) == 0);
+        assert(strcmp((char *)s_uart_tx_buf, "{\"cmd\":4,\"data\":[1,56,255]}\r\n") == 0);
+        assert(aiio_ci13162_uart_send_cwsl(2U, learn3, 3U) == -1);
+        assert(aiio_ci13162_uart_send_cwsl(1U, learn3, 4U) == -1);
+        printf("  PASS: CWSL LEARN with value verified\n");
+    }
+
+    /* TEST 17: CMD_RESP_SET (cmd 15) */
+    {
+        printf("--- Test 17: CMD_RESP_SET (cmd 15) ---\n");
+        reset_test_state();
+        assert(aiio_ci13162_uart_send_resp_set(56U, 47U) == 0);
+        assert(strcmp((char *)s_uart_tx_buf, "{\"cmd\":15,\"data\":[56,47]}\r\n") == 0);
+        s_aiio_ci13162_ota_held = 1U;
+        assert(aiio_ci13162_uart_send_resp_set(56U, 47U) == -1);
+        s_aiio_ci13162_ota_held = 0U;
+        aiio_ci13162_message_t msg;
+        assert(aiio_ci13162_parse_line("{\"cmd\":15,\"data\":[1]}", &msg) == AIIO_CI13162_PARSE_OK);
+        assert(msg.command == AIIO_CI13162_CMD_RESP_SET && msg.data_count == 1U && msg.data[0] == 1U);
+        assert(aiio_ci13162_parse_line("{\"cmd\":15,\"data\":[0]}", &msg) == AIIO_CI13162_PARSE_OK);
+        assert(aiio_ci13162_parse_line("{\"cmd\":15,\"data\":[2]}", &msg) == AIIO_CI13162_PARSE_INVALID_DATA);
+        assert(aiio_ci13162_parse_line("{\"cmd\":15,\"data\":[]}", &msg) == AIIO_CI13162_PARSE_INVALID_DATA);
+        assert(aiio_ci13162_parse_line("{\"cmd\":15,\"data\":[1],\"cmd_id\":56,\"cwsl\":255}", &msg) == AIIO_CI13162_PARSE_INVALID_FORMAT);
+        s_resp_set_cb_count = 0;
+        aiio_ci13162_uart_set_resp_set_callback(test_resp_set_cb);
+        aiio_ci13162_message_t m = {.command = AIIO_CI13162_CMD_RESP_SET, .data_count = 1U, .data = {0U}};
+        xQueueSend(NULL, &m, 0U);
+        aiio_ci13162_uart_process();
+        assert(s_resp_set_cb_count == 1 && s_resp_set_cb_last == 0U);
+        aiio_ci13162_uart_set_resp_set_callback(NULL);
+        printf("  PASS: CMD_RESP_SET verified\n");
+    }
+
+    printf("\nALL 17 PROTOCOL & HARDWARE TESTS PASSED 100%%!\n");
     return 0;
 }

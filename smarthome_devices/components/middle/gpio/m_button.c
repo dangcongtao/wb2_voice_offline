@@ -285,9 +285,15 @@ static void button_scan_task(void *param)
             tick_ota_led = 0;
         }
 
-        hw_uart_loop();
+        if (device_type != VOICEBOX)
+        {
+            hw_uart_loop();
+        }
         app_btn_scan(NULL);
-        m_ft62f28_check_send_change();
+        if (device_type != VOICEBOX)
+        {
+            m_ft62f28_check_send_change();
+        }
         if (device_type != VOICEBOX)
         {
             m_led_7_seg_loop(50);

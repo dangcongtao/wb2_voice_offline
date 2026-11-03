@@ -67,6 +67,10 @@ void m_ft62f28_send_led(void)
 
 void m_ft62f28_send_reset_touch(void)
 {
+    if (device_type == VOICEBOX)
+    {
+        return;
+    }
     os_trace("m_ft62f28_send_reset_touch");
     memset(&data_send, 0, sizeof(data_send));
     data_send.header[0] = HEADER_1;
@@ -79,6 +83,10 @@ void m_ft62f28_send_reset_touch(void)
 
 void m_ft62f28_check_send_change(void)
 {
+    if (device_type == VOICEBOX)
+    {
+        return;
+    }
     if (!s_ft62f28_obj.has_control_fan)
     {
         return;

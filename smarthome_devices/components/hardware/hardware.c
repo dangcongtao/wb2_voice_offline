@@ -45,5 +45,5 @@ uint32_t sys_get_tick_ms(void) { return (uint32_t)aos_now_ms(); }
 // Check whether the active device model supports the CI13162 voice IC.
 bool hw_device_support_voice(void)
 {
-    return (device_type == FANACIR || device_type == VOICEBOX);
+    return (device_type == VOICEBOX);
 }

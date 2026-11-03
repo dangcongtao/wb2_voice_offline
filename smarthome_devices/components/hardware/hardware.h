@@ -12,13 +12,7 @@
 #define gpio_get_level bl_gpio_input_get_value
 #define gpio_set_level bl_gpio_output_set
 
-/* GPIO 14 is shared with the software UART log (gpio_log.c): disable the
-   status LED in debug builds so the pin is free for log output */
-#if DEBUG_ENABLE == 1
-#define LED_STT 0xFF
-#else
 #define LED_STT 14
-#endif
 #define LED_STT_VOICEBOX 2
 #define LED_STT_SSW 1
 #define LED_STT_MINI 0xFF
@@ -80,6 +74,7 @@
 #define OE_PIN 0
 #define OE_PIN_2 0xFF
 
+/* use for fan AC */
 #define BUZZ_PIN 17
 
 extern uint32_t max_number_channel;
@@ -119,7 +114,7 @@ void hw_buzz_init(void);
 /** @brief Check whether the current device supports voice IC.
  *
  *  @return     Voice IC support status.
- *  @retval     true   Device supports voice IC (e.g. fanproacv2, voiceboxv1).
+ *  @retval     true   Device supports voice IC (voiceboxv1 only).
  *  @retval     false  Device does not support voice IC.
  */
 bool hw_device_support_voice(void);

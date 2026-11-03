@@ -70,6 +70,32 @@ void aiio_ci13162_uart_set_cwsl_callbacks(aiio_ci13162_cwsl_status_cb_t status_c
     s_registered_info_cb = info_cb;
 }
 
+static int s_resp_set_send_count = 0;
+static uint8_t s_resp_set_last_cmd_id = 0;
+static uint8_t s_resp_set_last_value = 0;
+static int32_t s_mock_resp_set_ret = 0;
+int32_t aiio_ci13162_uart_send_resp_set(uint8_t cmd_id, uint8_t value)
+{
+    s_resp_set_send_count++;
+    s_resp_set_last_cmd_id = cmd_id;
+    s_resp_set_last_value = value;
+    return s_mock_resp_set_ret;
+}
+
+static aiio_ci13162_resp_set_cb_t s_registered_resp_set_cb = NULL;
+void aiio_ci13162_uart_set_resp_set_callback(aiio_ci13162_resp_set_cb_t cb)
+{
+    s_registered_resp_set_cb = cb;
+}
+
+static int s_scene_resp_set_result_count = 0;
+static uint8_t s_scene_resp_set_result_code = 0;
+void app_scene_on_resp_set_result(uint8_t code)
+{
+    s_scene_resp_set_result_count++;
+    s_scene_resp_set_result_code = code;
+}
+
 void aiio_ci13162_uart_set_version_query_paused(uint8_t paused)
 {
     (void)paused;
@@ -106,10 +132,14 @@ bool app_scene_is_cmd_id_active(uint8_t cmd_id)
     return true;
 }
 
+static int s_scene_learn_result_count = 0;
+static uint8_t s_scene_learn_result_code = 0;
+static uint8_t s_scene_learn_result_cmd_id = 0;
 void app_scene_on_learn_result(uint8_t code, uint8_t cmd_id)
 {
-    (void)code;
-    (void)cmd_id;
+    s_scene_learn_result_count++;
+    s_scene_learn_result_code = code;
+    s_scene_learn_result_cmd_id = cmd_id;
 }
 
 void app_scene_on_delete_result(uint8_t code, uint8_t cmd_id)
@@ -161,12 +191,29 @@ static void reset_cwsl_mocks(void)
     s_mock_uart_data_count = 0;
     s_uart_send_count = 0;
     s_scene_clear_all_count = 0;
+    s_scene_learn_result_count = 0;
+    s_scene_learn_result_code = 0;
+    s_scene_learn_result_cmd_id = 0;
     s_mock_uart_ret = 0;
     s_mock_tick = 0;
     s_mock_led_pulse_duration = 0;
     s_mock_led_pulse_count = 0;
     s_mock_ble_beacon_cmd_id = 0;
     s_mock_ble_beacon_count = 0;
+    s_resp_set_send_count = 0;
+    s_resp_set_last_cmd_id = 0;
+    s_resp_set_last_value = 0;
+    s_mock_resp_set_ret = 0;
+    s_scene_resp_set_result_count = 0;
+    s_scene_resp_set_result_code = 0;
+}
+
+/* Drop CWSL sessions left by earlier tests (app_cwsl_init would rerun the validation suite). */
+static void reset_cwsl_sessions(void)
+{
+    memset(&s_app_cwsl_mutating, 0, sizeof(s_app_cwsl_mutating));
+    memset(&s_app_cwsl_query, 0, sizeof(s_app_cwsl_query));
+    memset(&s_app_cwsl_resp_set, 0, sizeof(s_app_cwsl_resp_set));
 }
 
 int main(void)
@@ -228,7 +275,7 @@ int main(void)
         assert(strstr(s_last_published, "\"code\":65") != NULL);
         assert(strstr(s_last_published, "\"result\":0") != NULL);
 
-        /* Scene commands (56..65) must be rejected with BAD_REQUEST (64) */
+        /* Scene commands (56..70) must be rejected with BAD_REQUEST (64) */
         reset_cwsl_mocks();
         req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":56,\"slot\":255,\"u\":1004,\"act_id\":4}");
         app_cwsl_learn(req);
@@ -244,9 +291,23 @@ int main(void)
         assert(s_publish_count == 1);
         assert(strstr(s_last_published, "\"code\":64") != NULL);
 
-        /* Out-of-bounds commands (> 65) must be rejected with BAD_COMMAND_ID (65) */
         reset_cwsl_mocks();
         req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":66,\"slot\":0,\"u\":1006,\"act_id\":6}");
+        app_cwsl_learn(req);
+        cJSON_Delete(req);
+        assert(s_publish_count == 1);
+        assert(strstr(s_last_published, "\"code\":64") != NULL);
+
+        reset_cwsl_mocks();
+        req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":70,\"slot\":255,\"u\":1007,\"act_id\":7}");
+        app_cwsl_learn(req);
+        cJSON_Delete(req);
+        assert(s_publish_count == 1);
+        assert(strstr(s_last_published, "\"code\":64") != NULL);
+
+        /* Out-of-bounds commands (> 70) must be rejected with BAD_COMMAND_ID (65) */
+        reset_cwsl_mocks();
+        req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":71,\"slot\":0,\"u\":1008,\"act_id\":8}");
         app_cwsl_learn(req);
         cJSON_Delete(req);
         assert(s_publish_count == 1);
@@ -373,12 +434,18 @@ int main(void)
         assert(s_publish_count == 1);
         assert(strcmp(s_last_published, "{\"fanoem\":224,\"cmd_id\":60,\"cwsl\":0}") == 0);
 
-        /* Invalid command IDs (0, 68) must not publish */
+        /* Highest scene command (cmd_id 70) is published */
+        reset_cwsl_mocks();
+        app_cwsl_notify_voice_cmd(70U, 255U);
+        assert(s_publish_count == 1);
+        assert(strcmp(s_last_published, "{\"fanoem\":224,\"cmd_id\":70,\"cwsl\":255}") == 0);
+
+        /* Invalid command IDs (0, 71) must not publish */
         reset_cwsl_mocks();
         app_cwsl_notify_voice_cmd(0U, 255U);
         assert(s_publish_count == 0);
 
-        app_cwsl_notify_voice_cmd(68U, 255U);
+        app_cwsl_notify_voice_cmd(71U, 255U);
         assert(s_publish_count == 0);
 
         printf("  PASS: Voice notifications publish proper JSON with cmd_id and cwsl\n");
@@ -507,6 +574,13 @@ int main(void)
         assert(s_mock_ble_beacon_count == 1);
         assert(s_mock_ble_beacon_cmd_id == 56U);
 
+        /* Voice notify on scene command (cmd_id 66) with learned slot 2 */
+        reset_cwsl_mocks();
+        app_cwsl_notify_voice_cmd(66U, 2U);
+        assert(s_publish_count == 1);
+        assert(strcmp(s_last_published, "{\"voiceboxv1\":224,\"cmd_id\":66,\"cwsl\":2}") == 0);
+        assert(s_mock_ble_beacon_cmd_id == 66U);
+
         /* Voice notify on default voice command (cmd_id 7) triggers MQTT 224, LED 200ms pulse, AND BLE beacon */
         reset_cwsl_mocks();
         app_cwsl_notify_voice_cmd(7U, 255U);
@@ -528,7 +602,230 @@ int main(void)
         device_type = 0; /* restore */
         printf("  PASS: VOICEBOX wake-only CWSL validation, MQTT 224, BLE beacon, and 200ms LED pulse verified\n");
     }
+    /* TEST 7: Scene add FSM with respond_id */
+    {
+        printf("--- Test 7: Scene add FSM with respond_id ---\n");
+        device_type = 10;
+        reset_cwsl_mocks();
+        assert(app_cwsl_start_scene_learn(56U, 101U, 1U, 47U) == 0U);
+        assert(s_mock_uart_action == APP_CWSL_ACTION_QUERY && s_mock_uart_data_count == 1 && s_mock_uart_data[0] == 56U);
+        uint8_t empty_bitmap[2] = {0U, 0U};
+        s_registered_info_cb(56U, empty_bitmap, 2U);
+        assert(s_mock_uart_action == APP_CWSL_ACTION_LEARN && s_mock_uart_data_count == 3);
+        assert(s_mock_uart_data[0] == 56U && s_mock_uart_data[1] == 255U && s_mock_uart_data[2] == 47U);
+        s_registered_status_cb(32U, 56U, 3U);
+        assert(s_scene_learn_result_count == 1 && s_scene_learn_result_code == 32U && s_scene_learn_result_cmd_id == 56U);
 
-    printf("\nALL 6 CWSL TEST SCENARIOS PASSED 100%%!\n");
+        device_type = 0;
+        printf("  PASS: Scene add FSM with respond_id verified\n");
+    }
+
+    /* TEST 8: Scene add cancel (222) */
+    {
+        printf("--- Test 8: Scene add cancel (222) ---\n");
+        device_type = 10;
+        uint8_t empty_bitmap[2] = {0U, 0U};
+        const char *stop_json = "{\"voiceboxv1\":222,\"u\":9,\"act_id\":2}";
+        cJSON *req;
+        int sent_before;
+        int pub_before;
+
+        /* (a) cancel in QUERY_OLD */
+        reset_cwsl_mocks();
+        assert(app_cwsl_start_scene_learn(56U, 101U, 1U, 47U) == 0U);
+        sent_before = s_uart_send_count;
+        req = cJSON_Parse(stop_json);
+        app_cwsl_stop(req);
+        cJSON_Delete(req);
+        assert(strcmp(s_last_published, "{\"voiceboxv1\":222,\"cmd_id\":56,\"slot\":255,\"code\":34,\"u\":9,\"act_id\":2}") == 0);
+        assert(strstr(s_last_published, "\"result\"") == NULL);
+        assert(s_scene_learn_result_code == 34U);
+        assert(s_uart_send_count == sent_before);
+        sent_before = s_uart_send_count;
+        pub_before = s_publish_count;
+        s_registered_info_cb(56U, empty_bitmap, 2U);
+        assert(s_uart_send_count == sent_before);
+        assert(s_publish_count == pub_before);
+
+        /* (b) cancel in LEARNING, chip returns 34 */
+        reset_cwsl_mocks();
+        assert(app_cwsl_start_scene_learn(56U, 101U, 1U, 47U) == 0U);
+        s_registered_info_cb(56U, empty_bitmap, 2U);
+        req = cJSON_Parse(stop_json);
+        app_cwsl_stop(req);
+        cJSON_Delete(req);
+        assert(s_mock_uart_action == APP_CWSL_ACTION_STOP);
+        s_registered_status_cb(34U, 56U, 3U);
+        assert(strcmp(s_last_published, "{\"voiceboxv1\":222,\"cmd_id\":56,\"slot\":3,\"code\":34,\"u\":9,\"act_id\":2}") == 0);
+        assert(strstr(s_last_published, "\"result\"") == NULL);
+
+        /* (c) cancel in LEARNING, chip returns 48 */
+        reset_cwsl_mocks();
+        assert(app_cwsl_start_scene_learn(56U, 101U, 1U, 47U) == 0U);
+        s_registered_info_cb(56U, empty_bitmap, 2U);
+        req = cJSON_Parse(stop_json);
+        app_cwsl_stop(req);
+        cJSON_Delete(req);
+        assert(s_mock_uart_action == APP_CWSL_ACTION_STOP);
+        s_registered_status_cb(48U, 56U, 255U);
+        assert(strcmp(s_last_published, "{\"voiceboxv1\":222,\"cmd_id\":56,\"slot\":255,\"code\":48,\"u\":9,\"act_id\":2}") == 0);
+        assert(strstr(s_last_published, "\"result\"") == NULL);
+
+        /* (d) cancel in LEARNING, no chip frame -> timeout */
+        reset_cwsl_mocks();
+        assert(app_cwsl_start_scene_learn(56U, 101U, 1U, 47U) == 0U);
+        s_registered_info_cb(56U, empty_bitmap, 2U);
+        req = cJSON_Parse(stop_json);
+        app_cwsl_stop(req);
+        cJSON_Delete(req);
+        s_mock_tick = 120000;
+        app_cwsl_poll();
+        assert(strcmp(s_last_published, "{\"voiceboxv1\":222,\"cmd_id\":56,\"slot\":255,\"code\":52,\"u\":9,\"act_id\":2}") == 0);
+        assert(strstr(s_last_published, "\"result\"") == NULL);
+        assert(s_scene_learn_result_code == 52U);
+
+        /* (e) cancel in DELETING_OLD -> reject 67 */
+        reset_cwsl_mocks();
+        assert(app_cwsl_start_scene_learn(56U, 101U, 1U, 47U) == 0U);
+        uint8_t used_bitmap[2] = {0x01U, 0x00U};
+        s_registered_info_cb(56U, used_bitmap, 2U);
+        s_registered_status_cb(32U, 56U, 3U);
+        assert(s_mock_uart_action == APP_CWSL_ACTION_DELETE);
+        req = cJSON_Parse(stop_json);
+        app_cwsl_stop(req);
+        cJSON_Delete(req);
+        assert(strcmp(s_last_published, "{\"voiceboxv1\":222,\"u\":9,\"act_id\":2,\"result\":0,\"code\":67}") == 0);
+
+        device_type = 0;
+        printf("  PASS: Scene add cancel (222) verified\n");
+    }
+
+    /* TEST 9: Scene respond_id edit (cmd:15) */
+    {
+        printf("--- Test 9: Scene respond_id edit ---\n");
+        device_type = 10;
+        cJSON *req;
+        int sent_before;
+
+        /* (a) success */
+        reset_cwsl_mocks();
+        reset_cwsl_sessions();
+        assert(app_cwsl_start_scene_resp_set(56U, 47U) == 0U);
+        assert(s_resp_set_send_count == 1 && s_resp_set_last_cmd_id == 56U && s_resp_set_last_value == 47U);
+        assert(app_cwsl_is_pending() == true);
+        s_registered_resp_set_cb(1U);
+        assert(s_scene_resp_set_result_count == 1 && s_scene_resp_set_result_code == 0U);
+        assert(app_cwsl_is_pending() == false);
+
+        /* (b) chip rejects */
+        reset_cwsl_mocks();
+        reset_cwsl_sessions();
+        assert(app_cwsl_start_scene_resp_set(56U, 47U) == 0U);
+        s_registered_resp_set_cb(0U);
+        assert(s_scene_resp_set_result_count == 1 && s_scene_resp_set_result_code == 64U);
+        assert(app_cwsl_is_pending() == false);
+
+        /* (c) timeout, then late reply is dropped */
+        reset_cwsl_mocks();
+        reset_cwsl_sessions();
+        assert(app_cwsl_start_scene_resp_set(56U, 47U) == 0U);
+        s_mock_tick = 1999;
+        app_cwsl_poll();
+        assert(s_scene_resp_set_result_count == 0);
+        s_mock_tick = 2000;
+        app_cwsl_poll();
+        assert(s_scene_resp_set_result_count == 1 && s_scene_resp_set_result_code == 52U);
+        assert(app_cwsl_is_pending() == false);
+        s_registered_resp_set_cb(1U);
+        assert(s_scene_resp_set_result_count == 1);
+
+        /* (d) TX fail */
+        reset_cwsl_mocks();
+        reset_cwsl_sessions();
+        s_mock_resp_set_ret = -1;
+        assert(app_cwsl_start_scene_resp_set(56U, 47U) == 70U);
+        assert(app_cwsl_is_pending() == false);
+
+        /* (e) out of range */
+        reset_cwsl_mocks();
+        reset_cwsl_sessions();
+        assert(app_cwsl_start_scene_resp_set(55U, 47U) == 65U);
+        assert(app_cwsl_start_scene_resp_set(71U, 47U) == 65U);
+        assert(s_resp_set_send_count == 0);
+
+        /* (f) busy while a resp-set is pending */
+        reset_cwsl_mocks();
+        reset_cwsl_sessions();
+        assert(app_cwsl_start_scene_resp_set(56U, 47U) == 0U);
+        assert(app_cwsl_start_scene_learn(57U, 1U, 0U, 47U) == 67U);
+        assert(app_cwsl_start_scene_delete(57U, 1U, 0U) == 67U);
+        assert(app_cwsl_start_scene_resp_set(57U, 47U) == 67U);
+        sent_before = s_uart_send_count;
+        req = cJSON_Parse("{\"voiceboxv1\":220,\"cmd_id\":1,\"slot\":255,\"u\":3,\"act_id\":0}");
+        app_cwsl_learn(req);
+        cJSON_Delete(req);
+        assert(strstr(s_last_published, "\"code\":67") != NULL);
+        req = cJSON_Parse("{\"voiceboxv1\":221,\"cmd_id\":1,\"slot\":255,\"u\":3,\"act_id\":0}");
+        app_cwsl_delete(req);
+        cJSON_Delete(req);
+        assert(strstr(s_last_published, "\"code\":67") != NULL);
+        req = cJSON_Parse("{\"voiceboxv1\":223,\"cmd_id\":1,\"u\":3,\"act_id\":0}");
+        app_cwsl_query(req);
+        cJSON_Delete(req);
+        assert(strstr(s_last_published, "\"code\":67") != NULL);
+        req = cJSON_Parse("{\"voiceboxv1\":222,\"u\":3,\"act_id\":0}");
+        app_cwsl_stop(req);
+        cJSON_Delete(req);
+        assert(strcmp(s_last_published, "{\"voiceboxv1\":222,\"u\":3,\"act_id\":0,\"result\":0,\"code\":67}") == 0);
+        assert(s_uart_send_count == sent_before);
+
+        /* (g) reverse: learn session blocks resp-set */
+        reset_cwsl_mocks();
+        reset_cwsl_sessions();
+        assert(app_cwsl_start_scene_learn(56U, 1U, 0U, 47U) == 0U);
+        assert(app_cwsl_start_scene_resp_set(57U, 47U) == 67U);
+
+        /* (h1) late reply after timeout must not complete the next edit */
+        reset_cwsl_mocks();
+        reset_cwsl_sessions();
+        assert(app_cwsl_start_scene_resp_set(56U, 47U) == 0U);
+        s_mock_tick = 2000;
+        app_cwsl_poll();
+        assert(s_scene_resp_set_result_count == 1 && s_scene_resp_set_result_code == 52U);
+        sent_before = s_resp_set_send_count;
+        assert(app_cwsl_start_scene_resp_set(57U, 50U) == 67U);
+        assert(s_resp_set_send_count == sent_before);
+        s_registered_resp_set_cb(1U);
+        assert(s_scene_resp_set_result_count == 1);
+        assert(app_cwsl_start_scene_resp_set(57U, 50U) == 0U);
+        s_registered_resp_set_cb(1U);
+        assert(s_scene_resp_set_result_count == 2 && s_scene_resp_set_result_code == 0U);
+
+        /* (h2) drain window expires after 2000 ms without a late reply */
+        reset_cwsl_mocks();
+        reset_cwsl_sessions();
+        assert(app_cwsl_start_scene_resp_set(56U, 47U) == 0U);
+        s_mock_tick = 2000;
+        app_cwsl_poll();
+        s_mock_tick = 3999;
+        app_cwsl_poll();
+        assert(app_cwsl_start_scene_resp_set(57U, 50U) == 67U);
+        s_mock_tick = 4000;
+        app_cwsl_poll();
+        assert(app_cwsl_start_scene_resp_set(57U, 50U) == 0U);
+
+        /* (h3) draining does not block learn */
+        reset_cwsl_mocks();
+        reset_cwsl_sessions();
+        assert(app_cwsl_start_scene_resp_set(56U, 47U) == 0U);
+        s_mock_tick = 2000;
+        app_cwsl_poll();
+        assert(app_cwsl_start_scene_learn(56U, 1U, 0U, 47U) == 0U);
+
+        device_type = 0;
+        printf("  PASS: Scene respond_id edit verified\n");
+    }
+
+    printf("\nALL 9 CWSL TEST SCENARIOS PASSED 100%%!\n");
     return 0;
 }

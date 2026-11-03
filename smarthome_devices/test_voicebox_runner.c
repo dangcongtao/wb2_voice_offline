@@ -124,7 +124,7 @@ void m_ft62f28_send_reset_touch(void) {
 
 /* Mock Hardware Functions */
 bool hw_device_support_voice(void) {
-    return (device_type == FANACIR || device_type == VOICEBOX);
+    return (device_type == VOICEBOX);
 }
 
 /* Include source files directly for deep testing */
@@ -169,7 +169,9 @@ int main(void) {
         printf("--- Test 2: Hardware Pinout Macros & Voice Support ---\n");
         assert(LED_STT_VOICEBOX == 2);
         assert(BTN_CFG_VOICEBOX == 1);
-        assert(AIIO_CI13162_UART_RX_PIN == 7U);
+        assert(AIIO_CI13162_UART_RX_PIN == 3U);
+        assert(AIIO_CI13162_UART_TX_PIN == 4U);
+        assert(AIIO_CI13162_UART_ID == 1U);
         assert(AIIO_CI13162_POWER_PIN == 17U);
 
         device_type = VOICEBOX;
@@ -179,7 +181,7 @@ int main(void) {
         device_type = FANAC;
         assert(hw_device_support_voice() == false);
         device_type = FANACIR;
-        assert(hw_device_support_voice() == true);
+        assert(hw_device_support_voice() == false);
         device_type = VOICEBOX;
         printf("  PASS: Pin macros and hw_device_support_voice verified\n");
     }

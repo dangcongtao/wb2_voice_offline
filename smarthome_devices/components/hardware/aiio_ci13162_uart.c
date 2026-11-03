@@ -12,7 +12,6 @@
 #include <task.h>
 #include <hosal_uart.h>
 #include <bl602_glb.h>
-#include <bl602_hbn.h>
 #include <bl602_uart.h>
 #include <bl_gpio.h>
 #include <bl_sys.h>
@@ -21,6 +20,7 @@
 #include "aiio_ci13162_config.h"
 #include "app_config.h"
 #include "app_cwsl.h"
+#include "app_scene.h"
 #include "app_fan.h"
 #include "app_volume.h"
 #include "hardware.h"
@@ -32,8 +32,6 @@ extern void app_send_data(char *data, uint32_t length);
 
 #if AIIO_CI13162_UART_ENABLE == 1
 
-#define AIIO_CI13162_UART_ID                    0U
-#define AIIO_CI13162_UART_TX_PIN                16U
 #define AIIO_CI13162_UART_INVALID_PIN           255U
 #define AIIO_CI13162_UART_ISR_BUFFER_SIZE       64U
 #define AIIO_CI13162_UART_READ_BUFFER_SIZE      64U
@@ -43,17 +41,16 @@ extern void app_send_data(char *data, uint32_t length);
 #define AIIO_CI13162_UART_COMMAND_QUEUE_LENGTH  8U
 #define AIIO_CI13162_UART_RX_TRIGGER_LEVEL      1U
 #define AIIO_CI13162_UART_DIAG_ENABLE           0
+/* 1: log every JSON frame sent to and every raw chunk received from the CI13162 on the UART0 console. */
+#ifndef AIIO_CI13162_UART_TRACE_ENABLE
+#define AIIO_CI13162_UART_TRACE_ENABLE          DEBUG_ENABLE
+#endif
 #define AIIO_CI13162_UART_TX_IDLE_HOLD_MS       20U
 #define AIIO_CI13162_VERSION_INITIAL_DELAY_MS   3000U
 #define AIIO_CI13162_VERSION_RETRY_DELAY_MS     1000U
 #define AIIO_CI13162_VERSION_MAX_ATTEMPTS       3U
 #define AIIO_CI13162_UART_GPIO_FUNCTION         7U
 #define AIIO_CI13162_UART_DIAG_BUFFER_SIZE      384U
-#define AIIO_CI13162_UART_HBN_IRQ_MODE_ADDRESS  (HBN_BASE + HBN_IRQ_MODE_OFFSET)
-#define AIIO_CI13162_UART_GPIO7_CFG_ADDRESS     (GLB_BASE + GLB_GPIO_CFGCTL3_OFFSET)
-#define AIIO_CI13162_UART_GLB_PARM_ADDRESS      (GLB_BASE + GLB_PARM_OFFSET)
-#define AIIO_CI13162_UART_SIG_SEL_ADDRESS       (GLB_BASE + GLB_UART_SIG_SEL_0_OFFSET)
-#define AIIO_CI13162_UART_REG32(address)        (*(volatile uint32_t *)(uintptr_t)(address))
 #define AIIO_CI13162_VOLUME_LEVEL_MIN           1U
 #define AIIO_CI13162_VOLUME_LEVEL_MAX           7U
 #define AIIO_CI13162_ASR_VOLUME_DOWN            40U
@@ -67,7 +64,8 @@ static const char s_aiio_ci13162_reset_message[] = "{\"cmd\":0,\"data\":[]}\r\n"
 static const char s_aiio_ci13162_version_query[] = "{\"cmd\":3,\"data\":[]}\r\n";
 static const char s_aiio_ci13162_volume_query[] = "{\"cmd\":11,\"data\":[]}\r\n";
 
-extern hosal_uart_dev_t uart_stdio;
+// UART1 device owned by this driver; UART0 stays with the SDK log.
+static hosal_uart_dev_t s_aiio_ci13162_uart;
 
 typedef enum {
     AIIO_CI13162_CMD_RESET = 0,
@@ -85,6 +83,7 @@ typedef enum {
     AIIO_CI13162_CMD_SCENE = 12,
     AIIO_CI13162_CMD_VOLUME_CHANGE = 13,
     AIIO_CI13162_CMD_STATE = 14,
+    AIIO_CI13162_CMD_RESP_SET = 15,
     AIIO_CI13162_CMD_BUZZ = 200,
 } aiio_ci13162_command_t;
 
@@ -154,7 +153,6 @@ static volatile uint32_t s_aiio_ci13162_dropped_bytes;
 static volatile uint32_t s_aiio_ci13162_total_dropped_bytes;
 static volatile uint8_t s_aiio_ci13162_ota_held;
 static volatile uint8_t s_aiio_ci13162_ota_rx_overflow;
-static uint8_t s_aiio_ci13162_log_was_enabled;
 static uint32_t s_aiio_ci13162_voice_version;
 static TickType_t s_aiio_ci13162_version_start_tick;
 static TickType_t s_aiio_ci13162_version_last_query_tick;
@@ -166,11 +164,64 @@ static uint8_t s_aiio_ci13162_volume;
 static uint8_t s_aiio_ci13162_volume_valid;
 static aiio_ci13162_cwsl_status_cb_t s_aiio_ci13162_cwsl_status_cb;
 static aiio_ci13162_cwsl_info_cb_t s_aiio_ci13162_cwsl_info_cb;
+static aiio_ci13162_resp_set_cb_t s_aiio_ci13162_resp_set_cb;
 static aiio_ci13162_volume_info_cb_t s_aiio_ci13162_volume_info_cb;
 static SemaphoreHandle_t s_aiio_ci13162_tx_mutex;
 static StaticSemaphore_t s_aiio_ci13162_tx_mutex_control;
 
-extern volatile bool sys_log_all_enable;
+#if AIIO_CI13162_UART_TRACE_ENABLE == 1
+
+// Flush one chunk of trace text to the UART0 console.
+static void aiio_ci13162_trace_flush(char *text, size_t *text_length)
+{
+    if (*text_length > 0U) {
+        printf("%.*s", (int)*text_length, text);
+        *text_length = 0U;
+    }
+}
+
+// Log raw bytes exchanged with the CI13162 as safe ASCII and as hex.
+static void aiio_ci13162_trace_bytes(const char *direction,
+                                     const uint8_t *data,
+                                     size_t length)
+{
+    // static const char hex_digits[] = "0123456789ABCDEF";
+    char text[AIIO_CI13162_UART_PRINT_BUFFER_SIZE];
+    size_t text_length = 0U;
+    size_t i;
+
+    if ((direction == NULL) || (data == NULL) || (length == 0U)) {
+        return;
+    }
+
+    printf("[CI13162][%s] %u Arr_Bytes: ", direction, (unsigned int)length);
+    for (i = 0U; i < length; i++) {
+        uint8_t value = data[i];
+
+        if (text_length >= sizeof(text)) {
+            aiio_ci13162_trace_flush(text, &text_length);
+        }
+        text[text_length++] = ((value >= 0x20U) && (value <= 0x7EU)) ? (char)value : '.';
+    }
+    aiio_ci13162_trace_flush(text, &text_length);
+    printf("\r\n");
+
+    // printf("\r\n[CI13162][%s] HEX: ", direction);
+    // for (i = 0U; i < length; i++) {
+    //     uint8_t value = data[i];
+
+    //     if ((text_length + 3U) > sizeof(text)) {
+    //         aiio_ci13162_trace_flush(text, &text_length);
+    //     }
+    //     text[text_length++] = hex_digits[value >> 4U];
+    //     text[text_length++] = hex_digits[value & 0x0FU];
+    //     text[text_length++] = ' ';
+    // }
+    // aiio_ci13162_trace_flush(text, &text_length);
+    // printf("\r\n");
+}
+
+#endif
 
 // Send UART bytes safely across multiple task contexts.
 static int aiio_ci13162_uart_tx(const void *data, uint32_t length)
@@ -183,32 +234,22 @@ static int aiio_ci13162_uart_tx(const void *data, uint32_t length)
 
     if (s_aiio_ci13162_tx_mutex != NULL) {
         if (xSemaphoreTake(s_aiio_ci13162_tx_mutex, pdMS_TO_TICKS(50U)) == pdTRUE) {
-            sent_length = hosal_uart_send(&uart_stdio, data, length);
+            sent_length = hosal_uart_send(&s_aiio_ci13162_uart, data, length);
             (void)xSemaphoreGive(s_aiio_ci13162_tx_mutex);
         }
     } else {
-        sent_length = hosal_uart_send(&uart_stdio, data, length);
+        sent_length = hosal_uart_send(&s_aiio_ci13162_uart, data, length);
     }
-    return sent_length;
-}
 
-// Restore the original UART0 TX-only console configuration.
-static void aiio_ci13162_restore_tx_only(void)
-{
-    uart_stdio.config.uart_id = AIIO_CI13162_UART_ID;
-    uart_stdio.config.tx_pin = AIIO_CI13162_UART_TX_PIN;
-    uart_stdio.config.rx_pin = AIIO_CI13162_UART_INVALID_PIN;
-    uart_stdio.config.cts_pin = AIIO_CI13162_UART_INVALID_PIN;
-    uart_stdio.config.rts_pin = AIIO_CI13162_UART_INVALID_PIN;
-    uart_stdio.config.baud_rate = AIIO_CI13162_UART_BAUD_RATE;
-    uart_stdio.config.data_width = HOSAL_DATA_WIDTH_8BIT;
-    uart_stdio.config.parity = HOSAL_NO_PARITY;
-    uart_stdio.config.stop_bits = HOSAL_STOP_BITS_1;
-    uart_stdio.config.flow_control = HOSAL_FLOW_CONTROL_DISABLED;
-    uart_stdio.config.mode = HOSAL_UART_MODE_POLL;
-    uart_stdio.rx_cb = NULL;
-    uart_stdio.p_rxarg = NULL;
-    hosal_uart_init_only_tx(&uart_stdio);
+#if AIIO_CI13162_UART_TRACE_ENABLE == 1
+    aiio_ci13162_trace_bytes("TX", (const uint8_t *)data, (size_t)length);
+    /* rx_irq/rx_bytes stay 0 when nothing ever arrives on the RX pin. */
+    printf("[CI13162][TX] sent=%d rx_irq=%lu rx_bytes=%lu\r\n",
+           sent_length,
+           (unsigned long)s_aiio_ci13162_callback_count,
+           (unsigned long)s_aiio_ci13162_received_bytes);
+#endif
+    return sent_length;
 }
 
 // Atomically take the number of bytes dropped since the previous task check.
@@ -257,7 +298,7 @@ static void aiio_ci13162_queue_error_report(const char *raw_line, const char *re
 
 #if DEBUG_ENABLE == 1
 
-// Send debug text on the GPIO14 log path, never on UART0 TX.
+// Send debug text on the UART0 log (printf), never on the CI13162 UART1.
 static void aiio_ci13162_uart_send(const void *data, uint32_t length)
 {
     if ((data == NULL) || (length == 0U)) {
@@ -267,7 +308,7 @@ static void aiio_ci13162_uart_send(const void *data, uint32_t length)
     printf("%.*s", (int)length, (const char *)data);
 }
 
-// Send a null-terminated debug string on the GPIO14 log path.
+// Send a null-terminated debug string on the UART0 log (printf).
 static void aiio_ci13162_uart_send_string(const char *text)
 {
     if (text == NULL) {
@@ -295,7 +336,7 @@ static void aiio_ci13162_snapshot_counters(aiio_ci13162_counter_snapshot_t *snap
     taskEXIT_CRITICAL();
 }
 
-// Report the GPIO7, UART0 IRQ, FIFO, callback, and stream-buffer state.
+// Report the UART1 RX pin, IRQ, FIFO, callback, and stream-buffer state.
 static void aiio_ci13162_report_diagnostics(void)
 {
     static aiio_ci13162_counter_snapshot_t previous_snapshot;
@@ -316,17 +357,7 @@ static void aiio_ci13162_report_diagnostics(void)
     uint8_t irq_rx_error;
     uint8_t overflow;
     uint8_t rx_busy;
-    uint8_t aon_input_enable;
-    uint8_t aon_pull_enable;
-    uint8_t gpio_input_enable;
-    uint8_t gpio_schmitt_enable;
-    uint8_t uart_signal_function;
-    uint8_t uart_swap;
     uint32_t baud_rate;
-    uint32_t hbn_irq_mode;
-    uint32_t gpio_config;
-    uint32_t uart_signal_select;
-    uint32_t glb_parameter;
     int gpio_level;
     int output_length;
 
@@ -338,35 +369,19 @@ static void aiio_ci13162_report_diagnostics(void)
     dropped_delta = snapshot.dropped_bytes - previous_snapshot.dropped_bytes;
     previous_snapshot = snapshot;
 
-    hbn_irq_mode = AIIO_CI13162_UART_REG32(AIIO_CI13162_UART_HBN_IRQ_MODE_ADDRESS);
-    gpio_config = AIIO_CI13162_UART_REG32(AIIO_CI13162_UART_GPIO7_CFG_ADDRESS);
-    uart_signal_select = AIIO_CI13162_UART_REG32(AIIO_CI13162_UART_SIG_SEL_ADDRESS);
-    glb_parameter = AIIO_CI13162_UART_REG32(AIIO_CI13162_UART_GLB_PARM_ADDRESS);
-    aon_input_enable = (uint8_t)((hbn_irq_mode >> HBN_REG_AON_PAD_IE_SMT_POS) & 0x01U);
-    aon_pull_enable = (uint8_t)((hbn_irq_mode >> HBN_REG_EN_HW_PU_PD_POS) & 0x01U);
-    gpio_input_enable = (uint8_t)((gpio_config >> GLB_REG_GPIO_7_IE_POS) & 0x01U);
-    gpio_schmitt_enable = (uint8_t)((gpio_config >> GLB_REG_GPIO_7_SMT_POS) & 0x01U);
-    uart_signal_function = (uint8_t)((uart_signal_select >> GLB_UART_SIG_7_SEL_POS) & 0x0FU);
-    uart_swap = (uint8_t)((glb_parameter >> GLB_UART_SWAP_SET_POS) & 0x07U);
     gpio_function = GLB_GPIO_Get_Fun((GLB_GPIO_Type)AIIO_CI13162_UART_RX_PIN);
     gpio_level = bl_gpio_input_get_value((uint8_t)AIIO_CI13162_UART_RX_PIN);
-    fifo_count = UART_GetRxFifoCount(UART0_ID);
-    irq_fifo = (UART_GetIntStatus(UART0_ID, UART_INT_RX_FIFO_REQ) == SET) ? 1U : 0U;
-    irq_timeout = (UART_GetIntStatus(UART0_ID, UART_INT_RTO) == SET) ? 1U : 0U;
-    irq_rx_end = (UART_GetIntStatus(UART0_ID, UART_INT_RX_END) == SET) ? 1U : 0U;
-    irq_rx_error = (UART_GetIntStatus(UART0_ID, UART_INT_RX_FER) == SET) ? 1U : 0U;
-    overflow = (UART_GetOverflowStatus(UART0_ID, UART_RX_OVERFLOW) == SET) ? 1U : 0U;
-    rx_busy = (UART_GetRxBusBusyStatus(UART0_ID) == SET) ? 1U : 0U;
-    baud_rate = UART_GetBaudrate(UART0_ID);
+    fifo_count = UART_GetRxFifoCount(AIIO_CI13162_UART_ID);
+    irq_fifo = (UART_GetIntStatus(AIIO_CI13162_UART_ID, UART_INT_RX_FIFO_REQ) == SET) ? 1U : 0U;
+    irq_timeout = (UART_GetIntStatus(AIIO_CI13162_UART_ID, UART_INT_RTO) == SET) ? 1U : 0U;
+    irq_rx_end = (UART_GetIntStatus(AIIO_CI13162_UART_ID, UART_INT_RX_END) == SET) ? 1U : 0U;
+    irq_rx_error = (UART_GetIntStatus(AIIO_CI13162_UART_ID, UART_INT_RX_FER) == SET) ? 1U : 0U;
+    overflow = (UART_GetOverflowStatus(AIIO_CI13162_UART_ID, UART_RX_OVERFLOW) == SET) ? 1U : 0U;
+    rx_busy = (UART_GetRxBusBusyStatus(AIIO_CI13162_UART_ID) == SET) ? 1U : 0U;
+    baud_rate = UART_GetBaudrate(AIIO_CI13162_UART_ID);
     stream_available = xStreamBufferBytesAvailable(s_aiio_ci13162_rx_stream);
 
-    if ((aon_input_enable == 0U) ||
-        (gpio_input_enable == 0U) ||
-        (gpio_schmitt_enable == 0U)) {
-        classification = "PAD_DISABLED";
-    } else if ((gpio_function != AIIO_CI13162_UART_GPIO_FUNCTION) ||
-               (uart_signal_function != GLB_UART_SIG_FUN_UART0_RXD) ||
-               (uart_swap != UART_SIG_SWAP_NONE)) {
+    if (gpio_function != AIIO_CI13162_UART_GPIO_FUNCTION) {
         classification = "PINMUX";
     } else if ((fifo_count > 0U) && (callback_delta == 0U)) {
         classification = "FIFO_NO_IRQ";
@@ -389,20 +404,14 @@ static void aiio_ci13162_report_diagnostics(void)
     output_length = snprintf(
         output,
         sizeof(output),
-        "[CI13162][DIAG] cls=%s fun=%u sig7=%u swap=%u pin=%u lvl=%d "
-        "aon=%u hwpull=%u ie=%u smt=%u baud=%lu busy=%u fifo=%u "
+        "[CI13162][DIAG] cls=%s fun=%u pin=%u lvl=%d "
+        "baud=%lu busy=%u fifo=%u "
         "irq=%u/%u/%u/%u cb=%lu(+%lu) empty=%lu(+%lu) rx=%lu(+%lu) "
         "stream_rx=%lu(+%lu) buf=%u/%u drop=%lu(+%lu) ovf=%u\r\n",
         classification,
         (unsigned int)gpio_function,
-        (unsigned int)uart_signal_function,
-        (unsigned int)uart_swap,
         (unsigned int)AIIO_CI13162_UART_RX_PIN,
         gpio_level,
-        (unsigned int)aon_input_enable,
-        (unsigned int)aon_pull_enable,
-        (unsigned int)gpio_input_enable,
-        (unsigned int)gpio_schmitt_enable,
         (unsigned long)baud_rate,
         (unsigned int)rx_busy,
         (unsigned int)fifo_count,
@@ -780,6 +789,11 @@ static aiio_ci13162_parse_result_t aiio_ci13162_validate_message(
                        ? AIIO_CI13162_PARSE_OK
                        : AIIO_CI13162_PARSE_INVALID_DATA;
 
+        case AIIO_CI13162_CMD_RESP_SET:
+            return ((message->data_count == 1U) && (message->data[0] <= 1U))
+                       ? AIIO_CI13162_PARSE_OK
+                       : AIIO_CI13162_PARSE_INVALID_DATA;
+
         case AIIO_CI13162_CMD_TIMER:
             if (message->data_count != 1U) {
                 return AIIO_CI13162_PARSE_INVALID_FORMAT;
@@ -803,7 +817,7 @@ static aiio_ci13162_parse_result_t aiio_ci13162_validate_message(
             if (message->data_count != 1U) {
                 return AIIO_CI13162_PARSE_INVALID_FORMAT;
             }
-            if ((message->data[0] < 1U) || (message->data[0] > 10U)) {
+            if ((message->data[0] < 1U) || (message->data[0] > APP_SCENE_COUNT_MAX)) {
                 return AIIO_CI13162_PARSE_INVALID_DATA;
             }
             if (message->cmd_id != (uint8_t)(55U + message->data[0])) {
@@ -1108,7 +1122,7 @@ static void aiio_ci13162_handle_line(char *line, size_t length)
     line[length] = '\0';
 #if DEBUG_ENABLE == 1
     aiio_ci13162_print_ascii((const uint8_t *)line, length);
-    aiio_ci13162_print_hex((const uint8_t *)line, length);
+    // aiio_ci13162_print_hex((const uint8_t *)line, length);
 #endif
 
     result = aiio_ci13162_parse_line(line, &message);
@@ -1207,7 +1221,9 @@ static void aiio_ci13162_run_parser_tests(void)
          AIIO_CI13162_CMD_CWSL_INFO, 3U, {55U, 1U, 0U, 0U}, 0U, 0U, 0U},
         {"{cmd:6,data:[65,1,0]}", AIIO_CI13162_PARSE_OK,
          AIIO_CI13162_CMD_CWSL_INFO, 3U, {65U, 1U, 0U, 0U}, 0U, 0U, 0U},
-        {"{cmd:6,data:[66,1,0]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
+        {"{cmd:6,data:[70,1,0]}", AIIO_CI13162_PARSE_OK,
+         AIIO_CI13162_CMD_CWSL_INFO, 3U, {70U, 1U, 0U, 0U}, 0U, 0U, 0U},
+        {"{cmd:6,data:[71,1,0]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
          {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
         {"{cmd:7,data:[],cmd_id:47,cwsl:255}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
          {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
@@ -1259,9 +1275,13 @@ static void aiio_ci13162_run_parser_tests(void)
          {1U, 0U, 0U, 0U}, 0U, 56U, 255U},
         {"{cmd:12,data:[10],cmd_id:65,cwsl:255}", AIIO_CI13162_PARSE_OK, AIIO_CI13162_CMD_SCENE, 1U,
          {10U, 0U, 0U, 0U}, 0U, 65U, 255U},
+        {"{cmd:12,data:[15],cmd_id:70,cwsl:255}", AIIO_CI13162_PARSE_OK, AIIO_CI13162_CMD_SCENE, 1U,
+         {15U, 0U, 0U, 0U}, 0U, 70U, 255U},
         {"{cmd:12,data:[0],cmd_id:56,cwsl:255}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
          {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
-        {"{cmd:12,data:[11],cmd_id:66,cwsl:255}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
+        {"{cmd:12,data:[11],cmd_id:66,cwsl:255}", AIIO_CI13162_PARSE_OK, AIIO_CI13162_CMD_SCENE, 1U,
+         {11U, 0U, 0U, 0U}, 0U, 66U, 255U},
+        {"{cmd:12,data:[16],cmd_id:71,cwsl:255}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
          {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
         {"{cmd:12,data:[1,2],cmd_id:56,cwsl:255}", AIIO_CI13162_PARSE_INVALID_FORMAT, 0U, 0U,
          {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
@@ -1574,7 +1594,7 @@ static int aiio_ci13162_rx_callback(void *argument)
     (void)argument;
     s_aiio_ci13162_callback_count++;
 
-    received_length = hosal_uart_receive(&uart_stdio, input, sizeof(input));
+    received_length = hosal_uart_receive(&s_aiio_ci13162_uart, input, sizeof(input));
     target_stream = (s_aiio_ci13162_ota_held != 0U)
                         ? s_aiio_ci13162_ota_rx_stream
                         : s_aiio_ci13162_rx_stream;
@@ -1649,6 +1669,10 @@ static void aiio_ci13162_uart_task(void *argument)
             continue;
         }
 
+// #if AIIO_CI13162_UART_TRACE_ENABLE == 1
+//         aiio_ci13162_trace_bytes("RX", input, received_length);
+// #endif
+
         for (i = 0U; i < received_length; i++) {
             aiio_ci13162_process_byte(&assembler, input[i]);
         }
@@ -1664,7 +1688,6 @@ void aiio_ci13162_uart_hold_tx_idle(void)
     bl_gpio_output_set((uint8_t)AIIO_CI13162_UART_TX_PIN, 1U);
     bl_gpio_enable_output((uint8_t)AIIO_CI13162_UART_TX_PIN, 1U, 0U);
     bl_gpio_output_set((uint8_t)AIIO_CI13162_UART_TX_PIN, 1U);
-    UART_Disable(UART0_ID, UART_TXRX);
 #endif
 }
 
@@ -1781,33 +1804,34 @@ int32_t aiio_ci13162_uart_init(void)
     }
 
     // Pin is already GPIO idle-high. Do not finalize first: UART_Disable
-    // while GPIO16 is still UART AF can drop TX and look like a BREAK.
+    // while GPIO4 is still UART AF can drop TX and look like a BREAK.
     vTaskDelay(pdMS_TO_TICKS(AIIO_CI13162_UART_TX_IDLE_HOLD_MS));
 
-    uart_stdio.config.uart_id = AIIO_CI13162_UART_ID;
-    uart_stdio.config.tx_pin = AIIO_CI13162_UART_TX_PIN;
-    uart_stdio.config.rx_pin = AIIO_CI13162_UART_RX_PIN;
-    uart_stdio.config.cts_pin = AIIO_CI13162_UART_INVALID_PIN;
-    uart_stdio.config.rts_pin = AIIO_CI13162_UART_INVALID_PIN;
-    uart_stdio.config.baud_rate = AIIO_CI13162_UART_BAUD_RATE;
-    uart_stdio.config.data_width = HOSAL_DATA_WIDTH_8BIT;
-    uart_stdio.config.parity = HOSAL_NO_PARITY;
-    uart_stdio.config.stop_bits = HOSAL_STOP_BITS_1;
-    uart_stdio.config.flow_control = HOSAL_FLOW_CONTROL_DISABLED;
-    uart_stdio.config.mode = HOSAL_UART_MODE_INT;
-    uart_stdio.rx_cb = aiio_ci13162_rx_callback;
-    uart_stdio.p_rxarg = NULL;
+    s_aiio_ci13162_uart.config.uart_id = AIIO_CI13162_UART_ID;
+    s_aiio_ci13162_uart.config.tx_pin = AIIO_CI13162_UART_TX_PIN;
+    s_aiio_ci13162_uart.config.rx_pin = AIIO_CI13162_UART_RX_PIN;
+    s_aiio_ci13162_uart.config.cts_pin = AIIO_CI13162_UART_INVALID_PIN;
+    s_aiio_ci13162_uart.config.rts_pin = AIIO_CI13162_UART_INVALID_PIN;
+    s_aiio_ci13162_uart.config.baud_rate = AIIO_CI13162_UART_BAUD_RATE;
+    s_aiio_ci13162_uart.config.data_width = HOSAL_DATA_WIDTH_8BIT;
+    s_aiio_ci13162_uart.config.parity = HOSAL_NO_PARITY;
+    s_aiio_ci13162_uart.config.stop_bits = HOSAL_STOP_BITS_1;
+    s_aiio_ci13162_uart.config.flow_control = HOSAL_FLOW_CONTROL_DISABLED;
+    s_aiio_ci13162_uart.config.mode = HOSAL_UART_MODE_INT;
+    s_aiio_ci13162_uart.rx_cb = aiio_ci13162_rx_callback;
+    s_aiio_ci13162_uart.p_rxarg = NULL;
 
-    if (hosal_uart_init(&uart_stdio) != 0) {
-        aiio_ci13162_restore_tx_only();
+    if (hosal_uart_init(&s_aiio_ci13162_uart) != 0) {
         return -1;
     }
 
-    if (AIIO_CI13162_UART_RX_PIN == GLB_GPIO_PIN_7) {
-        HBN_Hw_Pu_Pd_Cfg(DISABLE);
-        HBN_Aon_Pad_IeSmt_Cfg(ENABLE);
-        GLB_GPIO_INPUT_Enable(GLB_GPIO_PIN_7);
-        GLB_UART_Sig_Swap_Set(UART_SIG_SWAP_NONE);
+    /* The TX-only log init (bfl_main: hosal_uart_init_only_tx) never claims UART
+     * signal 7, so it keeps its reset value UART1_RXD (GLB_UART_SIG_SEL_0 reset
+     * 0x76543210). hosal_uart_init also selects UART1_RXD on SIG(rx_pin % 8), so
+     * UART1_RXD would be selected twice and UART1 no longer listens only to the
+     * RX pin. Give SIG7 back to UART0_RXD (log RX pin GPIO7), as the old UART0
+     * driver did. */
+    if ((AIIO_CI13162_UART_RX_PIN % 8U) != 7U) {
         GLB_UART_Fun_Sel(GLB_UART_SIG_7, GLB_UART_SIG_FUN_UART0_RXD);
     }
 
@@ -1819,8 +1843,7 @@ int32_t aiio_ci13162_uart_init(void)
                                     s_aiio_ci13162_task_stack,
                                     &s_aiio_ci13162_task_control);
     if (task_handle == NULL) {
-        hosal_uart_finalize(&uart_stdio);
-        aiio_ci13162_restore_tx_only();
+        hosal_uart_finalize(&s_aiio_ci13162_uart);
         return -1;
     }
 
@@ -1841,7 +1864,9 @@ int32_t aiio_ci13162_uart_init(void)
 
         output_length = snprintf(output,
                                  sizeof(output),
-                                 "[CI13162] GPIO%u, %lu 8N1 ready\r\n",
+                                 "[CI13162] UART%u TX GPIO%u RX GPIO%u, %lu 8N1 ready\r\n",
+                                 (unsigned int)AIIO_CI13162_UART_ID,
+                                 (unsigned int)AIIO_CI13162_UART_TX_PIN,
                                  (unsigned int)AIIO_CI13162_UART_RX_PIN,
                                  (unsigned long)AIIO_CI13162_UART_BAUD_RATE);
         if (output_length > 0) {
@@ -1934,6 +1959,13 @@ void aiio_ci13162_uart_process(void)
                 s_aiio_ci13162_cwsl_info_cb(message.data[0],
                                             &message.data[1],
                                             (uint8_t)(message.data_count - 1U));
+            }
+            continue;
+        }
+
+        if (message.command == AIIO_CI13162_CMD_RESP_SET) {
+            if (s_aiio_ci13162_resp_set_cb != NULL) {
+                s_aiio_ci13162_resp_set_cb(message.data[0]);
             }
             continue;
         }
@@ -2102,11 +2134,9 @@ int32_t aiio_ci13162_uart_ota_acquire(void)
     s_aiio_ci13162_ota_rx_overflow = 0U;
     taskEXIT_CRITICAL();
 
-    s_aiio_ci13162_log_was_enabled = sys_log_all_enable ? 1U : 0U;
-    (void)bl_sys_logall_disable();
     (void)xQueueReset(s_aiio_ci13162_command_queue);
     (void)xStreamBufferReset(s_aiio_ci13162_ota_rx_stream);
-    while (hosal_uart_receive(&uart_stdio, input, sizeof(input)) > 0) {
+    while (hosal_uart_receive(&s_aiio_ci13162_uart, input, sizeof(input)) > 0) {
     }
     return 0;
 #else
@@ -2121,8 +2151,8 @@ void aiio_ci13162_uart_ota_release(void)
         return;
     }
 
-    (void)hosal_uart_ioctl(&uart_stdio, HOSAL_UART_FLUSH, NULL);
-    (void)hosal_uart_ioctl(&uart_stdio,
+    (void)hosal_uart_ioctl(&s_aiio_ci13162_uart, HOSAL_UART_FLUSH, NULL);
+    (void)hosal_uart_ioctl(&s_aiio_ci13162_uart,
                            HOSAL_UART_BAUD_SET,
                            (void *)(uintptr_t)AIIO_CI13162_UART_BAUD_RATE);
     aiio_ci13162_uart_ota_flush_rx();
@@ -2131,10 +2161,6 @@ void aiio_ci13162_uart_ota_release(void)
     taskENTER_CRITICAL();
     s_aiio_ci13162_ota_held = 0U;
     taskEXIT_CRITICAL();
-
-    if (s_aiio_ci13162_log_was_enabled != 0U) {
-        (void)bl_sys_logall_enable();
-    }
 #endif
 }
 
@@ -2154,10 +2180,10 @@ int32_t aiio_ci13162_uart_ota_set_baud(uint32_t baud)
         return -1;
     }
 
-    if (hosal_uart_ioctl(&uart_stdio, HOSAL_UART_FLUSH, NULL) != 0) {
+    if (hosal_uart_ioctl(&s_aiio_ci13162_uart, HOSAL_UART_FLUSH, NULL) != 0) {
         return -1;
     }
-    if (hosal_uart_ioctl(&uart_stdio,
+    if (hosal_uart_ioctl(&s_aiio_ci13162_uart,
                          HOSAL_UART_BAUD_SET,
                          (void *)(uintptr_t)baud) != 0) {
         return -1;
@@ -2183,7 +2209,7 @@ int32_t aiio_ci13162_uart_ota_write(const void *data, size_t length)
         return -1;
     }
 
-    sent_length = hosal_uart_send(&uart_stdio, data, (uint32_t)length);
+    sent_length = hosal_uart_send(&s_aiio_ci13162_uart, data, (uint32_t)length);
     return (sent_length == (int)length) ? sent_length : -1;
 #else
     (void)data;
@@ -2228,7 +2254,7 @@ void aiio_ci13162_uart_ota_flush_rx(void)
     if (s_aiio_ci13162_ota_rx_stream != NULL) {
         (void)xStreamBufferReset(s_aiio_ci13162_ota_rx_stream);
     }
-    while (hosal_uart_receive(&uart_stdio, input, sizeof(input)) > 0) {
+    while (hosal_uart_receive(&s_aiio_ci13162_uart, input, sizeof(input)) > 0) {
     }
     s_aiio_ci13162_ota_rx_overflow = 0U;
 #endif
@@ -2272,6 +2298,27 @@ int32_t aiio_ci13162_uart_send_cwsl(uint8_t action,
 
     switch (action) {
         case 1U:
+            if ((data == NULL) || ((data_count != 2U) && (data_count != 3U))) {
+                return -1;
+            }
+            if (data_count == 3U) {
+                request_length = snprintf(request,
+                                          sizeof(request),
+                                          "{\"cmd\":4,\"data\":[%u,%u,%u,%u]}\r\n",
+                                          (unsigned int)action,
+                                          (unsigned int)data[0],
+                                          (unsigned int)data[1],
+                                          (unsigned int)data[2]);
+                break;
+            }
+            request_length = snprintf(request,
+                                      sizeof(request),
+                                      "{\"cmd\":4,\"data\":[%u,%u,%u]}\r\n",
+                                      (unsigned int)action,
+                                      (unsigned int)data[0],
+                                      (unsigned int)data[1]);
+            break;
+
         case 2U:
             if ((data == NULL) || (data_count != 2U)) {
                 return -1;
@@ -2332,6 +2379,46 @@ void aiio_ci13162_uart_set_cwsl_callbacks(
 #else
     (void)status_cb;
     (void)info_cb;
+#endif
+}
+
+int32_t aiio_ci13162_uart_send_resp_set(uint8_t cmd_id, uint8_t value)
+{
+#if AIIO_CI13162_UART_ENABLE == 1
+    char request[40];
+    int request_length;
+    int sent_length;
+
+    if ((s_aiio_ci13162_command_queue == NULL) ||
+        (s_aiio_ci13162_ota_held != 0U)) {
+        return -1;
+    }
+
+    request_length = snprintf(request,
+                              sizeof(request),
+                              "{\"cmd\":15,\"data\":[%u,%u]}\r\n",
+                              (unsigned int)cmd_id,
+                              (unsigned int)value);
+    if ((request_length <= 0) || ((size_t)request_length >= sizeof(request))) {
+        return -1;
+    }
+
+    sent_length = aiio_ci13162_uart_tx(request,
+                                       (uint32_t)request_length);
+    return (sent_length == request_length) ? 0 : -1;
+#else
+    (void)cmd_id;
+    (void)value;
+    return -1;
+#endif
+}
+
+void aiio_ci13162_uart_set_resp_set_callback(aiio_ci13162_resp_set_cb_t cb)
+{
+#if AIIO_CI13162_UART_ENABLE == 1
+    s_aiio_ci13162_resp_set_cb = cb;
+#else
+    (void)cb;
 #endif
 }
 

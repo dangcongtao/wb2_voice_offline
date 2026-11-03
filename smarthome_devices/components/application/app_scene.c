@@ -16,6 +16,7 @@
 #include "process_data.h"
 #include "system_typedef.h"
 
+
 #define APP_SCENE_RESPONSE_SIZE 180U
 
 static uint16_t s_app_scene_mask;
@@ -23,6 +24,8 @@ static uint8_t s_app_scene_delete_all_active;
 static uint8_t s_app_scene_delete_all_cursor;
 static uint32_t s_app_scene_pending_uid;
 static uint8_t s_app_scene_pending_act_id;
+static uint8_t s_app_scene_pending_cmd_id;
+static uint8_t s_app_scene_pending_respond_id;
 
 static void app_scene_publish(const char *response, int response_length)
 {
@@ -81,27 +84,30 @@ static bool app_scene_read_number(cJSON *js_root,
     return true;
 }
 
-static void app_scene_publish_add_reject(uint32_t u, uint8_t act_id, uint8_t code)
+static void app_scene_publish_add_reject(uint8_t cmd_id, uint8_t respond_id, uint32_t u, uint8_t act_id, uint8_t code)
 {
     char response[APP_SCENE_RESPONSE_SIZE];
     int len = snprintf(response,
                        sizeof(response),
-                       "{\"%s\":227,\"u\":%lu,\"act_id\":%u,\"result\":0,\"code\":%u}",
+                       "{\"%s\":227,\"cmd_id\":%u,\"respond_id\":%u,\"u\":%lu,\"act_id\":%u,\"result\":0,\"code\":%u}",
                        gs_dev_type[device_type],
+                       (unsigned int)cmd_id,
+                       (unsigned int)respond_id,
                        (unsigned long)u,
                        (unsigned int)act_id,
                        (unsigned int)code);
     app_scene_publish(response, len);
 }
 
-static void app_scene_publish_add_success(uint8_t cmd_id, uint32_t u, uint8_t act_id)
+static void app_scene_publish_add_success(uint8_t cmd_id, uint8_t respond_id, uint32_t u, uint8_t act_id)
 {
     char response[APP_SCENE_RESPONSE_SIZE];
     int len = snprintf(response,
                        sizeof(response),
-                       "{\"%s\":227,\"cmd_id\":%u,\"u\":%lu,\"act_id\":%u,\"result\":1}",
+                       "{\"%s\":227,\"cmd_id\":%u,\"respond_id\":%u,\"u\":%lu,\"act_id\":%u,\"result\":1}",
                        gs_dev_type[device_type],
                        (unsigned int)cmd_id,
+                       (unsigned int)respond_id,
                        (unsigned long)u,
                        (unsigned int)act_id);
     app_scene_publish(response, len);
@@ -144,11 +150,13 @@ void app_scene_init(void)
     s_app_scene_delete_all_cursor = 0U;
     s_app_scene_pending_uid = 0U;
     s_app_scene_pending_act_id = 0U;
+    s_app_scene_pending_cmd_id = 0U;
+    s_app_scene_pending_respond_id = 0U;
 
     if (!ef_get_u16("scene_mask", &s_app_scene_mask)) {
         s_app_scene_mask = 0U;
     }
-    s_app_scene_mask &= 0x03FFU;
+    s_app_scene_mask &= APP_SCENE_MASK_ALL;
 
 #if defined(BUILD_TEST) && (BUILD_TEST == 1)
     app_scene_run_validation_tests();
@@ -183,64 +191,113 @@ void app_scene_clear_all(void)
     (void)app_scene_save_mask(0U);
 }
 
+// Accepted "respond_id" set: 0..3, 11..19, 40..47, 50..68, 70, 71.
+static bool app_scene_respond_id_is_valid(uint32_t respond_id)
+{
+    return (respond_id <= 3U) ||
+           ((respond_id >= 11U) && (respond_id <= 19U)) ||
+           ((respond_id >= 40U) && (respond_id <= 47U)) ||
+           ((respond_id >= 50U) && (respond_id <= 68U)) ||
+           (respond_id == 70U) || (respond_id == 71U);
+}
+
 void app_scene_add(cJSON *js_root)
 {
     uint32_t u = 0U;
     uint32_t act_id = 0U;
+    uint32_t cmd_id = 0U;
+    uint32_t respond_id = 0U;
     uint32_t cmd_type = 0U;
+    uint8_t code;
+    uint8_t candidate_cmd_id;
+    uint8_t bit_idx;
 
     if (js_root == NULL) {
-        app_scene_publish_add_reject(0U, 0U, 64U);
+        app_scene_publish_add_reject(0U, 0U, 0U, 0U, 64U);
         return;
     }
 
+    /* Best-effort read so the reject message echoes what the caller sent */
     (void)app_scene_read_number(js_root, CJSON_KEY_USER_ID, UINT32_MAX, &u);
     (void)app_scene_read_number(js_root, CJSON_KEY_ACT_ID, UINT8_MAX, &act_id);
+    (void)app_scene_read_number(js_root, APP_SCENE_KEY_CMD_ID, UINT8_MAX, &cmd_id);
+    (void)app_scene_read_number(js_root, APP_SCENE_KEY_RESPOND_ID, UINT8_MAX, &respond_id);
 
     if (cJSON_GetObjectItem(js_root, CJSON_KEY_ACTION) != NULL) {
-        app_scene_publish_add_reject(u, (uint8_t)act_id, 64U);
+        app_scene_publish_add_reject((uint8_t)cmd_id, (uint8_t)respond_id, u, (uint8_t)act_id, 64U);
         return;
     }
 
     if (!app_scene_read_number(js_root, gs_dev_type[device_type], UINT32_MAX, &cmd_type) ||
         (cmd_type != APP_SCENE_CMD_ADD) ||
         !app_scene_read_number(js_root, CJSON_KEY_USER_ID, UINT32_MAX, &u) ||
-        !app_scene_read_number(js_root, CJSON_KEY_ACT_ID, UINT8_MAX, &act_id)) {
-        app_scene_publish_add_reject(u, (uint8_t)act_id, 64U);
+        !app_scene_read_number(js_root, CJSON_KEY_ACT_ID, UINT8_MAX, &act_id) ||
+        !app_scene_read_number(js_root, APP_SCENE_KEY_CMD_ID, UINT8_MAX, &cmd_id) ||
+        !app_scene_read_number(js_root, APP_SCENE_KEY_RESPOND_ID, UINT8_MAX, &respond_id) ||
+        !app_scene_respond_id_is_valid(respond_id)) {
+        app_scene_publish_add_reject((uint8_t)cmd_id, (uint8_t)respond_id, u, (uint8_t)act_id, 64U);
+        return;
+    }
+
+    if ((cmd_id != APP_SCENE_CMD_ID_NEW) &&
+        ((cmd_id < APP_SCENE_CMD_ID_MIN) || (cmd_id > APP_SCENE_CMD_ID_MAX))) {
+        app_scene_publish_add_reject((uint8_t)cmd_id, (uint8_t)respond_id, u, (uint8_t)act_id, 65U);
         return;
     }
 
     if (app_scene_is_pending()) {
-        app_scene_publish_add_reject(u, (uint8_t)act_id, 67U);
+        app_scene_publish_add_reject((uint8_t)cmd_id, (uint8_t)respond_id, u, (uint8_t)act_id, 67U);
         return;
     }
 
-    if (s_app_scene_mask >= 0x03FFU) {
-        app_scene_publish_add_reject(u, (uint8_t)act_id, APP_SCENE_CODE_FULL);
-        return;
-    }
-
-    uint8_t bit_idx;
-    for (bit_idx = 0U; bit_idx < APP_SCENE_COUNT_MAX; bit_idx++) {
-        if ((s_app_scene_mask & (uint16_t)(1U << bit_idx)) == 0U) {
-            break;
+    if (cmd_id == APP_SCENE_CMD_ID_NEW) {
+        /* Add: allocate the lowest free slot and start learning */
+        if (s_app_scene_mask == APP_SCENE_MASK_ALL) {
+            app_scene_publish_add_reject(APP_SCENE_CMD_ID_NEW, (uint8_t)respond_id, u,
+                                         (uint8_t)act_id, APP_SCENE_CODE_FULL);
+            return;
         }
-    }
-    if (bit_idx >= APP_SCENE_COUNT_MAX) {
-        app_scene_publish_add_reject(u, (uint8_t)act_id, APP_SCENE_CODE_FULL);
-        return;
-    }
 
-    uint8_t candidate_cmd_id = (uint8_t)(APP_SCENE_CMD_ID_MIN + bit_idx);
+        for (bit_idx = 0U; bit_idx < APP_SCENE_COUNT_MAX; bit_idx++) {
+            if ((s_app_scene_mask & (uint16_t)(1U << bit_idx)) == 0U) {
+                break;
+            }
+        }
+        if (bit_idx >= APP_SCENE_COUNT_MAX) {
+            app_scene_publish_add_reject(APP_SCENE_CMD_ID_NEW, (uint8_t)respond_id, u,
+                                         (uint8_t)act_id, APP_SCENE_CODE_FULL);
+            return;
+        }
 
-    uint8_t code = app_cwsl_start_scene_learn(candidate_cmd_id, u, (uint8_t)act_id);
-    if (code != 0U) {
-        app_scene_publish_add_reject(u, (uint8_t)act_id, code);
-        return;
+        candidate_cmd_id = (uint8_t)(APP_SCENE_CMD_ID_MIN + bit_idx);
+        code = app_cwsl_start_scene_learn(candidate_cmd_id, u, (uint8_t)act_id, (uint8_t)respond_id);
+        if (code != 0U) {
+            app_scene_publish_add_reject(APP_SCENE_CMD_ID_NEW, (uint8_t)respond_id, u,
+                                         (uint8_t)act_id, code);
+            return;
+        }
+        s_app_scene_pending_cmd_id = candidate_cmd_id;
+    } else {
+        /* Edit: change the respond_id of an existing scene, mask is untouched */
+        if (!app_scene_is_cmd_id_active((uint8_t)cmd_id)) {
+            app_scene_publish_add_reject((uint8_t)cmd_id, (uint8_t)respond_id, u, (uint8_t)act_id, 65U);
+            return;
+        }
+
+        code = app_cwsl_start_scene_resp_set((uint8_t)cmd_id, (uint8_t)respond_id);
+        if (code != 0U) {
+            app_scene_publish_add_reject((uint8_t)cmd_id, (uint8_t)respond_id, u, (uint8_t)act_id, code);
+            return;
+        }
+        s_app_scene_pending_cmd_id = (uint8_t)cmd_id;
     }
+    os_trace("[SCENE] changing respond_id of cmd_id %u to %u\r\n",
+             (unsigned int)cmd_id,
+             (unsigned int)respond_id);
 
     s_app_scene_pending_uid = u;
     s_app_scene_pending_act_id = (uint8_t)act_id;
+    s_app_scene_pending_respond_id = (uint8_t)respond_id;
 }
 
 void app_scene_on_learn_result(uint8_t code, uint8_t cmd_id)
@@ -250,13 +307,40 @@ void app_scene_on_learn_result(uint8_t code, uint8_t cmd_id)
             uint16_t new_mask = s_app_scene_mask | (uint16_t)(1U << (cmd_id - APP_SCENE_CMD_ID_MIN));
             if (app_scene_save_mask(new_mask)) {
                 s_app_scene_mask = new_mask;
-                app_scene_publish_add_success(cmd_id, s_app_scene_pending_uid, s_app_scene_pending_act_id);
+                app_scene_publish_add_success(cmd_id,
+                                              s_app_scene_pending_respond_id,
+                                              s_app_scene_pending_uid,
+                                              s_app_scene_pending_act_id);
                 return;
             }
         }
-        app_scene_publish_add_reject(s_app_scene_pending_uid, s_app_scene_pending_act_id, 70U);
+        app_scene_publish_add_reject(s_app_scene_pending_cmd_id,
+                                     s_app_scene_pending_respond_id,
+                                     s_app_scene_pending_uid,
+                                     s_app_scene_pending_act_id,
+                                     70U);
     } else {
-        app_scene_publish_add_reject(s_app_scene_pending_uid, s_app_scene_pending_act_id, code);
+        app_scene_publish_add_reject(s_app_scene_pending_cmd_id,
+                                     s_app_scene_pending_respond_id,
+                                     s_app_scene_pending_uid,
+                                     s_app_scene_pending_act_id,
+                                     code);
+    }
+}
+
+void app_scene_on_resp_set_result(uint8_t code)
+{
+    if (code == 0U) {
+        app_scene_publish_add_success(s_app_scene_pending_cmd_id,
+                                      s_app_scene_pending_respond_id,
+                                      s_app_scene_pending_uid,
+                                      s_app_scene_pending_act_id);
+    } else {
+        app_scene_publish_add_reject(s_app_scene_pending_cmd_id,
+                                     s_app_scene_pending_respond_id,
+                                     s_app_scene_pending_uid,
+                                     s_app_scene_pending_act_id,
+                                     code);
     }
 }
 
@@ -300,6 +384,12 @@ void app_scene_delete(cJSON *js_root)
         return;
     }
 
+    /* Deleting a slot that is not active is rejected (255 = delete all is exempt) */
+    if ((cmd_id != 255U) && !app_scene_is_cmd_id_active((uint8_t)cmd_id)) {
+        app_scene_publish_delete_reject((uint8_t)cmd_id, u, (uint8_t)act_id, 65U);
+        return;
+    }
+
     if (cmd_id == 255U) {
         uint8_t code = app_cwsl_start_scene_delete(APP_SCENE_CMD_ID_MIN, u, (uint8_t)act_id);
         if (code != 0U) {
@@ -313,7 +403,7 @@ void app_scene_delete(cJSON *js_root)
         return;
     }
 
-    /* Single slot delete (58..67) */
+    /* Single slot delete (56..70) */
     uint8_t code = app_cwsl_start_scene_delete((uint8_t)cmd_id, u, (uint8_t)act_id);
     if (code != 0U) {
         app_scene_publish_delete_reject((uint8_t)cmd_id, u, (uint8_t)act_id, code);
@@ -480,11 +570,11 @@ static void app_scene_run_validation_tests(void)
 
     /* Test 1: is_active bounds */
     if (app_scene_is_active(0U) != false) { failed_count++; }
-    if (app_scene_is_active(11U) != false) { failed_count++; }
+    if (app_scene_is_active(16U) != false) { failed_count++; }
 
     /* Test 2: is_cmd_id_active bounds */
     if (app_scene_is_cmd_id_active(55U) != false) { failed_count++; }
-    if (app_scene_is_cmd_id_active(66U) != false) { failed_count++; }
+    if (app_scene_is_cmd_id_active(71U) != false) { failed_count++; }
     if (app_scene_is_cmd_id_active(255U) != false) { failed_count++; }
 
     /* Test 3: mask bits indexing */

@@ -13,7 +13,7 @@
 #include "cJSON.h"
 
 /** Maximum ASR command identifier accepted by CWSL LEARN/DELETE/QUERY. */
-#define APP_CWSL_CMD_ID_MAX 65U
+#define APP_CWSL_CMD_ID_MAX 70U
 
 /** @brief Initialize the CWSL state machine and UART response callbacks.
  *
@@ -76,27 +76,42 @@ bool app_cwsl_factory_clear_done(void);
 
 /** @brief Notify application/cloud about a triggered voice command.
  *
- *  @param[in]  cmd_id  ASR command identifier (e.g. 7..67).
+ *  @param[in]  cmd_id  ASR command identifier (e.g. 7..70).
  *  @param[in]  cwsl    CWSL slot identifier (255 for default, 0..14 for learned).
  *  @return     None.
  */
 void app_cwsl_notify_voice_cmd(uint8_t cmd_id, uint8_t cwsl);
 
-/** @brief Start a scene learning session for an ASR command ID (58..67).
+/** @brief Start a scene learning session for an ASR command ID (56..70).
  *
- *  @param[in]  cmd_id   ASR command identifier (58..67).
- *  @param[in]  user_id  Requesting user ID.
- *  @param[in]  act_id   Requesting action ID.
- *  @return     0 on success, or error code (67, 69, 70).
+ *  The LEARN frame always carries respond_id: [cmd_id, 255, respond_id].
+ *
+ *  @param[in]  cmd_id      ASR command identifier (56..70).
+ *  @param[in]  user_id     Requesting user ID.
+ *  @param[in]  act_id      Requesting action ID.
+ *  @param[in]  respond_id  Response phrase ID sent with LEARN.
+ *  @return     0 on success, or error code (65, 67, 69, 70).
  */
-uint8_t app_cwsl_start_scene_learn(uint8_t cmd_id, uint32_t user_id, uint8_t act_id);
+uint8_t app_cwsl_start_scene_learn(uint8_t cmd_id, uint32_t user_id, uint8_t act_id, uint8_t respond_id);
 
-/** @brief Start a scene deletion session for an ASR command ID (58..67).
+/** @brief Change the response phrase of an already learned ASR command (cmd:15).
  *
- *  @param[in]  cmd_id   ASR command identifier (58..67).
+ *  On success the version query is paused until the chip replies, the wait
+ *  times out, or the result is delivered through app_scene_on_resp_set_result().
+ *
+ *  @param[in]  cmd_id      ASR command identifier (56..70).
+ *  @param[in]  respond_id  New response phrase ID.
+ *  @return     0 when sent, or error code (65 out of range, 67 busy,
+ *              69 OTA hold, 70 UART TX fail).
+ */
+uint8_t app_cwsl_start_scene_resp_set(uint8_t cmd_id, uint8_t respond_id);
+
+/** @brief Start a scene deletion session for an ASR command ID (56..70).
+ *
+ *  @param[in]  cmd_id   ASR command identifier (56..70).
  *  @param[in]  user_id  Requesting user ID.
  *  @param[in]  act_id   Requesting action ID.
- *  @return     0 on success, or error code (67, 69, 70).
+ *  @return     0 on success, or error code (65, 67, 69, 70).
  */
 uint8_t app_cwsl_start_scene_delete(uint8_t cmd_id, uint32_t user_id, uint8_t act_id);
 

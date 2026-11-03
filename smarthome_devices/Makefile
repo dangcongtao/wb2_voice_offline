@@ -74,4 +74,6 @@ COMPONENT_ADD_INCLUDEDIRS += third_party/cJson
 
 LOG_ENABLED_COMPONENTS:=blog_testc hosal loopset looprt bloop
 
+# SDK log on UART0 TX GPIO16 at 115200; run `make clean` after changing (make does not track CPPFLAGS)
+CPPFLAGS += -DCUSTOM_LOG_IO=1 -DCUSTOM_LOG_TX_IO=16 -DCUSTOM_LOG_RX_IO=7 -DCUSTOM_LOG_RX_BAUD=115200
 include $(BL60X_SDK_PATH)/make_scripts_riscv/project.mk

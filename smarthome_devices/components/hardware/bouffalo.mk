@@ -16,7 +16,6 @@ COMPONENT_SRCS := hardware.c \
                   aiio_ci13162_uart.c \
                   buzz.c \
                   lpf.c \
-                  gpio_log.c \
 				  
 COMPONENT_OBJS := $(patsubst %.c,%.o, $(COMPONENT_SRCS))
 
