@@ -23,6 +23,20 @@
 /** @brief cmd_id sent in a 227 request to add a new scene (not edit). */
 #define APP_SCENE_CMD_ID_NEW   255U
 
+/** @brief Check a response phrase ID accepted by MQTT 220 and 227.
+ *  Accepted set: 0..3, 11..19, 40..47, 50..68, 70, 71.
+ *  @param[in] respond_id Response phrase ID from the request.
+ *  @return true if accepted, false otherwise.
+ */
+static inline bool app_scene_respond_id_is_valid(uint32_t respond_id)
+{
+    return (respond_id <= 3U) ||
+           ((respond_id >= 11U) && (respond_id <= 19U)) ||
+           ((respond_id >= 40U) && (respond_id <= 47U)) ||
+           ((respond_id >= 50U) && (respond_id <= 68U)) ||
+           (respond_id == 70U) || (respond_id == 71U);
+}
+
 /** @brief Initialize scene management and load mask from EasyFlash. */
 void app_scene_init(void);
 

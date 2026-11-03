@@ -191,16 +191,6 @@ void app_scene_clear_all(void)
     (void)app_scene_save_mask(0U);
 }
 
-// Accepted "respond_id" set: 0..3, 11..19, 40..47, 50..68, 70, 71.
-static bool app_scene_respond_id_is_valid(uint32_t respond_id)
-{
-    return (respond_id <= 3U) ||
-           ((respond_id >= 11U) && (respond_id <= 19U)) ||
-           ((respond_id >= 40U) && (respond_id <= 47U)) ||
-           ((respond_id >= 50U) && (respond_id <= 68U)) ||
-           (respond_id == 70U) || (respond_id == 71U);
-}
-
 void app_scene_add(cJSON *js_root)
 {
     uint32_t u = 0U;

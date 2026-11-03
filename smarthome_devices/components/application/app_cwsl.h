@@ -26,7 +26,11 @@
  */
 void app_cwsl_init(void);
 
-/** @brief Handle one CWSL learn request.
+/** @brief Handle one CWSL learn request (MQTT 220).
+ *
+ *  Request: {"<type>":220,"cmd_id":..,"slot":..,"u":..,"act_id":..,"respond_id":..}
+ *  respond_id is required (same set as 227, else code 64) and is sent to the chip
+ *  as LEARN [cmd_id, slot, respond_id]. Every 220 reply echoes it after cmd_id.
  *
  *  @param[in]  js_root  Parsed MQTT request object.
  *  @return     None.

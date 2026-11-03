@@ -231,10 +231,11 @@ Các vị trí code chính:
 
 ### 3.2. Đề xuất mới
 
-- MQTT cmd **220**: LEARN request, ACK tức thời và kết quả cuối.
-- MQTT cmd **221**: DELETE request, ACK tức thời và kết quả cuối.
-- MQTT cmd **222**: STOP request, ACK tức thời và kết quả cuối.
-- MQTT cmd **223**: QUERY request, ACK tức thời và kết quả query.
+- MQTT cmd **220**: LEARN request (bắt buộc `respond_id`); bản tin từ chối tức thời hoặc kết quả cuối.
+- MQTT cmd **221**: DELETE request; bản tin từ chối tức thời hoặc kết quả cuối.
+- MQTT cmd **222**: STOP request; bản tin từ chối tức thời hoặc kết quả cuối.
+- MQTT cmd **223**: QUERY request; bản tin từ chối tức thời hoặc kết quả query.
+- Không có ACK thành công (`result=1`) cho 220–223.
 - MQTT cmd **224**: VOICE_NOTIFY sự kiện báo cáo kích hoạt lệnh giọng nói từ thiết bị lên App.
 - MQTT không dùng trường `action`; mã lệnh 220–224 trực tiếp xác định hành động hoặc loại sự kiện.
 - UART TX `cmd=4`; giá trị action UART vẫn là 1/2/4/6 theo contract chip.
@@ -256,28 +257,33 @@ sequenceDiagram
 
     App->>Broker: MQTT 220–223 request
     Broker->>WB2: AES-CBC(JSON), topic_sub
-    WB2->>Voice: UART cmd4 action
-    WB2-->>Broker: MQTT cùng cmd, ACK result=1
-    Broker-->>App: MQTT ACK
+    alt Bị từ chối local (validate / busy / OTA / TX fail)
+        WB2-->>Broker: MQTT cùng cmd, result=0 + code
+        Broker-->>App: MQTT bản tin từ chối (không có final event)
+    else Chấp nhận
+        WB2->>Voice: UART cmd4 action (không publish MQTT ở bước này)
 
-    Note over Voice: Thu mẫu / xóa / query
+        Note over Voice: Thu mẫu / xóa / query
 
-    alt LEARN / DELETE / STOP
-        Voice-->>WB2: UART cmd5 [code, cmd_id, slot]
-    else QUERY
-        Voice-->>WB2: UART cmd6 bitmap/capacity
+        alt LEARN / DELETE / STOP
+            Voice-->>WB2: UART cmd5 [code, cmd_id, slot]
+        else QUERY
+            Voice-->>WB2: UART cmd6 bitmap/capacity
+        end
+
+        WB2-->>Broker: MQTT cùng cmd, final event
+        Broker-->>App: MQTT final event
     end
-
-    WB2-->>Broker: MQTT cùng cmd, final event
-    Broker-->>App: MQTT final event
 ```
 
-Hai lớp kết quả dùng cùng mã lệnh của hành động:
+Mỗi request nhận đúng một trong hai loại bản tin, cùng mã lệnh của hành động:
 
-1. **ACK**: MCU đã chấp nhận và gửi UART; frame có `result`.
-2. **Final event**: kết quả nghiệp vụ cuối từ chip hoặc timeout do MCU tạo; frame không có `result`.
+1. **Bản tin từ chối**: MCU từ chối local và không gửi UART; frame có `result=0` và `code`. Không có final event sau đó.
+2. **Final event**: request đã được gửi UART; kết quả nghiệp vụ cuối từ chip hoặc timeout do MCU tạo; frame không có `result`.
 
-Ví dụ LEARN dùng cmd 220 cho cả request, ACK và final event. `result=1` trên ACK **không** có nghĩa là học thành công.
+MCU **không** gửi ACK thành công (`result=1`) khi đã gửi UART. Request được chấp nhận thì MCU im lặng cho tới final event.
+
+Ví dụ LEARN dùng cmd 220 cho cả request, bản tin từ chối và final event.
 
 ---
 
@@ -301,7 +307,7 @@ Ví dụ LEARN dùng cmd 220 cho cả request, ACK và final event. `result=1` t
 Envelope phải là object phẳng. Mã lệnh trực tiếp xác định hành động, ví dụ LEARN:
 
 ```json
-{"fanoem":220,"cmd_id":7,"slot":255,"u":55519,"act_id":0}
+{"fanoem":220,"cmd_id":7,"slot":255,"u":55519,"act_id":0,"respond_id":47}
 ```
 
 Không dùng các dạng sau:
@@ -326,12 +332,12 @@ Không tạo topic riêng cho CWSL và không gửi trường `action` trong pay
 
 ### 6.1. Bảng tổng hợp
 
-| MQTT | Tên | Request App → thiết bị | UART MCU → chip | ACK / final event thiết bị → App |
+| MQTT | Tên | Request App → thiết bị | UART MCU → chip | Bản tin thiết bị → App |
 |---:|---|---|---|---|
-| 220 | LEARN | `u, act_id, cmd_id, slot` | `cmd4 [1,cmd_id,slot]` | ACK 220; sau đó final 220 từ `cmd5` |
-| 221 | DELETE | `u, act_id, cmd_id, slot` | `cmd4 [2,cmd_id,slot]` | ACK 221; sau đó final 221 từ `cmd5` |
-| 222 | STOP | `u, act_id` | `cmd4 [4]` | ACK 222; sau đó final 222 từ `cmd5` nếu đã gửi UART |
-| 223 | QUERY | `u, act_id, cmd_id` | `cmd4 [6,cmd_id]` | ACK 223; sau đó final 223 từ `cmd6` |
+| 220 | LEARN | `u, act_id, cmd_id, slot, respond_id` | `cmd4 [1,cmd_id,slot,respond_id]` | Từ chối 220 (`result=0`), hoặc final 220 từ `cmd5` |
+| 221 | DELETE | `u, act_id, cmd_id, slot` | `cmd4 [2,cmd_id,slot]` | Từ chối 221 (`result=0`), hoặc final 221 từ `cmd5` |
+| 222 | STOP | `u, act_id` | `cmd4 [4]` | Từ chối 222 (`result=0`), hoặc final 222 từ `cmd5` |
+| 223 | QUERY | `u, act_id, cmd_id` | `cmd4 [6,cmd_id]` | Từ chối 223 (`result=0`), hoặc final 223 từ `cmd6` |
 | 224 | VOICE_NOTIFY | Không có (Event-only) | Đã nhận từ chip qua `cmd1`/`cmd2` | Bản tin 224: `{"<device_type>":224,"cmd_id":<id>}` |
 
 Mã lệnh MQTT thay cho trường `action`:
@@ -357,31 +363,37 @@ Theo mã lệnh:
 
 | MQTT cmd | Field bắt buộc thêm | Field bỏ qua |
 |---:|---|---|
-| 220 LEARN | `cmd_id`, `slot` | — |
+| 220 LEARN | `cmd_id`, `slot`, `respond_id` | — |
 | 221 DELETE | `cmd_id`, `slot` | — |
 | 222 STOP | Không | `cmd_id`, `slot` nếu App gửi nhầm |
 | 223 QUERY | `cmd_id` | `slot` nếu App gửi nhầm |
 
 Trường `action` không hợp lệ trong request CWSL mới; firmware không dùng trường này để chọn hành động.
 
-### 6.3. Quy tắc ACK
+`respond_id` (chỉ 220): ID câu phản hồi gán cho `cmd_id`, gửi xuống chip cùng LEARN. Tập hợp lệ giống 227: `0..3, 11..19, 40..47, 50..68, 70, 71`. Thiếu, sai kiểu hoặc ngoài tập thì trả `code=64`. `respond_id` được kiểm **trước** dải `cmd_id`/`slot`: ví dụ `cmd_id=99` mà thiếu `respond_id` thì trả 64, không phải 65.
 
-ACK thành công cho LEARN:
+### 6.3. Quy tắc bản tin từ chối
+
+Bản tin từ chối LEARN (ví dụ đang bận):
 
 ```json
 {
   "fanoem": 220,
   "cmd_id": 7,
+  "respond_id": 47,
   "slot": 255,
   "u": 55519,
   "act_id": 0,
-  "result": 1
+  "result": 0,
+  "code": 67
 }
 ```
 
-- ACK dùng cùng mã lệnh với request.
-- `result=1`: UART TX thành công; không có `code`.
-- `result=0`: request bị từ chối local; bắt buộc có `code`; không có final event nếu chưa gửi UART.
+- Bản tin từ chối dùng cùng mã lệnh với request, luôn có `result=0` và `code`; không gửi UART nên không có final event.
+- Không có ACK thành công `result=1`: request hợp lệ đã gửi UART thì MCU không publish gì cho tới final event.
+- Bản tin 220 luôn có `respond_id` ngay sau `cmd_id`; thiếu hoặc sai kiểu thì ghi 0, đọc được thì echo giá trị App gửi (kể cả khi ngoài tập hợp lệ).
+- Nếu thiếu hoặc sai `u`/`act_id` thì `cmd_id`, `slot` trong bản tin ghi 0 (MCU chưa đọc tới).
+- Bản tin 221/222/223 không có `respond_id`.
 
 ### 6.4. Quy tắc final event
 
@@ -391,6 +403,7 @@ LEARN final event:
 {
   "fanoem": 220,
   "cmd_id": 7,
+  "respond_id": 47,
   "slot": 0,
   "code": 32,
   "u": 55519,
@@ -403,6 +416,7 @@ Quy tắc:
 - Final event dùng cùng mã lệnh với request và không bao giờ có `result`.
 - LEARN_OK phải trả slot thật được gán, không giữ `255`.
 - `cmd_id`, `slot`, `code` của final event mutating lấy từ frame chip.
+- `respond_id` của final 220 lấy từ request đang pending. Final 222 (STOP hủy phiên 220) không có `respond_id`.
 - `u`, `act_id` lấy từ request đang pending; sau khi STOP được chấp nhận thì final cmd 222 echo `u`, `act_id` của request STOP.
 - QUERY thành công không có `code`.
 - QUERY timeout có `code=52` và không có bitmap/capacity.
@@ -416,13 +430,14 @@ Tất cả số là JSON Number nguyên, biểu diễn ở hệ thập phân.
 | Trường | Có mặt | Kiểu / miền | Nguồn | Ý nghĩa |
 |---|---|---|---|---|
 | `<device_type>` | Mọi frame | 220, 221, 222, 223 hoặc 224 | Hiện có | Ví dụ `fanoem`; value trực tiếp xác định LEARN/DELETE/STOP/QUERY/VOICE_NOTIFY |
-| `u` | Request; echo ACK/final event | `uint32`, không âm | Hiện có | User ID; không phải request ID |
-| `act_id` | Request; echo ACK/final event | `uint8`, thường App = 0 | Hiện có | Nguồn thao tác; không đảm bảo duy nhất |
+| `u` | Request; echo bản tin từ chối/final event | `uint32`, không âm | Hiện có | User ID; không phải request ID |
+| `act_id` | Request; echo bản tin từ chối/final event | `uint8`, thường App = 0 | Hiện có | Nguồn thao tác; không đảm bảo duy nhất |
 | `action` | Không được gửi | — | — | Hành động được xác định bằng MQTT cmd 220–224 |
 | `cmd_id` | LEARN/DELETE/QUERY; final event; VOICE_NOTIFY | `uint8` | Mới | ASR command ID; 255 là giá trị đặc biệt |
 | `slot` | LEARN/DELETE; mutating final event | Wake 0–4, command 0–14, hoặc 255 | Mới | Địa chỉ mẫu hoặc `CWSL_ANY` |
-| `result` | Chỉ ACK | 0 hoặc 1 | Hiện có | 1 = request đã được gửi UART; 0 = bị từ chối local |
-| `code` | ACK fail hoặc final event fail/status | Byte status hoặc mã local | Mới | Trạng thái chi tiết |
+| `respond_id` | Request 220 (bắt buộc); mọi bản tin 220 | `uint8`, tập `0..3, 11..19, 40..47, 50..68, 70, 71` | Mới | ID câu phản hồi chip phát khi `cmd_id` được kích hoạt; echo ngay sau `cmd_id` |
+| `result` | Chỉ bản tin từ chối | Luôn 0 | Hiện có | 0 = bị từ chối local. MCU không gửi `result=1` cho 220–223 |
+| `code` | Bản tin từ chối hoặc final event | Byte status hoặc mã local | Mới | Trạng thái chi tiết |
 | `bitmap` | QUERY cmd 223 thành công | `uint16` | Mới | `low | (high << 8)`; bit N tương ứng slot N |
 | `wake` | QUERY capacity cmd 223 | 0–5 | Mới | Số template wake đang dùng |
 | `ncmd` | QUERY capacity cmd 223 | 0–15 | Mới | Số template command đang dùng |
@@ -435,13 +450,14 @@ Tất cả số là JSON Number nguyên, biểu diễn ở hệ thập phân.
 
 Validation phải thực hiện trước khi cast về `uint8_t`.
 
-Trả ACK cùng mã lệnh với `result=0, code=64` nếu:
+Trả bản tin từ chối cùng mã lệnh với `result=0, code=64` nếu:
 
 - Thiếu field bắt buộc.
 - Field cần là Number nhưng nhận String/Object/Array.
 - Số âm.
 - Số không nguyên.
-- `cmd_id`, `slot` hoặc `act_id` lớn hơn 255.
+- `cmd_id`, `slot`, `act_id` hoặc `respond_id` lớn hơn 255.
+- LEARN cmd 220 thiếu `respond_id`, `respond_id` sai kiểu hoặc ngoài tập hợp lệ.
 - Payload có trường `action` của contract cũ.
 - DELETE cmd 221 dùng `cmd_id=255` nhưng `slot≠255`.
 - LEARN/DELETE ID bị khóa theo policy sản phẩm.
@@ -458,7 +474,7 @@ UART frame:
 
 | MQTT cmd | UART action | UART MCU → chip | UART chip → MCU | MQTT final event |
 |---:|---:|---|---|---|
-| 220 LEARN | 1 | `{"cmd":4,"data":[1,<cmd_id>,<slot>]}` | `{"cmd":5,"data":[<code>,<cmd_id>,<slot>]}` | cmd 220 với `cmd_id,slot,code` |
+| 220 LEARN | 1 | `{"cmd":4,"data":[1,<cmd_id>,<slot>,<respond_id>]}` | `{"cmd":5,"data":[<code>,<cmd_id>,<slot>]}` | cmd 220 với `cmd_id,respond_id,slot,code` |
 | 221 DELETE | 2 | `{"cmd":4,"data":[2,<cmd_id>,<slot>]}` | `cmd5 [code,id,slot]` | cmd 221 với `cmd_id,slot,code` |
 | 222 STOP | 4 | `{"cmd":4,"data":[4]}` | `cmd5 [code,id,slot]` | cmd 222 với `cmd_id,slot,code` |
 | 223 QUERY ID | 6 | `{"cmd":4,"data":[6,<cmd_id>]}` | `{"cmd":6,"data":[id,low,high]}` | cmd 223 với `bitmap=low|(high<<8)` |
@@ -527,7 +543,7 @@ QUERY được phép cho mọi ASR ID 1–43 và 255 vì đây là thao tác đ�
 **Cơ chế thực thi LEARN:**
 - **Lệnh điều khiển (`cmd_id` 7..43) và Từ đánh thức (`cmd_id = 1`)**:
   - Chạy trực tiếp trong phase thông thường (`APP_CWSL_PHASE_NORMAL`), không qua các sub-phase truy vấn hay dọn dẹp slot cũ.
-  - MCU gửi trực tiếp lệnh UART `[1, cmd_id, slot]` tới chip CI13162 (`slot` là 255 hoặc 0..14).
+  - MCU gửi trực tiếp lệnh UART `[1, cmd_id, slot, respond_id]` tới chip CI13162 (`slot` là slot trong request: 255 hoặc 0..14, wake 0..4).
   - Chip CI13162 thu âm; khi nhận `cmd5` thành công (`code = 32`, `LEARN_OK`), MCU phát final MQTT cmd 220 chứa `slot` thực tế vừa ghi nhận và kết thúc phiên mà không xóa mẫu cũ (hỗ trợ quan hệ 1-n).
 - **Chỉ riêng Ngữ cảnh (Scene - `cmd_id` 46..55)**:
   - Duy trì cơ chế Safe Replace (1-1) qua 3 sub-phase:
@@ -540,23 +556,19 @@ QUERY được phép cho mọi ASR ID 1–43 và 255 vì đây là thao tác đ�
 ```text
 IDLE + LEARN cmd 220 / DELETE cmd 221
   → validate
-  → TX UART cmd4
-  → ACK cùng cmd result=1
+  → TX UART cmd4 (không publish MQTT)
   → WAIT_STATUS
 
 IDLE + QUERY cmd 223
-  → TX UART cmd4 action=6
-  → ACK 223 result=1
+  → TX UART cmd4 action=6 (không publish MQTT)
   → WAIT_INFO
 
 WAIT_STATUS + QUERY cmd 223
-  → TX query
-  → ACK 223 result=1
+  → TX query (không publish MQTT)
   → WAIT_BOTH
 
 WAIT_STATUS/WAIT_BOTH + STOP cmd 222
-  → TX UART [4]
-  → ACK 222 result=1
+  → TX UART [4] (không publish MQTT)
   → lưu u/act_id của STOP
   → tiếp tục chờ cmd5 cuối; publish final cmd 222
 ```
@@ -570,7 +582,7 @@ Hai response độc lập:
 - Final event cmd 223 không kết thúc spinner LEARN.
 - Final event cmd 220/221/222 mới kết thúc phiên LEARN/DELETE/STOP tương ứng.
 
-QUERY thứ hai khi đã có QUERY pending trả ACK 223 `result=0, code=67`.
+QUERY thứ hai khi đã có QUERY pending trả bản tin từ chối 223 `result=0, code=67`.
 
 ### 10.4. Khớp cmd5
 
@@ -622,7 +634,7 @@ Version query cmd3 từ MCU nên tạm dừng trong lúc mutating CWSL để tr�
 
 ## 11. Mã trạng thái
 
-### 11.1. ACK local của cmd 220–223 (`result=0`)
+### 11.1. Mã từ chối local của cmd 220–223 (`result=0`)
 
 | Dec | Hex | Tên | Ý nghĩa | App xử lý |
 |---:|---:|---|---|---|
@@ -677,12 +689,6 @@ App gửi:
 {"fanoem":223,"cmd_id":255,"u":55519,"act_id":0}
 ```
 
-MCU gửi ACK:
-
-```json
-{"fanoem":223,"cmd_id":255,"u":55519,"act_id":0,"result":1}
-```
-
 UART MCU → chip:
 
 ```text
@@ -729,22 +735,16 @@ MQTT final event cmd 223:
 App:
 
 ```json
-{"fanoem":220,"cmd_id":7,"slot":255,"u":55519,"act_id":0}
+{"fanoem":220,"cmd_id":7,"slot":255,"u":55519,"act_id":0,"respond_id":47}
 ```
 
 UART:
 
 ```text
-{"cmd":4,"data":[1,7,255]}\r\n
+{"cmd":4,"data":[1,7,255,47]}\r\n
 ```
 
-ACK:
-
-```json
-{"fanoem":220,"cmd_id":7,"slot":255,"u":55519,"act_id":0,"result":1}
-```
-
-Chip phát prompt 1010, người dùng nói, sau đó chip trả:
+MCU không publish ACK. Chip phát prompt 1010, người dùng nói, sau đó chip trả:
 
 ```text
 {"cmd":5,"data":[32,7,0]}\r\n
@@ -753,7 +753,7 @@ Chip phát prompt 1010, người dùng nói, sau đó chip trả:
 Event:
 
 ```json
-{"fanoem":220,"cmd_id":7,"slot":0,"code":32,"u":55519,"act_id":0}
+{"fanoem":220,"cmd_id":7,"respond_id":47,"slot":0,"code":32,"u":55519,"act_id":0}
 ```
 
 Khi người dùng nói lại câu đã học, thiết bị report trạng thái quạt bằng MQTT cmd 20, `act_id=13`; không phát lại final event CWSL.
@@ -761,14 +761,16 @@ Khi người dùng nói lại câu đã học, thiết bị report trạng thái
 ### 12.4. Learn wake
 
 ```json
-{"fanoem":220,"cmd_id":1,"slot":255,"u":55519,"act_id":0}
+{"fanoem":220,"cmd_id":1,"slot":255,"u":55519,"act_id":0,"respond_id":47}
 ```
 
 UART:
 
 ```text
-{"cmd":4,"data":[1,1,255]}\r\n
+{"cmd":4,"data":[1,1,255,47]}\r\n
 ```
+
+Học vào slot chỉ định (ví dụ slot 2) thì UART mang đúng slot đó: `{"cmd":4,"data":[1,1,2,47]}`.
 
 LEARN_OK phải trả slot 0–4.
 
@@ -852,24 +854,31 @@ MQTT:
 {"fanoem":222,"cmd_id":7,"slot":0,"code":34,"u":55519,"act_id":0}
 ```
 
+Final 222 không có `respond_id`, kể cả khi phiên bị hủy là LEARN 220.
+
 ### 12.9. Busy
 
 Request thứ hai trong lúc đã có mutating pending:
 
 ```json
-{"fanoem":220,"cmd_id":8,"slot":255,"u":55519,"act_id":0,"result":0,"code":67}
+{"fanoem":220,"cmd_id":8,"respond_id":47,"slot":255,"u":55519,"act_id":0,"result":0,"code":67}
 ```
 
 Không gửi UART thứ hai.
 
 ### 12.10. ID bị khóa hoặc sai
 
-| Input | MQTT cmd ACK | Nội dung ACK |
+Các LEARN dưới đây đều có `respond_id` hợp lệ, trừ khi ghi khác.
+
+| Input | MQTT cmd | Bản tin trả về |
 |---|---:|---|
 | LEARN ID 2 | 220 | `result=0, code=64` |
-| LEARN ID 13 | 220 | `result=1` rồi final từ chip |
-| LEARN ID 14 | 220 | `result=1` rồi final từ chip |
-| LEARN ID 43 | 220 | `result=1` rồi final từ chip |
+| LEARN ID 13 | 220 | Không có bản tin tức thời; final từ chip |
+| LEARN ID 14 | 220 | Không có bản tin tức thời; final từ chip |
+| LEARN ID 43 | 220 | Không có bản tin tức thời; final từ chip |
+| LEARN thiếu `respond_id` | 220 | `result=0, code=64`, `respond_id=0` |
+| LEARN `respond_id=72` | 220 | `result=0, code=64`, `respond_id=72` |
+| LEARN ID 99, thiếu `respond_id` | 220 | `result=0, code=64` (kiểm `respond_id` trước) |
 | LEARN ID 44 | 220 | `result=0, code=65` |
 | LEARN ID 99 | 220 | `result=0, code=65` |
 | LEARN ID 7 slot 15 | 220 | `result=0, code=66` |
@@ -883,7 +892,7 @@ Không gửi UART thứ hai.
 ```text
 LEARN cmd 220 cho ID 7 đang WAIT_STATUS
 App gửi QUERY cmd 223 cho ID 7
-MCU ACK 223 result=1
+MCU gửi UART query (không publish ngay)
 MCU chuyển WAIT_BOTH
 Final 223 bitmap có thể tới trước
 Final 220 LEARN_OK tới sau
@@ -992,11 +1001,11 @@ Quy tắc:
 Vì QoS 0 và không retain:
 
 - Request cmd 220–223 có thể mất.
-- ACK có thể mất dù UART đã được gửi.
+- Bản tin từ chối có thể mất.
 - Final event có thể mất dù thao tác đã hoàn tất.
 - MCU không queue/replay final event sau reconnect.
 
-Không được suy luận “không thấy ACK trong 3 giây = firmware cũ”. ACK có thể mất trong khi chip đang học thật.
+Không được suy luận “không thấy bản tin nào trong 3 giây = firmware cũ”. Request được chấp nhận thì MCU im lặng cho tới final event (LEARN có thể tới 120 giây).
 
 ### 13.2. Probe firmware hỗ trợ CWSL
 
@@ -1005,7 +1014,7 @@ Nếu LEARN cmd 220 im lặng:
 1. Không gửi LEARN lại.
 2. Gửi QUERY capacity cmd 223 với `cmd_id=255`.
 3. Nếu QUERY cũng hoàn toàn im lặng, firmware có thể chưa hỗ trợ nhóm cmd 220–223.
-4. Nếu QUERY có ACK/final event, firmware hỗ trợ CWSL; tiếp tục reconcile bằng QUERY.
+4. Nếu QUERY có final event hoặc bản tin từ chối, firmware hỗ trợ CWSL; tiếp tục reconcile bằng QUERY.
 
 ### 13.3. Correlation và idempotency
 
@@ -1016,7 +1025,7 @@ Do đó:
 - Chỉ cho phép một mutating request trên thiết bị.
 - Cho phép tối đa một QUERY song song.
 - App không tự retry LEARN/DELETE khi kết quả không chắc chắn.
-- Khi mất ACK/final event, App phải QUERY thay vì gửi lại mutation.
+- Khi không nhận được final event, App phải QUERY thay vì gửi lại mutation.
 - Nếu mutation đầu đã hoàn tất nhưng final event mất, gửi lại mutation khi MCU đã IDLE có thể thực thi lần hai; protocol không cung cấp exactly-once.
 
 ### 13.4. Timeout chip và MCU
@@ -1082,8 +1091,8 @@ Không hiển thị nút học cho ID 44/45 (tắt/bật âm thanh); LEARN/DELET
 | Sự kiện | Hành vi UI |
 |---|---|
 | Vào màn | Gửi QUERY cmd 223 cho capacity và từng ID được hỗ trợ |
-| Nhấn Học | Gửi LEARN cmd 220, thường dùng slot 255 |
-| ACK 220 `result=1` | Hiển thị “Mời nói sau tiếng loa”; bật spinner |
+| Nhấn Học | Gửi LEARN cmd 220 kèm `respond_id`, thường dùng slot 255; hiển thị “Mời nói sau tiếng loa”; bật spinner (firmware không gửi ACK thành công) |
+| Bản tin 220 `result=0` | Tắt spinner, xử lý theo `code` |
 | Final 220 `code=32` | Tắt spinner, hiển thị slot được gán |
 | Final 222 `code=34` | Tắt spinner, hiển thị đã hủy |
 | Final 223 | Chỉ cập nhật bitmap/capacity, không tắt spinner LEARN |
@@ -1115,35 +1124,36 @@ Không hiển thị nút học cho ID 44/45 (tắt/bật âm thanh); LEARN/DELET
 
 | # | Test | Kỳ vọng |
 |---:|---|---|
-| 1 | QUERY capacity cmd 223 | ACK 223=1, sau đó final 223 `wake/ncmd/nfree` |
-| 2 | LEARN cmd 220, ID 7 slot 255 | ACK=1, UART `[1,7,255]`, final 220 code=32 với slot thật |
+| 1 | QUERY capacity cmd 223 | Không có ACK; final 223 `wake/ncmd/nfree` |
+| 2 | LEARN cmd 220, ID 7 slot 255, `respond_id` 47 | Không có ACK; UART `[1,7,255,47]`; final 220 code=32 với slot thật và `respond_id` 47 |
 | 3 | Nói lại câu học | MQTT cmd 20, `act_id=13`, không phát lại final CWSL |
 | 4 | QUERY cmd 223, ID 7 | Bit slot mới bật |
 | 5 | LEARN lại cùng ID 7 | Mẫu mới lưu vào slot trống (hoặc slot chỉ định), mẫu cũ KHÔNG bị xóa; cả hai slot đều có hiệu lực (quan hệ 1-n) |
 | 6 | DELETE cmd 221 một slot | code=33; slot khác giữ nguyên |
 | 7 | LEARN cmd 220 wake ID 1 | Slot 0–4; wake factory vẫn hoạt động |
-| 8 | LEARN thứ hai khi đang học | ACK 220 code=67; không UART thứ hai |
+| 8 | LEARN thứ hai khi đang học | Bản tin từ chối 220 code=67; không UART thứ hai |
 | 9 | QUERY khi đang học | Final 223 không kết thúc LEARN |
 | 10 | STOP cmd 222 khi đang học | UART `[4]`, final 222 code=34 |
-| 11 | STOP cmd 222 khi IDLE | ACK 222 code=68, không final event |
+| 11 | STOP cmd 222 khi IDLE | Bản tin từ chối 222 code=68, không final event |
 | 12 | Chip timeout | Final của cmd pending có code=52 |
 | 13 | Pool đầy | Final 220 code=50 |
 | 14 | Học lại rồi học fail / timeout | Final 220 code=48 hoặc 52; mẫu cũ VẪN CÒN NGUYÊN và hoạt động bình thường |
-| 15 | LEARN 2–6 | ACK 220 code=64, không UART |
+| 15 | LEARN 2–6 | Bản tin từ chối 220 code=64, không UART |
 | 16 | LEARN timer ID 15 hoặc 39 | Gửi UART và xử lý giống command template khác |
 | 17 | LEARN ID 13/14/43 | Gửi UART và xử lý giống command template khác |
-| 17b | LEARN ID 44/99 | ACK 220 code=65 |
-| 18 | Slot ngoài trần | ACK của cmd tương ứng code=66 |
-| 19 | Thiếu field | ACK của cmd tương ứng code=64 |
-| 20 | OTA đang chạy | ACK của cmd tương ứng code=69 |
-| 21 | UART TX fail | ACK của cmd tương ứng code=70 |
-| 22 | Sai root key hoặc firmware cũ | Không ACK |
+| 17b | LEARN ID 44/99 | Bản tin từ chối 220 code=65 |
+| 18 | Slot ngoài trần | Bản tin từ chối của cmd tương ứng code=66 |
+| 19 | Thiếu field | Bản tin từ chối của cmd tương ứng code=64 |
+| 20 | OTA đang chạy | Bản tin từ chối của cmd tương ứng code=69 |
+| 21 | UART TX fail | Bản tin từ chối của cmd tương ứng code=70 |
+| 22 | Sai root key hoặc firmware cũ | Không có bản tin |
 | 23 | Payload cmd 220–224 | Plaintext dưới 180 byte; frame encrypted không vượt output buffer |
 | 24 | Kích hoạt lệnh giọng nói (ví dụ ID 7..43) | MCU gửi state MQTT cmd 20/131 và MQTT cmd 224 chứa `cmd_id` tương ứng |
+| 25 | LEARN cmd 220 thiếu / sai kiểu / ngoài tập `respond_id` | Bản tin từ chối 220 code=64, echo `respond_id` (thiếu → 0), không UART |
 
 ### 15.3. Bốn gate bắt buộc
 
-1. **Mất ACK QoS 0**
+1. **Mất bản tin QoS 0**
    - UART đã thực hiện LEARN cmd 220.
    - App probe bằng QUERY cmd 223.
    - App không gửi LEARN đè.
@@ -1223,10 +1233,10 @@ Nếu không có quyết định khác, dùng default sau:
 
 ```text
 MQTT cmd:
-  220 = LEARN request / ACK / final event
-  221 = DELETE request / ACK / final event
-  222 = STOP request / ACK / final event
-  223 = QUERY request / ACK / final event
+  220 = LEARN request / bản tin từ chối / final event
+  221 = DELETE request / bản tin từ chối / final event
+  222 = STOP request / bản tin từ chối / final event
+  223 = QUERY request / bản tin từ chối / final event
   224 = VOICE_NOTIFY event (Báo cáo lệnh giọng nói kích hoạt)
   225 = SET_VOLUME request / response
   226 = GET_VOLUME request / response
@@ -1249,9 +1259,13 @@ Slot:
   command DELETE= 0..14 hoặc 255
   delete all   = cmd_id=255, slot=255
 
-Hai lớp kết quả dùng cùng MQTT cmd của request:
-  ACK có result=1 = UART đã gửi
-  Final event không có result; code = kết quả cuối
+Mỗi request nhận một trong hai bản tin, cùng MQTT cmd của request:
+  Bản tin từ chối: result=0 + code; không gửi UART, không có final event
+  Final event: không có result; code = kết quả cuối
+  Không có ACK result=1.
+
+220 bắt buộc respond_id (tập như 227); UART LEARN [1,cmd_id,slot,respond_id];
+mọi bản tin 220 echo respond_id ngay sau cmd_id.
 ```
 
 ## Phụ lục B. Việc cần sửa trong tài liệu cũ

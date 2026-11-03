@@ -55,7 +55,7 @@ Luật nhận (chip → WB2), theo `aiio_ci13162_process_byte()` và `aiio_ci131
 |---:|---|---|---|
 | 0 | `{"cmd":0,"data":[]}` | `aiio_ci13162_uart_ota_send_app_reset()` | Chỉ trong OTA, khi reset mode là `SOFT_ONLY`, hoặc `POWER_FALLBACK` mà sau 5 s chưa handshake được. Mode hiện tại là `POWER_ONLY`, nên **không gửi**: chip được reset bằng cách ngắt nguồn GPIO17 trong 1000 ms |
 | 3 | `{"cmd":3,"data":[]}` | `aiio_ci13162_uart_request_version()` | Tự động: 3 s sau `aiio_ci13162_uart_init()`, thử lại mỗi 1 s, tối đa 3 lần, dừng khi có phản hồi hợp lệ. Tạm dừng khi đang có thao tác CWSL (kể cả đang chờ trả lời cmd 15) hoặc OTA |
-| 4 | `{"cmd":4,"data":[1,<cmd_id>,<slot>]}` | `aiio_ci13162_uart_send_cwsl()` | LEARN. MQTT 220 gửi đúng slot yêu cầu. MQTT 227 (thêm ngữ cảnh) gửi slot `255` và **luôn** gửi 4 phần tử `{"cmd":4,"data":[1,<cmd_id>,255,<respond_id>]}` (`respond_id` bắt buộc trong request 227). Các đường khác vẫn 3 phần tử |
+| 4 | `{"cmd":4,"data":[1,<cmd_id>,<slot>,<respond_id>]}` | `aiio_ci13162_uart_send_cwsl()` | LEARN, luôn 4 phần tử. MQTT 220 gửi đúng slot yêu cầu kèm `respond_id` (bắt buộc trong request 220). MQTT 227 (thêm ngữ cảnh) gửi slot `255` kèm `respond_id` (bắt buộc trong request 227) |
 | 4 | `{"cmd":4,"data":[2,<cmd_id>,<slot>]}` | như trên | DELETE một mẫu (MQTT 221, hoặc xóa slot cũ sau khi học lại ngữ cảnh) |
 | 4 | `{"cmd":4,"data":[2,<cmd_id>,255]}` | như trên | DELETE mọi mẫu của `cmd_id` (MQTT 221, MQTT 228 xóa ngữ cảnh) |
 | 4 | `{"cmd":4,"data":[2,255,255]}` | như trên | DELETE toàn bộ (MQTT 221 với `cmd_id`=`slot`=255, hoặc khi reset nhà máy) |
@@ -198,7 +198,7 @@ Trình tự trong `ci13162_ota_task()`:
 | Lệnh quạt 1, 2, 7, 14 | Đã bỏ | Vẫn parse; chỉ báo MQTT 224, nhánh quạt không áp dụng | Code thừa, vô hại |
 | `CMD_VOLUME` (8) | `[8]` tắt tiếng, `[9]` bật tiếng | Gửi `1..7`; `[8]` chỉ do nút giảm gửi khi đang tắt tiếng; không gửi `[9]` | WB2 không bật tiếng bằng `[9]`; bật lại bằng nút tăng (`[1]`) |
 | `CMD_VOLUME_INFO` (9) | `[level, result, muted]` | Chỉ nhận đúng 3 phần tử, nhớ `muted` | Không có |
-| `CMD_CWSL` LEARN | Có dạng 4 phần tử, kèm `value` câu trả lời | MQTT 227 luôn gửi 4 phần tử (kèm `respond_id`); các đường khác vẫn 3 phần tử | Đường 220 không đặt được câu trả lời khi học |
+| `CMD_CWSL` LEARN | Có dạng 4 phần tử, kèm `value` câu trả lời | MQTT 220 và 227 đều gửi 4 phần tử (kèm `respond_id`) | Không có |
 | `CMD_RESP_SET` (15) | Có | **Đã cài**, chỉ cho MQTT 227 sửa câu phản hồi | Không có đường khác đặt câu phản hồi |
 | `CMD_RESP_GET` (16) | Có | Chưa cài | Chip trả về thì WB2 báo `UNKNOWN_COMMAND` (MQTT 299) |
 | `CMD_VOICE_SET/GET` (17/18) | Có | **Đã cài**, cho MQTT 230/231 và lần hỏi lúc boot | Không có |

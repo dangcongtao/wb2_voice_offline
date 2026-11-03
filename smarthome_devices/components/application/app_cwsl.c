@@ -66,6 +66,7 @@ typedef struct {
     uint8_t act_id;
     uint8_t cmd_id;
     uint8_t slot;
+    uint8_t respond_id;  /* Response phrase ID sent with LEARN (220 and 227 add) */
 } app_cwsl_request_t;
 
 typedef enum {
@@ -82,7 +83,6 @@ typedef struct {
     uint8_t new_slot;
     uint8_t delete_target_slot;
     uint8_t delete_retry_count;
-    uint8_t respond_id;
     uint16_t old_bitmap;
     app_cwsl_request_t request;
     TickType_t start_tick;
@@ -196,19 +196,37 @@ static uint8_t app_cwsl_parse_mutating(cJSON *js_root,
 {
     uint32_t cmd_id;
     uint32_t slot;
+    uint32_t respond_id;
     uint8_t code;
 
     code = app_cwsl_parse_common(js_root, mqtt_cmd, request);
+    if (code == 0U) {
+        if (!app_cwsl_read_number(js_root, "cmd_id", UINT8_MAX, &cmd_id) ||
+            !app_cwsl_read_number(js_root, "slot", UINT8_MAX, &slot)) {
+            code = APP_CWSL_CODE_BAD_REQUEST;
+        } else {
+            request->cmd_id = (uint8_t)cmd_id;
+            request->slot = (uint8_t)slot;
+        }
+    }
+    if (mqtt_cmd == APP_CWSL_CMD_LEARN) {
+        /* respond_id is required and checked before the cmd_id/slot ranges; a
+         * readable value is kept even on reject so the reply echoes what was sent. */
+        if (app_cwsl_read_number(js_root,
+                                 APP_SCENE_KEY_RESPOND_ID,
+                                 UINT8_MAX,
+                                 &respond_id)) {
+            request->respond_id = (uint8_t)respond_id;
+        } else {
+            respond_id = UINT32_MAX; /* missing or wrong type: rejected below */
+        }
+        if ((code == 0U) && !app_scene_respond_id_is_valid(respond_id)) {
+            code = APP_CWSL_CODE_BAD_REQUEST;
+        }
+    }
     if (code != 0U) {
         return code;
     }
-    if (!app_cwsl_read_number(js_root, "cmd_id", UINT8_MAX, &cmd_id) ||
-        !app_cwsl_read_number(js_root, "slot", UINT8_MAX, &slot)) {
-        return APP_CWSL_CODE_BAD_REQUEST;
-    }
-
-    request->cmd_id = (uint8_t)cmd_id;
-    request->slot = (uint8_t)slot;
 
     if (request->cmd_id == APP_CWSL_ANY) {
         if (mqtt_cmd == APP_CWSL_CMD_LEARN) {
@@ -289,25 +307,43 @@ static void app_cwsl_publish(char *response, int response_length)
     app_send_data(response, (uint32_t)response_length);
 }
 
+// Build the ",\"respond_id\":N" reply fragment; only MQTT 220 replies carry it.
+static void app_cwsl_format_respond_id(char *field,
+                                       size_t field_size,
+                                       uint32_t mqtt_cmd,
+                                       uint8_t respond_id)
+{
+    field[0] = '\0';
+    if (mqtt_cmd == APP_CWSL_CMD_LEARN) {
+        (void)snprintf(field, field_size, ",\"respond_id\":%u", (unsigned int)respond_id);
+    }
+}
+
 // Publish a LEARN or DELETE acknowledgement.
 static void app_cwsl_publish_mutating_reject(const app_cwsl_request_t *request,
                                              uint8_t code)
 {
     char response[APP_CWSL_RESPONSE_SIZE];
+    char respond_field[20];
     int response_length;
 
     if (request == NULL) {
         return;
     }
 
+    app_cwsl_format_respond_id(respond_field,
+                               sizeof(respond_field),
+                               request->mqtt_cmd,
+                               request->respond_id);
     response_length = snprintf(
         response,
         sizeof(response),
-        "{\"%s\":%lu,\"cmd_id\":%u,\"slot\":%u,\"u\":%lu,"
+        "{\"%s\":%lu,\"cmd_id\":%u%s,\"slot\":%u,\"u\":%lu,"
         "\"act_id\":%u,\"result\":0,\"code\":%u}",
         gs_dev_type[device_type],
         (unsigned long)request->mqtt_cmd,
         (unsigned int)request->cmd_id,
+        respond_field,
         (unsigned int)request->slot,
         (unsigned long)request->user_id,
         (unsigned int)request->act_id,
@@ -394,6 +430,7 @@ static void app_cwsl_publish_mutating_final(
     uint8_t code)
 {
     char response[APP_CWSL_RESPONSE_SIZE];
+    char respond_field[20];
     uint32_t mqtt_cmd;
     int response_length;
 
@@ -404,14 +441,19 @@ static void app_cwsl_publish_mutating_final(
     mqtt_cmd = (pending->stop_sent != 0U)
                    ? APP_CWSL_CMD_STOP
                    : pending->request.mqtt_cmd;
+    app_cwsl_format_respond_id(respond_field,
+                               sizeof(respond_field),
+                               mqtt_cmd,
+                               pending->request.respond_id);
     response_length = snprintf(
         response,
         sizeof(response),
-        "{\"%s\":%lu,\"cmd_id\":%u,\"slot\":%u,\"code\":%u,"
+        "{\"%s\":%lu,\"cmd_id\":%u%s,\"slot\":%u,\"code\":%u,"
         "\"u\":%lu,\"act_id\":%u}",
         gs_dev_type[device_type],
         (unsigned long)mqtt_cmd,
         (unsigned int)cmd_id,
+        respond_field,
         (unsigned int)slot,
         (unsigned int)code,
         (unsigned long)pending->request.user_id,
@@ -666,7 +708,7 @@ static void app_cwsl_on_info(uint8_t cmd_id,
 
         uart_data[0] = s_app_cwsl_mutating.request.cmd_id;
         uart_data[1] = APP_CWSL_ANY;
-        uart_data[2] = s_app_cwsl_mutating.respond_id;
+        uart_data[2] = s_app_cwsl_mutating.request.respond_id;
         if (aiio_ci13162_uart_send_cwsl(APP_CWSL_ACTION_LEARN, uart_data, 3U) != 0) {
             app_cwsl_mutating_t pending_mut = s_app_cwsl_mutating;
             app_cwsl_clear_mutating();
@@ -735,73 +777,73 @@ static void app_cwsl_run_validation_tests(void)
         uint32_t mqtt_cmd;
         uint8_t expected_code;
     } test_cases[] = {
-        {"\"cmd_id\":7,\"slot\":255,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":7,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, 0U},
-        {"\"cmd_id\":1,\"slot\":4,\"u\":1,\"act_id\":255",
+        {"\"cmd_id\":1,\"slot\":4,\"u\":1,\"act_id\":255,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, 0U},
-        {"\"cmd_id\":2,\"slot\":0,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":2,\"slot\":0,\"u\":1,\"act_id\":0,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
-        {"\"cmd_id\":13,\"slot\":0,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":13,\"slot\":0,\"u\":1,\"act_id\":0,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, 0U},
-        {"\"cmd_id\":14,\"slot\":255,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":14,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, 0U},
-        {"\"cmd_id\":15,\"slot\":0,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":15,\"slot\":0,\"u\":1,\"act_id\":0,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, 0U},
-        {"\"cmd_id\":39,\"slot\":255,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":39,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, 0U},
-        {"\"cmd_id\":43,\"slot\":255,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":43,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, 0U},
-        {"\"cmd_id\":44,\"slot\":0,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":44,\"slot\":0,\"u\":1,\"act_id\":0,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, 0U},
-        {"\"cmd_id\":45,\"slot\":255,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":45,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, 0U},
-        {"\"cmd_id\":46,\"slot\":255,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":46,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, 0U},
-        {"\"cmd_id\":53,\"slot\":255,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":53,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, 0U},
-        {"\"cmd_id\":54,\"slot\":0,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":54,\"slot\":0,\"u\":1,\"act_id\":0,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_COMMAND_ID},
-        {"\"cmd_id\":55,\"slot\":255,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":55,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_COMMAND_ID},
         {"\"cmd_id\":54,\"slot\":0,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_DELETE, APP_CWSL_CODE_BAD_COMMAND_ID},
         {"\"cmd_id\":55,\"slot\":255,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_DELETE, APP_CWSL_CODE_BAD_COMMAND_ID},
-        {"\"cmd_id\":56,\"slot\":255,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":56,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
-        {"\"cmd_id\":65,\"slot\":255,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":65,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
         {"\"cmd_id\":56,\"slot\":255,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_DELETE, APP_CWSL_CODE_BAD_REQUEST},
         {"\"cmd_id\":65,\"slot\":255,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_DELETE, APP_CWSL_CODE_BAD_REQUEST},
-        {"\"cmd_id\":66,\"slot\":0,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":66,\"slot\":0,\"u\":1,\"act_id\":0,\"respond_id\":47",
+         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
+        {"\"cmd_id\":70,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
         {"\"cmd_id\":70,\"slot\":255,\"u\":1,\"act_id\":0",
-         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
-        {"\"cmd_id\":70,\"slot\":255,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_DELETE, APP_CWSL_CODE_BAD_REQUEST},
-        {"\"cmd_id\":71,\"slot\":0,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":71,\"slot\":0,\"u\":1,\"act_id\":0,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_COMMAND_ID},
-        {"\"cmd_id\":99,\"slot\":0,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":99,\"slot\":0,\"u\":1,\"act_id\":0,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_COMMAND_ID},
-        {"\"cmd_id\":7,\"slot\":14,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":7,\"slot\":14,\"u\":1,\"act_id\":0,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, 0U},
-        {"\"cmd_id\":43,\"slot\":14,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":43,\"slot\":14,\"u\":1,\"act_id\":0,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, 0U},
-        {"\"cmd_id\":7,\"slot\":15,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":7,\"slot\":15,\"u\":1,\"act_id\":0,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_SLOT},
         {"\"cmd_id\":7,\"slot\":15,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_DELETE, APP_CWSL_CODE_BAD_SLOT},
-        {"\"cmd_id\":1,\"slot\":5,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":1,\"slot\":5,\"u\":1,\"act_id\":0,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_SLOT},
         {"\"cmd_id\":1,\"slot\":5,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_DELETE, APP_CWSL_CODE_BAD_SLOT},
-        {"\"cmd_id\":7,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":7,\"u\":1,\"act_id\":0,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
-        {"\"cmd_id\":7,\"slot\":0.5,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":7,\"slot\":0.5,\"u\":1,\"act_id\":0,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
-        {"\"cmd_id\":7,\"slot\":0,\"u\":1,\"act_id\":0,\"action\":1",
+        {"\"cmd_id\":7,\"slot\":0,\"u\":1,\"act_id\":0,\"action\":1,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
         {"\"cmd_id\":255,\"slot\":255,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_DELETE, 0U},
@@ -839,6 +881,24 @@ static void app_cwsl_run_validation_tests(void)
          APP_CWSL_CMD_QUERY, APP_CWSL_CODE_BAD_COMMAND_ID},
         {"\"cmd_id\":255,\"u\":1,\"act_id\":\"0\"",
          APP_CWSL_CMD_QUERY, APP_CWSL_CODE_BAD_REQUEST},
+        {"\"cmd_id\":7,\"slot\":255,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
+        {"\"cmd_id\":7,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":0",
+         APP_CWSL_CMD_LEARN, 0U},
+        {"\"cmd_id\":7,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":71",
+         APP_CWSL_CMD_LEARN, 0U},
+        {"\"cmd_id\":7,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":4",
+         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
+        {"\"cmd_id\":7,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":72",
+         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
+        {"\"cmd_id\":7,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":256",
+         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
+        {"\"cmd_id\":7,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":\"47\"",
+         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
+        {"\"cmd_id\":99,\"slot\":0,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
+        {"\"cmd_id\":7,\"slot\":15,\"u\":1,\"act_id\":0,\"respond_id\":3",
+         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_SLOT},
     };
     char json[160];
     uint32_t failed_count = 0U;
@@ -893,7 +953,8 @@ static void app_cwsl_start_mutating(cJSON *js_root,
                                     uint8_t action)
 {
     app_cwsl_request_t request;
-    uint8_t uart_data[2];
+    uint8_t uart_data[3];
+    uint8_t uart_count;
     uint8_t code;
 
     memset(&request, 0, sizeof(request));
@@ -926,14 +987,16 @@ static void app_cwsl_start_mutating(cJSON *js_root,
     s_app_cwsl_mutating.new_slot = APP_CWSL_ANY;
     s_app_cwsl_mutating.delete_target_slot = APP_CWSL_ANY;
     s_app_cwsl_mutating.delete_retry_count = 0U;
-    s_app_cwsl_mutating.respond_id = 0U;
     s_app_cwsl_mutating.request = request;
     s_app_cwsl_mutating.start_tick = xTaskGetTickCount();
 
+    /* LEARN (220) sends [cmd_id, slot, respond_id]; DELETE (221) sends [cmd_id, slot]. */
     uart_data[0] = request.cmd_id;
     uart_data[1] = request.slot;
+    uart_data[2] = request.respond_id;
+    uart_count = (mqtt_cmd == APP_CWSL_CMD_LEARN) ? 3U : 2U;
     aiio_ci13162_uart_set_version_query_paused(1U);
-    if (aiio_ci13162_uart_send_cwsl(action, uart_data, 2U) != 0) {
+    if (aiio_ci13162_uart_send_cwsl(action, uart_data, uart_count) != 0) {
         aiio_ci13162_uart_set_version_query_paused(0U);
         app_cwsl_clear_mutating();
         app_cwsl_publish_mutating_reject(&request, APP_CWSL_CODE_TX_FAIL);
@@ -975,7 +1038,7 @@ uint8_t app_cwsl_start_scene_learn(uint8_t cmd_id, uint32_t user_id, uint8_t act
     s_app_cwsl_mutating.new_slot = APP_CWSL_ANY;
     s_app_cwsl_mutating.delete_target_slot = APP_CWSL_ANY;
     s_app_cwsl_mutating.delete_retry_count = 0U;
-    s_app_cwsl_mutating.respond_id = respond_id;
+    s_app_cwsl_mutating.request.respond_id = respond_id;
     s_app_cwsl_mutating.request.mqtt_cmd = APP_SCENE_CMD_ADD;
     s_app_cwsl_mutating.request.user_id = user_id;
     s_app_cwsl_mutating.request.act_id = act_id;
@@ -1012,7 +1075,7 @@ uint8_t app_cwsl_start_scene_delete(uint8_t cmd_id, uint32_t user_id, uint8_t ac
     s_app_cwsl_mutating.new_slot = APP_CWSL_ANY;
     s_app_cwsl_mutating.delete_target_slot = APP_CWSL_ANY;
     s_app_cwsl_mutating.delete_retry_count = 0U;
-    s_app_cwsl_mutating.respond_id = 0U;
+    s_app_cwsl_mutating.request.respond_id = 0U;
     s_app_cwsl_mutating.request.mqtt_cmd = APP_SCENE_CMD_DELETE;
     s_app_cwsl_mutating.request.user_id = user_id;
     s_app_cwsl_mutating.request.act_id = act_id;
