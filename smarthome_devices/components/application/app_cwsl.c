@@ -220,10 +220,10 @@ static uint8_t app_cwsl_parse_mutating(cJSON *js_root,
                                        uint32_t mqtt_cmd,
                                        app_cwsl_request_t *request)
 {
-    uint32_t cmd_id;
-    uint32_t slot;
-    uint32_t respond_id;
-    uint8_t code;
+    uint32_t cmd_id = 0;
+    uint32_t slot = 0;
+    uint32_t respond_id = 0;
+    uint8_t code = 0;
 
     code = app_cwsl_parse_common(js_root, mqtt_cmd, request);
     if (code == 0U)
@@ -261,7 +261,7 @@ static uint8_t app_cwsl_parse_mutating(cJSON *js_root,
         {
             if (respond_id == UINT32_MAX)
             {
-                os_trace("[ERROR]: get respond_id, in[%s]\r\n", __func__);
+                os_trace("[ERROR]: get respond_id=%lu, in[%s]\r\n", respond_id, __func__);
             }
             else
             {
@@ -322,9 +322,9 @@ static uint8_t app_cwsl_parse_mutating(cJSON *js_root,
 
     if (device_type == VOICEBOX)
     {
-        if ((request->cmd_id != 1U) && (request->cmd_id != APP_CWSL_ANY))
+        if ((request->cmd_id > 103) && (request->cmd_id != APP_CWSL_ANY))
         {
-            os_trace("[ERROR]: cmd_id=%u(!= 1), in[%s] \r\n",
+            os_trace("[ERROR]: cmd_id=%u(> MAX), in[%s] \r\n",
                      (unsigned int)request->cmd_id, __func__);
             return APP_CWSL_CODE_BAD_COMMAND_ID;
         }
