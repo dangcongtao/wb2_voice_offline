@@ -10,7 +10,8 @@
 #include <stdint.h>
 
 /** Action produced by the VOICEBOX button state machine. */
-typedef enum {
+typedef enum
+{
     APP_BUTTON_ACTION_NONE = 0,
     APP_BUTTON_ACTION_VOLUME_UP,
     APP_BUTTON_ACTION_VOLUME_DOWN,
@@ -21,9 +22,9 @@ typedef enum {
     APP_BUTTON_ACTION_AP_CONFIG,
 } app_button_action_t;
 
-#define APP_BUTTON_INDEX_VOLUME_UP   0U  /**< IO21 */
-#define APP_BUTTON_INDEX_FUNCTION    1U  /**< IO20 */
-#define APP_BUTTON_INDEX_VOLUME_DOWN 2U  /**< IO0  */
+#define APP_BUTTON_INDEX_VOLUME_UP 0U   /**< IO21 */
+#define APP_BUTTON_INDEX_FUNCTION 1U    /**< IO20 */
+#define APP_BUTTON_INDEX_VOLUME_DOWN 2U /**< IO0  */
 
 /** @brief Translate one button-library event into an action.
  *

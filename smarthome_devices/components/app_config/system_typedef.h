@@ -54,6 +54,7 @@
 #define CJSON_KEY_OTP "otp"
 #define APP_SCENE_KEY_RESPOND_ID "respond_id"
 #define APP_SCENE_KEY_CMD_ID "cmd_id"
+#define APP_SCENE_KEY_SLOT "slot"
 
 #define DEFAULT_AES_KEY "0000000000000000"
 #define DEFAULT_AES_IV "0000000000000000"

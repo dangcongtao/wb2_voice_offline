@@ -131,4 +131,3 @@ uint8_t app_cwsl_start_scene_resp_set(uint8_t cmd_id, uint8_t respond_id);
 uint8_t app_cwsl_start_scene_delete(uint8_t cmd_id, uint32_t user_id, uint8_t act_id);
 
 #endif /* APP_CWSL_H */
-

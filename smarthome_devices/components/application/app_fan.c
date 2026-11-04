@@ -65,8 +65,8 @@ void app_fan_respond_control(uint8_t mode, uint8_t speed, uint8_t pcn, uint8_t s
     if (m_mqtt_get_instance()._mqtt_state >= MQTT_INTIALIZED)
     {
         memset(respond, 0, sizeof(respond));
-        sprintf(respond, "{\"%s\":20,\"mode\":%u,\"lv\":%u,\"swing\":%u,\"pcn\":%u,\"lamp\":%u,\"u\":%lu,\"act_id\":%u,\"change\":%u}", 
-            gs_dev_type[device_type], mode, speed, swing, pcn, light, uid, act_id, change);
+        sprintf(respond, "{\"%s\":20,\"mode\":%u,\"lv\":%u,\"swing\":%u,\"pcn\":%u,\"lamp\":%u,\"u\":%lu,\"act_id\":%u,\"change\":%u}",
+                gs_dev_type[device_type], mode, speed, swing, pcn, light, uid, act_id, change);
         app_send_data(respond, strlen(respond));
     }
 }
@@ -77,8 +77,8 @@ void app_fan_respond_control_voice(uint8_t mode, uint8_t speed, uint8_t pcn, uin
     if (m_mqtt_get_instance()._mqtt_state >= MQTT_INTIALIZED)
     {
         memset(respond, 0, sizeof(respond));
-        sprintf(respond, "{\"%s\":20,\"mode\":%u,\"lv\":%u,\"swing\":%u,\"pcn\":%u,\"lamp\":%u,\"u\":%lu,\"act_id\":%u,\"change\":%u,\"cmd_id\":%u,\"cwsl\":%u}", 
-            gs_dev_type[device_type], mode, speed, swing, pcn, light, (unsigned long)uid, act_id, change, (unsigned int)cmd_id, (unsigned int)cwsl);
+        sprintf(respond, "{\"%s\":20,\"mode\":%u,\"lv\":%u,\"swing\":%u,\"pcn\":%u,\"lamp\":%u,\"u\":%lu,\"act_id\":%u,\"change\":%u,\"cmd_id\":%u,\"cwsl\":%u}",
+                gs_dev_type[device_type], mode, speed, swing, pcn, light, (unsigned long)uid, act_id, change, (unsigned int)cmd_id, (unsigned int)cwsl);
         app_send_data(respond, strlen(respond));
     }
 }
