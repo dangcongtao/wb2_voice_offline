@@ -871,6 +871,10 @@ static void app_cwsl_on_info(uint8_t cmd_id,
             app_cwsl_clear_mutating();
             if (pending_mut.request.mqtt_cmd == APP_SCENE_CMD_ADD)
             {
+                os_trace("[ERROR]: UART send LEARN cmd_id=%u to CI13162 "
+                         "failed, in[%s]\r\n",
+                         (unsigned int)pending_mut.request.cmd_id,
+                         __func__);
                 app_scene_on_learn_result(APP_CWSL_CODE_TX_FAIL,
                                           pending_mut.request.cmd_id);
             }
@@ -1198,26 +1202,49 @@ static void app_cwsl_start_mutating(cJSON *js_root,
     }
 }
 
+// Log which CWSL session blocks a 227 start (add or edit).
+static void app_cwsl_trace_scene_busy(const char *caller)
+{
+    os_trace("[ERROR]: busy, session active: mutating=%u (cmd %lu), "
+             "query=%u, resp_set=%u, in[%s]\r\n",
+             (unsigned int)s_app_cwsl_mutating.active,
+             (unsigned long)s_app_cwsl_mutating.request.mqtt_cmd,
+             (unsigned int)s_app_cwsl_query.active,
+             (unsigned int)s_app_cwsl_resp_set.active,
+             caller);
+}
+
 /* start learn */
 uint8_t app_cwsl_start_scene_learn(uint8_t cmd_id, uint32_t user_id,
                                    uint8_t act_id, uint8_t respond_id)
 {
     if ((cmd_id < APP_SCENE_CMD_ID_MIN) || (cmd_id > APP_SCENE_CMD_ID_MAX))
     {
+        os_trace("[ERROR]: cmd_id=%u out of range %u..%u, in[%s]\r\n",
+                 (unsigned int)cmd_id,
+                 (unsigned int)APP_SCENE_CMD_ID_MIN,
+                 (unsigned int)APP_SCENE_CMD_ID_MAX,
+                 __func__);
         return APP_CWSL_CODE_BAD_COMMAND_ID;
     }
     if (app_cwsl_ota_active())
     {
+        os_trace("[ERROR]: OTA in progress, CI13162 UART is held, in[%s]\r\n",
+                 __func__);
         return APP_CWSL_CODE_OTA_HOLD;
     }
     if (app_volume_is_pending() || app_voice_is_pending())
     {
+        os_trace("[ERROR]: busy, %s set still waiting for the chip, in[%s]\r\n",
+                 app_volume_is_pending() ? "volume" : "voice_id",
+                 __func__);
         return APP_CWSL_CODE_BUSY;
     }
     if ((s_app_cwsl_mutating.active != 0U) ||
         (s_app_cwsl_query.active != 0U) ||
         (s_app_cwsl_resp_set.active != 0U))
     {
+        app_cwsl_trace_scene_busy(__func__);
         return APP_CWSL_CODE_BUSY;
     }
 
@@ -1226,6 +1253,10 @@ uint8_t app_cwsl_start_scene_learn(uint8_t cmd_id, uint32_t user_id,
                                     &cmd_id,
                                     1U) != 0)
     {
+        os_trace("[ERROR]: UART send QUERY cmd_id=%u to CI13162 failed, "
+                 "in[%s]\r\n",
+                 (unsigned int)cmd_id,
+                 __func__);
         aiio_ci13162_uart_set_version_query_paused(0U);
         return APP_CWSL_CODE_TX_FAIL;
     }
@@ -1311,6 +1342,12 @@ static void app_cwsl_on_resp_set(uint8_t applied)
         }
         return;
     }
+    if (applied == 0U)
+    {
+        os_trace("[ERROR]: chip replied cmd 15 [0] for cmd_id=%u, in[%s]\r\n",
+                 (unsigned int)s_app_cwsl_resp_set.cmd_id,
+                 __func__);
+    }
     memset(&s_app_cwsl_resp_set, 0, sizeof(s_app_cwsl_resp_set));
     aiio_ci13162_uart_set_version_query_paused(0U);
     app_scene_on_resp_set_result((applied != 0U) ? 0U : APP_CWSL_CODE_BAD_REQUEST);
@@ -1320,30 +1357,49 @@ uint8_t app_cwsl_start_scene_resp_set(uint8_t cmd_id, uint8_t respond_id)
 {
     if ((cmd_id < APP_SCENE_CMD_ID_MIN) || (cmd_id > APP_SCENE_CMD_ID_MAX))
     {
+        os_trace("[ERROR]: cmd_id=%u out of range %u..%u, in[%s]\r\n",
+                 (unsigned int)cmd_id,
+                 (unsigned int)APP_SCENE_CMD_ID_MIN,
+                 (unsigned int)APP_SCENE_CMD_ID_MAX,
+                 __func__);
         return APP_CWSL_CODE_BAD_COMMAND_ID;
     }
     if (app_cwsl_ota_active())
     {
+        os_trace("[ERROR]: OTA in progress, CI13162 UART is held, in[%s]\r\n",
+                 __func__);
         return APP_CWSL_CODE_OTA_HOLD;
     }
     if (s_app_cwsl_resp_set.draining != 0U)
     {
+        os_trace("[ERROR]: busy, dropping late cmd 15 reply of last edit, "
+                 "in[%s]\r\n",
+                 __func__);
         return APP_CWSL_CODE_BUSY;
     }
     if (app_volume_is_pending() || app_voice_is_pending())
     {
+        os_trace("[ERROR]: busy, %s set still waiting for the chip, in[%s]\r\n",
+                 app_volume_is_pending() ? "volume" : "voice_id",
+                 __func__);
         return APP_CWSL_CODE_BUSY;
     }
     if ((s_app_cwsl_mutating.active != 0U) ||
         (s_app_cwsl_query.active != 0U) ||
         (s_app_cwsl_resp_set.active != 0U))
     {
+        app_cwsl_trace_scene_busy(__func__);
         return APP_CWSL_CODE_BUSY;
     }
 
     aiio_ci13162_uart_set_version_query_paused(1U);
     if (aiio_ci13162_uart_send_resp_set(cmd_id, respond_id) != 0)
     {
+        os_trace("[ERROR]: UART send cmd 15 [%u,%u] to CI13162 failed, "
+                 "in[%s]\r\n",
+                 (unsigned int)cmd_id,
+                 (unsigned int)respond_id,
+                 __func__);
         aiio_ci13162_uart_set_version_query_paused(0U);
         return APP_CWSL_CODE_TX_FAIL;
     }
@@ -1546,6 +1602,11 @@ void app_cwsl_poll(void)
                 app_cwsl_clear_mutating();
                 if (pending.request.mqtt_cmd == APP_SCENE_CMD_ADD)
                 {
+                    os_trace("[ERROR]: no cmd 6 slot reply for cmd_id=%u "
+                             "within %u ms, in[%s]\r\n",
+                             (unsigned int)pending.request.cmd_id,
+                             (unsigned int)AIIO_CI13162_CWSL_QUERY_TIMEOUT_MS,
+                             __func__);
                     app_scene_on_learn_result(APP_CWSL_CODE_TIMEOUT,
                                               pending.request.cmd_id);
                 }
@@ -1567,6 +1628,11 @@ void app_cwsl_poll(void)
                 app_cwsl_clear_mutating();
                 if (pending.request.mqtt_cmd == APP_SCENE_CMD_ADD)
                 {
+                    os_trace("[ERROR]: learn cmd_id=%u got no result within "
+                             "%u ms, STOP sent, in[%s]\r\n",
+                             (unsigned int)pending.request.cmd_id,
+                             (unsigned int)AIIO_CI13162_CWSL_MUTATE_TIMEOUT_MS,
+                             __func__);
                     app_scene_on_learn_result(APP_CWSL_CODE_TIMEOUT,
                                               pending.request.cmd_id);
                     if (pending.stop_sent != 0U)
@@ -1691,6 +1757,11 @@ void app_cwsl_poll(void)
         ((TickType_t)(current_tick - s_app_cwsl_resp_set.start_tick) >=
          pdMS_TO_TICKS(AIIO_CI13162_CWSL_QUERY_TIMEOUT_MS)))
     {
+        os_trace("[ERROR]: no cmd 15 reply for cmd_id=%u within %u ms, "
+                 "in[%s]\r\n",
+                 (unsigned int)s_app_cwsl_resp_set.cmd_id,
+                 (unsigned int)AIIO_CI13162_CWSL_QUERY_TIMEOUT_MS,
+                 __func__);
         memset(&s_app_cwsl_resp_set, 0, sizeof(s_app_cwsl_resp_set));
         s_app_cwsl_resp_set.draining = 1U;
         s_app_cwsl_resp_set.drain_tick = current_tick;

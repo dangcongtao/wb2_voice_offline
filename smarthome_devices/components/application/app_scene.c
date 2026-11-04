@@ -202,7 +202,9 @@ void app_scene_add(cJSON *js_root)
     uint8_t candidate_cmd_id;
     uint8_t bit_idx;
 
-    if (js_root == NULL) {
+    if (js_root == NULL)
+    {
+        os_trace("[ERROR]: js_root NULL, in[%s]\r\n", __func__);
         app_scene_publish_add_reject(0U, 0U, 0U, 0U, 64U);
         return;
     }
@@ -210,73 +212,154 @@ void app_scene_add(cJSON *js_root)
     /* Best-effort read so the reject message echoes what the caller sent */
     (void)app_scene_read_number(js_root, CJSON_KEY_USER_ID, UINT32_MAX, &u);
     (void)app_scene_read_number(js_root, CJSON_KEY_ACT_ID, UINT8_MAX, &act_id);
-    (void)app_scene_read_number(js_root, APP_SCENE_KEY_CMD_ID, UINT8_MAX, &cmd_id);
-    (void)app_scene_read_number(js_root, APP_SCENE_KEY_RESPOND_ID, UINT8_MAX, &respond_id);
+    (void)app_scene_read_number(js_root, APP_SCENE_KEY_CMD_ID, UINT8_MAX,
+                                &cmd_id);
+    (void)app_scene_read_number(js_root, APP_SCENE_KEY_RESPOND_ID, UINT8_MAX,
+                                &respond_id);
 
-    if (cJSON_GetObjectItem(js_root, CJSON_KEY_ACTION) != NULL) {
-        app_scene_publish_add_reject((uint8_t)cmd_id, (uint8_t)respond_id, u, (uint8_t)act_id, 64U);
+    /* get action */
+    if (cJSON_GetObjectItem(js_root, CJSON_KEY_ACTION) != NULL)
+    {
+        os_trace("[ERROR]: get action, in[%s]\r\n", __func__);
+        app_scene_publish_add_reject((uint8_t)cmd_id, (uint8_t)respond_id, u,
+                                     (uint8_t)act_id, 64U);
         return;
     }
-
-    if (!app_scene_read_number(js_root, gs_dev_type[device_type], UINT32_MAX, &cmd_type) ||
-        (cmd_type != APP_SCENE_CMD_ADD) ||
-        !app_scene_read_number(js_root, CJSON_KEY_USER_ID, UINT32_MAX, &u) ||
-        !app_scene_read_number(js_root, CJSON_KEY_ACT_ID, UINT8_MAX, &act_id) ||
-        !app_scene_read_number(js_root, APP_SCENE_KEY_CMD_ID, UINT8_MAX, &cmd_id) ||
-        !app_scene_read_number(js_root, APP_SCENE_KEY_RESPOND_ID, UINT8_MAX, &respond_id) ||
-        !app_scene_respond_id_is_valid(respond_id)) {
-        app_scene_publish_add_reject((uint8_t)cmd_id, (uint8_t)respond_id, u, (uint8_t)act_id, 64U);
+    /* get cmd num */
+    if (!app_scene_read_number(js_root, gs_dev_type[device_type], UINT32_MAX,
+                               &cmd_type) ||
+        (cmd_type != APP_SCENE_CMD_ADD))
+    {
+        os_trace("[ERROR]: get cmd, in[%s]\r\n", __func__);
+        app_scene_publish_add_reject((uint8_t)cmd_id, (uint8_t)respond_id, u,
+                                     (uint8_t)act_id, 64U);
+        return;
+    }
+    /* get uid */
+    if (!app_scene_read_number(js_root, CJSON_KEY_USER_ID, UINT32_MAX, &u))
+    {
+        os_trace("[ERROR]: get uid, in[%s]\r\n", __func__);
+        app_scene_publish_add_reject((uint8_t)cmd_id, (uint8_t)respond_id, u,
+                                     (uint8_t)act_id, 64U);
+        return;
+    }
+    /* get act_id */
+    if (!app_scene_read_number(js_root, CJSON_KEY_ACT_ID, UINT8_MAX, &act_id))
+    {
+        os_trace("[ERROR]: get act_id, in[%s]\r\n", __func__);
+        app_scene_publish_add_reject((uint8_t)cmd_id, (uint8_t)respond_id, u,
+                                     (uint8_t)act_id, 64U);
+        return;
+    }
+    /* get cmd_id */
+    if (!app_scene_read_number(js_root, APP_SCENE_KEY_CMD_ID, UINT8_MAX,
+                               &cmd_id))
+    {
+        os_trace("[ERROR]: get cmd_id, in[%s]\r\n", __func__);
+        app_scene_publish_add_reject((uint8_t)cmd_id, (uint8_t)respond_id, u,
+                                     (uint8_t)act_id, 64U);
+        return;
+    }
+    /* get respond_id */
+    if (!app_scene_read_number(js_root, APP_SCENE_KEY_RESPOND_ID, UINT8_MAX,
+                               &respond_id))
+    {
+        os_trace("[ERROR]: get respond_id, in[%s]\r\n", __func__);
+        app_scene_publish_add_reject((uint8_t)cmd_id, (uint8_t)respond_id, u,
+                                     (uint8_t)act_id, 64U);
+        return;
+    }
+    if (!app_scene_respond_id_is_valid(respond_id))
+    {
+        os_trace("[ERROR]: respond_id=%lu invalid, in[%s]\r\n",
+                 (unsigned long)respond_id,
+                 __func__);
+        app_scene_publish_add_reject((uint8_t)cmd_id, (uint8_t)respond_id, u,
+                                     (uint8_t)act_id, 64U);
         return;
     }
 
     if ((cmd_id != APP_SCENE_CMD_ID_NEW) &&
-        ((cmd_id < APP_SCENE_CMD_ID_MIN) || (cmd_id > APP_SCENE_CMD_ID_MAX))) {
-        app_scene_publish_add_reject((uint8_t)cmd_id, (uint8_t)respond_id, u, (uint8_t)act_id, 65U);
+        ((cmd_id < APP_SCENE_CMD_ID_MIN) || (cmd_id > APP_SCENE_CMD_ID_MAX)))
+    {
+        os_trace("[ERROR]: cmd_id=%lu not %u (add) or %u..%u (edit), "
+                 "in[%s]\r\n",
+                 (unsigned long)cmd_id,
+                 (unsigned int)APP_SCENE_CMD_ID_NEW,
+                 (unsigned int)APP_SCENE_CMD_ID_MIN,
+                 (unsigned int)APP_SCENE_CMD_ID_MAX,
+                 __func__);
+        app_scene_publish_add_reject((uint8_t)cmd_id, (uint8_t)respond_id, u,
+                                     (uint8_t)act_id, 65U);
         return;
     }
 
-    if (app_scene_is_pending()) {
-        app_scene_publish_add_reject((uint8_t)cmd_id, (uint8_t)respond_id, u, (uint8_t)act_id, 67U);
+    if (app_scene_is_pending())
+    {
+        os_trace("[ERROR]: busy, scene delete-all still running, in[%s]\r\n",
+                 __func__);
+        app_scene_publish_add_reject((uint8_t)cmd_id, (uint8_t)respond_id, u,
+                                     (uint8_t)act_id, 67U);
         return;
     }
 
-    if (cmd_id == APP_SCENE_CMD_ID_NEW) {
+    if (cmd_id == APP_SCENE_CMD_ID_NEW)
+    {
         /* Add: allocate the lowest free slot and start learning */
-        if (s_app_scene_mask == APP_SCENE_MASK_ALL) {
-            app_scene_publish_add_reject(APP_SCENE_CMD_ID_NEW, (uint8_t)respond_id, u,
-                                         (uint8_t)act_id, APP_SCENE_CODE_FULL);
-            return;
-        }
-
-        for (bit_idx = 0U; bit_idx < APP_SCENE_COUNT_MAX; bit_idx++) {
-            if ((s_app_scene_mask & (uint16_t)(1U << bit_idx)) == 0U) {
+        for (bit_idx = 0U; bit_idx < APP_SCENE_COUNT_MAX; bit_idx++)
+        {
+            if ((s_app_scene_mask & (uint16_t)(1U << bit_idx)) == 0U)
+            {
                 break;
             }
         }
-        if (bit_idx >= APP_SCENE_COUNT_MAX) {
-            app_scene_publish_add_reject(APP_SCENE_CMD_ID_NEW, (uint8_t)respond_id, u,
+        if (bit_idx >= APP_SCENE_COUNT_MAX)
+        {
+            os_trace("[ERROR]: all %u scenes used, mask=0x%04x, in[%s]\r\n",
+                     (unsigned int)APP_SCENE_COUNT_MAX,
+                     (unsigned int)s_app_scene_mask,
+                     __func__);
+            app_scene_publish_add_reject(APP_SCENE_CMD_ID_NEW,
+                                         (uint8_t)respond_id, u,
                                          (uint8_t)act_id, APP_SCENE_CODE_FULL);
             return;
         }
 
+        /* app_cwsl_start_scene_learn() logs its own reject reason */
         candidate_cmd_id = (uint8_t)(APP_SCENE_CMD_ID_MIN + bit_idx);
-        code = app_cwsl_start_scene_learn(candidate_cmd_id, u, (uint8_t)act_id, (uint8_t)respond_id);
-        if (code != 0U) {
-            app_scene_publish_add_reject(APP_SCENE_CMD_ID_NEW, (uint8_t)respond_id, u,
+        code = app_cwsl_start_scene_learn(candidate_cmd_id, u,
+                                          (uint8_t)act_id,
+                                          (uint8_t)respond_id);
+        if (code != 0U)
+        {
+            app_scene_publish_add_reject(APP_SCENE_CMD_ID_NEW,
+                                         (uint8_t)respond_id, u,
                                          (uint8_t)act_id, code);
             return;
         }
         s_app_scene_pending_cmd_id = candidate_cmd_id;
-    } else {
+    }
+    else
+    {
         /* Edit: change the respond_id of an existing scene, mask is untouched */
-        if (!app_scene_is_cmd_id_active((uint8_t)cmd_id)) {
-            app_scene_publish_add_reject((uint8_t)cmd_id, (uint8_t)respond_id, u, (uint8_t)act_id, 65U);
+        if (!app_scene_is_cmd_id_active((uint8_t)cmd_id))
+        {
+            os_trace("[ERROR]: cmd_id=%lu not active, mask=0x%04x, in[%s]\r\n",
+                     (unsigned long)cmd_id,
+                     (unsigned int)s_app_scene_mask,
+                     __func__);
+            app_scene_publish_add_reject((uint8_t)cmd_id, (uint8_t)respond_id,
+                                         u, (uint8_t)act_id, 65U);
             return;
         }
 
-        code = app_cwsl_start_scene_resp_set((uint8_t)cmd_id, (uint8_t)respond_id);
-        if (code != 0U) {
-            app_scene_publish_add_reject((uint8_t)cmd_id, (uint8_t)respond_id, u, (uint8_t)act_id, code);
+        /* app_cwsl_start_scene_resp_set() logs its own reject reason */
+        code = app_cwsl_start_scene_resp_set((uint8_t)cmd_id,
+                                             (uint8_t)respond_id);
+        if (code != 0U)
+        {
+            app_scene_publish_add_reject((uint8_t)cmd_id, (uint8_t)respond_id,
+                                         u, (uint8_t)act_id, code);
             return;
         }
         s_app_scene_pending_cmd_id = (uint8_t)cmd_id;
@@ -292,40 +375,78 @@ void app_scene_add(cJSON *js_root)
 
 void app_scene_on_learn_result(uint8_t code, uint8_t cmd_id)
 {
-    if (code == 32U) {
-        if ((cmd_id >= APP_SCENE_CMD_ID_MIN) && (cmd_id <= APP_SCENE_CMD_ID_MAX)) {
-            uint16_t new_mask = s_app_scene_mask | (uint16_t)(1U << (cmd_id - APP_SCENE_CMD_ID_MIN));
-            if (app_scene_save_mask(new_mask)) {
-                s_app_scene_mask = new_mask;
-                app_scene_publish_add_success(cmd_id,
-                                              s_app_scene_pending_respond_id,
-                                              s_app_scene_pending_uid,
-                                              s_app_scene_pending_act_id);
-                return;
-            }
-        }
-        app_scene_publish_add_reject(s_app_scene_pending_cmd_id,
-                                     s_app_scene_pending_respond_id,
-                                     s_app_scene_pending_uid,
-                                     s_app_scene_pending_act_id,
-                                     70U);
-    } else {
+    uint16_t new_mask;
+
+    if (code != 32U)
+    {
+        os_trace("[ERROR]: cmd 227 add cmd_id=%u failed, code=%u, in[%s]\r\n",
+                 (unsigned int)cmd_id,
+                 (unsigned int)code,
+                 __func__);
         app_scene_publish_add_reject(s_app_scene_pending_cmd_id,
                                      s_app_scene_pending_respond_id,
                                      s_app_scene_pending_uid,
                                      s_app_scene_pending_act_id,
                                      code);
+        return;
     }
+
+    if ((cmd_id < APP_SCENE_CMD_ID_MIN) || (cmd_id > APP_SCENE_CMD_ID_MAX))
+    {
+        os_trace("[ERROR]: learned cmd_id=%u out of range %u..%u, code=70, "
+                 "in[%s]\r\n",
+                 (unsigned int)cmd_id,
+                 (unsigned int)APP_SCENE_CMD_ID_MIN,
+                 (unsigned int)APP_SCENE_CMD_ID_MAX,
+                 __func__);
+        app_scene_publish_add_reject(s_app_scene_pending_cmd_id,
+                                     s_app_scene_pending_respond_id,
+                                     s_app_scene_pending_uid,
+                                     s_app_scene_pending_act_id,
+                                     70U);
+        return;
+    }
+
+    new_mask = s_app_scene_mask |
+               (uint16_t)(1U << (cmd_id - APP_SCENE_CMD_ID_MIN));
+    if (!app_scene_save_mask(new_mask))
+    {
+        os_trace("[ERROR]: cmd_id=%u learned but scene_mask not saved, "
+                 "code=70, in[%s]\r\n",
+                 (unsigned int)cmd_id,
+                 __func__);
+        app_scene_publish_add_reject(s_app_scene_pending_cmd_id,
+                                     s_app_scene_pending_respond_id,
+                                     s_app_scene_pending_uid,
+                                     s_app_scene_pending_act_id,
+                                     70U);
+        return;
+    }
+
+    s_app_scene_mask = new_mask;
+    app_scene_publish_add_success(cmd_id,
+                                  s_app_scene_pending_respond_id,
+                                  s_app_scene_pending_uid,
+                                  s_app_scene_pending_act_id);
 }
 
 void app_scene_on_resp_set_result(uint8_t code)
 {
-    if (code == 0U) {
+    if (code == 0U)
+    {
         app_scene_publish_add_success(s_app_scene_pending_cmd_id,
                                       s_app_scene_pending_respond_id,
                                       s_app_scene_pending_uid,
                                       s_app_scene_pending_act_id);
-    } else {
+    }
+    else
+    {
+        os_trace("[ERROR]: cmd 227 edit cmd_id=%u respond_id=%u failed, "
+                 "code=%u, in[%s]\r\n",
+                 (unsigned int)s_app_scene_pending_cmd_id,
+                 (unsigned int)s_app_scene_pending_respond_id,
+                 (unsigned int)code,
+                 __func__);
         app_scene_publish_add_reject(s_app_scene_pending_cmd_id,
                                      s_app_scene_pending_respond_id,
                                      s_app_scene_pending_uid,
