@@ -11,6 +11,7 @@ Nguồn chính (dưới `smarthome_devices/components/`):
 | `hardware/aiio_ci13162_uart.c` | Driver UART, parser JSON, gửi lệnh, dispatch |
 | `hardware/aiio_ci13162_config.h` | Chân, baud, timeout |
 | `application/app_cwsl.c` | Học / xóa / dừng / hỏi mẫu giọng nói (CWSL) |
+| `application/app_scene.c` | MQTT 227/228/229 (ngữ cảnh) và 232 (đặt câu trả lời qua cmd 15) |
 | `application/app_volume.c` | Âm lượng loa |
 | `application/app_voice.c` | MQTT 230/231 đặt/đọc giọng qua cmd 17/18 |
 | `application/app_button.c` | Nút nhấn VOICEBOX (âm lượng, đổi giọng) |
@@ -62,7 +63,7 @@ Luật nhận (chip → WB2), theo `aiio_ci13162_process_byte()` và `aiio_ci131
 | 4 | `{"cmd":4,"data":[4]}` | như trên | STOP (MQTT 222, hoặc sau 120 s học mà không có kết quả) |
 | 4 | `{"cmd":4,"data":[6,<cmd_id>]}` | như trên | QUERY bitmap slot của `cmd_id` (MQTT 223, hoặc trước khi học ngữ cảnh) |
 | 4 | `{"cmd":4,"data":[6,255]}` | như trên | QUERY sức chứa (MQTT 223 với `cmd_id` 255) |
-| 15 | `{"cmd":15,"data":[<cmd_id>,<respond_id>]}` | `aiio_ci13162_uart_send_resp_set()` | RESP_SET. **Chỉ dùng cho MQTT 227 sửa câu phản hồi** (`cmd_id` 56..70 đã kích hoạt). Chờ chip trả `cmd:15` tối đa 2 s |
+| 15 | `{"cmd":15,"data":[<cmd_id>,<respond_id>]}` | `aiio_ci13162_uart_send_resp_set()` | RESP_SET. **Hai đường dùng**: MQTT 227 sửa câu phản hồi (`cmd_id` 56..70 đã kích hoạt) và MQTT 232 đặt câu trả lời (`cmd_id` 1..6, 48..103; 56..70 phải đã kích hoạt; `respond_id` theo tập lọc của 227). Chờ chip trả `cmd:15` tối đa 2 s |
 | 8 | `{"cmd":8,"data":[1..7]}` | `aiio_ci13162_uart_send_volume()` | MQTT 225 (đặt âm lượng) và nút nhấn tăng/giảm âm lượng. `aiio_ci13162_uart_send_volume()` chặn giá trị ngoài `1..7`, không gửi |
 | 8 | `{"cmd":8,"data":[8]}` | `aiio_ci13162_uart_send_mute()` | Nút giảm âm lượng gửi khi đang tắt tiếng (giữ tắt tiếng) |
 | 11 | `{"cmd":11,"data":[]}` | `aiio_ci13162_uart_query_volume()` | MQTT 226 (hỏi âm lượng), và nút nhấn âm lượng khi WB2 chưa biết mức / tắt tiếng |
@@ -79,7 +80,7 @@ Ràng buộc phía WB2 trước khi gửi `cmd:4` (`app_cwsl_parse_mutating()`, 
 - Bị từ chối: `cmd_id` `2..6`; `54`, `55` (tắt/bật tiếng); `56..70` qua MQTT 220/221 (ngữ cảnh phải đi qua MQTT 227/228).
 - Slot: wake (`cmd_id` 1) là `0..4`; lệnh khác là `0..14`; `255` nghĩa là tự chọn.
 - `VOICEBOX`: MQTT 220..223 chỉ nhận `cmd_id` 1 hoặc 255.
-- Chỉ chạy một thao tác CWSL tại một thời điểm. Đang chờ phản hồi âm lượng, đang xử lý ngữ cảnh, hoặc MQTT 230/231 đang chờ / còn trong khoảng chờ frame muộn thì trả `BUSY` (67); đang OTA thì trả `OTA_HOLD` (69).
+- Chỉ chạy một thao tác CWSL tại một thời điểm. Đang chờ phản hồi âm lượng, đang xử lý ngữ cảnh, MQTT 232 đang chờ cmd 15, hoặc MQTT 230/231 đang chờ / còn trong khoảng chờ frame muộn thì trả `BUSY` (67); đang OTA thì trả `OTA_HOLD` (69).
 
 ## 4. CI13162 → WB2
 
@@ -97,7 +98,7 @@ Ràng buộc phía WB2 trước khi gửi `cmd:4` (`app_cwsl_parse_mutating()`, 
 | 12 SCENE | `[1..15]` (ngữ cảnh) hoặc `[71..103]` (lệnh nhà) | Ngữ cảnh: `55 + data` (56..70). Lệnh nhà: `= data` (71..103) | `app_cwsl_notify_voice_cmd()`: nháy LED 200 ms, BLE ADV, MQTT 224. Ngữ cảnh chưa được cấu hình thì bỏ hẳn (không LED, BLE, 224); lệnh nhà luôn xử lý. Cặp `data`/`cmd_id` khác → `INVALID_DATA` (MQTT 299) |
 | 13 VOLUME_CHANGE | `[0..7]` | 48..55. 54 → `[0]`; 50/51 → `[1]`; 52/53 → `[7]`; 48/49/55 → `[1..7]` | Lưu cache, báo MQTT 224, `app_volume_report_voice()` |
 | 14 STATE | `[0]` | — | Nhận rồi bỏ |
-| 15 RESP_SET | `[0]` / `[1]` (đúng 1 phần tử, không có `cmd_id`/`cwsl`) | — | `app_cwsl_on_resp_set()` (trong `app_cwsl.c`). `[1]` → MQTT 227 thành công, `[0]` → 227 code 64. Nhận khi không có lệnh sửa nào đang chờ thì bỏ qua |
+| 15 RESP_SET | `[0]` / `[1]` (đúng 1 phần tử, không có `cmd_id`/`cwsl`) | — | `app_cwsl_on_resp_set()` (trong `app_cwsl.c`). `[1]` / `[0]` trả cho lệnh đang chờ (227 hoặc 232): `[1]` thành công, `[0]` là code 64. Nhận khi không có lệnh sửa nào đang chờ thì bỏ qua |
 | 17 VOICE_SET | `[0]` / `[1]` | — | Cả `[0]` và `[1]` đều chuyển cho `app_voice`. `[1]` chỉ cập nhật cache `voice_id` khi WB2 thật sự đã gửi một giá trị; `[0]` → MQTT 230 code 64 |
 | 18 VOICE_GET | `[1..4]` | — | Lưu cache (`aiio_ci13162_uart_get_voice_id()`) và báo `app_voice` (MQTT 231) |
 | 200 BUZZ | `[]`, `[0]`, `[1]` | — | Nhận rồi bỏ |
@@ -115,7 +116,7 @@ Ba nút trên VOICEBOX (nhấn = mức 0, mức nghỉ = 1, pull-up trong). Nh�
 | 2 | IO20 | Giữ 10 s, thả tay | Đèn AP config khi đủ 10 s; thả tay thì vào AP config | Không |
 | 3 | IO0 | Nhấn | Giảm âm lượng 1 mức (1..7); đang tắt tiếng thì `cmd 8 [8]` (giữ tắt tiếng) | 225 (`act_id` 1) |
 
-Chưa biết mức / tắt tiếng thì hỏi chip trước (`cmd 11`), chưa biết giọng thì hỏi `cmd 18`, có trả lời rồi mới gửi lệnh đặt. Nút 1 và 3 giữ lâu không làm gì. Đang bận (có 220..231, lần nhấn trước còn chờ chip, hoặc OTA) thì bỏ qua lần nhấn và gửi `cmd 200 [1]` (beep dài); riêng khi đang học lệnh (`app_cwsl_is_learning()`) thì im lặng.
+Chưa biết mức / tắt tiếng thì hỏi chip trước (`cmd 11`), chưa biết giọng thì hỏi `cmd 18`, có trả lời rồi mới gửi lệnh đặt. Nút 1 và 3 giữ lâu không làm gì. Đang bận (có 220..232, lần nhấn trước còn chờ chip, hoặc OTA) thì bỏ qua lần nhấn và gửi `cmd 200 [1]` (beep dài); riêng khi đang học lệnh (`app_cwsl_is_learning()`) thì im lặng.
 
 Frame thoại chỉ được xử lý trên `VOICEBOX` (chỉ thiết bị này dùng chip giọng nói; `fanproacv2` không còn). Nhánh điều khiển quạt cho cmd 1/2/7 vẫn còn trong code nhưng không áp dụng cho thiết bị nào trong firmware này.
 
@@ -139,7 +140,7 @@ MQTT 224 do `app_cwsl_notify_voice_cmd(cmd_id, cwsl)` gửi. Hàm này bỏ qua 
 
 Code xếp loại theo `code >> 4` và chỉ chốt phiên ở lớp `2` (thành công), `3` (thất bại), `4` (bị từ chối). Mã lớp `0` và `1` (tiến trình, ví dụ `0x10..0x12`) bị bỏ qua, phiên vẫn chờ tiếp.
 
-Timeout phía WB2: thao tác học/xóa chờ 120 s (hết hạn thì gửi STOP), query chờ 2 s, âm lượng chờ 2 s, giọng (MQTT 230/231) chờ chip 2 s và khoảng chờ frame muộn 2 s.
+Timeout phía WB2: thao tác học/xóa chờ 120 s (hết hạn thì gửi STOP), query chờ 2 s, âm lượng chờ 2 s, giọng (MQTT 230/231) chờ chip 2 s và khoảng chờ frame muộn 2 s, đặt câu trả lời (227 sửa, 232) chờ chip 2 s và khoảng chờ frame muộn 2 s.
 
 ## 6. OTA nhị phân (MQTT 134)
 
@@ -199,7 +200,7 @@ Trình tự trong `ci13162_ota_task()`:
 | `CMD_VOLUME` (8) | `[8]` tắt tiếng, `[9]` bật tiếng | Gửi `1..7`; `[8]` chỉ do nút giảm gửi khi đang tắt tiếng; không gửi `[9]` | WB2 không bật tiếng bằng `[9]`; bật lại bằng nút tăng (`[1]`) |
 | `CMD_VOLUME_INFO` (9) | `[level, result, muted]` | Chỉ nhận đúng 3 phần tử, nhớ `muted` | Không có |
 | `CMD_CWSL` LEARN | Có dạng 4 phần tử, kèm `value` câu trả lời | MQTT 220 và 227 đều gửi 4 phần tử (kèm `respond_id`) | Không có |
-| `CMD_RESP_SET` (15) | Có | **Đã cài**, chỉ cho MQTT 227 sửa câu phản hồi | Không có đường khác đặt câu phản hồi |
+| `CMD_RESP_SET` (15) | Có | **Đã cài**, cho MQTT 227 sửa câu phản hồi và MQTT 232 | Không có |
 | `CMD_RESP_GET` (16) | Có | Chưa cài | Chip trả về thì WB2 báo `UNKNOWN_COMMAND` (MQTT 299) |
 | `CMD_VOICE_SET/GET` (17/18) | Có | **Đã cài**, cho MQTT 230/231 và lần hỏi lúc boot | Không có |
 | 201..204 (bản debug của chip) | Có | Chưa cài | Nếu chip chạy bản debug, frame 201 bị báo MQTT 299. Frame 202 có key `log` cũng bị từ chối, hoặc bị bỏ vì dài quá 63 ký tự |

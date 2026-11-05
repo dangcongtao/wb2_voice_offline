@@ -1202,7 +1202,7 @@ static void app_cwsl_start_mutating(cJSON *js_root,
     }
 }
 
-// Log which CWSL session blocks a 227 start (add or edit).
+// Log which CWSL session blocks a start (227 add/edit, 232 respond_id set).
 static void app_cwsl_trace_scene_busy(const char *caller)
 {
     os_trace("[ERROR]: busy, session active: mutating=%u (cmd %lu), "
@@ -1353,17 +1353,8 @@ static void app_cwsl_on_resp_set(uint8_t applied)
     app_scene_on_resp_set_result((applied != 0U) ? 0U : APP_CWSL_CODE_BAD_REQUEST);
 }
 
-uint8_t app_cwsl_start_scene_resp_set(uint8_t cmd_id, uint8_t respond_id)
+uint8_t app_cwsl_start_resp_set(uint8_t cmd_id, uint8_t respond_id)
 {
-    if ((cmd_id < APP_SCENE_CMD_ID_MIN) || (cmd_id > APP_SCENE_CMD_ID_MAX))
-    {
-        os_trace("[ERROR]: cmd_id=%u out of range %u..%u, in[%s]\r\n",
-                 (unsigned int)cmd_id,
-                 (unsigned int)APP_SCENE_CMD_ID_MIN,
-                 (unsigned int)APP_SCENE_CMD_ID_MAX,
-                 __func__);
-        return APP_CWSL_CODE_BAD_COMMAND_ID;
-    }
     if (app_cwsl_ota_active())
     {
         os_trace("[ERROR]: OTA in progress, CI13162 UART is held, in[%s]\r\n",
@@ -1408,6 +1399,20 @@ uint8_t app_cwsl_start_scene_resp_set(uint8_t cmd_id, uint8_t respond_id)
     s_app_cwsl_resp_set.cmd_id = cmd_id;
     s_app_cwsl_resp_set.start_tick = xTaskGetTickCount();
     return 0U;
+}
+
+uint8_t app_cwsl_start_scene_resp_set(uint8_t cmd_id, uint8_t respond_id)
+{
+    if ((cmd_id < APP_SCENE_CMD_ID_MIN) || (cmd_id > APP_SCENE_CMD_ID_MAX))
+    {
+        os_trace("[ERROR]: cmd_id=%u out of range %u..%u, in[%s]\r\n",
+                 (unsigned int)cmd_id,
+                 (unsigned int)APP_SCENE_CMD_ID_MIN,
+                 (unsigned int)APP_SCENE_CMD_ID_MAX,
+                 __func__);
+        return APP_CWSL_CODE_BAD_COMMAND_ID;
+    }
+    return app_cwsl_start_resp_set(cmd_id, respond_id);
 }
 
 void app_cwsl_init(void)

@@ -26,6 +26,7 @@ static uint32_t s_app_scene_pending_uid;
 static uint8_t s_app_scene_pending_act_id;
 static uint8_t s_app_scene_pending_cmd_id;
 static uint8_t s_app_scene_pending_respond_id;
+static uint32_t s_app_scene_pending_mqtt;
 
 static void app_scene_publish(const char *response, int response_length)
 {
@@ -140,6 +141,49 @@ static void app_scene_publish_delete_success(uint8_t cmd_id, uint32_t u, uint8_t
     app_scene_publish(response, len);
 }
 
+static void app_scene_publish_resp_set_reject(uint8_t cmd_id,
+                                              uint8_t respond_id, uint32_t u,
+                                              uint8_t act_id, uint8_t code)
+{
+    char response[APP_SCENE_RESPONSE_SIZE];
+    int len = snprintf(response,
+                       sizeof(response),
+                       "{\"%s\":232,\"u\":%lu,\"cmd_id\":%u,\"respond_id\":%u,"
+                       "\"act_id\":%u,\"result\":0,\"code\":%u}",
+                       gs_dev_type[device_type],
+                       (unsigned long)u,
+                       (unsigned int)cmd_id,
+                       (unsigned int)respond_id,
+                       (unsigned int)act_id,
+                       (unsigned int)code);
+    app_scene_publish(response, len);
+}
+
+static void app_scene_publish_resp_set_success(uint8_t cmd_id,
+                                               uint8_t respond_id, uint32_t u,
+                                               uint8_t act_id)
+{
+    char response[APP_SCENE_RESPONSE_SIZE];
+    int len = snprintf(response,
+                       sizeof(response),
+                       "{\"%s\":232,\"u\":%lu,\"cmd_id\":%u,\"respond_id\":%u,"
+                       "\"act_id\":%u,\"result\":1}",
+                       gs_dev_type[device_type],
+                       (unsigned long)u,
+                       (unsigned int)cmd_id,
+                       (unsigned int)respond_id,
+                       (unsigned int)act_id);
+    app_scene_publish(response, len);
+}
+
+/* Chip command IDs whose response phrase can be set: wake 1..6, 48..103 */
+static bool app_scene_resp_cmd_id_exists(uint32_t cmd_id)
+{
+    return ((cmd_id >= 1U) && (cmd_id <= APP_SCENE_RESP_WAKE_ID_MAX)) ||
+           ((cmd_id >= APP_SCENE_RESP_CMD_ID_MIN) &&
+            (cmd_id <= APP_SCENE_RESP_CMD_ID_MAX));
+}
+
 #if defined(BUILD_TEST) && (BUILD_TEST == 1)
 static void app_scene_run_validation_tests(void);
 #endif
@@ -152,6 +196,7 @@ void app_scene_init(void)
     s_app_scene_pending_act_id = 0U;
     s_app_scene_pending_cmd_id = 0U;
     s_app_scene_pending_respond_id = 0U;
+    s_app_scene_pending_mqtt = 0U;
 
     if (!ef_get_u16("scene_mask", &s_app_scene_mask)) {
         s_app_scene_mask = 0U;
@@ -371,6 +416,157 @@ void app_scene_add(cJSON *js_root)
     s_app_scene_pending_uid = u;
     s_app_scene_pending_act_id = (uint8_t)act_id;
     s_app_scene_pending_respond_id = (uint8_t)respond_id;
+    s_app_scene_pending_mqtt = APP_SCENE_CMD_ADD;
+}
+
+void app_scene_resp_set(cJSON *js_root)
+{
+    uint32_t u = 0U;
+    uint32_t act_id = 0U;
+    uint32_t cmd_id = 0U;
+    uint32_t respond_id = 0U;
+    uint32_t cmd_type = 0U;
+    uint8_t code;
+
+    if (js_root == NULL)
+    {
+        os_trace("[ERROR]: js_root NULL, in[%s]\r\n", __func__);
+        app_scene_publish_resp_set_reject(0U, 0U, 0U, 0U, 64U);
+        return;
+    }
+
+    /* Best-effort read so the reject message echoes what the caller sent */
+    (void)app_scene_read_number(js_root, CJSON_KEY_USER_ID, UINT32_MAX, &u);
+    (void)app_scene_read_number(js_root, CJSON_KEY_ACT_ID, UINT8_MAX, &act_id);
+    (void)app_scene_read_number(js_root, APP_SCENE_KEY_CMD_ID, UINT8_MAX,
+                                &cmd_id);
+    (void)app_scene_read_number(js_root, APP_SCENE_KEY_RESPOND_ID, UINT8_MAX,
+                                &respond_id);
+
+    /* get action */
+    if (cJSON_GetObjectItem(js_root, CJSON_KEY_ACTION) != NULL)
+    {
+        os_trace("[ERROR]: get action, in[%s]\r\n", __func__);
+        app_scene_publish_resp_set_reject((uint8_t)cmd_id,
+                                          (uint8_t)respond_id, u,
+                                          (uint8_t)act_id, 64U);
+        return;
+    }
+    /* get cmd num */
+    if (!app_scene_read_number(js_root, gs_dev_type[device_type], UINT32_MAX,
+                               &cmd_type) ||
+        (cmd_type != APP_SCENE_CMD_RESP_SET))
+    {
+        os_trace("[ERROR]: get cmd, in[%s]\r\n", __func__);
+        app_scene_publish_resp_set_reject((uint8_t)cmd_id,
+                                          (uint8_t)respond_id, u,
+                                          (uint8_t)act_id, 64U);
+        return;
+    }
+    /* get uid */
+    if (!app_scene_read_number(js_root, CJSON_KEY_USER_ID, UINT32_MAX, &u))
+    {
+        os_trace("[ERROR]: get uid, in[%s]\r\n", __func__);
+        app_scene_publish_resp_set_reject((uint8_t)cmd_id,
+                                          (uint8_t)respond_id, u,
+                                          (uint8_t)act_id, 64U);
+        return;
+    }
+    /* get act_id */
+    if (!app_scene_read_number(js_root, CJSON_KEY_ACT_ID, UINT8_MAX, &act_id))
+    {
+        os_trace("[ERROR]: get act_id, in[%s]\r\n", __func__);
+        app_scene_publish_resp_set_reject((uint8_t)cmd_id,
+                                          (uint8_t)respond_id, u,
+                                          (uint8_t)act_id, 64U);
+        return;
+    }
+    /* get cmd_id */
+    if (!app_scene_read_number(js_root, APP_SCENE_KEY_CMD_ID, UINT8_MAX,
+                               &cmd_id))
+    {
+        os_trace("[ERROR]: get cmd_id, in[%s]\r\n", __func__);
+        app_scene_publish_resp_set_reject((uint8_t)cmd_id,
+                                          (uint8_t)respond_id, u,
+                                          (uint8_t)act_id, 64U);
+        return;
+    }
+    /* get respond_id */
+    if (!app_scene_read_number(js_root, APP_SCENE_KEY_RESPOND_ID, UINT8_MAX,
+                               &respond_id))
+    {
+        os_trace("[ERROR]: get respond_id, in[%s]\r\n", __func__);
+        app_scene_publish_resp_set_reject((uint8_t)cmd_id,
+                                          (uint8_t)respond_id, u,
+                                          (uint8_t)act_id, 64U);
+        return;
+    }
+    if (!app_scene_respond_id_is_valid(respond_id))
+    {
+        os_trace("[ERROR]: respond_id=%lu invalid, in[%s]\r\n",
+                 (unsigned long)respond_id,
+                 __func__);
+        app_scene_publish_resp_set_reject((uint8_t)cmd_id,
+                                          (uint8_t)respond_id, u,
+                                          (uint8_t)act_id, 64U);
+        return;
+    }
+    if (!app_scene_resp_cmd_id_exists(cmd_id))
+    {
+        os_trace("[ERROR]: cmd_id=%lu not %u..%u or %u..%u, in[%s]\r\n",
+                 (unsigned long)cmd_id,
+                 1U,
+                 (unsigned int)APP_SCENE_RESP_WAKE_ID_MAX,
+                 (unsigned int)APP_SCENE_RESP_CMD_ID_MIN,
+                 (unsigned int)APP_SCENE_RESP_CMD_ID_MAX,
+                 __func__);
+        app_scene_publish_resp_set_reject((uint8_t)cmd_id,
+                                          (uint8_t)respond_id, u,
+                                          (uint8_t)act_id, 65U);
+        return;
+    }
+    if (app_scene_is_pending())
+    {
+        os_trace("[ERROR]: busy, scene delete-all still running, in[%s]\r\n",
+                 __func__);
+        app_scene_publish_resp_set_reject((uint8_t)cmd_id,
+                                          (uint8_t)respond_id, u,
+                                          (uint8_t)act_id, 67U);
+        return;
+    }
+    if (((cmd_id >= APP_SCENE_CMD_ID_MIN) &&
+         (cmd_id <= APP_SCENE_CMD_ID_MAX)) &&
+        !app_scene_is_cmd_id_active((uint8_t)cmd_id))
+    {
+        os_trace("[ERROR]: cmd_id=%lu not active, mask=0x%04x, in[%s]\r\n",
+                 (unsigned long)cmd_id,
+                 (unsigned int)s_app_scene_mask,
+                 __func__);
+        app_scene_publish_resp_set_reject((uint8_t)cmd_id,
+                                          (uint8_t)respond_id, u,
+                                          (uint8_t)act_id, 65U);
+        return;
+    }
+
+    /* app_cwsl_start_resp_set() logs its own reject reason */
+    code = app_cwsl_start_resp_set((uint8_t)cmd_id, (uint8_t)respond_id);
+    if (code != 0U)
+    {
+        app_scene_publish_resp_set_reject((uint8_t)cmd_id,
+                                          (uint8_t)respond_id, u,
+                                          (uint8_t)act_id, code);
+        return;
+    }
+
+    os_trace("[SCENE] setting respond_id of cmd_id %u to %u\r\n",
+             (unsigned int)cmd_id,
+             (unsigned int)respond_id);
+
+    s_app_scene_pending_cmd_id = (uint8_t)cmd_id;
+    s_app_scene_pending_respond_id = (uint8_t)respond_id;
+    s_app_scene_pending_uid = u;
+    s_app_scene_pending_act_id = (uint8_t)act_id;
+    s_app_scene_pending_mqtt = APP_SCENE_CMD_RESP_SET;
 }
 
 void app_scene_on_learn_result(uint8_t code, uint8_t cmd_id)
@@ -432,26 +628,50 @@ void app_scene_on_learn_result(uint8_t code, uint8_t cmd_id)
 
 void app_scene_on_resp_set_result(uint8_t code)
 {
+    bool is_232 = (s_app_scene_pending_mqtt == APP_SCENE_CMD_RESP_SET);
+
     if (code == 0U)
     {
-        app_scene_publish_add_success(s_app_scene_pending_cmd_id,
-                                      s_app_scene_pending_respond_id,
-                                      s_app_scene_pending_uid,
-                                      s_app_scene_pending_act_id);
+        if (is_232)
+        {
+            app_scene_publish_resp_set_success(s_app_scene_pending_cmd_id,
+                                               s_app_scene_pending_respond_id,
+                                               s_app_scene_pending_uid,
+                                               s_app_scene_pending_act_id);
+        }
+        else
+        {
+            app_scene_publish_add_success(s_app_scene_pending_cmd_id,
+                                          s_app_scene_pending_respond_id,
+                                          s_app_scene_pending_uid,
+                                          s_app_scene_pending_act_id);
+        }
     }
     else
     {
-        os_trace("[ERROR]: cmd 227 edit cmd_id=%u respond_id=%u failed, "
+        os_trace("[ERROR]: cmd %lu cmd_id=%u respond_id=%u failed, "
                  "code=%u, in[%s]\r\n",
+                 (unsigned long)s_app_scene_pending_mqtt,
                  (unsigned int)s_app_scene_pending_cmd_id,
                  (unsigned int)s_app_scene_pending_respond_id,
                  (unsigned int)code,
                  __func__);
-        app_scene_publish_add_reject(s_app_scene_pending_cmd_id,
-                                     s_app_scene_pending_respond_id,
-                                     s_app_scene_pending_uid,
-                                     s_app_scene_pending_act_id,
-                                     code);
+        if (is_232)
+        {
+            app_scene_publish_resp_set_reject(s_app_scene_pending_cmd_id,
+                                              s_app_scene_pending_respond_id,
+                                              s_app_scene_pending_uid,
+                                              s_app_scene_pending_act_id,
+                                              code);
+        }
+        else
+        {
+            app_scene_publish_add_reject(s_app_scene_pending_cmd_id,
+                                         s_app_scene_pending_respond_id,
+                                         s_app_scene_pending_uid,
+                                         s_app_scene_pending_act_id,
+                                         code);
+        }
     }
 }
 

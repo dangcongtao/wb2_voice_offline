@@ -122,6 +122,7 @@ wswitch_handler_t array_handler[] = {
     {app_scene_query, 229},
     {app_voice_set, 230},
     {app_voice_get, 231},
+    {app_scene_resp_set, 232},
 };
 
 wswitch_handler_t array_ble_handler[] = {

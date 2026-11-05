@@ -109,10 +109,23 @@ void app_cwsl_notify_voice_cmd(uint8_t cmd_id, uint8_t cwsl);
  */
 uint8_t app_cwsl_start_scene_learn(uint8_t cmd_id, uint32_t user_id, uint8_t act_id, uint8_t respond_id);
 
-/** @brief Change the response phrase of an already learned ASR command (cmd:15).
+/** @brief Send cmd:15 [cmd_id, respond_id] and wait for the chip reply.
  *
- *  On success the version query is paused until the chip replies, the wait
- *  times out, or the result is delivered through app_scene_on_resp_set_result().
+ *  The caller validates cmd_id and respond_id. On success the version query
+ *  is paused until the chip replies or the wait times out. The result is
+ *  delivered through app_scene_on_resp_set_result(): 0 applied, 64 chip
+ *  replied [0], 52 timeout.
+ *
+ *  @param[in]  cmd_id      ASR command identifier.
+ *  @param[in]  respond_id  New response phrase ID.
+ *  @return     0 when sent, or error code (67 busy, 69 OTA hold,
+ *              70 UART TX fail).
+ */
+uint8_t app_cwsl_start_resp_set(uint8_t cmd_id, uint8_t respond_id);
+
+/** @brief Change the response phrase of a scene ASR command (cmd:15).
+ *
+ *  Checks cmd_id is in 56..70, then calls app_cwsl_start_resp_set().
  *
  *  @param[in]  cmd_id      ASR command identifier (56..70).
  *  @param[in]  respond_id  New response phrase ID.
