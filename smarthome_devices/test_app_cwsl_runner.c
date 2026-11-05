@@ -246,35 +246,35 @@ int main(void)
         app_cwsl_init();
 
         /* Valid LEARN on fan turn on (7), lowest slot (255) */
-        cJSON *req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":7,\"slot\":255,\"u\":1001,\"act_id\":1,\"respond_id\":47}");
+        cJSON *req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":72,\"slot\":255,\"u\":1001,\"act_id\":1,\"respond_id\":47}");
         app_cwsl_learn(req);
         cJSON_Delete(req);
 
         assert(s_uart_send_count == 1);
         assert(s_mock_uart_action == APP_CWSL_ACTION_LEARN);
         assert(s_mock_uart_data_count == 3); /* [cmd_id, slot, respond_id] */
-        assert(s_mock_uart_data[0] == 7U);
+        assert(s_mock_uart_data[0] == 72U);
         assert(s_mock_uart_data[1] == 255U);
         assert(s_mock_uart_data[2] == 47U);
         assert(s_publish_count == 0); /* No MQTT ack until chip status returns */
 
         /* Callback status LEARN_OK (32) arrives from chip */
-        s_registered_status_cb(32U, 7U, 0U);
+        s_registered_status_cb(32U, 72U, 0U);
         assert(s_publish_count == 1);
         assert(strcmp(s_last_published,
-                      "{\"fanoem\":220,\"cmd_id\":7,\"respond_id\":47,\"slot\":0,\"code\":32,\"u\":1001,\"act_id\":1}") == 0);
+                      "{\"fanoem\":220,\"cmd_id\":72,\"respond_id\":47,\"slot\":0,\"code\":32,\"u\":1001,\"act_id\":1}") == 0);
 
-        /* Mute (54) and Unmute (55) must be rejected with BAD_COMMAND_ID (65) */
+        /* Old fan commands (7..47) are not in the voice model: BAD_COMMAND_ID (65) */
         reset_cwsl_mocks();
-        req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":54,\"slot\":0,\"u\":1002,\"act_id\":2,\"respond_id\":47}");
+        req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":47,\"slot\":0,\"u\":1002,\"act_id\":2,\"respond_id\":47}");
         app_cwsl_learn(req);
         cJSON_Delete(req);
         assert(s_publish_count == 1);
         assert(strcmp(s_last_published,
-                      "{\"fanoem\":220,\"cmd_id\":54,\"respond_id\":47,\"slot\":0,\"u\":1002,\"act_id\":2,\"result\":0,\"code\":65}") == 0);
+                      "{\"fanoem\":220,\"cmd_id\":47,\"respond_id\":47,\"slot\":0,\"u\":1002,\"act_id\":2,\"result\":0,\"code\":65}") == 0);
 
         reset_cwsl_mocks();
-        req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":55,\"slot\":255,\"u\":1003,\"act_id\":3,\"respond_id\":47}");
+        req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":8,\"slot\":255,\"u\":1003,\"act_id\":3,\"respond_id\":47}");
         app_cwsl_learn(req);
         cJSON_Delete(req);
         assert(s_publish_count == 1);
@@ -311,9 +311,9 @@ int main(void)
         assert(s_publish_count == 1);
         assert(strstr(s_last_published, "\"code\":64") != NULL);
 
-        /* Out-of-bounds commands (> 70) must be rejected with BAD_COMMAND_ID (65) */
+        /* Out-of-bounds commands (> 103) must be rejected with BAD_COMMAND_ID (65) */
         reset_cwsl_mocks();
-        req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":71,\"slot\":0,\"u\":1008,\"act_id\":8,\"respond_id\":47}");
+        req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":104,\"slot\":0,\"u\":1008,\"act_id\":8,\"respond_id\":47}");
         app_cwsl_learn(req);
         cJSON_Delete(req);
         assert(s_publish_count == 1);
@@ -329,18 +329,18 @@ int main(void)
         app_cwsl_init();
 
         /* Delete specific slot */
-        cJSON *req = cJSON_Parse("{\"fanoem\":221,\"cmd_id\":7,\"slot\":0,\"u\":2001,\"act_id\":1}");
+        cJSON *req = cJSON_Parse("{\"fanoem\":221,\"cmd_id\":72,\"slot\":0,\"u\":2001,\"act_id\":1}");
         app_cwsl_delete(req);
         cJSON_Delete(req);
 
         assert(s_uart_send_count == 1);
         assert(s_mock_uart_action == APP_CWSL_ACTION_DELETE);
         assert(s_mock_uart_data_count == 2);
-        assert(s_mock_uart_data[0] == 7U);
+        assert(s_mock_uart_data[0] == 72U);
         assert(s_mock_uart_data[1] == 0U);
 
         /* Chip confirms DELETE_OK (33) */
-        s_registered_status_cb(33U, 7U, 0U);
+        s_registered_status_cb(33U, 72U, 0U);
         assert(s_publish_count == 1);
         assert(strstr(s_last_published, "\"fanoem\":221") != NULL);
         assert(strstr(s_last_published, "\"code\":33") != NULL);
@@ -383,18 +383,18 @@ int main(void)
         app_cwsl_init();
 
         /* Query single command (cmd_id 7) */
-        cJSON *req = cJSON_Parse("{\"fanoem\":223,\"cmd_id\":7,\"u\":3001,\"act_id\":1}");
+        cJSON *req = cJSON_Parse("{\"fanoem\":223,\"cmd_id\":72,\"u\":3001,\"act_id\":1}");
         app_cwsl_query(req);
         cJSON_Delete(req);
 
         assert(s_uart_send_count == 1);
         assert(s_mock_uart_action == APP_CWSL_ACTION_QUERY);
         assert(s_mock_uart_data_count == 1);
-        assert(s_mock_uart_data[0] == 7U);
+        assert(s_mock_uart_data[0] == 72U);
 
         /* Response with slot bitmap (low=5, high=0 -> slots 0 and 2 active) */
         uint8_t data_info[2] = {5U, 0U};
-        s_registered_info_cb(7U, data_info, 2U);
+        s_registered_info_cb(72U, data_info, 2U);
 
         assert(s_publish_count == 1);
         assert(strstr(s_last_published, "\"fanoem\":223") != NULL);
@@ -608,7 +608,159 @@ int main(void)
         assert(s_mock_ble_beacon_count == 0);
 
         device_type = 0; /* restore */
-        printf("  PASS: VOICEBOX wake-only CWSL validation, MQTT 224, BLE beacon, and 200ms LED pulse verified\n");
+        printf("  PASS: VOICEBOX CWSL validation, MQTT 224, BLE beacon, and 200ms LED pulse verified\n");
+    }
+    /* TEST 6b: VOICEBOX 220/221/223 accept the voice-model cmd_id 1..6, 48..103 */
+    {
+        static const uint8_t ok_ids[] = {1U, 2U, 6U, 48U, 54U, 55U, 71U, 72U, 103U};
+        static const struct
+        {
+            uint8_t cmd_id;
+            uint8_t code;
+        } bad_ids[] = {{0U, 65U}, {7U, 65U}, {47U, 65U}, {104U, 65U},
+                       {254U, 65U}, {56U, 64U}, {70U, 64U}};
+        uint8_t info[2] = {4U, 0U};
+        char json[160];
+        char expect[160];
+        cJSON *req;
+        size_t i;
+
+        printf("--- Test 6b: VOICEBOX cmd_id 1..6, 48..103 ---\n");
+        device_type = 10; /* VOICEBOX */
+
+        for (i = 0U; i < sizeof(ok_ids); i++)
+        {
+            /* 220 LEARN: sent to chip as [cmd_id, slot, respond_id], final echoes it */
+            reset_cwsl_mocks();
+            reset_cwsl_sessions();
+            snprintf(json, sizeof(json),
+                     "{\"voiceboxv1\":220,\"cmd_id\":%u,\"slot\":255,\"u\":7001,"
+                     "\"act_id\":1,\"respond_id\":47}", ok_ids[i]);
+            req = cJSON_Parse(json);
+            app_cwsl_learn(req);
+            cJSON_Delete(req);
+            assert(s_publish_count == 0);
+            assert(s_uart_send_count == 1);
+            assert(s_mock_uart_action == APP_CWSL_ACTION_LEARN);
+            assert(s_mock_uart_data[0] == ok_ids[i]);
+            assert(s_mock_uart_data[1] == 255U);
+            assert(s_mock_uart_data[2] == 47U);
+            s_registered_status_cb(32U, ok_ids[i], 3U);
+            snprintf(expect, sizeof(expect),
+                     "{\"voiceboxv1\":220,\"cmd_id\":%u,\"respond_id\":47,\"slot\":3,"
+                     "\"code\":32,\"u\":7001,\"act_id\":1}", ok_ids[i]);
+            assert(s_publish_count == 1);
+            assert(strcmp(s_last_published, expect) == 0);
+
+            /* 221 DELETE all slots of this cmd_id */
+            reset_cwsl_mocks();
+            snprintf(json, sizeof(json),
+                     "{\"voiceboxv1\":221,\"cmd_id\":%u,\"slot\":255,\"u\":7002,"
+                     "\"act_id\":2}", ok_ids[i]);
+            req = cJSON_Parse(json);
+            app_cwsl_delete(req);
+            cJSON_Delete(req);
+            assert(s_publish_count == 0);
+            assert(s_uart_send_count == 1);
+            assert(s_mock_uart_action == APP_CWSL_ACTION_DELETE);
+            assert(s_mock_uart_data[0] == ok_ids[i]);
+            s_registered_status_cb(33U, ok_ids[i], 255U);
+            assert(s_publish_count == 1);
+            assert(strstr(s_last_published, "\"code\":33") != NULL);
+
+            /* 223 QUERY slot bitmap */
+            reset_cwsl_mocks();
+            snprintf(json, sizeof(json),
+                     "{\"voiceboxv1\":223,\"cmd_id\":%u,\"u\":7003,\"act_id\":3}",
+                     ok_ids[i]);
+            req = cJSON_Parse(json);
+            app_cwsl_query(req);
+            cJSON_Delete(req);
+            assert(s_publish_count == 0);
+            assert(s_uart_send_count == 1);
+            assert(s_mock_uart_action == APP_CWSL_ACTION_QUERY);
+            s_registered_info_cb(ok_ids[i], info, 2U);
+            assert(s_publish_count == 1);
+            assert(strstr(s_last_published, "\"bitmap\":4") != NULL);
+        }
+
+        for (i = 0U; i < (sizeof(bad_ids) / sizeof(bad_ids[0])); i++)
+        {
+            snprintf(expect, sizeof(expect), "\"code\":%u", bad_ids[i].code);
+
+            reset_cwsl_mocks();
+            reset_cwsl_sessions();
+            snprintf(json, sizeof(json),
+                     "{\"voiceboxv1\":220,\"cmd_id\":%u,\"slot\":255,\"u\":7004,"
+                     "\"act_id\":4,\"respond_id\":47}", bad_ids[i].cmd_id);
+            req = cJSON_Parse(json);
+            app_cwsl_learn(req);
+            cJSON_Delete(req);
+            assert(s_uart_send_count == 0);
+            assert(s_publish_count == 1);
+            assert(strstr(s_last_published, expect) != NULL);
+            assert(strstr(s_last_published, "\"result\":0") != NULL);
+
+            reset_cwsl_mocks();
+            snprintf(json, sizeof(json),
+                     "{\"voiceboxv1\":221,\"cmd_id\":%u,\"slot\":255,\"u\":7005,"
+                     "\"act_id\":5}", bad_ids[i].cmd_id);
+            req = cJSON_Parse(json);
+            app_cwsl_delete(req);
+            cJSON_Delete(req);
+            assert(s_uart_send_count == 0);
+            assert(s_publish_count == 1);
+            assert(strstr(s_last_published, expect) != NULL);
+        }
+
+        /* 223 is read-only: scenes 56..70 are allowed, unknown ids are not */
+        reset_cwsl_mocks();
+        req = cJSON_Parse("{\"voiceboxv1\":223,\"cmd_id\":56,\"u\":7006,\"act_id\":6}");
+        app_cwsl_query(req);
+        cJSON_Delete(req);
+        assert(s_uart_send_count == 1);
+        s_registered_info_cb(56U, info, 2U);
+        assert(s_publish_count == 1);
+        assert(strstr(s_last_published, "\"bitmap\":4") != NULL);
+        for (i = 0U; i < 4U; i++)
+        {
+            static const uint8_t query_bad[] = {0U, 7U, 47U, 104U};
+
+            reset_cwsl_mocks();
+            reset_cwsl_sessions();
+            snprintf(json, sizeof(json),
+                     "{\"voiceboxv1\":223,\"cmd_id\":%u,\"u\":7007,\"act_id\":7}",
+                     query_bad[i]);
+            req = cJSON_Parse(json);
+            app_cwsl_query(req);
+            cJSON_Delete(req);
+            assert(s_uart_send_count == 0);
+            assert(s_publish_count == 1);
+            assert(strstr(s_last_published, "\"code\":65") != NULL);
+        }
+
+        /* Slot rule: only cmd_id 1 is 0..4; 2..6 and 48..103 are 0..14 */
+        reset_cwsl_mocks();
+        reset_cwsl_sessions();
+        req = cJSON_Parse("{\"voiceboxv1\":220,\"cmd_id\":1,\"slot\":5,\"u\":7008,\"act_id\":8,\"respond_id\":47}");
+        app_cwsl_learn(req);
+        cJSON_Delete(req);
+        assert(strstr(s_last_published, "\"code\":66") != NULL);
+        reset_cwsl_mocks();
+        req = cJSON_Parse("{\"voiceboxv1\":220,\"cmd_id\":2,\"slot\":15,\"u\":7009,\"act_id\":9,\"respond_id\":47}");
+        app_cwsl_learn(req);
+        cJSON_Delete(req);
+        assert(strstr(s_last_published, "\"code\":66") != NULL);
+        reset_cwsl_mocks();
+        req = cJSON_Parse("{\"voiceboxv1\":220,\"cmd_id\":72,\"slot\":14,\"u\":7010,\"act_id\":10,\"respond_id\":47}");
+        app_cwsl_learn(req);
+        cJSON_Delete(req);
+        assert(s_uart_send_count == 1);
+        assert(s_mock_uart_data[1] == 14U);
+        reset_cwsl_sessions();
+
+        device_type = 0; /* restore */
+        printf("  PASS: VOICEBOX 220/221/223 cmd_id allow-list verified\n");
     }
     /* TEST 7: Scene add FSM with respond_id */
     {
@@ -841,7 +993,7 @@ int main(void)
         reset_cwsl_sessions();
         s_mock_voice_pending = true;
         int sent = s_uart_send_count;
-        cJSON *req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":7,\"slot\":255,\"u\":1001,\"act_id\":1,\"respond_id\":47}");
+        cJSON *req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":72,\"slot\":255,\"u\":1001,\"act_id\":1,\"respond_id\":47}");
         app_cwsl_learn(req); cJSON_Delete(req);
         assert(strstr(s_last_published, "\"code\":67") != NULL && s_uart_send_count == sent);
         assert(app_cwsl_start_scene_learn(56U, 1U, 0U, 47U) == 67U);
@@ -863,7 +1015,7 @@ int main(void)
         reset_cwsl_mocks();
         reset_cwsl_sessions();
         assert(!app_cwsl_is_learning());
-        cJSON *req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":7,\"slot\":255,\"u\":1001,\"act_id\":1,\"respond_id\":47}");
+        cJSON *req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":72,\"slot\":255,\"u\":1001,\"act_id\":1,\"respond_id\":47}");
         app_cwsl_learn(req); cJSON_Delete(req);
         assert(app_cwsl_is_learning());
         reset_cwsl_mocks();
@@ -949,19 +1101,19 @@ int main(void)
         /* 13.1: missing respond_id -> 64, echoed as 0, nothing sent */
         reset_cwsl_mocks();
         reset_cwsl_sessions();
-        req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":7,\"slot\":255,\"u\":1,\"act_id\":0}");
+        req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":72,\"slot\":255,\"u\":1,\"act_id\":0}");
         app_cwsl_learn(req); cJSON_Delete(req);
         assert(s_uart_send_count == 0);
         assert(strcmp(s_last_published,
-                      "{\"fanoem\":220,\"cmd_id\":7,\"respond_id\":0,\"slot\":255,\"u\":1,\"act_id\":0,\"result\":0,\"code\":64}") == 0);
+                      "{\"fanoem\":220,\"cmd_id\":72,\"respond_id\":0,\"slot\":255,\"u\":1,\"act_id\":0,\"result\":0,\"code\":64}") == 0);
 
         /* 13.2: respond_id outside the 227 set -> 64, readable value echoed */
         reset_cwsl_mocks();
-        req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":7,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":72}");
+        req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":72,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":72}");
         app_cwsl_learn(req); cJSON_Delete(req);
         assert(s_uart_send_count == 0);
         assert(strcmp(s_last_published,
-                      "{\"fanoem\":220,\"cmd_id\":7,\"respond_id\":72,\"slot\":255,\"u\":1,\"act_id\":0,\"result\":0,\"code\":64}") == 0);
+                      "{\"fanoem\":220,\"cmd_id\":72,\"respond_id\":72,\"slot\":255,\"u\":1,\"act_id\":0,\"result\":0,\"code\":64}") == 0);
 
         /* 13.3: respond_id is checked before cmd_id: bad cmd_id + missing respond_id -> 64, not 65 */
         reset_cwsl_mocks();
@@ -972,7 +1124,7 @@ int main(void)
 
         /* 13.4: common field missing -> 64, respond_id still echoed */
         reset_cwsl_mocks();
-        req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":7,\"slot\":255,\"act_id\":0,\"respond_id\":47}");
+        req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":72,\"slot\":255,\"act_id\":0,\"respond_id\":47}");
         app_cwsl_learn(req); cJSON_Delete(req);
         assert(strcmp(s_last_published,
                       "{\"fanoem\":220,\"cmd_id\":0,\"respond_id\":47,\"slot\":0,\"u\":0,\"act_id\":0,\"result\":0,\"code\":64}") == 0);
@@ -980,12 +1132,12 @@ int main(void)
         /* 13.5: busy reject also carries respond_id */
         reset_cwsl_mocks();
         s_mock_voice_pending = true;
-        req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":7,\"slot\":3,\"u\":1,\"act_id\":0,\"respond_id\":13}");
+        req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":72,\"slot\":3,\"u\":1,\"act_id\":0,\"respond_id\":13}");
         app_cwsl_learn(req); cJSON_Delete(req);
         s_mock_voice_pending = false;
         assert(s_uart_send_count == 0);
         assert(strcmp(s_last_published,
-                      "{\"fanoem\":220,\"cmd_id\":7,\"respond_id\":13,\"slot\":3,\"u\":1,\"act_id\":0,\"result\":0,\"code\":67}") == 0);
+                      "{\"fanoem\":220,\"cmd_id\":72,\"respond_id\":13,\"slot\":3,\"u\":1,\"act_id\":0,\"result\":0,\"code\":67}") == 0);
 
         /* 13.6: voicebox wake word with a real slot -> UART [1, 2, 13], final echoes respond_id */
         reset_cwsl_mocks();
@@ -1007,40 +1159,40 @@ int main(void)
         /* 13.7: learn timeout final (220) carries respond_id */
         reset_cwsl_mocks();
         reset_cwsl_sessions();
-        req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":7,\"slot\":255,\"u\":5,\"act_id\":1,\"respond_id\":0}");
+        req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":72,\"slot\":255,\"u\":5,\"act_id\":1,\"respond_id\":0}");
         app_cwsl_learn(req); cJSON_Delete(req);
         s_mock_tick = 120000;
         app_cwsl_poll();
         assert(strcmp(s_last_published,
-                      "{\"fanoem\":220,\"cmd_id\":7,\"respond_id\":0,\"slot\":255,\"code\":52,\"u\":5,\"act_id\":1}") == 0);
+                      "{\"fanoem\":220,\"cmd_id\":72,\"respond_id\":0,\"slot\":255,\"code\":52,\"u\":5,\"act_id\":1}") == 0);
         assert(s_mock_uart_action == APP_CWSL_ACTION_STOP);
 
         /* 13.8: STOP during 220 -> final 222 keeps the old format (no respond_id) */
         reset_cwsl_mocks();
         reset_cwsl_sessions();
-        req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":7,\"slot\":255,\"u\":5,\"act_id\":1,\"respond_id\":47}");
+        req = cJSON_Parse("{\"fanoem\":220,\"cmd_id\":72,\"slot\":255,\"u\":5,\"act_id\":1,\"respond_id\":47}");
         app_cwsl_learn(req); cJSON_Delete(req);
         req = cJSON_Parse("{\"fanoem\":222,\"u\":9,\"act_id\":2}");
         app_cwsl_stop(req); cJSON_Delete(req);
-        s_registered_status_cb(34U, 7U, 255U);
+        s_registered_status_cb(34U, 72U, 255U);
         assert(strcmp(s_last_published,
-                      "{\"fanoem\":222,\"cmd_id\":7,\"slot\":255,\"code\":34,\"u\":9,\"act_id\":2}") == 0);
+                      "{\"fanoem\":222,\"cmd_id\":72,\"slot\":255,\"code\":34,\"u\":9,\"act_id\":2}") == 0);
 
         /* 13.9: 221 needs no respond_id, sends 2 bytes, replies keep the old format */
         reset_cwsl_mocks();
         reset_cwsl_sessions();
-        req = cJSON_Parse("{\"fanoem\":221,\"cmd_id\":7,\"slot\":0,\"u\":5,\"act_id\":1}");
+        req = cJSON_Parse("{\"fanoem\":221,\"cmd_id\":72,\"slot\":0,\"u\":5,\"act_id\":1}");
         app_cwsl_delete(req); cJSON_Delete(req);
         assert(s_mock_uart_action == APP_CWSL_ACTION_DELETE);
         assert(s_mock_uart_data_count == 2);
-        s_registered_status_cb(33U, 7U, 0U);
+        s_registered_status_cb(33U, 72U, 0U);
         assert(strcmp(s_last_published,
-                      "{\"fanoem\":221,\"cmd_id\":7,\"slot\":0,\"code\":33,\"u\":5,\"act_id\":1}") == 0);
+                      "{\"fanoem\":221,\"cmd_id\":72,\"slot\":0,\"code\":33,\"u\":5,\"act_id\":1}") == 0);
         reset_cwsl_mocks();
-        req = cJSON_Parse("{\"fanoem\":221,\"cmd_id\":7,\"slot\":15,\"u\":5,\"act_id\":1,\"respond_id\":47}");
+        req = cJSON_Parse("{\"fanoem\":221,\"cmd_id\":72,\"slot\":15,\"u\":5,\"act_id\":1,\"respond_id\":47}");
         app_cwsl_delete(req); cJSON_Delete(req);
         assert(strcmp(s_last_published,
-                      "{\"fanoem\":221,\"cmd_id\":7,\"slot\":15,\"u\":5,\"act_id\":1,\"result\":0,\"code\":66}") == 0);
+                      "{\"fanoem\":221,\"cmd_id\":72,\"slot\":15,\"u\":5,\"act_id\":1,\"result\":0,\"code\":66}") == 0);
 
         /* 13.10: 227 add path still sends LEARN [cmd_id, 255, respond_id] after QUERY */
         reset_cwsl_mocks();

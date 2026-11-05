@@ -29,6 +29,18 @@
 /** @brief cmd_id sent in a 227 request to add a new scene (not edit). */
 #define APP_SCENE_CMD_ID_NEW   255U
 
+/** @brief Check a cmd_id of the VOICEBOX voice model: wake 1..6, 48..103.
+ *  Used by MQTT 232 and, on VOICEBOX, by MQTT 220, 221 and 223.
+ *  @param[in] cmd_id ASR command ID from the request.
+ *  @return true if the chip has this command, false otherwise.
+ */
+static inline bool app_scene_cmd_id_exists(uint32_t cmd_id)
+{
+    return ((cmd_id >= 1U) && (cmd_id <= APP_SCENE_RESP_WAKE_ID_MAX)) ||
+           ((cmd_id >= APP_SCENE_RESP_CMD_ID_MIN) &&
+            (cmd_id <= APP_SCENE_RESP_CMD_ID_MAX));
+}
+
 /** @brief Check a response phrase ID accepted by MQTT 220, 227 and 232.
  *  Accepted set: 0..3, 11..19, 40..47, 50..68, 70, 71.
  *  @param[in] respond_id Response phrase ID from the request.

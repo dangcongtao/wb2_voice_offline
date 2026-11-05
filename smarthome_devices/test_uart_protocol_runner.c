@@ -1073,7 +1073,11 @@ int main(void) {
         assert(aiio_ci13162_parse_line("{\"cmd\":12,\"data\":[16],\"cmd_id\":71,\"cwsl\":255}", &msg) == AIIO_CI13162_PARSE_INVALID_DATA);
         assert(aiio_ci13162_parse_line("{\"cmd\":12,\"data\":[15],\"cmd_id\":69,\"cwsl\":255}", &msg) == AIIO_CI13162_PARSE_INVALID_DATA);
         assert(aiio_ci13162_parse_line("{\"cmd\":6,\"data\":[70,1,0]}", &msg) == AIIO_CI13162_PARSE_OK);
-        assert(aiio_ci13162_parse_line("{\"cmd\":6,\"data\":[71,1,0]}", &msg) == AIIO_CI13162_PARSE_INVALID_DATA);
+        /* CWSL_INFO answers QUERY for every cmd_id of the voice model, 1..103 */
+        assert(aiio_ci13162_parse_line("{\"cmd\":6,\"data\":[71,1,0]}", &msg) == AIIO_CI13162_PARSE_OK);
+        assert(msg.data[0] == 71U);
+        assert(aiio_ci13162_parse_line("{\"cmd\":6,\"data\":[103,1,0]}", &msg) == AIIO_CI13162_PARSE_OK);
+        assert(aiio_ci13162_parse_line("{\"cmd\":6,\"data\":[104,1,0]}", &msg) == AIIO_CI13162_PARSE_INVALID_DATA);
         printf("  PASS: Scene 1..15 parser verified\n");
     }
     /* TEST 16: CWSL LEARN with value */

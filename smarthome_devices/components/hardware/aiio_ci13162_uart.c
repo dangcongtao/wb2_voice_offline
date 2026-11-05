@@ -797,8 +797,9 @@ static aiio_ci13162_parse_result_t aiio_ci13162_validate_message(
                 return (message->data_count == 4U) ? AIIO_CI13162_PARSE_OK
                                                    : AIIO_CI13162_PARSE_INVALID_DATA;
             }
+            /* 1..103: every cmd_id of the voice model, home commands too. */
             return ((message->data[0] >= 1U) &&
-                    (message->data[0] <= APP_CWSL_CMD_ID_MAX) &&
+                    (message->data[0] <= APP_CWSL_HOME_CMD_ID_MAX) &&
                     (message->data_count == 3U))
                        ? AIIO_CI13162_PARSE_OK
                        : AIIO_CI13162_PARSE_INVALID_DATA;
@@ -1282,7 +1283,11 @@ static void aiio_ci13162_run_parser_tests(void)
          AIIO_CI13162_CMD_CWSL_INFO, 3U, {65U, 1U, 0U, 0U}, 0U, 0U, 0U},
         {"{cmd:6,data:[70,1,0]}", AIIO_CI13162_PARSE_OK,
          AIIO_CI13162_CMD_CWSL_INFO, 3U, {70U, 1U, 0U, 0U}, 0U, 0U, 0U},
-        {"{cmd:6,data:[71,1,0]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
+        {"{cmd:6,data:[71,1,0]}", AIIO_CI13162_PARSE_OK,
+         AIIO_CI13162_CMD_CWSL_INFO, 3U, {71U, 1U, 0U, 0U}, 0U, 0U, 0U},
+        {"{cmd:6,data:[103,1,0]}", AIIO_CI13162_PARSE_OK,
+         AIIO_CI13162_CMD_CWSL_INFO, 3U, {103U, 1U, 0U, 0U}, 0U, 0U, 0U},
+        {"{cmd:6,data:[104,1,0]}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
          {0U, 0U, 0U, 0U}, 0U, 0U, 0U},
         {"{cmd:7,data:[],cmd_id:47,cwsl:255}", AIIO_CI13162_PARSE_INVALID_DATA, 0U, 0U,
          {0U, 0U, 0U, 0U}, 0U, 0U, 0U},

@@ -176,14 +176,6 @@ static void app_scene_publish_resp_set_success(uint8_t cmd_id,
     app_scene_publish(response, len);
 }
 
-/* Chip command IDs whose response phrase can be set: wake 1..6, 48..103 */
-static bool app_scene_resp_cmd_id_exists(uint32_t cmd_id)
-{
-    return ((cmd_id >= 1U) && (cmd_id <= APP_SCENE_RESP_WAKE_ID_MAX)) ||
-           ((cmd_id >= APP_SCENE_RESP_CMD_ID_MIN) &&
-            (cmd_id <= APP_SCENE_RESP_CMD_ID_MAX));
-}
-
 #if defined(BUILD_TEST) && (BUILD_TEST == 1)
 static void app_scene_run_validation_tests(void);
 #endif
@@ -511,7 +503,7 @@ void app_scene_resp_set(cJSON *js_root)
                                           (uint8_t)act_id, 64U);
         return;
     }
-    if (!app_scene_resp_cmd_id_exists(cmd_id))
+    if (!app_scene_cmd_id_exists(cmd_id))
     {
         os_trace("[ERROR]: cmd_id=%lu not %u..%u or %u..%u, in[%s]\r\n",
                  (unsigned long)cmd_id,

@@ -76,10 +76,11 @@ Mọi lệnh gửi đều bị chặn (trả `-1`) khi OTA đang giữ UART1. C�
 
 Ràng buộc phía WB2 trước khi gửi `cmd:4` (`app_cwsl_parse_mutating()`, `app_cwsl_parse_query()`):
 
-- `cmd_id` hợp lệ là `1..70`, hoặc `255` (không dùng cho LEARN).
-- Bị từ chối: `cmd_id` `2..6`; `54`, `55` (tắt/bật tiếng); `56..70` qua MQTT 220/221 (ngữ cảnh phải đi qua MQTT 227/228).
-- Slot: wake (`cmd_id` 1) là `0..4`; lệnh khác là `0..14`; `255` nghĩa là tự chọn.
-- `VOICEBOX`: MQTT 220..223 chỉ nhận `cmd_id` 1 hoặc 255.
+- Tập `cmd_id` lấy theo model giọng nói, dùng chung với MQTT 232 qua `app_scene_cmd_id_exists()`. Không phân biệt `device_type`, vì CWSL chỉ chạy trên VOICEBOX:
+  - MQTT 220/221 (`app_cwsl_check_mutating_cmd_id()`) nhận `1..6`, `48..55`, `71..103`. `56..70` (ngữ cảnh) trả `code=64`, phải đi qua MQTT 227/228. `0`, `7..47`, `104..254` trả `code=65`.
+  - MQTT 223 nhận `1..6`, `48..103` (kể cả ngữ cảnh, vì chỉ đọc) và `255`. Ngoài tập trả `code=65`.
+- `255`: không dùng cho LEARN (`code=65`); DELETE chỉ nhận `[255,255]`; QUERY là hỏi sức chứa.
+- Slot: wake (`cmd_id` 1) là `0..4`; lệnh khác (kể cả `2..6`) là `0..14`; `255` nghĩa là tự chọn. Sai slot trả `code=66`.
 - Chỉ chạy một thao tác CWSL tại một thời điểm. Đang chờ phản hồi âm lượng, đang xử lý ngữ cảnh, MQTT 232 đang chờ cmd 15, hoặc MQTT 230/231 đang chờ / còn trong khoảng chờ frame muộn thì trả `BUSY` (67); đang OTA thì trả `OTA_HOLD` (69).
 
 ## 4. CI13162 → WB2
@@ -91,7 +92,7 @@ Ràng buộc phía WB2 trước khi gửi `cmd:4` (`app_cwsl_parse_mutating()`, 
 | 2 MODE | `[1..6]` | 1→11/12, 2→13/14, 3→15/16, 4→17/18, 5→19..21, 6→22..24 | Chỉ báo MQTT 224 (nhánh quạt không còn áp dụng) |
 | 3 VERSION | `[<uint32 > 0>]` | — | Lưu cache (`aiio_ci13162_uart_get_voice_version()`) |
 | 5 CWSL_STATUS | `[code, cmd_id, slot]` | — | `app_cwsl_on_status()` |
-| 6 CWSL_INFO | `[cmd_id(1..70), bm_lo, bm_hi]` hoặc `[255, wake, ncmd, nfree]` | — | `app_cwsl_on_info()` → MQTT 223 |
+| 6 CWSL_INFO | `[cmd_id(1..103), bm_lo, bm_hi]` hoặc `[255, wake, ncmd, nfree]` | — | `app_cwsl_on_info()` → MQTT 223 |
 | 7 TIMER | `[0..12]` | `[0]`→47; `[n]`→`23+2(n-1)` hoặc `+1` | Chỉ báo MQTT 224 (nhánh quạt không còn áp dụng) |
 | 9 VOLUME_INFO | `[level(0..7), result(0/1), muted(0/1)]` (đúng 3 phần tử; khác đi là `INVALID_DATA` → MQTT 299) | — | Lưu cache `level` và `muted`, gọi callback `app_volume` |
 | 10 ASR_UNHANDLED | `[cmd_id]` | — | Chỉ ghi log |
@@ -195,7 +196,6 @@ Trình tự trong `ci13162_ota_task()`:
 
 | Mục | `commands.md` | Code WB2 hiện tại | Hậu quả |
 |---|---|---|---|
-| `CMD_CWSL_INFO` (6) | `cmd_id` theo `cmd_info` (tới 103) | `data[0]` chỉ nhận `1..70` hoặc `255` | Không hỏi được slot của lệnh nhà mới |
 | Lệnh quạt 1, 2, 7, 14 | Đã bỏ | Vẫn parse; chỉ báo MQTT 224, nhánh quạt không áp dụng | Code thừa, vô hại |
 | `CMD_VOLUME` (8) | `[8]` tắt tiếng, `[9]` bật tiếng | Gửi `1..7`; `[8]` chỉ do nút giảm gửi khi đang tắt tiếng; không gửi `[9]` | WB2 không bật tiếng bằng `[9]`; bật lại bằng nút tăng (`[1]`) |
 | `CMD_VOLUME_INFO` (9) | `[level, result, muted]` | Chỉ nhận đúng 3 phần tử, nhớ `muted` | Không có |

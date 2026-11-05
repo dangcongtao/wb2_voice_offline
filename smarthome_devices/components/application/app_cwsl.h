@@ -12,7 +12,7 @@
 
 #include "cJSON.h"
 
-/** Maximum ASR command identifier accepted by CWSL LEARN/DELETE/QUERY. */
+/** Upper bound of the 1..70 range reported by MQTT 224 voice notify. */
 #define APP_CWSL_CMD_ID_MAX 70U
 
 /** First/last home-appliance command ID the chip reports via CMD_SCENE

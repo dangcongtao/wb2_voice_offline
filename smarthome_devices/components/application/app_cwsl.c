@@ -215,6 +215,37 @@ static uint8_t app_cwsl_parse_common(cJSON *js_root,
     return 0U;
 }
 
+// Check the cmd_id of a LEARN or DELETE request; 255 is handled by the caller.
+static uint8_t app_cwsl_check_mutating_cmd_id(uint8_t cmd_id)
+{
+    /* scene cmd_id */
+    if ((cmd_id >= APP_SCENE_CMD_ID_MIN) && (cmd_id <= APP_SCENE_CMD_ID_MAX))
+    {
+        os_trace("[ERROR]: cmd_id=%u is a scene id (%u..%u), "
+                 "use cmd %u, in[%s]\r\n",
+                 (unsigned int)cmd_id,
+                 (unsigned int)APP_SCENE_CMD_ID_MIN,
+                 (unsigned int)APP_SCENE_CMD_ID_MAX,
+                 (unsigned int)APP_SCENE_CMD_ADD,
+                 __func__);
+        return APP_CWSL_CODE_BAD_REQUEST;
+    }
+    /* Every cmd_id of the voice model except scenes: wake 1..6,
+     * volume 48..55 and home 71..103. */
+    if (!app_scene_cmd_id_exists(cmd_id))
+    {
+        os_trace("[ERROR]: cmd_id=%u not %u..%u or %u..%u, in[%s]\r\n",
+                 (unsigned int)cmd_id,
+                 1U,
+                 (unsigned int)APP_SCENE_RESP_WAKE_ID_MAX,
+                 (unsigned int)APP_SCENE_RESP_CMD_ID_MIN,
+                 (unsigned int)APP_SCENE_RESP_CMD_ID_MAX,
+                 __func__);
+        return APP_CWSL_CODE_BAD_COMMAND_ID;
+    }
+    return 0U;
+}
+
 // Parse and validate a LEARN or DELETE request against the product allow-list.
 static uint8_t app_cwsl_parse_mutating(cJSON *js_root,
                                        uint32_t mqtt_cmd,
@@ -228,12 +259,14 @@ static uint8_t app_cwsl_parse_mutating(cJSON *js_root,
     code = app_cwsl_parse_common(js_root, mqtt_cmd, request);
     if (code == 0U)
     {
-        if (!app_cwsl_read_number(js_root, APP_SCENE_KEY_CMD_ID, UINT8_MAX, &cmd_id))
+        if (!app_cwsl_read_number(js_root, APP_SCENE_KEY_CMD_ID,
+                                  UINT8_MAX, &cmd_id))
         {
             os_trace("[ERROR]: get cmd_id, in[%s]\r\n", __func__);
             code = APP_CWSL_CODE_BAD_REQUEST;
         }
-        else if (!app_cwsl_read_number(js_root, APP_SCENE_KEY_SLOT, UINT8_MAX, &slot))
+        else if (!app_cwsl_read_number(js_root, APP_SCENE_KEY_SLOT,
+                                       UINT8_MAX, &slot))
         {
             os_trace("[ERROR]: get slot, in[%s]\r\n", __func__);
             code = APP_CWSL_CODE_BAD_REQUEST;
@@ -246,8 +279,9 @@ static uint8_t app_cwsl_parse_mutating(cJSON *js_root,
     }
     if (mqtt_cmd == APP_CWSL_CMD_LEARN)
     {
-        /* respond_id is required and checked before the cmd_id/slot ranges; a
-         * readable value is kept even on reject so the reply echoes what was sent. */
+        /* respond_id is required and checked before the cmd_id/slot ranges;
+         * a readable value is kept even on reject so the reply echoes what
+         * was sent. */
         if (app_cwsl_read_number(js_root, APP_SCENE_KEY_RESPOND_ID,
                                  UINT8_MAX, &respond_id))
         {
@@ -261,7 +295,8 @@ static uint8_t app_cwsl_parse_mutating(cJSON *js_root,
         {
             if (respond_id == UINT32_MAX)
             {
-                os_trace("[ERROR]: get respond_id=%lu, in[%s]\r\n", respond_id, __func__);
+                os_trace("[ERROR]: get respond_id=%lu, in[%s]\r\n",
+                         (unsigned long)respond_id, __func__);
             }
             else
             {
@@ -280,7 +315,8 @@ static uint8_t app_cwsl_parse_mutating(cJSON *js_root,
     {
         if (mqtt_cmd == APP_CWSL_CMD_LEARN)
         {
-            os_trace("[ERROR]: cmd_id=255(any) -> not allowed for learn, in[%s]\r\n",
+            os_trace("[ERROR]: cmd_id=255(any) -> not allowed for learn, "
+                     "in[%s]\r\n",
                      __func__);
             return APP_CWSL_CODE_BAD_COMMAND_ID;
         }
@@ -288,46 +324,10 @@ static uint8_t app_cwsl_parse_mutating(cJSON *js_root,
                    ? 0U
                    : APP_CWSL_CODE_BAD_REQUEST;
     }
-    if ((request->cmd_id < 1U) || (request->cmd_id > APP_CWSL_CMD_ID_MAX))
+    code = app_cwsl_check_mutating_cmd_id(request->cmd_id);
+    if (code != 0U)
     {
-        os_trace("[ERROR]: cmd_id=%u out of range 1..%u, in[%s]\r\n",
-                 (unsigned int)request->cmd_id, (unsigned int)APP_CWSL_CMD_ID_MAX,
-                 __func__);
-        return APP_CWSL_CODE_BAD_COMMAND_ID;
-    }
-    if ((request->cmd_id >= 2U) && (request->cmd_id <= 6U))
-    {
-        os_trace("[ERROR]: cmd_id=%u not in[2,6], in[%s]\r\n",
-                 (unsigned int)request->cmd_id, __func__);
-        return APP_CWSL_CODE_BAD_REQUEST;
-    }
-    if ((request->cmd_id >= APP_SCENE_CMD_ID_MIN) &&
-        (request->cmd_id <= APP_SCENE_CMD_ID_MAX))
-    {
-        os_trace("[ERROR]: cmd_id=%u is a scene id (%u..%u), use cmd %u, in[%s]\r\n",
-                 (unsigned int)request->cmd_id,
-                 (unsigned int)APP_SCENE_CMD_ID_MIN,
-                 (unsigned int)APP_SCENE_CMD_ID_MAX,
-                 (unsigned int)APP_SCENE_CMD_ADD,
-                 __func__);
-        return APP_CWSL_CODE_BAD_REQUEST;
-    }
-    if ((request->cmd_id == 54U) || (request->cmd_id == 55U))
-    {
-        os_trace("[ERROR]: cmd_id=%u (54, 55) is locked by policy, in[%s]\r\n",
-                 (unsigned int)request->cmd_id,
-                 __func__);
-        return APP_CWSL_CODE_BAD_COMMAND_ID;
-    }
-
-    if (device_type == VOICEBOX)
-    {
-        if ((request->cmd_id > 103) && (request->cmd_id != APP_CWSL_ANY))
-        {
-            os_trace("[ERROR]: cmd_id=%u(> MAX), in[%s] \r\n",
-                     (unsigned int)request->cmd_id, __func__);
-            return APP_CWSL_CODE_BAD_COMMAND_ID;
-        }
+        return code;
     }
 
     if (request->cmd_id == 1U)
@@ -340,7 +340,8 @@ static uint8_t app_cwsl_parse_mutating(cJSON *js_root,
         }
         return 0U;
     }
-    if ((request->slot > APP_CWSL_CMD_SLOT_MAX) && (request->slot != APP_CWSL_ANY))
+    if ((request->slot > APP_CWSL_CMD_SLOT_MAX) &&
+        (request->slot != APP_CWSL_ANY))
     {
         os_trace("[ERROR]: slot=%u invalid for cmd_id=%u, in[%s]\r\n",
                  (unsigned int)request->slot,
@@ -369,15 +370,9 @@ static uint8_t app_cwsl_parse_query(cJSON *js_root,
     }
 
     request->cmd_id = (uint8_t)cmd_id;
-    if (device_type == VOICEBOX)
-    {
-        if ((request->cmd_id != 1U) && (request->cmd_id != APP_CWSL_ANY))
-        {
-            return APP_CWSL_CODE_BAD_COMMAND_ID;
-        }
-    }
-    if (((request->cmd_id >= 1U) && (request->cmd_id <= APP_CWSL_CMD_ID_MAX)) ||
-        (request->cmd_id == APP_CWSL_ANY))
+    /* Read-only: every cmd_id of the voice model, scenes included. */
+    if ((request->cmd_id == APP_CWSL_ANY) ||
+        app_scene_cmd_id_exists(request->cmd_id))
     {
         return 0U;
     }
@@ -948,127 +943,153 @@ static void app_cwsl_run_validation_tests(void)
         uint32_t mqtt_cmd;
         uint8_t expected_code;
     } test_cases[] = {
-        {"\"cmd_id\":7,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":47",
+        {"\"cmd_id\":72,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, 0U},
         {"\"cmd_id\":1,\"slot\":4,\"u\":1,\"act_id\":255,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, 0U},
         {"\"cmd_id\":2,\"slot\":0,\"u\":1,\"act_id\":0,\"respond_id\":47",
-         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
-        {"\"cmd_id\":13,\"slot\":0,\"u\":1,\"act_id\":0,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, 0U},
-        {"\"cmd_id\":14,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":47",
+        {"\"cmd_id\":6,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, 0U},
-        {"\"cmd_id\":15,\"slot\":0,\"u\":1,\"act_id\":0,\"respond_id\":47",
-         APP_CWSL_CMD_LEARN, 0U},
-        {"\"cmd_id\":39,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":47",
-         APP_CWSL_CMD_LEARN, 0U},
-        {"\"cmd_id\":43,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":47",
-         APP_CWSL_CMD_LEARN, 0U},
-        {"\"cmd_id\":44,\"slot\":0,\"u\":1,\"act_id\":0,\"respond_id\":47",
-         APP_CWSL_CMD_LEARN, 0U},
-        {"\"cmd_id\":45,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":47",
-         APP_CWSL_CMD_LEARN, 0U},
-        {"\"cmd_id\":46,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":47",
+        {"\"cmd_id\":48,\"slot\":0,\"u\":1,\"act_id\":0,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, 0U},
         {"\"cmd_id\":53,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, 0U},
         {"\"cmd_id\":54,\"slot\":0,\"u\":1,\"act_id\":0,\"respond_id\":47",
-         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_COMMAND_ID},
+         APP_CWSL_CMD_LEARN, 0U},
         {"\"cmd_id\":55,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":47",
+         APP_CWSL_CMD_LEARN, 0U},
+        {"\"cmd_id\":71,\"slot\":0,\"u\":1,\"act_id\":0,\"respond_id\":47",
+         APP_CWSL_CMD_LEARN, 0U},
+        {"\"cmd_id\":99,\"slot\":0,\"u\":1,\"act_id\":0,\"respond_id\":47",
+         APP_CWSL_CMD_LEARN, 0U},
+        {"\"cmd_id\":103,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":47",
+         APP_CWSL_CMD_LEARN, 0U},
+        {"\"cmd_id\":0,\"slot\":0,\"u\":1,\"act_id\":0,\"respond_id\":47",
+         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_COMMAND_ID},
+        {"\"cmd_id\":7,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":47",
+         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_COMMAND_ID},
+        {"\"cmd_id\":43,\"slot\":0,\"u\":1,\"act_id\":0,\"respond_id\":47",
+         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_COMMAND_ID},
+        {"\"cmd_id\":47,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":47",
+         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_COMMAND_ID},
+        {"\"cmd_id\":104,\"slot\":0,\"u\":1,\"act_id\":0,\"respond_id\":47",
+         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_COMMAND_ID},
+        {"\"cmd_id\":254,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_COMMAND_ID},
         {"\"cmd_id\":54,\"slot\":0,\"u\":1,\"act_id\":0",
-         APP_CWSL_CMD_DELETE, APP_CWSL_CODE_BAD_COMMAND_ID},
+         APP_CWSL_CMD_DELETE, 0U},
         {"\"cmd_id\":55,\"slot\":255,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_DELETE, 0U},
+        {"\"cmd_id\":103,\"slot\":255,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_DELETE, 0U},
+        {"\"cmd_id\":7,\"slot\":0,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_DELETE, APP_CWSL_CODE_BAD_COMMAND_ID},
+        {"\"cmd_id\":47,\"slot\":255,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_DELETE, APP_CWSL_CODE_BAD_COMMAND_ID},
+        {"\"cmd_id\":104,\"slot\":255,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_DELETE, APP_CWSL_CODE_BAD_COMMAND_ID},
         {"\"cmd_id\":56,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
         {"\"cmd_id\":65,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
+        {"\"cmd_id\":66,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":47",
+         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
+        {"\"cmd_id\":70,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":47",
+         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
         {"\"cmd_id\":56,\"slot\":255,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_DELETE, APP_CWSL_CODE_BAD_REQUEST},
         {"\"cmd_id\":65,\"slot\":255,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_DELETE, APP_CWSL_CODE_BAD_REQUEST},
-        {"\"cmd_id\":66,\"slot\":0,\"u\":1,\"act_id\":0,\"respond_id\":47",
-         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
-        {"\"cmd_id\":70,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":47",
-         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
         {"\"cmd_id\":70,\"slot\":255,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_DELETE, APP_CWSL_CODE_BAD_REQUEST},
-        {"\"cmd_id\":71,\"slot\":0,\"u\":1,\"act_id\":0,\"respond_id\":47",
-         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_COMMAND_ID},
-        {"\"cmd_id\":99,\"slot\":0,\"u\":1,\"act_id\":0,\"respond_id\":47",
-         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_COMMAND_ID},
-        {"\"cmd_id\":7,\"slot\":14,\"u\":1,\"act_id\":0,\"respond_id\":47",
+        {"\"cmd_id\":72,\"slot\":14,\"u\":1,\"act_id\":0,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, 0U},
-        {"\"cmd_id\":43,\"slot\":14,\"u\":1,\"act_id\":0,\"respond_id\":47",
+        {"\"cmd_id\":103,\"slot\":14,\"u\":1,\"act_id\":0,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, 0U},
-        {"\"cmd_id\":7,\"slot\":15,\"u\":1,\"act_id\":0,\"respond_id\":47",
+        {"\"cmd_id\":2,\"slot\":14,\"u\":1,\"act_id\":0,\"respond_id\":47",
+         APP_CWSL_CMD_LEARN, 0U},
+        {"\"cmd_id\":72,\"slot\":15,\"u\":1,\"act_id\":0,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_SLOT},
-        {"\"cmd_id\":7,\"slot\":15,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":72,\"slot\":15,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_DELETE, APP_CWSL_CODE_BAD_SLOT},
         {"\"cmd_id\":1,\"slot\":5,\"u\":1,\"act_id\":0,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_SLOT},
         {"\"cmd_id\":1,\"slot\":5,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_DELETE, APP_CWSL_CODE_BAD_SLOT},
-        {"\"cmd_id\":7,\"u\":1,\"act_id\":0,\"respond_id\":47",
+        {"\"cmd_id\":72,\"u\":1,\"act_id\":0,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
-        {"\"cmd_id\":7,\"slot\":0.5,\"u\":1,\"act_id\":0,\"respond_id\":47",
+        {"\"cmd_id\":72,\"slot\":0.5,\"u\":1,\"act_id\":0,\"respond_id\":47",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
-        {"\"cmd_id\":7,\"slot\":0,\"u\":1,\"act_id\":0,\"action\":1,\"respond_id\":47",
+        {"\"cmd_id\":72,\"slot\":0,\"u\":1,\"act_id\":0,\"action\":1,"
+         "\"respond_id\":47",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
         {"\"cmd_id\":255,\"slot\":255,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_DELETE, 0U},
         {"\"cmd_id\":255,\"slot\":0,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_DELETE, APP_CWSL_CODE_BAD_REQUEST},
-        {"\"cmd_id\":7,\"slot\":0,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":255,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":47",
+         APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_COMMAND_ID},
+        {"\"cmd_id\":72,\"slot\":0,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_DELETE, 0U},
-        {"\"cmd_id\":7,\"slot\":14,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":72,\"slot\":14,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_DELETE, 0U},
-        {"\"cmd_id\":7,\"slot\":255,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":72,\"slot\":255,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_DELETE, 0U},
-        {"\"cmd_id\":13,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":1,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_QUERY, 0U},
-        {"\"cmd_id\":39,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":6,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_QUERY, 0U},
-        {"\"cmd_id\":43,\"u\":1,\"act_id\":0",
-         APP_CWSL_CMD_QUERY, 0U},
-        {"\"cmd_id\":44,\"u\":1,\"act_id\":0",
-         APP_CWSL_CMD_QUERY, 0U},
-        {"\"cmd_id\":53,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":48,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_QUERY, 0U},
         {"\"cmd_id\":54,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_QUERY, 0U},
         {"\"cmd_id\":55,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_QUERY, 0U},
-        {"\"cmd_id\":65,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":56,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_QUERY, 0U},
-        {"\"cmd_id\":66,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":65,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_QUERY, 0U},
         {"\"cmd_id\":70,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_QUERY, 0U},
         {"\"cmd_id\":71,\"u\":1,\"act_id\":0",
-         APP_CWSL_CMD_QUERY, APP_CWSL_CODE_BAD_COMMAND_ID},
+         APP_CWSL_CMD_QUERY, 0U},
         {"\"cmd_id\":99,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_QUERY, 0U},
+        {"\"cmd_id\":103,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_QUERY, 0U},
+        {"\"cmd_id\":255,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_QUERY, 0U},
+        {"\"cmd_id\":0,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_QUERY, APP_CWSL_CODE_BAD_COMMAND_ID},
+        {"\"cmd_id\":7,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_QUERY, APP_CWSL_CODE_BAD_COMMAND_ID},
+        {"\"cmd_id\":43,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_QUERY, APP_CWSL_CODE_BAD_COMMAND_ID},
+        {"\"cmd_id\":47,\"u\":1,\"act_id\":0",
+         APP_CWSL_CMD_QUERY, APP_CWSL_CODE_BAD_COMMAND_ID},
+        {"\"cmd_id\":104,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_QUERY, APP_CWSL_CODE_BAD_COMMAND_ID},
         {"\"cmd_id\":255,\"u\":1,\"act_id\":\"0\"",
          APP_CWSL_CMD_QUERY, APP_CWSL_CODE_BAD_REQUEST},
-        {"\"cmd_id\":7,\"slot\":255,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":72,\"slot\":255,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
-        {"\"cmd_id\":7,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":0",
+        {"\"cmd_id\":72,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":0",
          APP_CWSL_CMD_LEARN, 0U},
-        {"\"cmd_id\":7,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":71",
+        {"\"cmd_id\":72,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":71",
          APP_CWSL_CMD_LEARN, 0U},
-        {"\"cmd_id\":7,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":4",
+        {"\"cmd_id\":72,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":4",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
-        {"\"cmd_id\":7,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":72",
+        {"\"cmd_id\":72,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":72",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
-        {"\"cmd_id\":7,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":256",
+        {"\"cmd_id\":72,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":256",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
-        {"\"cmd_id\":7,\"slot\":255,\"u\":1,\"act_id\":0,\"respond_id\":\"47\"",
+        {"\"cmd_id\":72,\"slot\":255,\"u\":1,\"act_id\":0,"
+         "\"respond_id\":\"47\"",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
-        {"\"cmd_id\":99,\"slot\":0,\"u\":1,\"act_id\":0",
+        {"\"cmd_id\":104,\"slot\":0,\"u\":1,\"act_id\":0",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_REQUEST},
-        {"\"cmd_id\":7,\"slot\":15,\"u\":1,\"act_id\":0,\"respond_id\":3",
+        {"\"cmd_id\":72,\"slot\":15,\"u\":1,\"act_id\":0,\"respond_id\":3",
          APP_CWSL_CMD_LEARN, APP_CWSL_CODE_BAD_SLOT},
     };
     char json[160];
