@@ -9,6 +9,13 @@
 
 /* Guard unwanted SDK headers */
 #define _USER_CONFIG_H_
+/* app_config.h is blocked: mirror its VOICEBOX hardware selection.
+ * Default V2; build with -DVOICEBOX_HW=1 for V1. */
+#define VOICEBOX_HW_V1 1
+#define VOICEBOX_HW_V2 2
+#ifndef VOICEBOX_HW
+#define VOICEBOX_HW VOICEBOX_HW_V2
+#endif
 #define __EASY_FLASH_COMMON_H__
 #define _APP_MQTT_H__
 #define _APP_MQTT_H_

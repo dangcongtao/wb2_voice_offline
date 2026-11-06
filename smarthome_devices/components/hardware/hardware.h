@@ -41,12 +41,28 @@
 #define BUTTON_NATURAL_INDEX 2
 
 #define BTN_CFG_MINI 22
-/* VOICEBOX buttons: index 0 = volume up, 1 = function (config / next voice), 2 = volume down */
+#if !defined(VOICEBOX_HW) || !defined(VOICEBOX_HW_V1)
+#error "VOICEBOX_HW is not defined: include app_config.h first"
+#endif
+#if VOICEBOX_HW == VOICEBOX_HW_V1
+/* VOICEBOX V1: one function button (config / next voice) at index 0 */
+#define BTN_VOICEBOX_FUNCTION_PIN 1
+#define BTN_VOICEBOX_COUNT 1U
+#define BTN_VOICEBOX_PINS {BTN_VOICEBOX_FUNCTION_PIN}
+#else
+/* VOICEBOX V2: index 0 = volume up, 1 = function (config / next voice),
+ * 2 = volume down */
 #define BTN_VOICEBOX_VOLUME_UP_PIN 21
 #define BTN_VOICEBOX_FUNCTION_PIN 20
 #define BTN_VOICEBOX_VOLUME_DOWN_PIN 0
-#define BTN_VOICEBOX_IDLE_LEVEL 1
 #define BTN_VOICEBOX_COUNT 3U
+#define BTN_VOICEBOX_PINS                \
+    {BTN_VOICEBOX_VOLUME_UP_PIN,         \
+     BTN_VOICEBOX_FUNCTION_PIN,          \
+     BTN_VOICEBOX_VOLUME_DOWN_PIN}
+#endif
+/* Pressed = 0, internal pull-up on every VOICEBOX button */
+#define BTN_VOICEBOX_IDLE_LEVEL 1
 #define BUTTON_SSW 0xFF
 
 #define MAX_NUM_SWITCH 4

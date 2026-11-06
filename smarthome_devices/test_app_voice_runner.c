@@ -9,6 +9,13 @@
 
 /* Guard unwanted SDK headers */
 #define _USER_CONFIG_H_
+/* app_config.h is blocked: mirror its VOICEBOX hardware selection.
+ * Default V2; build with -DVOICEBOX_HW=1 for V1. */
+#define VOICEBOX_HW_V1 1
+#define VOICEBOX_HW_V2 2
+#ifndef VOICEBOX_HW
+#define VOICEBOX_HW VOICEBOX_HW_V2
+#endif
 #define __EASY_FLASH_COMMON_H__
 #define _APP_MQTT_H__
 #define _APP_MQTT_H_
@@ -774,6 +781,7 @@ static void test_button_post_rules(void)
     printf("PASS button_post_rules\n");
 }
 
+#if VOICEBOX_HW == VOICEBOX_HW_V2
 static void test_button_classify_volume_press(void)
 {
     assert(EV(0, APP_BTN_EVT_PRESSED) == APP_BUTTON_ACTION_VOLUME_UP);
@@ -799,38 +807,51 @@ static void test_button_classify_volume_hold_no_config(void)
     }
     printf("PASS button_classify_volume_hold_no_config\n");
 }
+#else
+/* V1: one function button at index 0, no volume buttons */
+static void test_button_classify_v1_single_button(void)
+{
+    assert(APP_BUTTON_INDEX_FUNCTION == 0U);
+    assert(EV(0, APP_BTN_EVT_PRESSED) == APP_BUTTON_ACTION_NONE);
+    assert(EV(0, APP_BTN_EVT_RELEASED) == APP_BUTTON_ACTION_VOICE_NEXT);
+    assert(EV(1, APP_BTN_EVT_PRESSED) == APP_BUTTON_ACTION_NONE);
+    assert(EV(2, APP_BTN_EVT_PRESSED) == APP_BUTTON_ACTION_NONE);
+    assert(EV(1, APP_BTN_EVT_RELEASED) == APP_BUTTON_ACTION_NONE);
+    printf("PASS button_classify_v1_single_button\n");
+}
+#endif
 
 static void test_button_classify_function_short(void)
 {
-    assert(EV(1, APP_BTN_EVT_PRESSED) == APP_BUTTON_ACTION_NONE);
-    assert(EV(1, APP_BTN_EVT_RELEASED) == APP_BUTTON_ACTION_VOICE_NEXT);
+    assert(EV(APP_BUTTON_INDEX_FUNCTION, APP_BTN_EVT_PRESSED) == APP_BUTTON_ACTION_NONE);
+    assert(EV(APP_BUTTON_INDEX_FUNCTION, APP_BTN_EVT_RELEASED) == APP_BUTTON_ACTION_VOICE_NEXT);
     printf("PASS button_classify_function_short\n");
 }
 
 static void test_button_classify_function_hold(void)
 {
-    assert(EV(1, APP_BTN_EVT_HOLD) == APP_BUTTON_ACTION_LED_SMART_CONFIG);
-    assert(EV(1, APP_BTN_EVT_RELEASED) == APP_BUTTON_ACTION_SMART_CONFIG);
-    assert(EV(1, APP_BTN_EVT_PRESSED) == APP_BUTTON_ACTION_NONE);
-    assert(EV(1, APP_BTN_EVT_RELEASED) == APP_BUTTON_ACTION_VOICE_NEXT);
+    assert(EV(APP_BUTTON_INDEX_FUNCTION, APP_BTN_EVT_HOLD) == APP_BUTTON_ACTION_LED_SMART_CONFIG);
+    assert(EV(APP_BUTTON_INDEX_FUNCTION, APP_BTN_EVT_RELEASED) == APP_BUTTON_ACTION_SMART_CONFIG);
+    assert(EV(APP_BUTTON_INDEX_FUNCTION, APP_BTN_EVT_PRESSED) == APP_BUTTON_ACTION_NONE);
+    assert(EV(APP_BUTTON_INDEX_FUNCTION, APP_BTN_EVT_RELEASED) == APP_BUTTON_ACTION_VOICE_NEXT);
     printf("PASS button_classify_function_hold\n");
 }
 
 static void test_button_classify_function_hold_long(void)
 {
-    assert(EV(1, APP_BTN_EVT_HOLD) == APP_BUTTON_ACTION_LED_SMART_CONFIG);
-    assert(EV(1, APP_BTN_EVT_HOLD_SO_LONG) == APP_BUTTON_ACTION_LED_AP_CONFIG);
-    assert(EV(1, APP_BTN_EVT_HOLD_HONG_PHIM) == APP_BUTTON_ACTION_NONE);
-    assert(EV(1, APP_BTN_EVT_RELEASED) == APP_BUTTON_ACTION_AP_CONFIG);
+    assert(EV(APP_BUTTON_INDEX_FUNCTION, APP_BTN_EVT_HOLD) == APP_BUTTON_ACTION_LED_SMART_CONFIG);
+    assert(EV(APP_BUTTON_INDEX_FUNCTION, APP_BTN_EVT_HOLD_SO_LONG) == APP_BUTTON_ACTION_LED_AP_CONFIG);
+    assert(EV(APP_BUTTON_INDEX_FUNCTION, APP_BTN_EVT_HOLD_HONG_PHIM) == APP_BUTTON_ACTION_NONE);
+    assert(EV(APP_BUTTON_INDEX_FUNCTION, APP_BTN_EVT_RELEASED) == APP_BUTTON_ACTION_AP_CONFIG);
     printf("PASS button_classify_function_hold_long\n");
 }
 
 static void test_button_classify_release_without_press(void)
 {
-    assert(EV(1, APP_BTN_EVT_RELEASED) == APP_BUTTON_ACTION_NONE);
-    assert(EV(1, APP_BTN_EVT_PRESSED) == APP_BUTTON_ACTION_NONE);
-    assert(EV(1, APP_BTN_EVT_RELEASED) == APP_BUTTON_ACTION_VOICE_NEXT);
-    assert(EV(1, APP_BTN_EVT_RELEASED) == APP_BUTTON_ACTION_NONE);
+    assert(EV(APP_BUTTON_INDEX_FUNCTION, APP_BTN_EVT_RELEASED) == APP_BUTTON_ACTION_NONE);
+    assert(EV(APP_BUTTON_INDEX_FUNCTION, APP_BTN_EVT_PRESSED) == APP_BUTTON_ACTION_NONE);
+    assert(EV(APP_BUTTON_INDEX_FUNCTION, APP_BTN_EVT_RELEASED) == APP_BUTTON_ACTION_VOICE_NEXT);
+    assert(EV(APP_BUTTON_INDEX_FUNCTION, APP_BTN_EVT_RELEASED) == APP_BUTTON_ACTION_NONE);
     printf("PASS button_classify_release_without_press\n");
 }
 
@@ -925,8 +946,12 @@ int main(void)
     test_voice_tx_fail();
     test_app_busy_during_button();
     test_button_post_rules();
+#if VOICEBOX_HW == VOICEBOX_HW_V2
     test_button_classify_volume_press();
     test_button_classify_volume_hold_no_config();
+#else
+    test_button_classify_v1_single_button();
+#endif
     test_button_classify_function_short();
     test_button_classify_function_hold();
     test_button_classify_function_hold_long();
@@ -935,6 +960,10 @@ int main(void)
     test_button_poll_busy_beeps();
     test_button_poll_busy_learning_silent();
     test_button_second_press_while_pending_beeps();
+#if VOICEBOX_HW == VOICEBOX_HW_V2
     printf("ALL 46 VOICE TESTS PASSED\n");
+#else
+    printf("ALL 45 VOICE TESTS PASSED (V1)\n");
+#endif
     return 0;
 }

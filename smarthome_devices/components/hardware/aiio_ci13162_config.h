@@ -5,10 +5,24 @@
 #ifndef AIIO_CI13162_CONFIG_H
 #define AIIO_CI13162_CONFIG_H
 
+#include "app_config.h"
+
+#if !defined(VOICEBOX_HW) || !defined(VOICEBOX_HW_V1)
+#error "VOICEBOX_HW is not defined: include app_config.h first"
+#endif
+
 #define AIIO_CI13162_UART_ENABLE 1
+#if VOICEBOX_HW == VOICEBOX_HW_V1
+/* V1: chip on UART0, shared with the SDK console (log stays off) */
+#define AIIO_CI13162_UART_ID 0U
+#define AIIO_CI13162_UART_TX_PIN 16U
+#define AIIO_CI13162_UART_RX_PIN 7U
+#else
+/* V2: chip on UART1, UART0 stays with the SDK log */
 #define AIIO_CI13162_UART_ID 1U
 #define AIIO_CI13162_UART_TX_PIN 4U
 #define AIIO_CI13162_UART_RX_PIN 3U
+#endif
 #define AIIO_CI13162_UART_BAUD_RATE 115200U
 #define AIIO_CI13162_UART_STREAM_SIZE 512U
 #define AIIO_CI13162_UART_LINE_MAX 64U

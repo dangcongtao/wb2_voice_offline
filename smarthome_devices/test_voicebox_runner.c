@@ -8,6 +8,13 @@
 #define os_trace printf
 #define BUILD_TEST 1
 #define _USER_CONFIG_H_
+/* app_config.h is blocked: mirror its VOICEBOX hardware selection.
+ * Default V2; build with -DVOICEBOX_HW=1 for V1. */
+#define VOICEBOX_HW_V1 1
+#define VOICEBOX_HW_V2 2
+#ifndef VOICEBOX_HW
+#define VOICEBOX_HW VOICEBOX_HW_V2
+#endif
 #define __EASY_FLASH_COMMON_H__
 #define _APP_MQTT_H__
 #define _APP_MQTT_H_
@@ -180,15 +187,24 @@ int main(void) {
     {
         printf("--- Test 2: Hardware Pinout Macros & Voice Support ---\n");
         assert(LED_STT_VOICEBOX == 2);
+        assert(BTN_VOICEBOX_IDLE_LEVEL == 1);
+        assert(AIIO_CI13162_POWER_PIN == 17U);
+#if VOICEBOX_HW == VOICEBOX_HW_V2
         assert(BTN_VOICEBOX_VOLUME_UP_PIN == 21);
         assert(BTN_VOICEBOX_FUNCTION_PIN == 20);
         assert(BTN_VOICEBOX_VOLUME_DOWN_PIN == 0);
-        assert(BTN_VOICEBOX_IDLE_LEVEL == 1);
         assert(BTN_VOICEBOX_COUNT == 3U);
         assert(AIIO_CI13162_UART_RX_PIN == 3U);
         assert(AIIO_CI13162_UART_TX_PIN == 4U);
         assert(AIIO_CI13162_UART_ID == 1U);
-        assert(AIIO_CI13162_POWER_PIN == 17U);
+#else
+        /* V1: chip on UART0 16/7, one function button on GPIO1 */
+        assert(BTN_VOICEBOX_FUNCTION_PIN == 1);
+        assert(BTN_VOICEBOX_COUNT == 1U);
+        assert(AIIO_CI13162_UART_RX_PIN == 7U);
+        assert(AIIO_CI13162_UART_TX_PIN == 16U);
+        assert(AIIO_CI13162_UART_ID == 0U);
+#endif
 
         device_type = VOICEBOX;
         assert(hw_device_support_voice() == true);
@@ -516,6 +532,20 @@ int main(void) {
             s_mock_gpio_input_levels[i] = 1;
         }
         device_type = VOICEBOX;
+#if VOICEBOX_HW == VOICEBOX_HW_V1
+        /* V1: index 0 = GPIO1, nothing else is a button */
+        hw_button_config(0U); hw_button_config(1U); hw_button_config(2U);
+        assert(s_mock_gpio_input_pins[1] && s_mock_gpio_input_pullup[1] == 1);
+        assert(s_mock_gpio_input_pins[21] == 0);
+        assert(s_mock_gpio_input_pins[20] == 0);
+        assert(s_mock_gpio_input_pins[0] == 0);
+        assert(hw_btn_read(0U) == 1U);
+        s_mock_gpio_input_levels[1] = 0; assert(hw_btn_read(0U) == 0U);
+        s_mock_gpio_input_levels[1] = 1;
+        assert(hw_btn_read(1U) == BTN_VOICEBOX_IDLE_LEVEL);
+        assert(hw_btn_read(2U) == BTN_VOICEBOX_IDLE_LEVEL);
+        printf("  PASS: VOICEBOX V1 button GPIO1 active-low\n");
+#else
         hw_button_config(0U); hw_button_config(1U); hw_button_config(2U);
         assert(s_mock_gpio_input_pins[21] && s_mock_gpio_input_pullup[21] == 1);
         assert(s_mock_gpio_input_pins[20] && s_mock_gpio_input_pullup[20] == 1);
@@ -530,6 +560,7 @@ int main(void) {
         assert(hw_btn_read(3U) == BTN_VOICEBOX_IDLE_LEVEL);
         hw_btn_set_val_button(0);
         printf("  PASS: VOICEBOX buttons 21/20/0 active-low, touch ignored\n");
+#endif
     }
 
     printf("\nALL 10 VOICEBOX UNIT TESTS PASSED 100%%!\n");

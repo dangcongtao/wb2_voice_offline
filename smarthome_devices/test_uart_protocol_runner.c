@@ -25,6 +25,13 @@
 
 /* Guard unwanted SDK headers */
 #define _USER_CONFIG_H_
+/* app_config.h is blocked: mirror its VOICEBOX hardware selection.
+ * Default V2; build with -DVOICEBOX_HW=1 for V1. */
+#define VOICEBOX_HW_V1 1
+#define VOICEBOX_HW_V2 2
+#ifndef VOICEBOX_HW
+#define VOICEBOX_HW VOICEBOX_HW_V2
+#endif
 #define __EASY_FLASH_COMMON_H__
 #define _APP_MQTT_H__
 #define _APP_MQTT_H_
@@ -104,6 +111,9 @@ int hosal_uart_ioctl(hosal_uart_dev_t *dev, int ctl, void *arg) {
 }
 int hosal_uart_init(hosal_uart_dev_t *dev) { s_last_init_dev = *dev; s_init_calls++; return 0; }
 int hosal_uart_init_only_tx(hosal_uart_dev_t *dev) { (void)dev; return 0; }
+#if VOICEBOX_HW == VOICEBOX_HW_V1
+hosal_uart_dev_t uart_stdio; /* SDK console device, declared in bfl_main.c */
+#endif
 int hosal_uart_finalize(hosal_uart_dev_t *dev) { (void)dev; return 0; }
 int hosal_uart_callback_set(hosal_uart_dev_t *dev, int c, int (*p)(void *), void *a) {
     (void)dev; (void)c; (void)p; (void)a; return 0;
@@ -388,6 +398,7 @@ int main(void) {
         printf("  PASS: Built-in parser and assembler tests succeeded\n");
     }
 
+#if VOICEBOX_HW == VOICEBOX_HW_V2
     /* TEST 1b: CI13162 driver owns UART1 and leaves UART0 (log) alone */
     {
         printf("--- Test 1b: UART1 config ---\n");
@@ -423,6 +434,45 @@ int main(void) {
         assert(g_mock_uart_disable_count == 0);
         printf("  PASS: CI13162 uses UART1 only\n");
     }
+#else
+    /* TEST 1b (V1): CI13162 driver takes UART0 16/7 through uart_stdio */
+    {
+        printf("--- Test 1b: UART0 config (V1) ---\n");
+        reset_test_state();
+        s_mock_voice_support = 1;
+        g_mock_uart_fun_sel_count = 0;
+        assert(aiio_ci13162_uart_init() == 0);
+        assert(s_init_calls == 1);
+        /* GPIO7 is routed to UART0_RXD after init */
+        assert(g_mock_uart_fun_sel_count == 1);
+        assert(g_mock_uart_fun_sel_last_sig == GLB_UART_SIG_7);
+        assert(g_mock_uart_fun_sel_last_fun == GLB_UART_SIG_FUN_UART0_RXD);
+        assert(s_last_init_dev.config.uart_id == 0);
+        assert(s_last_init_dev.config.tx_pin == 16);
+        assert(s_last_init_dev.config.rx_pin == 7);
+        assert(s_last_init_dev.config.baud_rate == 115200);
+        assert(s_last_init_dev.config.mode == HOSAL_UART_MODE_INT);
+        assert(uart_stdio.config.uart_id == 0);
+        aiio_ci13162_uart_send_volume(3);
+        assert(s_send_calls > 0);
+        assert(s_last_send_dev.config.uart_id == 0);
+        assert(aiio_ci13162_uart_ota_acquire() == 0);
+        assert(aiio_ci13162_uart_ota_set_baud(921600) == 0);
+        assert(s_last_ioctl_dev.config.uart_id == 0);
+        aiio_ci13162_uart_ota_release();
+        /* log is always off on V1: OTA never toggles it */
+        assert(g_mock_logall_disable_count == 0);
+        assert(g_mock_logall_enable_count == 0);
+        g_mock_gpio_last_out_pin = -1;
+        g_mock_gpio_last_out_val = -1;
+        g_mock_uart_disable_count = 0;
+        aiio_ci13162_uart_hold_tx_idle();
+        assert(g_mock_gpio_last_out_pin == 16);
+        assert(g_mock_gpio_last_out_val == 1);
+        assert(g_mock_uart_disable_count == 1);
+        printf("  PASS: CI13162 uses UART0 16/7 on V1\n");
+    }
+#endif
 
     /* TEST 2: Duplicate key rejection */
     {

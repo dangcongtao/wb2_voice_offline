@@ -6,17 +6,13 @@ static uint8_t val_button = 0;
 /** Map a VOICEBOX button index to its GPIO pin, or -1 if out of range. */
 static int hw_button_voicebox_pin(uint32_t index)
 {
-    switch (index)
+    static const uint8_t pins[BTN_VOICEBOX_COUNT] = BTN_VOICEBOX_PINS;
+
+    if (index >= BTN_VOICEBOX_COUNT)
     {
-    case 0U:
-        return BTN_VOICEBOX_VOLUME_UP_PIN;
-    case 1U:
-        return BTN_VOICEBOX_FUNCTION_PIN;
-    case 2U:
-        return BTN_VOICEBOX_VOLUME_DOWN_PIN;
-    default:
         return -1;
     }
+    return (int)pins[index];
 }
 
 void hw_button_config(uint32_t index)

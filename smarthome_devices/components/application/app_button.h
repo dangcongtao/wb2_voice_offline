@@ -9,6 +9,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "app_config.h"
+
+#if !defined(VOICEBOX_HW) || !defined(VOICEBOX_HW_V1)
+#error "VOICEBOX_HW is not defined: include app_config.h first"
+#endif
+
 /** Action produced by the VOICEBOX button state machine. */
 typedef enum
 {
@@ -22,13 +28,20 @@ typedef enum
     APP_BUTTON_ACTION_AP_CONFIG,
 } app_button_action_t;
 
+#if VOICEBOX_HW == VOICEBOX_HW_V1
+#define APP_BUTTON_INDEX_FUNCTION 0U       /**< GPIO1, the only button */
+#define APP_BUTTON_INDEX_VOLUME_UP 0xFFU   /**< not fitted on V1 */
+#define APP_BUTTON_INDEX_VOLUME_DOWN 0xFFU /**< not fitted on V1 */
+#else
 #define APP_BUTTON_INDEX_VOLUME_UP 0U   /**< IO21 */
 #define APP_BUTTON_INDEX_FUNCTION 1U    /**< IO20 */
 #define APP_BUTTON_INDEX_VOLUME_DOWN 2U /**< IO0  */
+#endif
 
 /** @brief Translate one button-library event into an action.
  *
- *  @param[in]  index  Button index (0 volume up, 1 function, 2 volume down).
+ *  @param[in]  index  Button index (APP_BUTTON_INDEX_*). V2: 0 volume up,
+ *                     1 function, 2 volume down. V1: 0 function.
  *  @param[in]  event  One APP_BTN_EVT_* value.
  *  @return     The action to run, or APP_BUTTON_ACTION_NONE.
  *  @note       Pure state machine, keeps per-button hold state. Call from the button task.

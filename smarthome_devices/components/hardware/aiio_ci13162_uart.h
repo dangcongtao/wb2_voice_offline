@@ -66,12 +66,13 @@ typedef void (*aiio_ci13162_volume_info_cb_t)(uint8_t level,
                                               uint8_t result,
                                               uint8_t muted);
 
-/** @brief Drive UART1 TX (GPIO4) idle-high before the port is remuxed.
+/** @brief Drive the chip UART TX pin idle-high before the port is remuxed.
  *
  *  @return      None.
- *  @note        GPIO4 stays high so the CI13162 RX pin sees no garbage before
- *               UART1 is initialized. Protocol bytes can still be sent later.
- *               UART0 (log) is not touched.
+ *  @note        V2: UART1 TX GPIO4. V1: UART0 TX GPIO16, and UART0 is also
+ *               disabled. The pin stays high so the CI13162 RX pin sees no
+ *               garbage before the chip UART is initialized. Protocol bytes
+ *               can still be sent later.
  */
 void aiio_ci13162_uart_hold_tx_idle(void);
 
@@ -98,9 +99,9 @@ int32_t aiio_ci13162_power_cycle(uint32_t off_duration_ms, uint32_t stabilize_de
  *  @return      Initialization result.
  *  @retval      0  Initialization succeeded or the module is disabled.
  *  @retval      -1 Initialization failed.
- *  @note        UART1 uses GPIO4 as TX and GPIO3 as RX at 115200 baud.
- *               TX stays idle-high until a protocol write. Debug text uses
- *               the UART0 log (printf), not UART1.
+ *  @note        V2: UART1, TX GPIO4, RX GPIO3. V1: UART0 (SDK console
+ *               device), TX GPIO16, RX GPIO7, log always off. Both run at
+ *               115200 baud. TX stays idle-high until a protocol write.
  */
 int32_t aiio_ci13162_uart_init(void);
 
@@ -278,16 +279,16 @@ uint8_t aiio_ci13162_uart_get_voice_id(void);
  */
 void aiio_ci13162_uart_set_version_query_paused(uint8_t paused);
 
-/** @brief Claim UART1 for the CI13162 binary OTA protocol. */
+/** @brief Claim the chip UART for the CI13162 binary OTA protocol. */
 int32_t aiio_ci13162_uart_ota_acquire(void);
 
-/** @brief Return UART1 to the CI13162 application command protocol. */
+/** @brief Return the chip UART to the CI13162 application protocol. */
 void aiio_ci13162_uart_ota_release(void);
 
-/** @brief Return true while the OTA protocol owns UART1. */
+/** @brief Return true while the OTA protocol owns the chip UART. */
 bool aiio_ci13162_uart_ota_held(void);
 
-/** @brief Change UART1 baud while OTA owns the port. */
+/** @brief Change the chip UART baud while OTA owns the port. */
 int32_t aiio_ci13162_uart_ota_set_baud(uint32_t baud);
 
 /** @brief Send one raw OTA byte sequence. */

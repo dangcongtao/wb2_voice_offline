@@ -12,6 +12,7 @@
 #include <task.h>
 #include <hosal_uart.h>
 #include <bl602_glb.h>
+#include <bl602_hbn.h>
 #include <bl602_uart.h>
 #include <bl_gpio.h>
 #include <bl_sys.h>
@@ -68,8 +69,16 @@ static const char s_aiio_ci13162_version_query[] = "{\"cmd\":3,\"data\":[]}\r\n"
 static const char s_aiio_ci13162_volume_mute[] = "{\"cmd\":8,\"data\":[8]}\r\n";
 static const char s_aiio_ci13162_volume_query[] = "{\"cmd\":11,\"data\":[]}\r\n";
 
-// UART1 device owned by this driver; UART0 stays with the SDK log.
+#if VOICEBOX_HW == VOICEBOX_HW_V1
+// V1: the chip shares UART0 with the SDK console, so this driver uses the
+// console device itself (log is always off). s_aiio_ci13162_uart is only an
+// alias of uart_stdio here.
+extern hosal_uart_dev_t uart_stdio;
+#define s_aiio_ci13162_uart uart_stdio
+#else
+// V2: UART1 device owned by this driver; UART0 stays with the SDK log.
 static hosal_uart_dev_t s_aiio_ci13162_uart;
+#endif
 
 typedef enum {
     AIIO_CI13162_CMD_RESET = 0,
@@ -350,7 +359,7 @@ static void aiio_ci13162_snapshot_counters(aiio_ci13162_counter_snapshot_t *snap
     taskEXIT_CRITICAL();
 }
 
-// Report the UART1 RX pin, IRQ, FIFO, callback, and stream-buffer state.
+// Report the chip UART RX pin, IRQ, FIFO, callback, and stream state.
 static void aiio_ci13162_report_diagnostics(void)
 {
     static aiio_ci13162_counter_snapshot_t previous_snapshot;
@@ -1756,6 +1765,9 @@ void aiio_ci13162_uart_hold_tx_idle(void)
     bl_gpio_output_set((uint8_t)AIIO_CI13162_UART_TX_PIN, 1U);
     bl_gpio_enable_output((uint8_t)AIIO_CI13162_UART_TX_PIN, 1U, 0U);
     bl_gpio_output_set((uint8_t)AIIO_CI13162_UART_TX_PIN, 1U);
+#if VOICEBOX_HW == VOICEBOX_HW_V1
+    UART_Disable(UART0_ID, UART_TXRX);
+#endif
 #endif
 }
 
@@ -1813,6 +1825,27 @@ int32_t aiio_ci13162_power_cycle(uint32_t off_duration_ms, uint32_t stabilize_de
     return -1;
 #endif
 }
+
+#if (AIIO_CI13162_UART_ENABLE == 1) && (VOICEBOX_HW == VOICEBOX_HW_V1)
+// V1: give UART0 back to the SDK console as TX only after a failed init.
+static void aiio_ci13162_restore_tx_only(void)
+{
+    uart_stdio.config.uart_id = AIIO_CI13162_UART_ID;
+    uart_stdio.config.tx_pin = AIIO_CI13162_UART_TX_PIN;
+    uart_stdio.config.rx_pin = AIIO_CI13162_UART_INVALID_PIN;
+    uart_stdio.config.cts_pin = AIIO_CI13162_UART_INVALID_PIN;
+    uart_stdio.config.rts_pin = AIIO_CI13162_UART_INVALID_PIN;
+    uart_stdio.config.baud_rate = AIIO_CI13162_UART_BAUD_RATE;
+    uart_stdio.config.data_width = HOSAL_DATA_WIDTH_8BIT;
+    uart_stdio.config.parity = HOSAL_NO_PARITY;
+    uart_stdio.config.stop_bits = HOSAL_STOP_BITS_1;
+    uart_stdio.config.flow_control = HOSAL_FLOW_CONTROL_DISABLED;
+    uart_stdio.config.mode = HOSAL_UART_MODE_POLL;
+    uart_stdio.rx_cb = NULL;
+    uart_stdio.p_rxarg = NULL;
+    (void)hosal_uart_init_only_tx(&uart_stdio);
+}
+#endif
 
 int32_t aiio_ci13162_uart_init(void)
 {
@@ -1872,7 +1905,7 @@ int32_t aiio_ci13162_uart_init(void)
     }
 
     // Pin is already GPIO idle-high. Do not finalize first: UART_Disable
-    // while GPIO4 is still UART AF can drop TX and look like a BREAK.
+    // while the TX pin is still UART AF can drop TX and look like a BREAK.
     vTaskDelay(pdMS_TO_TICKS(AIIO_CI13162_UART_TX_IDLE_HOLD_MS));
 
     s_aiio_ci13162_uart.config.uart_id = AIIO_CI13162_UART_ID;
@@ -1889,10 +1922,23 @@ int32_t aiio_ci13162_uart_init(void)
     s_aiio_ci13162_uart.rx_cb = aiio_ci13162_rx_callback;
     s_aiio_ci13162_uart.p_rxarg = NULL;
 
-    if (hosal_uart_init(&s_aiio_ci13162_uart) != 0) {
+    if (hosal_uart_init(&s_aiio_ci13162_uart) != 0)
+    {
+#if VOICEBOX_HW == VOICEBOX_HW_V1
+        aiio_ci13162_restore_tx_only();
+#endif
         return -1;
     }
 
+#if VOICEBOX_HW == VOICEBOX_HW_V1
+    /* V1: GPIO7 is an AON pad. Enable its input path and route UART
+     * signal 7 to UART0_RXD, as the old UART0 driver did. */
+    HBN_Hw_Pu_Pd_Cfg(DISABLE);
+    HBN_Aon_Pad_IeSmt_Cfg(ENABLE);
+    GLB_GPIO_INPUT_Enable(GLB_GPIO_PIN_7);
+    GLB_UART_Sig_Swap_Set(UART_SIG_SWAP_NONE);
+    GLB_UART_Fun_Sel(GLB_UART_SIG_7, GLB_UART_SIG_FUN_UART0_RXD);
+#else
     /* The TX-only log init (bfl_main: hosal_uart_init_only_tx) never claims UART
      * signal 7, so it keeps its reset value UART1_RXD (GLB_UART_SIG_SEL_0 reset
      * 0x76543210). hosal_uart_init also selects UART1_RXD on SIG(rx_pin % 8), so
@@ -1902,6 +1948,7 @@ int32_t aiio_ci13162_uart_init(void)
     if ((AIIO_CI13162_UART_RX_PIN % 8U) != 7U) {
         GLB_UART_Fun_Sel(GLB_UART_SIG_7, GLB_UART_SIG_FUN_UART0_RXD);
     }
+#endif
 
     task_handle = xTaskCreateStatic(aiio_ci13162_uart_task,
                                     "ci13162_uart",
@@ -1910,8 +1957,12 @@ int32_t aiio_ci13162_uart_init(void)
                                     AIIO_CI13162_UART_TASK_PRIORITY,
                                     s_aiio_ci13162_task_stack,
                                     &s_aiio_ci13162_task_control);
-    if (task_handle == NULL) {
+    if (task_handle == NULL)
+    {
         hosal_uart_finalize(&s_aiio_ci13162_uart);
+#if VOICEBOX_HW == VOICEBOX_HW_V1
+        aiio_ci13162_restore_tx_only();
+#endif
         return -1;
     }
 

@@ -20,6 +20,20 @@ Nguồn chính (dưới `smarthome_devices/components/`):
 
 ## 1. Kết nối và cấu hình
 
+Hardware chọn bằng macro `VOICEBOX_HW` trong `components/app_config/app_config.h`:
+
+| Macro | Hardware | UART chip | Nút | Log |
+|---|---|---|---|---|
+| `VOICEBOX_HW_V2` (mặc định) | Mới | UART1, TX GPIO4, RX GPIO3 | 3 nút IO21/20/0 | UART0 TX GPIO16 |
+| `VOICEBOX_HW_V1` | Cũ | UART0, TX GPIO16, RX GPIO7 | 1 nút GPIO1 | Luôn tắt (`DEBUG_ENABLE` ép về 0) |
+
+Hai bản dùng chung LED GPIO2, nguồn chip GPIO17 và 115200 8N1. Bảng dưới đây là bản V2. Khác biệt của V1:
+- Driver dùng lại `uart_stdio` (thiết bị console UART0 của SDK), không tự mở thiết bị riêng.
+- `hold_tx_idle` kéo GPIO16 lên mức cao, rồi `UART_Disable(UART0)`.
+- Sau khi init thì cấu hình GPIO7 làm UART0_RXD. Init lỗi thì trả UART0 về chế độ chỉ TX.
+- Không có log GPIO.
+- Lưu ý: 3 dòng `puts()` lúc boot của SDK (chạy trước `main()`) vẫn ra UART0 TX GPIO16, tức là vào chip.
+
 | Thuộc tính | Giá trị |
 |---|---|
 | UART WB2 | UART1 (driver tự mở thiết bị hosal UART1) |
@@ -107,7 +121,7 @@ Ràng buộc phía WB2 trước khi gửi `cmd:4` (`app_cwsl_parse_mutating()`, 
 
 ### Nút nhấn VOICEBOX
 
-Ba nút trên VOICEBOX (nhấn = mức 0, mức nghỉ = 1, pull-up trong). Nhấn không beep. Xử lý trong `application/app_button.c`, chân khai báo ở `hardware/hardware.h`.
+V2 có ba nút (nhấn = mức 0, mức nghỉ = 1, pull-up trong). V1 chỉ có một nút ở GPIO1 (cùng mức), chạy như nút 2 bên dưới: nhấn nhanh để đổi giọng, giữ 5 s / 10 s để cấu hình. V1 không có nút âm lượng. Nhấn không beep. Xử lý trong `application/app_button.c`, chân khai báo ở `hardware/hardware.h`.
 
 | Nút | Chân | Thao tác | Hành động | Báo App |
 |---|---|---|---|---|
