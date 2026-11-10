@@ -9,7 +9,7 @@
 #define VOICEBOX_HW_V1 1 /* old: chip on UART0 TX16/RX7, 1 button GPIO1 */
 #define VOICEBOX_HW_V2 2 /* new: chip on UART1 TX4/RX3, 3 buttons 21/20/0 */
 #ifndef VOICEBOX_HW
-#define VOICEBOX_HW VOICEBOX_HW_V1
+#define VOICEBOX_HW VOICEBOX_HW_V2
 #endif
 #if (VOICEBOX_HW != VOICEBOX_HW_V1) && (VOICEBOX_HW != VOICEBOX_HW_V2)
 #error "VOICEBOX_HW must be VOICEBOX_HW_V1 or VOICEBOX_HW_V2"
